@@ -108,6 +108,7 @@ expect_empty() {
 
 format_dir=testdata/cases/format
 lint_dir=testdata/cases/lint
+analyze_dir=testdata/cases/analyze
 
 run_timed "$temporary/basic.go" "$temporary/format.stderr" "$temporary/format.time" \
 	"$strider" fmt --stdin --stdin-filename basic.go \
@@ -147,6 +148,25 @@ expect_status "lint clean test" 0 "$code"
 expect_empty "lint clean test stdout" "$temporary/lint-clean.stdout"
 expect_empty "lint clean test stderr" "$temporary/lint-clean.stderr"
 
+run_timed "$temporary/analyze-findings.stdout" "$temporary/analyze-findings.stderr" \
+	"$temporary/analyze-findings.time" \
+	"$strider" analyze --only SA1000 "$analyze_dir/findings.go"
+code=$?
+record_timing "analyze SA1000 true-positive" "$temporary/analyze-findings.time"
+expect_status "analyze SA1000 true-positive test" 1 "$code"
+expect_file "analyze SA1000 true-positive test" \
+	"$analyze_dir/findings.expected" "$temporary/analyze-findings.stdout"
+expect_empty "analyze SA1000 true-positive test stderr" "$temporary/analyze-findings.stderr"
+
+run_timed "$temporary/analyze-clean.stdout" "$temporary/analyze-clean.stderr" \
+	"$temporary/analyze-clean.time" \
+	"$strider" analyze --only SA1000 "$analyze_dir/clean.go"
+code=$?
+record_timing "analyze SA1000 clean" "$temporary/analyze-clean.time"
+expect_status "analyze SA1000 clean test" 0 "$code"
+expect_empty "analyze SA1000 clean test stdout" "$temporary/analyze-clean.stdout"
+expect_empty "analyze SA1000 clean test stderr" "$temporary/analyze-clean.stderr"
+
 printf 'Timing: curated total Strider time: %ss\n' "$total_seconds"
 printf 'curated\t-\ttotal\t%s\t\tINFO\n' "$total_seconds" >> "$timings_file"
 if test -n "${GITHUB_STEP_SUMMARY:-}"; then
@@ -156,4 +176,4 @@ fi
 if test "$failed" -ne 0; then
 	exit 1
 fi
-echo "Curated formatter and linter tests passed."
+echo "Curated formatter, linter, and analyzer tests passed."

@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/gempir/strider/internal/analyze"
 	"github.com/gempir/strider/internal/formatter"
 	"github.com/gempir/strider/internal/lint"
 	"github.com/gempir/strider/internal/source"
@@ -19,22 +20,22 @@ import (
 type formattedFile struct {
 	filename string
 	original []byte
-	result formatter.Result
+	result   formatter.Result
 }
 
 type formatOptions struct {
-	check bool
-	diff bool
-	write bool
-	stdin bool
+	check         bool
+	diff          bool
+	write         bool
+	stdin         bool
 	stdinFilename string
-	paths []string
+	paths         []string
 }
 
 const (
-	exitSuccess = 0
+	exitSuccess  = 0
 	exitFindings = 1
-	exitError = 2
+	exitError    = 2
 )
 
 func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
@@ -47,6 +48,8 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return runFormat(args[1:], stdin, stdout, stderr)
 	case "lint":
 		return runLint(args[1:], stdout, stderr)
+	case "analyze":
+		return runAnalyze(args[1:], stdout, stderr)
 	case "help", "-h", "--help":
 		usage(stdout)
 		return exitSuccess
@@ -69,10 +72,12 @@ Usage:
   strider fmt [--check|--diff|--write|--stdin] [FILE|DIR]...
   strider fmt --stdin                      # stdin to stdout
   strider lint [OPTIONS] [FILE|DIR]...
+  strider analyze [OPTIONS] [FILE|DIR]...
 
 Commands:
   fmt       Format Go source (alias: format)
   lint      Run clarity and safety rules
+  analyze   Run package-aware static analysis
   version   Print the version`,
 	)
 }
@@ -134,12 +139,12 @@ func parseFormatOptions(args []string, stderr io.Writer) (formatOptions, bool) {
 		*write = true
 	}
 	return formatOptions{
-		check: *check,
-		diff: *diffMode,
-		write: *write,
-		stdin: *stdinMode,
+		check:         *check,
+		diff:          *diffMode,
+		write:         *write,
+		stdin:         *stdinMode,
 		stdinFilename: *stdinFilename,
-		paths: paths,
+		paths:         paths,
 	}, true
 }
 
@@ -236,7 +241,7 @@ func boolInt(value bool) int {
 
 type stagedFile struct {
 	temporary string
-	target string
+	target    string
 }
 
 func atomicWriteBatch(files []formattedFile) error {
@@ -431,6 +436,105 @@ func lintPaths(paths []string, format string, registry *lint.Registry, stdout, s
 	}
 	if err != nil {
 		fmt.Fprintf(stderr, "strider lint: %v\n", err)
+		return exitError
+	}
+	if len(diagnostics) != 0 {
+		return exitFindings
+	}
+	return exitSuccess
+}
+
+func runAnalyze(args []string, stdout, stderr io.Writer) int {
+	flags := flag.NewFlagSet("analyze", flag.ContinueOnError)
+	flags.SetOutput(stderr)
+	format := flags.String("format", "text", "report format: text or json")
+	listRules := flags.Bool("list-rules", false, "list enabled analysis rules")
+	explain := flags.String("explain", "", "explain an analysis rule")
+	var only stringList
+	flags.Var(&only, "only", "run only these rule codes (repeatable or comma-separated)")
+	flags.Usage = func() {
+		fmt.Fprintln(stderr, "Usage: strider analyze [OPTIONS] [FILE|DIR]...")
+		flags.PrintDefaults()
+	}
+	if err := flags.Parse(args); err != nil {
+		return exitError
+	}
+	registry, err := analyze.NewRegistry(only)
+	if err != nil {
+		fmt.Fprintf(stderr, "strider analyze: %v\n", err)
+		return exitError
+	}
+	if *listRules {
+		return listAnalyzeRules(registry, stdout)
+	}
+	if *explain != "" {
+		return explainAnalyzeRule(registry, *explain, stdout, stderr)
+	}
+	if *format != "text" && *format != "json" {
+		fmt.Fprintf(stderr, "strider analyze: unsupported report format %q\n", *format)
+		return exitError
+	}
+	return analyzePaths(flags.Args(), *format, registry, stdout, stderr)
+}
+
+func listAnalyzeRules(registry *analyze.Registry, stdout io.Writer) int {
+	rules := registry.Rules()
+	sort.Slice(
+		rules,
+		func(i, j int) bool {
+			return rules[i].Meta().Code < rules[j].Meta().Code
+		},
+	)
+	for _, rule := range rules {
+		meta := rule.Meta()
+		fmt.Fprintf(stdout, "%s\t%s\t%s\n", meta.Code, meta.DefaultSeverity, meta.Summary)
+	}
+	return exitSuccess
+}
+
+func explainAnalyzeRule(
+	registry *analyze.Registry,
+	code string,
+	stdout, stderr io.Writer,
+) int {
+	for _, rule := range registry.Rules() {
+		meta := rule.Meta()
+		if !strings.EqualFold(meta.Code, code) {
+			continue
+		}
+		fmt.Fprintf(
+			stdout,
+			"%s (%s)\n\n%s\n\nGood:\n%s\n\nBad:\n%s\n",
+			meta.Code,
+			meta.DefaultSeverity,
+			meta.Explanation,
+			meta.GoodExample,
+			meta.BadExample,
+		)
+		return exitSuccess
+	}
+	fmt.Fprintf(stderr, "strider analyze: unknown analysis rule %q\n", code)
+	return exitError
+}
+
+func analyzePaths(
+	paths []string,
+	format string,
+	registry *analyze.Registry,
+	stdout, stderr io.Writer,
+) int {
+	diagnostics, err := analyze.Run(paths, registry)
+	if err != nil {
+		fmt.Fprintf(stderr, "strider analyze: %v\n", err)
+		return exitError
+	}
+	if format == "json" {
+		err = analyze.ReportJSON(stdout, diagnostics)
+	} else {
+		err = analyze.ReportText(stdout, diagnostics)
+	}
+	if err != nil {
+		fmt.Fprintf(stderr, "strider analyze: %v\n", err)
 		return exitError
 	}
 	if len(diagnostics) != 0 {

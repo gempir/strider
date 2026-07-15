@@ -1,0 +1,1 @@
+testdata/cases/analyze/findings.go:8:21: error[SA1000]: error parsing regexp: missing closing ]: `[`

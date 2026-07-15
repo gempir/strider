@@ -39,7 +39,7 @@ func TestFormatWithoutPathsScansCurrentDirectory(t *testing.T) {
 	)
 	var stdout, stderr bytes.Buffer
 	if code := Run([]string{"fmt", "--check"}, strings.NewReader("ignored stdin"), &stdout, &stderr); code !=
-	exitFindings {
+		exitFindings {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 	if !strings.Contains(stdout.String(), "main.go") {
@@ -56,12 +56,12 @@ func TestFormatBatchDoesNotWriteWhenAnyFileIsUnsupported(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(bad, []byte("package p\nfunc F[T any](v T) T { return v }\n"), 0o600); err !=
-	nil {
+		nil {
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
 	if code := Run([]string{"fmt", "--write", root}, strings.NewReader(""), &stdout, &stderr); code !=
-	exitError {
+		exitError {
 		t.Fatalf("exit %d, stderr %s", code, stderr.String())
 	}
 	after, err := os.ReadFile(good)
@@ -91,7 +91,7 @@ func TestFormatCheckDiffAndWrite(t *testing.T) {
 	}
 	var stdout, stderr bytes.Buffer
 	if code := Run([]string{"fmt", "--write", filename}, strings.NewReader(""), &stdout, &stderr); code !=
-	exitSuccess {
+		exitSuccess {
 		t.Fatalf("write: exit %d, stderr %q", code, stderr.String())
 	}
 	after, err := os.ReadFile(filename)
@@ -190,7 +190,7 @@ func TestLintAllRulesListsCompleteRegistry(t *testing.T) {
 		t.Fatalf("listed %d rules; want 111", got)
 	}
 	if !strings.Contains(stdout.String(), "marshal-receiver\t") ||
-	!strings.Contains(stdout.String(), "multiline-if-init\t") {
+		!strings.Contains(stdout.String(), "multiline-if-init\t") {
 		t.Fatalf("complete registry is missing extended rules: %s", stdout.String())
 	}
 }
@@ -204,6 +204,63 @@ func TestLintAllRulesAndOnlyAreMutuallyExclusive(t *testing.T) {
 		&stderr,
 	)
 	if code != exitError || !strings.Contains(stderr.String(), "mutually exclusive") {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+}
+
+func TestAnalyzeSA1000JSONAndExitCode(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(
+		filepath.Join(root, "go.mod"),
+		[]byte("module example.com/analyzeapp\n\ngo 1.26\n"),
+		0o600,
+	); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(
+		filepath.Join(root, "main.go"),
+		[]byte("package sample\nimport \"regexp\"\nvar _ = regexp.MustCompile(\"[\")\n"),
+		0o600,
+	); err != nil {
+		t.Fatal(err)
+	}
+	previous, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(
+		func() {
+			_ = os.Chdir(previous)
+		},
+	)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(
+		[]string{"analyze", "--format", "json", "--only", "sa1000"},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitFindings {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stdout.String(), `"code": "SA1000"`) {
+		t.Fatalf("unexpected JSON: %s", stdout.String())
+	}
+}
+
+func TestAnalyzeListsRules(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(
+		[]string{"analyze", "--list-rules"},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitSuccess || !strings.Contains(stdout.String(), "SA1000\terror\t") {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 }

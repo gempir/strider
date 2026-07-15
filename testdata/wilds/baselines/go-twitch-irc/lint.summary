@@ -1,0 +1,6 @@
+TOTAL	21
+cyclomatic-complexity	2
+no-else-after-return	1
+no-init	1
+no-naked-return	5
+no-package-var	12

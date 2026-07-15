@@ -1,0 +1,1 @@
+strider fmt: cmd/bot/application.go:505:4: unsupported Go syntax: comments attached to *ast.Ident

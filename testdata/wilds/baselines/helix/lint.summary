@@ -1,0 +1,6 @@
+TOTAL	70
+cyclomatic-complexity	52
+no-defer-in-loop	1
+no-else-after-return	1
+no-naked-return	9
+no-package-var	7

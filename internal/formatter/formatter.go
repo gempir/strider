@@ -17,7 +17,11 @@ import (
 
 const PrintWidth = 100
 
-var ErrUnsupported = errors.New("unsupported Go syntax")
+type unsupportedErrorValue string
+
+func (value unsupportedErrorValue) Error() string { return string(value) }
+
+const ErrUnsupported unsupportedErrorValue = "unsupported Go syntax"
 
 type UnsupportedError struct {
 	Filename string
@@ -106,31 +110,9 @@ func validateSupported(filename string, fset *token.FileSet, file *ast.File) err
 		if node == nil || unsupported != nil {
 			return unsupported == nil
 		}
-		switch current := node.(type) {
-		case *ast.BadDecl, *ast.BadExpr, *ast.BadStmt:
-			unsupported, feature = node, "invalid AST node"
-		case *ast.SelectStmt:
-			unsupported, feature = node, "select statements"
-		case *ast.TypeSwitchStmt:
-			unsupported, feature = node, "type switches"
-		case *ast.SendStmt:
-			unsupported, feature = node, "channel sends"
-		case *ast.LabeledStmt:
-			unsupported, feature = node, "labeled statements"
-		case *ast.IndexListExpr:
-			unsupported, feature = node, "generic instantiations"
-		case *ast.FuncType:
-			if current.TypeParams != nil && len(current.TypeParams.List) != 0 {
-				unsupported, feature = node, "type parameters"
-			}
-		case *ast.TypeSpec:
-			if current.TypeParams != nil && len(current.TypeParams.List) != 0 {
-				unsupported, feature = node, "type parameters"
-			}
-		case *ast.BranchStmt:
-			if current.Tok == token.GOTO || current.Tok == token.FALLTHROUGH {
-				unsupported, feature = node, strings.ToLower(current.Tok.String())+" statements"
-			}
+		feature = unsupportedFeature(node)
+		if feature != "" {
+			unsupported = node
 		}
 		return unsupported == nil
 	})
@@ -139,6 +121,41 @@ func validateSupported(filename string, fset *token.FileSet, file *ast.File) err
 	}
 	position := fset.Position(unsupported.Pos())
 	return &UnsupportedError{Filename: filename, Line: position.Line, Column: position.Column, Feature: feature}
+}
+
+func unsupportedFeature(node ast.Node) string {
+	if feature := unsupportedNodeKind(node); feature != "" {
+		return feature
+	}
+	return unsupportedTypeParameters(node)
+}
+
+func unsupportedNodeKind(node ast.Node) string {
+	switch current := node.(type) {
+	case *ast.BadDecl, *ast.BadExpr, *ast.BadStmt:
+		return "invalid AST node"
+	case *ast.IndexListExpr:
+		return "generic instantiations"
+	case *ast.BranchStmt:
+		if current.Tok == token.GOTO || current.Tok == token.FALLTHROUGH {
+			return strings.ToLower(current.Tok.String()) + " statements"
+		}
+	}
+	return ""
+}
+
+func unsupportedTypeParameters(node ast.Node) string {
+	switch current := node.(type) {
+	case *ast.FuncType:
+		if current.TypeParams != nil && len(current.TypeParams.List) != 0 {
+			return "type parameters"
+		}
+	case *ast.TypeSpec:
+		if current.TypeParams != nil && len(current.TypeParams.List) != 0 {
+			return "type parameters"
+		}
+	}
+	return ""
 }
 
 func equivalent(filename string, original, formatted []byte) error {
@@ -170,19 +187,7 @@ func equivalent(filename string, original, formatted []byte) error {
 
 func structuralFingerprint(file *ast.File) string {
 	var output strings.Builder
-	imports := make([]string, 0, len(file.Imports))
-	for _, spec := range file.Imports {
-		name := ""
-		if spec.Name != nil {
-			name = spec.Name.Name
-		}
-		imports = append(imports, name+"\x00"+spec.Path.Value)
-	}
-	sort.Strings(imports)
-	output.WriteString("imports:")
-	output.WriteString(strings.Join(imports, "\x01"))
-	output.WriteByte('\n')
-
+	writeImportFingerprint(&output, file)
 	ast.Inspect(file, func(node ast.Node) bool {
 		if node == nil {
 			output.WriteString(")")
@@ -192,35 +197,72 @@ func structuralFingerprint(file *ast.File) string {
 			return false
 		}
 		fmt.Fprintf(&output, "(%s", reflect.TypeOf(node).String())
-		switch current := node.(type) {
-		case *ast.Ident:
-			fmt.Fprintf(&output, ":%q", current.Name)
-		case *ast.BasicLit:
-			fmt.Fprintf(&output, ":%s:%q", current.Kind, current.Value)
-		case *ast.GenDecl:
-			fmt.Fprintf(&output, ":%s", current.Tok)
-		case *ast.AssignStmt:
-			fmt.Fprintf(&output, ":%s", current.Tok)
-		case *ast.IncDecStmt:
-			fmt.Fprintf(&output, ":%s", current.Tok)
-		case *ast.BranchStmt:
-			fmt.Fprintf(&output, ":%s", current.Tok)
-		case *ast.UnaryExpr:
-			fmt.Fprintf(&output, ":%s", current.Op)
-		case *ast.BinaryExpr:
-			fmt.Fprintf(&output, ":%s", current.Op)
-		case *ast.RangeStmt:
-			fmt.Fprintf(&output, ":%s", current.Tok)
-		case *ast.CallExpr:
-			fmt.Fprintf(&output, ":ellipsis=%t", current.Ellipsis.IsValid())
-		case *ast.ChanType:
-			fmt.Fprintf(&output, ":%d", current.Dir)
-		case *ast.TypeSpec:
-			fmt.Fprintf(&output, ":alias=%t", current.Assign.IsValid())
-		}
+		writeNodeFingerprint(&output, node)
 		return true
 	})
 	return output.String()
+}
+
+func writeImportFingerprint(output *strings.Builder, file *ast.File) {
+	imports := make([]string, 0, len(file.Imports))
+
+	for _, spec := range file.Imports {
+		name := ""
+		if spec.Name != nil {
+			name = spec.Name.Name
+		}
+
+		imports = append(imports, name+"\x00"+spec.Path.Value)
+	}
+
+	sort.Strings(imports)
+	output.WriteString("imports:")
+	output.WriteString(strings.Join(imports, "\x01"))
+	output.WriteByte('\n')
+}
+
+func writeNodeFingerprint(output *strings.Builder, node ast.Node) {
+	if writeNamedNodeFingerprint(output, node) {
+		return
+	}
+	writeOperatorNodeFingerprint(output, node)
+}
+
+func writeNamedNodeFingerprint(output *strings.Builder, node ast.Node) bool {
+	switch current := node.(type) {
+	case *ast.Ident:
+		fmt.Fprintf(output, ":%q", current.Name)
+	case *ast.BasicLit:
+		fmt.Fprintf(output, ":%s:%q", current.Kind, current.Value)
+	case *ast.CallExpr:
+		fmt.Fprintf(output, ":ellipsis=%t", current.Ellipsis.IsValid())
+	case *ast.ChanType:
+		fmt.Fprintf(output, ":%d", current.Dir)
+	case *ast.TypeSpec:
+		fmt.Fprintf(output, ":alias=%t", current.Assign.IsValid())
+	default:
+		return false
+	}
+	return true
+}
+
+func writeOperatorNodeFingerprint(output *strings.Builder, node ast.Node) {
+	switch current := node.(type) {
+	case *ast.GenDecl:
+		fmt.Fprintf(output, ":%s", current.Tok)
+	case *ast.AssignStmt:
+		fmt.Fprintf(output, ":%s", current.Tok)
+	case *ast.IncDecStmt:
+		fmt.Fprintf(output, ":%s", current.Tok)
+	case *ast.BranchStmt:
+		fmt.Fprintf(output, ":%s", current.Tok)
+	case *ast.UnaryExpr:
+		fmt.Fprintf(output, ":%s", current.Op)
+	case *ast.BinaryExpr:
+		fmt.Fprintf(output, ":%s", current.Op)
+	case *ast.RangeStmt:
+		fmt.Fprintf(output, ":%s", current.Tok)
+	}
 }
 
 func commentFingerprint(file *ast.File) string {

@@ -60,7 +60,6 @@ func VeryLongFunctionName(
 func TestFormatRefusesUnsupportedSyntax(t *testing.T) {
 	tests := map[string]string{
 		"generics": "package p\nfunc F[T any](v T) T { return v }\n",
-		"select":   "package p\nfunc F(ch chan int) { select { case <-ch: } }\n",
 		"goto":     "package p\nfunc F() { goto done; done: return }\n",
 	}
 	for name, input := range tests {
@@ -118,6 +117,71 @@ func F(v int) int {
 	}
 }
 
+func TestFormatTypeSwitchAndChannelSend(t *testing.T) {
+	input := []byte(`package p
+
+func F(value any, output chan string) {
+	switch current := value.(type) {
+	case string:
+		output <- current
+	default:
+		output <- "unknown"
+	}
+}
+`)
+	result, err := Format("concurrency.go", input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := string(result.Source); got != string(input) {
+		t.Fatalf("formatted source:\n%s\nwant:\n%s", got, input)
+	}
+}
+
+func TestFormatSelect(t *testing.T) {
+	input := []byte(`package p
+
+func F(input <-chan string, output chan<- string) {
+	select {
+	case value := <-input: // received
+		output <- value
+	case output <- "fallback":
+	default:
+	}
+}
+`)
+	result, err := Format("select.go", input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := string(result.Source); got != string(input) {
+		t.Fatalf("formatted source:\n%s\nwant:\n%s", got, input)
+	}
+}
+
+func TestFormatLabeledLoop(t *testing.T) {
+	input := []byte(`package p
+
+func F(values [][]int) {
+	outer:
+	for _, values := range values {
+		for _, value := range values {
+			if value == 0 {
+				continue outer
+			}
+		}
+	}
+}
+`)
+	result, err := Format("label.go", input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := string(result.Source); got != string(input) {
+		t.Fatalf("formatted source:\n%s\nwant:\n%s", got, input)
+	}
+}
+
 func TestFormatConsolidatesAndGroupsImports(t *testing.T) {
 	input := []byte(`package p
 import "github.com/acme/lib"
@@ -132,6 +196,40 @@ var _ = lib.Value
 	want := "import (\n\t\"fmt\"\n\n\t\"github.com/acme/lib\"\n)"
 	if !strings.Contains(string(result.Source), want) {
 		t.Fatalf("imports not consolidated and grouped:\n%s", result.Source)
+	}
+}
+
+func TestFormatCompositeLiteralComments(t *testing.T) {
+	input := []byte(`package p
+
+var values = map[string]string{
+	"key": "value", // retain this comment
+}
+`)
+	result, err := Format("composite_comments.go", input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := string(result.Source); got != string(input) {
+		t.Fatalf("formatted source:\n%s\nwant:\n%s", got, input)
+	}
+}
+
+func TestFormatPreservesFreeFloatingCommentSeparation(t *testing.T) {
+	input := []byte(`package p
+
+func A() {}
+
+// This is context, not documentation for B.
+
+func B() {}
+`)
+	result, err := Format("free_comment.go", input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := string(result.Source); got != string(input) {
+		t.Fatalf("formatted source:\n%s\nwant:\n%s", got, input)
 	}
 }
 

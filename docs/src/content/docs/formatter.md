@@ -1,0 +1,73 @@
+---
+title: Formatter
+description: Strider's strict formatting profile, workflows, and safety model.
+---
+
+The formatter parses Go source with comments, converts supported syntax to a
+small width-aware document model, and renders deterministically at 100 columns.
+It is intentionally independent from `gofmt`: output remains valid and
+semantically equivalent Go, but byte-for-byte `gofmt` compatibility is not a
+goal.
+
+## Workflows
+
+Write all discovered files in place:
+
+```sh
+strider fmt [PATH]...
+```
+
+Check without writing:
+
+```sh
+strider fmt --check [PATH]...
+```
+
+Print full-file unified diffs without writing:
+
+```sh
+strider fmt --diff [PATH]...
+```
+
+Format standard input:
+
+```sh
+strider fmt --stdin --stdin-filename main.go < main.go
+```
+
+## Style
+
+Strider uses tabs for indentation, LF line endings, one final newline, and a
+strict 100-column print width. Imports are sorted into standard-library,
+third-party, and current-module groups. Lists that break across lines use one
+item per line and a trailing comma.
+
+Function signatures, calls, composite literals, and expressions use the same
+bounded group-fitting algorithm. Binary operators remain on the preceding
+line so automatic semicolon insertion cannot change the program.
+
+## Safety checks
+
+Before a file can be written, Strider:
+
+1. Parses and preflights the complete file.
+2. Renders and reparses the result.
+3. Confirms that the syntax-tree fingerprint is unchanged.
+4. Confirms that comment contents and ordering are unchanged.
+5. Formats the result again and requires byte-for-byte idempotence.
+
+For a batch write, every file must pass before temporary files are staged and
+atomically renamed. One unsupported or invalid file prevents the entire batch
+from being written.
+
+## Current syntax boundary
+
+The formatter supports ordinary application code, including type switches,
+`select`, channel sends, and labeled statements. It currently refuses
+generics, `goto`, `fallthrough`, and some comments embedded deeply inside
+expressions. Refusal is an exit-code `2` error and never produces a partial
+file.
+
+Use `//strider:format-ignore` anywhere in a file to return that file unchanged.
+This is currently a file-level escape hatch; region and next-node formatting
+ignores are not implemented.

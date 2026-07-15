@@ -1,0 +1,2 @@
+testdata/cases/lint/findings.go:3:5: warning[no-package-var]: package variables introduce mutable global state
+testdata/cases/lint/findings.go:5:6: warning[no-init]: replace init with explicit initialization

@@ -32,10 +32,14 @@ func TestFormatWithoutPathsScansCurrentDirectory(t *testing.T) {
 	if err := os.Chdir(root); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = os.Chdir(previous) })
-
+	t.Cleanup(
+		func() {
+			_ = os.Chdir(previous)
+		},
+	)
 	var stdout, stderr bytes.Buffer
-	if code := Run([]string{"fmt", "--check"}, strings.NewReader("ignored stdin"), &stdout, &stderr); code != exitFindings {
+	if code := Run([]string{"fmt", "--check"}, strings.NewReader("ignored stdin"), &stdout, &stderr); code !=
+	exitFindings {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 	if !strings.Contains(stdout.String(), "main.go") {
@@ -51,11 +55,13 @@ func TestFormatBatchDoesNotWriteWhenAnyFileIsUnsupported(t *testing.T) {
 	if err := os.WriteFile(good, original, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(bad, []byte("package p\nfunc F[T any](v T) T { return v }\n"), 0o600); err != nil {
+	if err := os.WriteFile(bad, []byte("package p\nfunc F[T any](v T) T { return v }\n"), 0o600); err !=
+	nil {
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	if code := Run([]string{"fmt", "--write", root}, strings.NewReader(""), &stdout, &stderr); code != exitError {
+	if code := Run([]string{"fmt", "--write", root}, strings.NewReader(""), &stdout, &stderr); code !=
+	exitError {
 		t.Fatalf("exit %d, stderr %s", code, stderr.String())
 	}
 	after, err := os.ReadFile(good)
@@ -74,7 +80,6 @@ func TestFormatCheckDiffAndWrite(t *testing.T) {
 	if err := os.WriteFile(filename, original, 0o640); err != nil {
 		t.Fatal(err)
 	}
-
 	for _, test := range []struct {
 		flag string
 		text string
@@ -82,22 +87,11 @@ func TestFormatCheckDiffAndWrite(t *testing.T) {
 		{flag: "--check", text: "main.go"},
 		{flag: "--diff", text: "--- "},
 	} {
-		var stdout, stderr bytes.Buffer
-		code := Run([]string{"fmt", test.flag, filename}, strings.NewReader(""), &stdout, &stderr)
-		if code != exitFindings || !strings.Contains(stdout.String(), test.text) {
-			t.Fatalf("%s: exit %d, stdout %q, stderr %q", test.flag, code, stdout.String(), stderr.String())
-		}
-		after, err := os.ReadFile(filename)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !bytes.Equal(after, original) {
-			t.Fatalf("%s changed the source", test.flag)
-		}
+		assertFormatReadOnly(t, filename, original, test.flag, test.text)
 	}
-
 	var stdout, stderr bytes.Buffer
-	if code := Run([]string{"fmt", "--write", filename}, strings.NewReader(""), &stdout, &stderr); code != exitSuccess {
+	if code := Run([]string{"fmt", "--write", filename}, strings.NewReader(""), &stdout, &stderr); code !=
+	exitSuccess {
 		t.Fatalf("write: exit %d, stderr %q", code, stderr.String())
 	}
 	after, err := os.ReadFile(filename)
@@ -116,6 +110,22 @@ func TestFormatCheckDiffAndWrite(t *testing.T) {
 	}
 }
 
+func assertFormatReadOnly(t *testing.T, filename string, original []byte, flag, expected string) {
+	t.Helper()
+	var stdout, stderr bytes.Buffer
+	code := Run([]string{"fmt", flag, filename}, strings.NewReader(""), &stdout, &stderr)
+	if code != exitFindings || !strings.Contains(stdout.String(), expected) {
+		t.Fatalf("%s: exit %d, stdout %q, stderr %q", flag, code, stdout.String(), stderr.String())
+	}
+	after, err := os.ReadFile(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(after, original) {
+		t.Fatalf("%s changed the source", flag)
+	}
+}
+
 func TestLintJSONAndExitCode(t *testing.T) {
 	root := t.TempDir()
 	filename := filepath.Join(root, "main.go")
@@ -123,7 +133,12 @@ func TestLintJSONAndExitCode(t *testing.T) {
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{"lint", "--format", "json", "--only", "no-init", root}, strings.NewReader(""), &stdout, &stderr)
+	code := Run(
+		[]string{"lint", "--format", "json", "--only", "no-init", root},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
 	if code != exitFindings {
 		t.Fatalf("exit %d, stderr %s", code, stderr.String())
 	}
@@ -134,7 +149,11 @@ func TestLintJSONAndExitCode(t *testing.T) {
 
 func TestLintWithoutPathsScansCurrentDirectory(t *testing.T) {
 	root := t.TempDir()
-	if err := os.WriteFile(filepath.Join(root, "main.go"), []byte("package p\nfunc init() {}\n"), 0o600); err != nil {
+	if err := os.WriteFile(
+		filepath.Join(root, "main.go"),
+		[]byte("package p\nfunc init() {}\n"),
+		0o600,
+	); err != nil {
 		t.Fatal(err)
 	}
 	previous, err := os.Getwd()
@@ -144,8 +163,11 @@ func TestLintWithoutPathsScansCurrentDirectory(t *testing.T) {
 	if err := os.Chdir(root); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = os.Chdir(previous) })
-
+	t.Cleanup(
+		func() {
+			_ = os.Chdir(previous)
+		},
+	)
 	var stdout, stderr bytes.Buffer
 	code := Run([]string{"lint", "--only", "no-init"}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitFindings || !strings.Contains(stdout.String(), "no-init") {

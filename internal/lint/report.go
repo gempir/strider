@@ -10,8 +10,16 @@ import (
 
 func ReportText(writer io.Writer, diagnostics []diagnostic.Diagnostic) error {
 	for _, item := range diagnostics {
-		if _, err := fmt.Fprintf(writer, "%s:%d:%d: %s[%s]: %s\n",
-			item.File, item.Start.Line, item.Start.Column, item.Severity, item.Code, item.Message); err != nil {
+		if _, err := fmt.Fprintf(
+			writer,
+			"%s:%d:%d: %s[%s]: %s\n",
+			item.File,
+			item.Start.Line,
+			item.Start.Column,
+			item.Severity,
+			item.Code,
+			item.Message,
+		); err != nil {
 			return err
 		}
 	}

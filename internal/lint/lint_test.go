@@ -42,8 +42,13 @@ func closeThing() {}
 		codes = append(codes, item.Code)
 	}
 	for _, wanted := range []string{
-		"cyclomatic-complexity", "max-parameters", "no-defer-in-loop", "no-else-after-return",
-		"no-init", "no-naked-return", "no-package-var",
+		"cyclomatic-complexity",
+		"max-parameters",
+		"no-defer-in-loop",
+		"no-else-after-return",
+		"no-init",
+		"no-naked-return",
+		"no-package-var",
 	} {
 		if !slices.Contains(codes, wanted) {
 			t.Errorf("missing %s in %v", wanted, codes)
@@ -101,7 +106,11 @@ func writeFixture(t *testing.T, source string) string {
 
 func BenchmarkLint(b *testing.B) {
 	filename := filepath.Join(b.TempDir(), "fixture.go")
-	if err := os.WriteFile(filename, []byte("package p\nfunc F(a int) int { if a > 0 { return a }; return -a }\n"), 0o600); err != nil {
+	if err := os.WriteFile(
+		filename,
+		[]byte("package p\nfunc F(a int) int { if a > 0 { return a }; return -a }\n"),
+		0o600,
+	); err != nil {
 		b.Fatal(err)
 	}
 	registry, _ := NewRegistry(nil)

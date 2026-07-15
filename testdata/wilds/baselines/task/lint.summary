@@ -1,0 +1,7 @@
+TOTAL	163
+cyclomatic-complexity	33
+max-parameters	2
+no-defer-in-loop	2
+no-else-after-return	16
+no-init	7
+no-package-var	103

@@ -19,13 +19,22 @@ import (
 type formattedFile struct {
 	filename string
 	original []byte
-	result   formatter.Result
+	result formatter.Result
+}
+
+type formatOptions struct {
+	check bool
+	diff bool
+	write bool
+	stdin bool
+	stdinFilename string
+	paths []string
 }
 
 const (
-	exitSuccess  = 0
+	exitSuccess = 0
 	exitFindings = 1
-	exitError    = 2
+	exitError = 2
 )
 
 func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
@@ -52,7 +61,9 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 }
 
 func usage(writer io.Writer) {
-	fmt.Fprintln(writer, `Strider is a strict formatter and syntax linter for Go.
+	fmt.Fprintln(
+		writer,
+		`Strider is a strict formatter and syntax linter for Go.
 
 Usage:
   strider fmt [--check|--diff|--write|--stdin] [FILE|DIR]...
@@ -62,10 +73,22 @@ Usage:
 Commands:
   fmt       Format Go source (alias: format)
   lint      Run clarity and safety rules
-  version   Print the version`)
+  version   Print the version`,
+	)
 }
 
 func runFormat(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+	options, ok := parseFormatOptions(args, stderr)
+	if !ok {
+		return exitError
+	}
+	if options.stdin {
+		return formatStdin(options.stdinFilename, stdin, stdout, stderr)
+	}
+	return formatPaths(options, stdout, stderr)
+}
+
+func parseFormatOptions(args []string, stderr io.Writer) (formatOptions, bool) {
 	flags := flag.NewFlagSet("fmt", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	check := flags.Bool("check", false, "report files that would change without writing")
@@ -78,49 +101,31 @@ func runFormat(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		flags.PrintDefaults()
 	}
 	if err := flags.Parse(args); err != nil {
-		return exitError
+		return formatOptions{}, false
 	}
-	stdinFilenameSet := false
-	flags.Visit(func(current *flag.Flag) {
-		if current.Name == "stdin-filename" {
-			stdinFilenameSet = true
-		}
-	})
+	stdinFilenameSet := flagWasSet(flags, "stdin-filename")
 	if stdinFilenameSet && !*stdinMode {
 		fmt.Fprintln(stderr, "strider fmt: --stdin-filename requires --stdin")
-		return exitError
+		return formatOptions{}, false
 	}
 	modeCount := boolInt(*check) + boolInt(*diffMode) + boolInt(*write)
 	if modeCount > 1 {
 		fmt.Fprintln(stderr, "strider fmt: --check, --diff, and --write are mutually exclusive")
-		return exitError
+		return formatOptions{}, false
 	}
-
 	paths := flags.Args()
 	if *stdinMode {
 		if len(paths) != 0 {
 			fmt.Fprintln(stderr, "strider fmt: --stdin does not accept file or directory arguments")
-			return exitError
+			return formatOptions{}, false
 		}
 		if modeCount != 0 {
-			fmt.Fprintln(stderr, "strider fmt: formatting stdin does not accept --check, --diff, or --write")
-			return exitError
+			fmt.Fprintln(
+				stderr,
+				"strider fmt: formatting stdin does not accept --check, --diff, or --write",
+			)
+			return formatOptions{}, false
 		}
-		input, err := io.ReadAll(stdin)
-		if err != nil {
-			fmt.Fprintf(stderr, "strider fmt: %v\n", err)
-			return exitError
-		}
-		result, err := formatter.Format(*stdinFilename, input)
-		if err != nil {
-			fmt.Fprintf(stderr, "strider fmt: %v\n", err)
-			return exitError
-		}
-		if _, err := stdout.Write(result.Source); err != nil {
-			fmt.Fprintf(stderr, "strider fmt: %v\n", err)
-			return exitError
-		}
-		return exitSuccess
 	}
 	if len(paths) == 0 {
 		paths = []string{"."}
@@ -128,8 +133,48 @@ func runFormat(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if modeCount == 0 {
 		*write = true
 	}
+	return formatOptions{
+		check: *check,
+		diff: *diffMode,
+		write: *write,
+		stdin: *stdinMode,
+		stdinFilename: *stdinFilename,
+		paths: paths,
+	}, true
+}
 
-	files, err := source.Discover(paths, source.Options{SkipGenerated: true})
+func flagWasSet(flags *flag.FlagSet, name string) bool {
+	found := false
+	flags.Visit(
+		func(current *flag.Flag) {
+			if current.Name == name {
+				found = true
+			}
+		},
+	)
+	return found
+}
+
+func formatStdin(filename string, stdin io.Reader, stdout, stderr io.Writer) int {
+	input, err := io.ReadAll(stdin)
+	if err != nil {
+		fmt.Fprintf(stderr, "strider fmt: %v\n", err)
+		return exitError
+	}
+	result, err := formatter.Format(filename, input)
+	if err != nil {
+		fmt.Fprintf(stderr, "strider fmt: %v\n", err)
+		return exitError
+	}
+	if _, err := stdout.Write(result.Source); err != nil {
+		fmt.Fprintf(stderr, "strider fmt: %v\n", err)
+		return exitError
+	}
+	return exitSuccess
+}
+
+func formatPaths(options formatOptions, stdout, stderr io.Writer) int {
+	files, err := source.Discover(options.paths, source.Options{SkipGenerated: true})
 	if err != nil {
 		fmt.Fprintf(stderr, "strider fmt: %v\n", err)
 		return exitError
@@ -146,23 +191,13 @@ func runFormat(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 			fmt.Fprintf(stderr, "strider fmt: %v\n", formatErr)
 			return exitError
 		}
-		formatted = append(formatted, formattedFile{filename: filename, original: original, result: result})
+		formatted = append(
+			formatted,
+			formattedFile{filename: filename, original: original, result: result},
+		)
 	}
-
-	changed := false
-	for _, file := range formatted {
-		if !file.result.Changed {
-			continue
-		}
-		changed = true
-		switch {
-		case *check:
-			fmt.Fprintln(stdout, source.DisplayPath(file.filename))
-		case *diffMode:
-			printDiff(stdout, source.DisplayPath(file.filename), file.original, file.result.Source)
-		}
-	}
-	if *write {
+	changed := reportFormatChanges(formatted, options, stdout)
+	if options.write {
 		if err := atomicWriteBatch(formatted); err != nil {
 			fmt.Fprintf(stderr, "strider fmt: %v\n", err)
 			return exitError
@@ -175,6 +210,23 @@ func runFormat(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	return exitSuccess
 }
 
+func reportFormatChanges(files []formattedFile, options formatOptions, stdout io.Writer) bool {
+	changed := false
+	for _, file := range files {
+		if !file.result.Changed {
+			continue
+		}
+		changed = true
+		switch {
+		case options.check:
+			fmt.Fprintln(stdout, source.DisplayPath(file.filename))
+		case options.diff:
+			printDiff(stdout, source.DisplayPath(file.filename), file.original, file.result.Source)
+		}
+	}
+	return changed
+}
+
 func boolInt(value bool) int {
 	if value {
 		return 1
@@ -184,7 +236,7 @@ func boolInt(value bool) int {
 
 type stagedFile struct {
 	temporary string
-	target    string
+	target string
 }
 
 func atomicWriteBatch(files []formattedFile) error {
@@ -198,29 +250,12 @@ func atomicWriteBatch(files []formattedFile) error {
 		if !file.result.Changed {
 			continue
 		}
-		info, err := os.Stat(file.filename)
+		stagedFile, err := stageFile(file)
 		if err != nil {
 			cleanup()
 			return err
 		}
-		temporary, err := os.CreateTemp(filepath.Dir(file.filename), ".strider-*")
-		if err != nil {
-			cleanup()
-			return err
-		}
-		name := temporary.Name()
-		if err := temporary.Chmod(info.Mode().Perm()); err == nil {
-			_, err = temporary.Write(file.result.Source)
-		}
-		if closeErr := temporary.Close(); err == nil {
-			err = closeErr
-		}
-		if err != nil {
-			_ = os.Remove(name)
-			cleanup()
-			return err
-		}
-		staged = append(staged, stagedFile{temporary: name, target: file.filename})
+		staged = append(staged, stagedFile)
 	}
 	for index, file := range staged {
 		if err := os.Rename(file.temporary, file.target); err != nil {
@@ -233,10 +268,40 @@ func atomicWriteBatch(files []formattedFile) error {
 	return nil
 }
 
+func stageFile(file formattedFile) (stagedFile, error) {
+	info, err := os.Stat(file.filename)
+	if err != nil {
+		return stagedFile{}, err
+	}
+	temporary, err := os.CreateTemp(filepath.Dir(file.filename), ".strider-*")
+	if err != nil {
+		return stagedFile{}, err
+	}
+	name := temporary.Name()
+	if err := temporary.Chmod(info.Mode().Perm()); err == nil {
+		_, err = temporary.Write(file.result.Source)
+	}
+	if closeErr := temporary.Close(); err == nil {
+		err = closeErr
+	}
+	if err != nil {
+		_ = os.Remove(name)
+		return stagedFile{}, err
+	}
+	return stagedFile{temporary: name, target: file.filename}, nil
+}
+
 func printDiff(writer io.Writer, filename string, before, after []byte) {
 	beforeLines := splitLines(before)
 	afterLines := splitLines(after)
-	fmt.Fprintf(writer, "--- %s\n+++ %s\n@@ -1,%d +1,%d @@\n", filename, filename, len(beforeLines), len(afterLines))
+	fmt.Fprintf(
+		writer,
+		"--- %s\n+++ %s\n@@ -1,%d +1,%d @@\n",
+		filename,
+		filename,
+		len(beforeLines),
+		len(afterLines),
+	)
 	for _, line := range beforeLines {
 		fmt.Fprintf(writer, "-%s\n", line)
 	}
@@ -255,7 +320,10 @@ func splitLines(content []byte) []string {
 
 type stringList []string
 
-func (values *stringList) String() string { return strings.Join(*values, ",") }
+func (values *stringList) String() string {
+	return strings.Join(*values, ",")
+}
+
 func (values *stringList) Set(value string) error {
 	for _, item := range strings.Split(value, ",") {
 		if item = strings.TrimSpace(item); item != "" {
@@ -286,33 +354,56 @@ func runLint(args []string, stdout, stderr io.Writer) int {
 		return exitError
 	}
 	if *listRules {
-		rules := registry.Rules()
-		sort.Slice(rules, func(i, j int) bool { return rules[i].Meta().Code < rules[j].Meta().Code })
-		for _, rule := range rules {
-			meta := rule.Meta()
-			fmt.Fprintf(stdout, "%s\t%s\t%s\n", meta.Code, meta.DefaultSeverity, meta.Summary)
-		}
-		return exitSuccess
+		return listLintRules(registry, stdout)
 	}
 	if *explain != "" {
-		for _, rule := range registry.Rules() {
-			meta := rule.Meta()
-			if meta.Code != *explain {
-				continue
-			}
-			fmt.Fprintf(stdout, "%s (%s)\n\n%s\n\nGood:\n%s\n\nBad:\n%s\n",
-				meta.Code, meta.DefaultSeverity, meta.Explanation, meta.GoodExample, meta.BadExample)
-			return exitSuccess
-		}
-		fmt.Fprintf(stderr, "strider lint: unknown lint rule %q\n", *explain)
-		return exitError
+		return explainLintRule(registry, *explain, stdout, stderr)
 	}
 	if *format != "text" && *format != "json" {
 		fmt.Fprintf(stderr, "strider lint: unsupported report format %q\n", *format)
 		return exitError
 	}
+	return lintPaths(flags.Args(), *format, registry, stdout, stderr)
+}
 
-	files, err := source.Discover(flags.Args(), source.Options{SkipGenerated: true})
+func listLintRules(registry *lint.Registry, stdout io.Writer) int {
+	rules := registry.Rules()
+	sort.Slice(
+		rules,
+		func(i, j int) bool {
+			return rules[i].Meta().Code < rules[j].Meta().Code
+		},
+	)
+	for _, rule := range rules {
+		meta := rule.Meta()
+		fmt.Fprintf(stdout, "%s\t%s\t%s\n", meta.Code, meta.DefaultSeverity, meta.Summary)
+	}
+	return exitSuccess
+}
+
+func explainLintRule(registry *lint.Registry, code string, stdout, stderr io.Writer) int {
+	for _, rule := range registry.Rules() {
+		meta := rule.Meta()
+		if meta.Code != code {
+			continue
+		}
+		fmt.Fprintf(
+			stdout,
+			"%s (%s)\n\n%s\n\nGood:\n%s\n\nBad:\n%s\n",
+			meta.Code,
+			meta.DefaultSeverity,
+			meta.Explanation,
+			meta.GoodExample,
+			meta.BadExample,
+		)
+		return exitSuccess
+	}
+	fmt.Fprintf(stderr, "strider lint: unknown lint rule %q\n", code)
+	return exitError
+}
+
+func lintPaths(paths []string, format string, registry *lint.Registry, stdout, stderr io.Writer) int {
+	files, err := source.Discover(paths, source.Options{SkipGenerated: true})
 	if err != nil {
 		fmt.Fprintf(stderr, "strider lint: %v\n", err)
 		return exitError
@@ -322,7 +413,7 @@ func runLint(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "strider lint: %v\n", err)
 		return exitError
 	}
-	if *format == "json" {
+	if format == "json" {
 		err = lint.ReportJSON(stdout, diagnostics)
 	} else {
 		err = lint.ReportText(stdout, diagnostics)

@@ -1,3 +1,5 @@
+![Strider](docs/src/assets/strider.png)
+
 # Strider
 
 Strider is an experimental strict formatter and syntax linter for Go 1.26. It
@@ -22,6 +24,60 @@ support instead of partially formatting it.
 CGO_ENABLED=0 go build -trimpath -o strider ./cmd/strider
 ```
 
+## Documentation
+
+The documentation site lives in [`docs/`](docs/) and is built with
+[Starlight](https://starlight.astro.build/).
+
+```sh
+cd docs
+bun install
+bun run dev
+```
+
+Use `bun run build` to generate the static site.
+
+## Test suites
+
+The deterministic suite checks curated formatter output, idempotence, known
+lint findings, and clean lint input using the existing Strider binary. It does
+not invoke Go:
+
+```sh
+make test
+```
+
+The Wilds suite exercises pinned open-source projects cloned into the
+gitignored `.wilds/` directory:
+
+```sh
+make wilds
+```
+
+`make wilds` is a smoke test. Formatting differences and lint findings are
+printed as observations, while crashes and processing errors fail the run.
+`make wilds-check` compares exit codes, formatter and linter output
+fingerprints, per-rule lint counts, and errors with reviewed baselines. Full
+output is printed when a fingerprint changes. `make wilds-accept` explicitly
+updates those baselines after review.
+
+Wilds baselines record behavior, not correctness. After deciding whether a
+finding is correct, reduce it to a focused case under `testdata/cases/`; those
+curated cases are the source of truth used by `make test`.
+
+Every Strider invocation reports elapsed time and enforces a deliberately
+generous speed budget. Timing reports are written as TSV files under
+`target/timings/`. Override `CURATED_MAX_SECONDS`, `WILDS_FMT_MAX_SECONDS`, or
+`WILDS_LINT_MAX_SECONDS` to tune the budgets for a machine. GitHub Actions adds
+the measurements to the job summary and uploads the reports as build artifacts.
+
+Add `name,repository,commit` entries to `WILDS_PROJECTS` in the Makefile to
+extend the corpus. Override `STRIDER` to test another binary, for example:
+
+```sh
+make test STRIDER=/path/to/strider
+```
+
 ## Format
 
 ```sh
@@ -37,8 +93,9 @@ directory. Use `--stdin` to read source from stdin and write it to stdout. A
 file containing `//strider:format-ignore` is passed through unchanged.
 
 The formatter spike supports ordinary, non-generic application code. It
-currently rejects generics, type switches, `select`, channel sends, labels,
-`goto`, `fallthrough`, and comments embedded inside expressions.
+currently rejects generics, `goto`, `fallthrough`, and some comments embedded
+inside expressions. Type switches, `select`, channel sends, and labeled
+statements are supported.
 
 ## Lint
 

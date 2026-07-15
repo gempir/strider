@@ -1,0 +1,289 @@
+// Package lint implements Strider's fast, syntax-only lint engine.
+package lint
+
+import (
+	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"reflect"
+	"runtime"
+	"sort"
+	"strings"
+	"sync"
+
+	"github.com/gempir/strider/internal/diagnostic"
+	"github.com/gempir/strider/internal/source"
+)
+
+type RuleMeta struct {
+	Code            string              `json:"code"`
+	Summary         string              `json:"summary"`
+	Explanation     string              `json:"explanation"`
+	GoodExample     string              `json:"good_example"`
+	BadExample      string              `json:"bad_example"`
+	DefaultSeverity diagnostic.Severity `json:"default_severity"`
+}
+
+type Rule interface {
+	Meta() RuleMeta
+	Nodes() []ast.Node
+	Run(*Context, ast.Node)
+}
+
+type Registry struct {
+	rules  []Rule
+	byType map[reflect.Type][]Rule
+}
+
+func NewRegistry(only []string) (*Registry, error) {
+	all := []Rule{
+		complexityRule{}, maxParametersRule{}, nakedReturnRule{}, noInitRule{},
+		noPackageVarRule{}, noDeferInLoopRule{}, noElseAfterReturnRule{},
+	}
+	wanted := make(map[string]bool, len(only))
+	for _, code := range only {
+		wanted[code] = true
+	}
+	if len(wanted) != 0 {
+		for _, rule := range all {
+			delete(wanted, rule.Meta().Code)
+		}
+		if len(wanted) != 0 {
+			unknown := make([]string, 0, len(wanted))
+			for code := range wanted {
+				unknown = append(unknown, code)
+			}
+			sort.Strings(unknown)
+			return nil, fmt.Errorf("unknown lint rule(s): %s", strings.Join(unknown, ", "))
+		}
+	}
+
+	registry := &Registry{byType: make(map[reflect.Type][]Rule)}
+	for _, rule := range all {
+		if len(only) != 0 && !contains(only, rule.Meta().Code) {
+			continue
+		}
+		registry.rules = append(registry.rules, rule)
+		for _, prototype := range rule.Nodes() {
+			typeOfNode := reflect.TypeOf(prototype)
+			registry.byType[typeOfNode] = append(registry.byType[typeOfNode], rule)
+		}
+	}
+	return registry, nil
+}
+
+func contains(values []string, wanted string) bool {
+	for _, value := range values {
+		if value == wanted {
+			return true
+		}
+	}
+	return false
+}
+
+func (r *Registry) Rules() []Rule {
+	return append([]Rule(nil), r.rules...)
+}
+
+type Context struct {
+	filename    string
+	fset        *token.FileSet
+	diagnostics []diagnostic.Diagnostic
+	ancestors   []ast.Node
+	fileIgnores map[string]bool
+	nodeIgnores map[ast.Node]map[string]bool
+	current     ast.Node
+}
+
+func (c *Context) Parent() ast.Node {
+	if len(c.ancestors) == 0 {
+		return nil
+	}
+	return c.ancestors[len(c.ancestors)-1]
+}
+
+func (c *Context) Ancestors() []ast.Node {
+	return c.ancestors
+}
+
+func (c *Context) Report(node ast.Node, code, message string, severity diagnostic.Severity) {
+	if c.suppressed(code) {
+		return
+	}
+	start := c.fset.Position(node.Pos())
+	end := c.fset.Position(node.End())
+	display := source.DisplayPath(c.filename)
+	start.Filename = display
+	end.Filename = display
+	c.diagnostics = append(c.diagnostics, diagnostic.Diagnostic{
+		Code: code, Message: message, Severity: severity, File: display, Start: start, End: end,
+	})
+}
+
+func (c *Context) suppressed(code string) bool {
+	if c.fileIgnores["all"] || c.fileIgnores[code] {
+		return true
+	}
+	nodes := append(append([]ast.Node(nil), c.ancestors...), c.current)
+	for _, node := range nodes {
+		ignored := c.nodeIgnores[node]
+		if ignored["all"] || ignored[code] {
+			return true
+		}
+	}
+	return false
+}
+
+type fileResult struct {
+	filename    string
+	diagnostics []diagnostic.Diagnostic
+	err         error
+}
+
+func Run(files []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
+	workers := min(runtime.GOMAXPROCS(0), max(1, len(files)))
+	jobs := make(chan string)
+	results := make(chan fileResult, len(files))
+	var group sync.WaitGroup
+
+	for range workers {
+		group.Add(1)
+		go func() {
+			defer group.Done()
+			for filename := range jobs {
+				diagnostics, err := lintFile(filename, registry)
+				results <- fileResult{filename: filename, diagnostics: diagnostics, err: err}
+			}
+		}()
+	}
+	go func() {
+		for _, filename := range files {
+			jobs <- filename
+		}
+		close(jobs)
+		group.Wait()
+		close(results)
+	}()
+
+	allDiagnostics := []diagnostic.Diagnostic{}
+	errorsByFile := []fileResult{}
+	for result := range results {
+		if result.err != nil {
+			errorsByFile = append(errorsByFile, result)
+			continue
+		}
+		allDiagnostics = append(allDiagnostics, result.diagnostics...)
+	}
+	if len(errorsByFile) != 0 {
+		sort.Slice(errorsByFile, func(i, j int) bool { return errorsByFile[i].filename < errorsByFile[j].filename })
+		return nil, fmt.Errorf("%s: %w", source.DisplayPath(errorsByFile[0].filename), errorsByFile[0].err)
+	}
+	sort.Slice(allDiagnostics, func(i, j int) bool {
+		left, right := allDiagnostics[i], allDiagnostics[j]
+		if left.File != right.File {
+			return left.File < right.File
+		}
+		if left.Start.Offset != right.Start.Offset {
+			return left.Start.Offset < right.Start.Offset
+		}
+		return left.Code < right.Code
+	})
+	return allDiagnostics, nil
+}
+
+func lintFile(filename string, registry *Registry) ([]diagnostic.Diagnostic, error) {
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, filename, nil, parser.ParseComments|parser.AllErrors|parser.SkipObjectResolution)
+	if err != nil {
+		return nil, err
+	}
+	fileIgnores, nodeIgnores := suppressions(file)
+	context := &Context{
+		filename: filename, fset: fset, fileIgnores: fileIgnores, nodeIgnores: nodeIgnores,
+	}
+
+	ast.Inspect(file, func(node ast.Node) bool {
+		if node == nil {
+			if len(context.ancestors) != 0 {
+				context.ancestors = context.ancestors[:len(context.ancestors)-1]
+			}
+			return true
+		}
+		context.current = node
+		for _, rule := range registry.byType[reflect.TypeOf(node)] {
+			rule.Run(context, node)
+		}
+		context.ancestors = append(context.ancestors, node)
+		return true
+	})
+	return context.diagnostics, nil
+}
+
+func suppressions(file *ast.File) (map[string]bool, map[ast.Node]map[string]bool) {
+	fileIgnores := make(map[string]bool)
+	nodeIgnores := make(map[ast.Node]map[string]bool)
+	candidates := []ast.Node{}
+	ast.Inspect(file, func(node ast.Node) bool {
+		switch node.(type) {
+		case ast.Decl, ast.Stmt:
+			candidates = append(candidates, node)
+		}
+		return true
+	})
+	sort.SliceStable(candidates, func(i, j int) bool {
+		if candidates[i].Pos() != candidates[j].Pos() {
+			return candidates[i].Pos() < candidates[j].Pos()
+		}
+		return candidates[i].End() > candidates[j].End()
+	})
+
+	for _, group := range file.Comments {
+		for _, comment := range group.List {
+			if codes, ok := directiveCodes(comment.Text, "strider:ignore-file"); ok && group.End() < file.Package {
+				for _, code := range codes {
+					fileIgnores[code] = true
+				}
+			}
+			codes, ok := directiveCodes(comment.Text, "strider:ignore")
+			if !ok {
+				continue
+			}
+			index := sort.Search(len(candidates), func(index int) bool { return candidates[index].Pos() > group.End() })
+			if index == len(candidates) {
+				continue
+			}
+			target := candidates[index]
+			if nodeIgnores[target] == nil {
+				nodeIgnores[target] = make(map[string]bool)
+			}
+			for _, code := range codes {
+				nodeIgnores[target][code] = true
+			}
+		}
+	}
+	return fileIgnores, nodeIgnores
+}
+
+func directiveCodes(comment, directive string) ([]string, bool) {
+	index := strings.Index(comment, directive)
+	if index < 0 {
+		return nil, false
+	}
+	remainder := comment[index+len(directive):]
+	if remainder != "" && remainder[0] != ' ' && remainder[0] != '\t' && remainder[0] != '*' && remainder[0] != '/' {
+		return nil, false
+	}
+	remainder = strings.Trim(remainder, " \t*/")
+	if remainder == "" {
+		return nil, false
+	}
+	parts := strings.Split(remainder, ",")
+	codes := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if code := strings.TrimSpace(part); code != "" {
+			codes = append(codes, code)
+		}
+	}
+	return codes, len(codes) != 0
+}

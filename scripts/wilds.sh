@@ -51,6 +51,9 @@ if test "$mode" != clone; then
 	mkdir -p "$(dirname "$timings_file")" || exit 2
 	printf 'suite\tproject\toperation\tseconds\tbudget_seconds\tbudget_result\n' > "$timings_file"
 	total_seconds=0
+	lint_args=${STRIDER_LINT_ARGS:-}
+	skip_format=${STRIDER_SKIP_FORMAT:-0}
+	suite_name=${STRIDER_SUITE_NAME:-wilds-$mode}
 	if test -n "${GITHUB_STEP_SUMMARY:-}"; then
 		{
 			printf '### Wilds %s timings\n\n' "$mode"
@@ -125,17 +128,26 @@ capture_project() {
 	printf '%s\n' "$revision" > "$output_dir/revision"
 	(
 		cd "$project" || exit 2
-		{ time -p "$strider" fmt --diff . \
-			> "$output_dir/format.stdout.raw" \
-			2> "$output_dir/format.stderr.raw"; } \
-			2> "$output_dir/format.time"
-		printf '%s\n' "$?" > "$output_dir/format.status"
+		if test "$skip_format" = 1; then
+			: > "$output_dir/format.stdout.raw"
+			: > "$output_dir/format.stderr.raw"
+			printf 'real 0.00\nuser 0.00\nsys 0.00\n' > "$output_dir/format.time"
+			printf '0\n' > "$output_dir/format.status"
+		else
+			{ time -p "$strider" fmt --diff . \
+				> "$output_dir/format.stdout.raw" \
+				2> "$output_dir/format.stderr.raw"; } \
+				2> "$output_dir/format.time"
+			printf '%s\n' "$?" > "$output_dir/format.status"
+		fi
 		normalize_output "$output_dir/format.stdout.raw" "$output_dir/format.stdout"
 		normalize_output "$output_dir/format.stderr.raw" "$output_dir/format.stderr"
 		git hash-object --stdin \
 			< "$output_dir/format.stdout" \
 			> "$output_dir/format.digest"
-		{ time -p "$strider" lint . \
+		# lint_args is an intentionally word-split list of trusted harness flags.
+		# shellcheck disable=SC2086
+		{ time -p "$strider" lint $lint_args . \
 			> "$output_dir/lint.stdout.raw" \
 			2> "$output_dir/lint.stderr.raw"; } \
 			2> "$output_dir/lint.time"
@@ -190,8 +202,8 @@ record_timing() {
 	fi
 	printf 'Timing: %s / %s: %ss (budget %ss) [%s]\n' \
 		"$project_name" "$operation" "$seconds" "$budget" "$budget_result"
-	printf 'wilds-%s\t%s\t%s\t%s\t%s\t%s\n' \
-		"$mode" "$project_name" "$operation" "$seconds" "$budget" "$budget_result" \
+	printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
+		"$suite_name" "$project_name" "$operation" "$seconds" "$budget" "$budget_result" \
 		>> "$timings_file"
 	if test -n "${GITHUB_STEP_SUMMARY:-}"; then
 		printf '| %s | %s | %ss | %ss | %s |\n' \
@@ -291,8 +303,8 @@ if test "$mode" = check && test "$failed" -eq 0; then
 	echo "Wilds baselines match."
 fi
 printf 'Timing: Wilds %s total Strider time: %ss\n' "$mode" "$total_seconds"
-printf 'wilds-%s\t-\ttotal\t%s\t\tINFO\n' \
-	"$mode" "$total_seconds" >> "$timings_file"
+printf '%s\t-\ttotal\t%s\t\tINFO\n' \
+	"$suite_name" "$total_seconds" >> "$timings_file"
 if test -n "${GITHUB_STEP_SUMMARY:-}"; then
 	printf '| **Total** |  | **%ss** |  | INFO |\n' \
 		"$total_seconds" >> "$GITHUB_STEP_SUMMARY"

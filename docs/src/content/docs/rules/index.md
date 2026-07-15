@@ -1,9 +1,11 @@
 ---
 title: Lint rules
-description: Complete reference for Strider's built-in AST-only lint rules.
+description: Complete reference for Strider's native Go lint rules.
+sidebar:
+  order: 0
 ---
 
-Every current rule is enabled by default at `warning` severity. Warnings cause
+Every profile rule is enabled by default at `warning` severity. Warnings cause
 `strider lint` to exit with code `1`. Severity and thresholds are fixed in the
 current draft.
 
@@ -19,3 +21,15 @@ current draft.
 
 Use `strider lint --list-rules` to inspect the executable's registry or
 `strider lint --explain CODE` for its short built-in explanation.
+
+## Extended rule catalog
+
+Strider includes 104 additional native rules alongside its seven-rule default
+profile. Each rule has a page in this section describing its behavior and
+fixed Strider default.
+
+```sh
+strider lint --all-rules ./...
+```
+
+The extended rules share one native AST traversal per source file.

@@ -22,16 +22,7 @@ export default defineConfig({
             'reference/cli',
             {
               label: 'Lint rules',
-              items: [
-                'rules',
-                'rules/cyclomatic-complexity',
-                'rules/max-parameters',
-                'rules/no-naked-return',
-                'rules/no-init',
-                'rules/no-package-var',
-                'rules/no-defer-in-loop',
-                'rules/no-else-after-return',
-              ],
+              items: [{ autogenerate: { directory: 'rules' } }],
             },
           ],
         },

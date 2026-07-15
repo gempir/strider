@@ -14,7 +14,7 @@ WILDS_PROJECTS ?= \
 	helix,https://github.com/nicklaw5/helix.git,15cffe632969bd9f5b99a19fa2fee8e55a13ce2f \
 	tailscale,https://github.com/tailscale/tailscale.git,168b20d3b42088aafa30e73dd57e8590ad8d5fbd
 
-.PHONY: build test require-strider wilds wilds-clone wilds-check wilds-accept
+.PHONY: build test require-strider wilds wilds-all wilds-clone wilds-check wilds-accept
 .PHONY: test-projects test-projects-clone
 
 build:
@@ -31,6 +31,15 @@ test: require-strider
 # are observations; crashes and processing errors (exit 2+) fail the smoke run.
 wilds: require-strider wilds-clone
 	@TIMINGS_FILE="$(TIMINGS_DIR)/wilds-smoke.tsv" \
+		WILDS_FMT_MAX_SECONDS="$(WILDS_FMT_MAX_SECONDS)" \
+		WILDS_LINT_MAX_SECONDS="$(WILDS_LINT_MAX_SECONDS)" \
+		./scripts/wilds.sh smoke "$(STRIDER)" "$(WILDS_DIR)" "$(WILDS_BASELINES)" $(WILDS_PROJECTS)
+
+wilds-all: require-strider wilds-clone
+	@TIMINGS_FILE="$(TIMINGS_DIR)/wilds-all.tsv" \
+		STRIDER_LINT_ARGS="--all-rules" \
+		STRIDER_SKIP_FORMAT="1" \
+		STRIDER_SUITE_NAME="wilds-all" \
 		WILDS_FMT_MAX_SECONDS="$(WILDS_FMT_MAX_SECONDS)" \
 		WILDS_LINT_MAX_SECONDS="$(WILDS_LINT_MAX_SECONDS)" \
 		./scripts/wilds.sh smoke "$(STRIDER)" "$(WILDS_DIR)" "$(WILDS_BASELINES)" $(WILDS_PROJECTS)

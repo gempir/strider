@@ -2,8 +2,13 @@
 
 # Strider
 
-Strider is an experimental strict formatter and syntax linter for Go 1.26. It
-is built as one dependency-free binary for the initial engine spike.
+Strider is an experimental toolchain that includes a strict formatter and linter for Go 1.26.
+
+# Slopclaimer
+
+This is slop, written heavily with LLMs. I don't have the time next to a full time job to 
+build this level of product without LLMs. The good thing though, none of this code ever runs in production.
+You run it in CI or locally and get useful output or not. 
 
 ## Inspiration
 
@@ -11,31 +16,6 @@ Strider is hugely inspired by
 [carthage-software/mago](https://github.com/carthage-software/mago), particularly
 its speed, configuration design, and clear separation between formatting,
 linting, analysis, and reporting.
-
-The formatter deliberately owns its style instead of reproducing `gofmt`
-byte-for-byte. Before returning formatted source, it reparses the output,
-checks that the syntax tree and comments are unchanged, and verifies that a
-second formatting pass is identical. The spike refuses syntax it does not yet
-support instead of partially formatting it.
-
-## Build
-
-```sh
-CGO_ENABLED=0 go build -trimpath -o strider ./cmd/strider
-```
-
-## Documentation
-
-The documentation site lives in [`docs/`](docs/) and is built with
-[Starlight](https://starlight.astro.build/).
-
-```sh
-cd docs
-bun install
-bun run dev
-```
-
-Use `bun run build` to generate the static site.
 
 ## Test suites
 
@@ -53,6 +33,9 @@ gitignored `.wilds/` directory:
 ```sh
 make wilds
 ```
+
+Use `make wilds-all` to run every native rule against each pinned Wilds
+project.
 
 `make wilds` is a smoke test. Formatting differences and lint findings are
 printed as observations, while crashes and processing errors fail the run.
@@ -111,7 +94,14 @@ With no path, `lint` also recursively scans the current directory.
 
 The initial rules are `cyclomatic-complexity`, `max-parameters`,
 `no-naked-return`, `no-init`, `no-package-var`, `no-defer-in-loop`, and
-`no-else-after-return`.
+`no-else-after-return`. Strider also includes 104 additional native rules. Run
+the complete 111-rule registry with:
+
+```sh
+strider lint --all-rules ./...
+```
+
+Use `--only RULE` to select any individual rule without enabling the rest.
 
 Suppress a rule on the next declaration or statement with:
 

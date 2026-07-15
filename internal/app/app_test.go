@@ -174,3 +174,36 @@ func TestLintWithoutPathsScansCurrentDirectory(t *testing.T) {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 }
+
+func TestLintAllRulesListsCompleteRegistry(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(
+		[]string{"lint", "--all-rules", "--list-rules"},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitSuccess {
+		t.Fatalf("exit %d, stderr %s", code, stderr.String())
+	}
+	if got := strings.Count(strings.TrimSpace(stdout.String()), "\n") + 1; got != 111 {
+		t.Fatalf("listed %d rules; want 111", got)
+	}
+	if !strings.Contains(stdout.String(), "marshal-receiver\t") ||
+	!strings.Contains(stdout.String(), "multiline-if-init\t") {
+		t.Fatalf("complete registry is missing extended rules: %s", stdout.String())
+	}
+}
+
+func TestLintAllRulesAndOnlyAreMutuallyExclusive(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(
+		[]string{"lint", "--all-rules", "--only", "atomic"},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitError || !strings.Contains(stderr.String(), "mutually exclusive") {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+}

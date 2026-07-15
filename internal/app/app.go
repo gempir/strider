@@ -338,6 +338,7 @@ func runLint(args []string, stdout, stderr io.Writer) int {
 	flags.SetOutput(stderr)
 	format := flags.String("format", "text", "report format: text or json")
 	listRules := flags.Bool("list-rules", false, "list enabled lint rules")
+	allRules := flags.Bool("all-rules", false, "run every built-in rule")
 	explain := flags.String("explain", "", "explain a lint rule")
 	var only stringList
 	flags.Var(&only, "only", "run only these rule codes (repeatable or comma-separated)")
@@ -348,7 +349,17 @@ func runLint(args []string, stdout, stderr io.Writer) int {
 	if err := flags.Parse(args); err != nil {
 		return exitError
 	}
-	registry, err := lint.NewRegistry(only)
+	if *allRules && len(only) != 0 {
+		fmt.Fprintln(stderr, "strider lint: --all-rules and --only are mutually exclusive")
+		return exitError
+	}
+	var registry *lint.Registry
+	var err error
+	if *allRules {
+		registry, err = lint.NewRegistryAll()
+	} else {
+		registry, err = lint.NewRegistry(only)
+	}
 	if err != nil {
 		fmt.Fprintf(stderr, "strider lint: %v\n", err)
 		return exitError

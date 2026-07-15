@@ -6,112 +6,52 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"reflect"
+	"os"
 	"runtime"
 	"sort"
 	"strings"
 	"sync"
 
 	"github.com/gempir/strider/internal/diagnostic"
+	builtinrules "github.com/gempir/strider/internal/lint/rules"
 	"github.com/gempir/strider/internal/source"
 )
 
-type RuleMeta struct {
-	Code string `json:"code"`
-	Summary string `json:"summary"`
-	Explanation string `json:"explanation"`
-	GoodExample string `json:"good_example"`
-	BadExample string `json:"bad_example"`
-	DefaultSeverity diagnostic.Severity `json:"default_severity"`
-}
-
-type Rule interface {
-	Meta() RuleMeta
-	Nodes() []ast.Node
-	Run(*Context, ast.Node)
-}
-
 type Registry struct {
-	rules []Rule
-	byType map[reflect.Type][]Rule
+	rules []builtinrules.Rule
 }
 
 func NewRegistry(only []string) (*Registry, error) {
-	all := []Rule{
-		complexityRule{},
-		maxParametersRule{},
-		nakedReturnRule{},
-		noInitRule{},
-		noPackageVarRule{},
-		noDeferInLoopRule{},
-		noElseAfterReturnRule{},
-	}
-	wanted := make(map[string]bool, len(only))
-	for _, code := range only {
-		wanted[code] = true
-	}
-	if len(wanted) != 0 {
-		for _, rule := range all {
-			delete(wanted, rule.Meta().Code)
-		}
-		if len(wanted) != 0 {
-			unknown := make([]string, 0, len(wanted))
-			for code := range wanted {
-				unknown = append(unknown, code)
-			}
-			sort.Strings(unknown)
-			return nil, fmt.Errorf("unknown lint rule(s): %s", strings.Join(unknown, ", "))
-		}
-	}
-	registry := &Registry{byType: make(map[reflect.Type][]Rule)}
-	for _, rule := range all {
-		if len(only) != 0 && !contains(only, rule.Meta().Code) {
-			continue
-		}
-		registry.rules = append(registry.rules, rule)
-		for _, prototype := range rule.Nodes() {
-			typeOfNode := reflect.TypeOf(prototype)
-			registry.byType[typeOfNode] = append(registry.byType[typeOfNode], rule)
-		}
-	}
-	return registry, nil
+	return newRegistry(only, false)
 }
 
-func contains(values []string, wanted string) bool {
-	for _, value := range values {
-		if value == wanted {
-			return true
-		}
-	}
-	return false
+func NewRegistryAll() (*Registry, error) {
+	return newRegistry(nil, true)
 }
 
-func (r *Registry) Rules() []Rule {
-	return append([]Rule(nil), r.rules...)
+func newRegistry(only []string, enableAll bool) (*Registry, error) {
+	selected, err := builtinrules.Select(only, enableAll)
+	if err != nil {
+		return nil, err
+	}
+	return &Registry{rules: selected}, nil
+}
+
+func (r *Registry) Rules() []builtinrules.Rule {
+	return append([]builtinrules.Rule(nil), r.rules...)
 }
 
 type Context struct {
-	filename string
-	fset *token.FileSet
+	filename    string
+	fset        *token.FileSet
 	diagnostics []diagnostic.Diagnostic
-	ancestors []ast.Node
+	ancestors   []ast.Node
 	fileIgnores map[string]bool
 	nodeIgnores map[ast.Node]map[string]bool
-	current ast.Node
+	current     ast.Node
 }
 
-func (c *Context) Parent() ast.Node {
-	if len(c.ancestors) == 0 {
-		return nil
-	}
-	return c.ancestors[len(c.ancestors) - 1]
-}
-
-func (c *Context) Ancestors() []ast.Node {
-	return c.ancestors
-}
-
-func (c *Context) Report(node ast.Node, code, message string, severity diagnostic.Severity) {
+func (c *Context) report(node ast.Node, code, message string) {
 	if c.suppressed(code) {
 		return
 	}
@@ -123,12 +63,12 @@ func (c *Context) Report(node ast.Node, code, message string, severity diagnosti
 	c.diagnostics = append(
 		c.diagnostics,
 		diagnostic.Diagnostic{
-			Code: code,
-			Message: message,
-			Severity: severity,
-			File: display,
-			Start: start,
-			End: end,
+			Code:     code,
+			Message:  message,
+			Severity: diagnostic.SeverityWarning,
+			File:     display,
+			Start:    start,
+			End:      end,
 		},
 	)
 }
@@ -148,14 +88,14 @@ func (c *Context) suppressed(code string) bool {
 }
 
 type fileResult struct {
-	filename string
+	filename    string
 	diagnostics []diagnostic.Diagnostic
-	err error
+	err         error
 }
 
 type suppressionSet struct {
-	file *ast.File
-	candidates []ast.Node
+	file        *ast.File
+	candidates  []ast.Node
 	fileIgnores map[string]bool
 	nodeIgnores map[ast.Node]map[string]bool
 }
@@ -215,45 +155,52 @@ func Run(files []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
 			if left.Start.Offset != right.Start.Offset {
 				return left.Start.Offset < right.Start.Offset
 			}
-			return left.Code < right.Code
+			if left.Code != right.Code {
+				return left.Code < right.Code
+			}
+			return left.Message < right.Message
 		},
 	)
 	return allDiagnostics, nil
 }
 
 func lintFile(filename string, registry *Registry) ([]diagnostic.Diagnostic, error) {
+	content, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(
 		fset,
 		filename,
-		nil,
-		parser.ParseComments | parser.AllErrors | parser.SkipObjectResolution,
+		content,
+		parser.ParseComments|parser.AllErrors|parser.SkipObjectResolution,
 	)
 	if err != nil {
 		return nil, err
 	}
 	fileIgnores, nodeIgnores := suppressions(file)
 	context := &Context{
-		filename: filename,
-		fset: fset,
+		filename:    filename,
+		fset:        fset,
 		fileIgnores: fileIgnores,
 		nodeIgnores: nodeIgnores,
 	}
-	ast.Inspect(
-		file,
-		func(node ast.Node) bool {
-			if node == nil {
-				if len(context.ancestors) != 0 {
-					context.ancestors = context.ancestors[:len(context.ancestors) - 1]
+	builtinrules.Analyze(
+		builtinrules.Input{
+			Filename: filename,
+			FileSet:  fset,
+			File:     file,
+			Content:  content,
+			Rules:    registry.rules,
+			Report: func(finding builtinrules.Finding) {
+				context.current = finding.Scope
+				if context.current == nil {
+					context.current = finding.Node
 				}
-				return true
-			}
-			context.current = node
-			for _, rule := range registry.byType[reflect.TypeOf(node)] {
-				rule.Run(context, node)
-			}
-			context.ancestors = append(context.ancestors, node)
-			return true
+				context.ancestors = finding.Ancestors
+				context.report(finding.Node, finding.Code, finding.Message)
+			},
 		},
 	)
 	return context.diagnostics, nil
@@ -261,8 +208,8 @@ func lintFile(filename string, registry *Registry) ([]diagnostic.Diagnostic, err
 
 func suppressions(file *ast.File) (map[string]bool, map[ast.Node]map[string]bool) {
 	set := suppressionSet{
-		file: file,
-		candidates: suppressionCandidates(file),
+		file:        file,
+		candidates:  suppressionCandidates(file),
 		fileIgnores: make(map[string]bool),
 		nodeIgnores: make(map[ast.Node]map[string]bool),
 	}
@@ -300,7 +247,7 @@ func suppressionCandidates(file *ast.File) []ast.Node {
 
 func (set *suppressionSet) apply(group *ast.CommentGroup, comment string) {
 	if codes, ok := directiveCodes(comment, "strider:ignore-file"); ok &&
-	group.End() < set.file.Package {
+		group.End() < set.file.Package {
 		for _, code := range codes {
 			set.fileIgnores[code] = true
 		}
@@ -332,9 +279,9 @@ func directiveCodes(comment, directive string) ([]string, bool) {
 	if index < 0 {
 		return nil, false
 	}
-	remainder := comment[index + len(directive):]
+	remainder := comment[index+len(directive):]
 	if remainder != "" && remainder[0] != ' ' && remainder[0] != '\t' && remainder[0] != '*' &&
-	remainder[0] != '/' {
+		remainder[0] != '/' {
 		return nil, false
 	}
 	remainder = strings.Trim(remainder, " \t*/")

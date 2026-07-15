@@ -42,6 +42,7 @@ strider lint [OPTIONS] [FILE|DIR]...
 | --- | --- |
 | `--format text\|json` | Select text or JSON diagnostics. Default: `text`. |
 | `--only CODE` | Select rule codes. Repeatable and comma-separated. |
+| `--all-rules` | Enable all 111 built-in rules. Mutually exclusive with `--only`. |
 | `--list-rules` | List the selected registry and exit. |
 | `--explain CODE` | Explain one selected rule and exit. |
 

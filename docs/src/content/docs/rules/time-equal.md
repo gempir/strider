@@ -1,0 +1,18 @@
+---
+title: time-equal
+description: prefer time.Time.Equal over equality.
+---
+
+Purpose: prefer time.Time.Equal over equality.
+
+## Behavior
+
+Strider implements this rule natively in its shared Go AST analysis pass. It
+runs entirely inside Strider. Findings use the rule code
+Purpose: and warning severity.
+
+## Default
+
+enabled. The rule is part of Strider's extended catalog and runs
+when selected with `--only time-equal` or when the complete catalog is enabled
+with `--all-rules`.

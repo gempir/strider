@@ -11,6 +11,7 @@ description: Commands, arguments, output streams, and exit codes.
 | `strider version` | Print the current version string. `--version` is an alias. |
 | `strider fmt` | Format Go source. `format` is an alias. |
 | `strider lint` | Run the AST-only lint rules. |
+| `strider analyze` | Run package-aware static-analysis checks. |
 
 Calling Strider without a command is an error. Source-oriented commands use
 the current directory recursively when no path is provided.
@@ -50,10 +51,26 @@ An unknown code passed to `--only` or `--explain` is an exit-code `2` error.
 `--only` also limits what appears in `--list-rules` and what can be selected by
 `--explain`.
 
+## `strider analyze`
+
+```text
+strider analyze [OPTIONS] [FILE|DIR]...
+```
+
+| Flag | Description |
+| --- | --- |
+| `--format text\|json` | Select text or JSON diagnostics. Default: `text`. |
+| `--only CODE` | Select analysis codes. Repeatable, comma-separated, and case-insensitive. |
+| `--list-rules` | List the selected analysis registry and exit. |
+| `--explain CODE` | Explain one selected analysis rule and exit. |
+
+The analyzer loads and type-checks complete packages and constructs SSA. Its
+first implemented rule is `SA1000`, invalid regular expressions.
+
 ## Streams
 
-- Formatted source, diffs, changed paths, rule lists, explanations, and lint
-  reports go to standard output.
+- Formatted source, diffs, changed paths, rule lists, explanations, and
+  lint/analyze reports go to standard output.
 - Usage errors, parsing failures, unsupported syntax, and I/O failures go to
   standard error.
 
@@ -62,5 +79,5 @@ An unknown code passed to `--only` or `--explain` is an exit-code `2` error.
 | Code | Meaning |
 | --- | --- |
 | `0` | Clean or successful. |
-| `1` | Lint findings or formatting differences. |
+| `1` | Lint or analysis findings, or formatting differences. |
 | `2` | Invalid command/options, parse failure, unsupported syntax, or I/O failure. |

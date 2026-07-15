@@ -43,6 +43,7 @@ fi
 if test "$mode" != clone; then
 	format_budget=${WILDS_FMT_MAX_SECONDS:-2.0}
 	lint_budget=${WILDS_LINT_MAX_SECONDS:-2.0}
+	analyze_budget=${WILDS_ANALYZE_MAX_SECONDS:-10.0}
 	timings_file=${TIMINGS_FILE:-target/timings/wilds-$mode.tsv}
 	case "$timings_file" in
 	/*) ;;
@@ -52,7 +53,10 @@ if test "$mode" != clone; then
 	printf 'suite\tproject\toperation\tseconds\tbudget_seconds\tbudget_result\n' > "$timings_file"
 	total_seconds=0
 	lint_args=${STRIDER_LINT_ARGS:-}
+	analyze_args=${STRIDER_ANALYZE_ARGS:-}
 	skip_format=${STRIDER_SKIP_FORMAT:-0}
+	skip_lint=${STRIDER_SKIP_LINT:-0}
+	run_analyze=${STRIDER_RUN_ANALYZE:-0}
 	suite_name=${STRIDER_SUITE_NAME:-wilds-$mode}
 	if test -n "${GITHUB_STEP_SUMMARY:-}"; then
 		{
@@ -145,13 +149,20 @@ capture_project() {
 		git hash-object --stdin \
 			< "$output_dir/format.stdout" \
 			> "$output_dir/format.digest"
-		# lint_args is an intentionally word-split list of trusted harness flags.
-		# shellcheck disable=SC2086
-		{ time -p "$strider" lint $lint_args . \
-			> "$output_dir/lint.stdout.raw" \
-			2> "$output_dir/lint.stderr.raw"; } \
-			2> "$output_dir/lint.time"
-		printf '%s\n' "$?" > "$output_dir/lint.status"
+		if test "$skip_lint" = 1; then
+			: > "$output_dir/lint.stdout.raw"
+			: > "$output_dir/lint.stderr.raw"
+			printf 'real 0.00\nuser 0.00\nsys 0.00\n' > "$output_dir/lint.time"
+			printf '0\n' > "$output_dir/lint.status"
+		else
+			# lint_args is an intentionally word-split list of trusted harness flags.
+			# shellcheck disable=SC2086
+			{ time -p "$strider" lint $lint_args . \
+				> "$output_dir/lint.stdout.raw" \
+				2> "$output_dir/lint.stderr.raw"; } \
+				2> "$output_dir/lint.time"
+			printf '%s\n' "$?" > "$output_dir/lint.status"
+		fi
 		normalize_output "$output_dir/lint.stdout.raw" "$output_dir/lint.stdout"
 		normalize_output "$output_dir/lint.stderr.raw" "$output_dir/lint.stderr"
 		git hash-object --stdin \
@@ -175,6 +186,17 @@ capture_project() {
 				printf "TOTAL\t%d\n", total
 			}
 		' "$output_dir/lint.stdout" | sort > "$output_dir/lint.summary"
+		if test "$run_analyze" = 1; then
+			# analyze_args is an intentionally word-split list of trusted harness flags.
+			# shellcheck disable=SC2086
+			{ time -p "$strider" analyze $analyze_args . \
+				> "$output_dir/analyze.stdout.raw" \
+				2> "$output_dir/analyze.stderr.raw"; } \
+				2> "$output_dir/analyze.time"
+			printf '%s\n' "$?" > "$output_dir/analyze.status"
+			normalize_output "$output_dir/analyze.stdout.raw" "$output_dir/analyze.stdout"
+			normalize_output "$output_dir/analyze.stderr.raw" "$output_dir/analyze.stderr"
+		fi
 	)
 }
 
@@ -274,11 +296,17 @@ for project_spec in "$@"; do
 	capture_project "$actual"
 	record_timing "$name" fmt "$actual/format.time" "$format_budget"
 	record_timing "$name" lint "$actual/lint.time" "$lint_budget"
+	if test "$run_analyze" = 1; then
+		record_timing "$name" analyze "$actual/analyze.time" "$analyze_budget"
+	fi
 
 	case "$mode" in
 	smoke)
 		show_observation format "$actual" || failed=1
 		show_observation lint "$actual" || failed=1
+		if test "$run_analyze" = 1; then
+			show_observation analyze "$actual" || failed=1
+		fi
 		;;
 	check)
 		printf '\n==> %s: comparing reviewed baseline\n' "$name"

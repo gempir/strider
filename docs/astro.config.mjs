@@ -5,7 +5,7 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'Strider',
-      description: 'A strict formatter and syntax linter for Go.',
+      description: 'Formatting, linting, and static analysis for Go.',
       customCss: ['./src/styles/custom.css'],
       sidebar: [
         {
@@ -14,7 +14,7 @@ export default defineConfig({
         },
         {
           label: 'Guides',
-          items: ['formatter', 'linter'],
+          items: ['formatter', 'linter', 'analyzer'],
         },
         {
           label: 'Reference',

@@ -167,6 +167,25 @@ expect_status "analyze SA1000 clean test" 0 "$code"
 expect_empty "analyze SA1000 clean test stdout" "$temporary/analyze-clean.stdout"
 expect_empty "analyze SA1000 clean test stderr" "$temporary/analyze-clean.stderr"
 
+run_timed "$temporary/analyze-sa1001.stdout" "$temporary/analyze-sa1001.stderr" \
+	"$temporary/analyze-sa1001.time" \
+	"$strider" analyze --only SA1001 "$analyze_dir/sa1001.go"
+code=$?
+record_timing "analyze SA1001 true-positive" "$temporary/analyze-sa1001.time"
+expect_status "analyze SA1001 true-positive test" 1 "$code"
+expect_file "analyze SA1001 true-positive test" \
+	"$analyze_dir/sa1001.expected" "$temporary/analyze-sa1001.stdout"
+expect_empty "analyze SA1001 true-positive test stderr" "$temporary/analyze-sa1001.stderr"
+
+run_timed "$temporary/analyze-sa1001-clean.stdout" \
+	"$temporary/analyze-sa1001-clean.stderr" "$temporary/analyze-sa1001-clean.time" \
+	"$strider" analyze --only SA1001 "$analyze_dir/sa1001_clean.go"
+code=$?
+record_timing "analyze SA1001 clean" "$temporary/analyze-sa1001-clean.time"
+expect_status "analyze SA1001 clean test" 0 "$code"
+expect_empty "analyze SA1001 clean test stdout" "$temporary/analyze-sa1001-clean.stdout"
+expect_empty "analyze SA1001 clean test stderr" "$temporary/analyze-sa1001-clean.stderr"
+
 printf 'Timing: curated total Strider time: %ss\n' "$total_seconds"
 printf 'curated\t-\ttotal\t%s\t\tINFO\n' "$total_seconds" >> "$timings_file"
 if test -n "${GITHUB_STEP_SUMMARY:-}"; then

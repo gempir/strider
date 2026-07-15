@@ -51,5 +51,5 @@ func (registry *Registry) Rules() []Rule {
 }
 
 func allRules() []Rule {
-	return []Rule{invalidRegexpRule{}}
+	return []Rule{invalidRegexpRule{}, invalidTemplateRule{}, invalidTimeParseRule{}}
 }

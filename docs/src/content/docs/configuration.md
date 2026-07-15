@@ -41,6 +41,15 @@ The 104 additional rules are selectable individually or together with
 `--all-rules`. Rule severities and thresholds cannot yet be changed; each
 rule reference records the fixed default used when that rule is enabled.
 
+## Analyzer options
+
+| Option | Default | Effect |
+| --- | --- | --- |
+| `--format text\|json` | `text` | Select the diagnostic report format. |
+| `--only CODE` | All implemented checks | Run only the selected analysis code. Repeatable, comma-separated, and case-insensitive. |
+| `--list-rules` | Off | List selected analysis codes, severities, and summaries, then exit. |
+| `--explain CODE` | None | Print the explanation and examples for one selected analysis rule, then exit. |
+
 ## Fixed formatter settings
 
 | Setting | Current value |

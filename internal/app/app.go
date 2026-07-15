@@ -66,7 +66,7 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 func usage(writer io.Writer) {
 	fmt.Fprintln(
 		writer,
-		`Strider is a strict formatter and syntax linter for Go.
+		`Strider formats, lints, and statically analyzes Go code.
 
 Usage:
   strider fmt [--check|--diff|--write|--stdin] [FILE|DIR]...

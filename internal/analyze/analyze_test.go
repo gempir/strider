@@ -19,6 +19,8 @@ func check(pattern string) {
 	local := "("
 	rx.Compile(local)
 	rx.MatchString("[a-", "value")
+	compile := rx.Compile
+	compile("[")
 	rx.Compile(pattern)
 }
 `)
@@ -30,8 +32,8 @@ func check(pattern string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(diagnostics) != 3 {
-		t.Fatalf("got %d diagnostics, want 3: %#v", len(diagnostics), diagnostics)
+	if len(diagnostics) != 4 {
+		t.Fatalf("got %d diagnostics, want 4: %#v", len(diagnostics), diagnostics)
 	}
 	for _, item := range diagnostics {
 		if item.Code != "SA1000" || !strings.Contains(item.Message, "error parsing regexp") {
@@ -63,6 +65,78 @@ func check(pattern string) {
 	}
 	if len(diagnostics) != 0 {
 		t.Fatalf("unexpected diagnostics: %#v", diagnostics)
+	}
+}
+
+func TestSA1001ReportsInvalidDirectTemplates(t *testing.T) {
+	root := analysisModule(t, `package sample
+
+import (
+	htmltemplate "html/template"
+	texttemplate "text/template"
+)
+
+const invalid = "{{.Name}} {{.LastName}"
+
+func check() {
+	texttemplate.New("").Parse(invalid)
+	htmltemplate.New("").Parse(invalid)
+	texttemplate.New("").Parse("{{missingFunction}}")
+	template := texttemplate.New("")
+	template.Parse(invalid)
+	texttemplate.New("").Delims("[[", "]]").Parse("{{broken-}}")
+}
+`)
+	registry, err := NewRegistry([]string{"SA1001"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{root}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diagnostics) != 2 {
+		t.Fatalf("got %d diagnostics, want 2: %#v", len(diagnostics), diagnostics)
+	}
+	for _, item := range diagnostics {
+		validMessage := strings.Contains(item.Message, "unexpected") ||
+			strings.Contains(item.Message, "bad character")
+		if item.Code != "SA1001" || !validMessage {
+			t.Fatalf("unexpected diagnostic: %#v", item)
+		}
+	}
+}
+
+func TestSA1002ReportsInvalidConstantTimeLayouts(t *testing.T) {
+	root := analysisModule(t, `package sample
+
+import "time"
+
+const invalidLayout = "12345"
+
+func check(value string) {
+	time.Parse(invalidLayout, value)
+	local := "12345"
+	time.Parse(local, value)
+	time.Parse("2006-01-02", value)
+	time.Parse(time.RFC3339Nano, value)
+}
+`)
+	registry, err := NewRegistry([]string{"SA1002"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{root}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diagnostics) != 2 {
+		t.Fatalf("got %d diagnostics, want 2: %#v", len(diagnostics), diagnostics)
+	}
+	for _, item := range diagnostics {
+		if item.Code != "SA1002" || !strings.Contains(item.Message, "parsing time") {
+			t.Fatalf("unexpected diagnostic: %#v", item)
+		}
 	}
 }
 

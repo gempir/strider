@@ -1,8 +1,9 @@
-![Strider](docs/src/assets/strider.png)
+<img src="docs/src/assets/strider.png" alt="Strider" width="200">
 
 # Strider
 
-Strider is an experimental toolchain that includes a strict formatter and linter for Go 1.26.
+Strider is an experimental Go 1.26 toolchain with a strict formatter, an
+AST-only linter, and package-aware static analysis.
 
 # Slopclaimer
 
@@ -16,50 +17,6 @@ Strider is hugely inspired by
 [carthage-software/mago](https://github.com/carthage-software/mago), particularly
 its speed, configuration design, and clear separation between formatting,
 linting, analysis, and reporting.
-
-## Test suites
-
-The deterministic suite checks curated formatter output, idempotence, known
-lint findings, and clean lint input using the existing Strider binary. It does
-not invoke Go:
-
-```sh
-make test
-```
-
-The Wilds suite exercises pinned open-source projects cloned into the
-gitignored `.wilds/` directory:
-
-```sh
-make wilds
-```
-
-Use `make wilds-all` to run every native rule against each pinned Wilds
-project.
-
-`make wilds` is a smoke test. Formatting differences and lint findings are
-printed as observations, while crashes and processing errors fail the run.
-`make wilds-check` compares exit codes, formatter and linter output
-fingerprints, per-rule lint counts, and errors with reviewed baselines. Full
-output is printed when a fingerprint changes. `make wilds-accept` explicitly
-updates those baselines after review.
-
-Wilds baselines record behavior, not correctness. After deciding whether a
-finding is correct, reduce it to a focused case under `testdata/cases/`; those
-curated cases are the source of truth used by `make test`.
-
-Every Strider invocation reports elapsed time and enforces a deliberately
-generous speed budget. Timing reports are written as TSV files under
-`target/timings/`. Override `CURATED_MAX_SECONDS`, `WILDS_FMT_MAX_SECONDS`, or
-`WILDS_LINT_MAX_SECONDS` to tune the budgets for a machine. GitHub Actions adds
-the measurements to the job summary and uploads the reports as build artifacts.
-
-Add `name,repository,commit` entries to `WILDS_PROJECTS` in the Makefile to
-extend the corpus. Override `STRIDER` to test another binary, for example:
-
-```sh
-make test STRIDER=/path/to/strider
-```
 
 ## Format
 
@@ -113,12 +70,27 @@ var ErrUnavailable = errors.New("unavailable")
 Use `//strider:ignore-file code[,code]` before the package clause for a
 file-level suppression.
 
+## Analyze
+
+```sh
+strider analyze ./...
+strider analyze --format json ./...
+strider analyze --only SA1000 ./...
+strider analyze --list-rules
+strider analyze --explain SA1000
+```
+
+`analyze` loads complete packages, type-checks them, and builds SSA before
+running deeper correctness and data-flow checks. The first implemented check
+is Staticcheck-compatible `SA1000`, which detects invalid constant regular
+expressions passed to `regexp.Compile`, `regexp.MustCompile`, `regexp.Match`,
+`regexp.MatchReader`, and `regexp.MatchString`.
+
 ## Exit codes
 
 - `0`: success with no findings or formatting differences.
-- `1`: lint findings or files that differ in `--check`/`--diff` mode.
+- `1`: lint/analyze findings or files that differ in `--check`/`--diff` mode.
 - `2`: command, parsing, unsupported-syntax, or I/O error.
 
-Configuration, type-aware analysis, vet integration, baselines, and staged-file
-workflows are intentionally deferred until the formatter and linter contracts
-have proved themselves.
+Configuration, vet integration, analysis baselines, and staged-file workflows
+remain deferred while the command contracts are evolving.

@@ -1,6 +1,6 @@
 ---
 title: Getting started
-description: Build Strider and run its formatter and linter.
+description: Build Strider and run its formatter, linter, and analyzer.
 ---
 
 ## Build
@@ -45,12 +45,26 @@ Limit a run to one or more rule codes when investigating or adopting Strider:
 strider lint --only no-init,no-package-var ./...
 ```
 
+## Analyze a project
+
+Run the package-aware checks, including type checking and SSA construction:
+
+```sh
+strider analyze ./...
+```
+
+Select one Staticcheck-compatible rule while investigating a finding:
+
+```sh
+strider analyze --only SA1000 ./...
+```
+
 ## Exit status
 
 | Code | Meaning |
 | --- | --- |
 | `0` | The command succeeded with no findings or formatting differences. |
-| `1` | Lint findings or formatting differences were found. |
+| `1` | Lint or analysis findings, or formatting differences were found. |
 | `2` | A command, parsing, unsupported-syntax, configuration, or I/O error occurred. |
 
 Source output is written to standard output. Operational errors are written to

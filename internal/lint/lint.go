@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/parser"
+	"go/scanner"
 	"go/token"
 	"os"
 	"runtime"
@@ -13,6 +14,7 @@ import (
 	"sync"
 
 	"github.com/gempir/strider/internal/config"
+	"github.com/gempir/strider/internal/cst"
 	"github.com/gempir/strider/internal/diagnostic"
 	builtinrules "github.com/gempir/strider/internal/lint/rules"
 	"github.com/gempir/strider/internal/pathfilter"
@@ -142,13 +144,21 @@ func (r *Registry) activeRules(filename string) []builtinrules.Rule {
 }
 
 type Context struct {
-	filename    string
-	fset        *token.FileSet
-	diagnostics []diagnostic.Diagnostic
-	ancestors   []ast.Node
-	fileIgnores map[string]bool
-	nodeIgnores map[ast.Node]map[string]bool
-	current     ast.Node
+	filename        string
+	fset            *token.FileSet
+	diagnostics     []diagnostic.Diagnostic
+	ancestors       []ast.Node
+	fileIgnores     map[string]bool
+	nodeIgnores     map[ast.Node]map[string]bool
+	concreteIgnores map[string]bool
+	concreteNodes   []concreteSuppression
+	current         ast.Node
+}
+
+type concreteSuppression struct {
+	start int
+	end   int
+	codes map[string]bool
 }
 
 func (c *Context) report(node ast.Node, code, message string, severity diagnostic.Severity) {
@@ -269,6 +279,36 @@ func lintFile(filename string, registry *Registry) ([]diagnostic.Diagnostic, err
 	if err != nil {
 		return nil, err
 	}
+	concreteTree, err := cst.Parse(filename, content)
+	if err != nil {
+		return nil, err
+	}
+	concreteIgnores, concreteNodes := concreteSuppressions(filename, concreteTree)
+	context := &Context{
+		filename:        filename,
+		concreteIgnores: concreteIgnores,
+		concreteNodes:   concreteNodes,
+	}
+	activeRules := registry.activeRules(filename)
+	builtinrules.AnalyzeCST(
+		builtinrules.CSTInput{
+			Filename: filename,
+			Tree:     concreteTree,
+			Rules:    activeRules,
+			Report: func(finding builtinrules.Finding) {
+				context.reportConcrete(concreteTree, finding, registry.Severity(finding.Code))
+			},
+		},
+	)
+	legacyRules := make([]builtinrules.Rule, 0, len(activeRules))
+	for _, rule := range activeRules {
+		if !builtinrules.UsesCST(rule.Meta().Code) {
+			legacyRules = append(legacyRules, rule)
+		}
+	}
+	if len(legacyRules) == 0 {
+		return context.diagnostics, nil
+	}
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(
 		fset,
@@ -279,20 +319,15 @@ func lintFile(filename string, registry *Registry) ([]diagnostic.Diagnostic, err
 	if err != nil {
 		return nil, err
 	}
-	fileIgnores, nodeIgnores := suppressions(file)
-	context := &Context{
-		filename:    filename,
-		fset:        fset,
-		fileIgnores: fileIgnores,
-		nodeIgnores: nodeIgnores,
-	}
+	context.fset = fset
+	context.fileIgnores, context.nodeIgnores = suppressions(file)
 	builtinrules.Analyze(
 		builtinrules.Input{
 			Filename: filename,
 			FileSet:  fset,
 			File:     file,
 			Content:  content,
-			Rules:    registry.activeRules(filename),
+			Rules:    legacyRules,
 			Report: func(finding builtinrules.Finding) {
 				context.current = finding.Scope
 				if context.current == nil {
@@ -309,6 +344,113 @@ func lintFile(filename string, registry *Registry) ([]diagnostic.Diagnostic, err
 		},
 	)
 	return context.diagnostics, nil
+}
+
+func (c *Context) reportConcrete(
+	tree *cst.Tree,
+	finding builtinrules.Finding,
+	severity diagnostic.Severity,
+) {
+	startOffset, endOffset := cst.Range(finding.ConcreteNode)
+	if c.suppressedRange(finding.Code, startOffset, endOffset) {
+		return
+	}
+	start := tree.Position(startOffset)
+	end := tree.Position(endOffset)
+	display := source.DisplayPath(c.filename)
+	start.Filename = display
+	end.Filename = display
+	c.diagnostics = append(c.diagnostics, diagnostic.Diagnostic{
+		Code:     finding.Code,
+		Message:  finding.Message,
+		Severity: severity,
+		File:     display,
+		Start:    start,
+		End:      end,
+	})
+}
+
+func (c *Context) suppressedRange(code string, start, end int) bool {
+	if c.concreteIgnores["all"] || c.concreteIgnores[code] {
+		return true
+	}
+	for _, ignored := range c.concreteNodes {
+		if ignored.start <= start && ignored.end >= end &&
+			(ignored.codes["all"] || ignored.codes[code]) {
+			return true
+		}
+	}
+	return false
+}
+
+func concreteSuppressions(filename string, tree *cst.Tree) (map[string]bool, []concreteSuppression) {
+	fileIgnores := make(map[string]bool)
+	candidates := concreteSuppressionCandidates(tree)
+	packageStart, _ := cst.Range(tree.Root())
+	sourceBytes := tree.Source()
+	fset := token.NewFileSet()
+	tokenFile := fset.AddFile(filename, -1, len(sourceBytes))
+	var lexer scanner.Scanner
+	lexer.Init(tokenFile, sourceBytes, nil, scanner.ScanComments)
+	result := []concreteSuppression{}
+	for {
+		position, kind, literal := lexer.Scan()
+		if kind == token.EOF {
+			break
+		}
+		if kind != token.COMMENT {
+			continue
+		}
+		start := tokenFile.Offset(position)
+		end := start + len(literal)
+		if codes, ok := directiveCodes(literal, "strider:ignore-file"); ok && end < packageStart {
+			for _, code := range codes {
+				fileIgnores[code] = true
+			}
+		}
+		codes, ok := directiveCodes(literal, "strider:ignore")
+		if !ok {
+			continue
+		}
+		index := sort.Search(len(candidates), func(index int) bool {
+			return candidates[index].start > end
+		})
+		if index == len(candidates) {
+			continue
+		}
+		ignored := concreteSuppression{
+			start: candidates[index].start,
+			end:   candidates[index].end,
+			codes: make(map[string]bool, len(codes)),
+		}
+		for _, code := range codes {
+			ignored.codes[code] = true
+		}
+		result = append(result, ignored)
+	}
+	return fileIgnores, result
+}
+
+func concreteSuppressionCandidates(tree *cst.Tree) []concreteSuppression {
+	result := []concreteSuppression{}
+	cst.Walk(tree.Root(), func(node cst.Node) bool {
+		kind := cst.Kind(node)
+		if !strings.HasSuffix(kind, "Decl") && !strings.HasSuffix(kind, "Stmt") {
+			return true
+		}
+		start, end := cst.Range(node)
+		if end > start {
+			result = append(result, concreteSuppression{start: start, end: end})
+		}
+		return true
+	})
+	sort.SliceStable(result, func(i, j int) bool {
+		if result[i].start != result[j].start {
+			return result[i].start < result[j].start
+		}
+		return result[i].end > result[j].end
+	})
+	return result
 }
 
 func suppressions(file *ast.File) (map[string]bool, map[ast.Node]map[string]bool) {

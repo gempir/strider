@@ -65,6 +65,49 @@ func closeThing() {}
 	}
 }
 
+func TestDefaultProfileUsesConcreteSyntaxAndExactRanges(t *testing.T) {
+	source := `package p
+
+func overloaded[T any](one, two T, three, four, five, six int) {}
+
+func named[T any]() (result T) {
+	for {
+		func() { defer closeThing() }()
+		defer closeThing()
+		return
+	}
+}
+
+func closeThing() {}
+`
+	filename := writeFixture(t, source)
+	registry, err := NewRegistry(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{filename}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	counts := map[string]int{}
+	for _, item := range diagnostics {
+		counts[item.Code]++
+		selected := source[item.Start.Offset:item.End.Offset]
+		if strings.TrimSpace(selected) == "" {
+			t.Errorf("%s selected an empty range: %#v", item.Code, item)
+		}
+	}
+	if counts["max-parameters"] != 1 {
+		t.Errorf("grouped parameter count produced %d findings; want 1", counts["max-parameters"])
+	}
+	if counts["no-defer-in-loop"] != 1 {
+		t.Errorf("nested function boundary produced %d defer findings; want 1", counts["no-defer-in-loop"])
+	}
+	if counts["no-naked-return"] != 1 {
+		t.Errorf("named generic result produced %d naked-return findings; want 1", counts["no-naked-return"])
+	}
+}
+
 func TestSuppressions(t *testing.T) {
 	source := `//strider:ignore-file no-init
 package p

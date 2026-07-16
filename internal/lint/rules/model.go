@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/token"
 
+	"github.com/gempir/strider/internal/cst"
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
@@ -40,11 +41,22 @@ func (rule definition) defaultEnabled() bool {
 // Finding is a rule result before the lint package converts source positions
 // and applies suppression directives.
 type Finding struct {
-	Node      ast.Node
-	Scope     ast.Node
-	Ancestors []ast.Node
-	Code      string
-	Message   string
+	Node              ast.Node
+	Scope             ast.Node
+	Ancestors         []ast.Node
+	ConcreteNode      cst.Node
+	ConcreteScope     cst.Node
+	ConcreteAncestors []cst.Node
+	Code              string
+	Message           string
+}
+
+// CSTInput contains everything needed for the concrete-syntax lint pass.
+type CSTInput struct {
+	Filename string
+	Tree     *cst.Tree
+	Rules    []Rule
+	Report   func(Finding)
 }
 
 // Input contains everything needed to analyze one parsed Go source file.

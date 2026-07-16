@@ -20,6 +20,33 @@ type Node = gc.Node
 // immediately before the token, and Src returns the token spelling.
 type Token = gc.Token
 
+// Grammar node aliases keep consumers coupled to Strider's CST vocabulary
+// rather than to the parser implementation package.
+type (
+	BinaryExpression  = gc.BinaryExpressionNode
+	Block             = gc.BlockNode
+	CommCase          = gc.CommCaseNode
+	DeferStmt         = gc.DeferStmtNode
+	ExprSwitchCase    = gc.ExprSwitchCaseNode
+	ExprSwitchCase2   = gc.ExprSwitchCase2Node
+	ForStmt           = gc.ForStmtNode
+	FunctionDecl      = gc.FunctionDeclNode
+	FunctionLit       = gc.FunctionLitNode
+	IdentifierList    = gc.IdentifierListNode
+	IfElseStmt        = gc.IfElseStmtNode
+	MethodDecl        = gc.MethodDeclNode
+	ParameterDecl     = gc.ParameterDeclNode
+	ParameterDeclList = gc.ParameterDeclListNode
+	Parameters        = gc.ParametersNode
+	ReturnStmt        = gc.ReturnStmtNode
+	StatementList     = gc.StatementListNode
+	TypeSwitchCase    = gc.TypeSwitchCaseNode
+	TypeSwitchStmt    = gc.TypeSwitchStmtNode
+	VarDecl           = gc.VarDeclNode
+	VarSpec           = gc.VarSpecNode
+	VarSpec2          = gc.VarSpec2Node
+)
+
 // Tree owns one parsed source file and its lossless concrete representation.
 type Tree struct {
 	root   *gc.AST

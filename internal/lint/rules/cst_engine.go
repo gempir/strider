@@ -148,9 +148,7 @@ type cstAnalyzer struct {
 func AnalyzeCST(input CSTInput) {
 	enabled := make(map[string]bool, len(input.Rules))
 	for _, rule := range input.Rules {
-		if UsesCST(rule.Meta().Code) {
-			enabled[rule.Meta().Code] = true
-		}
+		enabled[rule.Meta().Code] = true
 	}
 	if len(enabled) == 0 || input.Tree == nil {
 		return
@@ -268,11 +266,9 @@ func (a *cstAnalyzer) report(code string, node cst.Node, message string) {
 		return
 	}
 	a.reporter(Finding{
-		ConcreteNode:      node,
-		ConcreteScope:     a.current,
-		ConcreteAncestors: append([]cst.Node(nil), a.ancestors...),
-		Code:              code,
-		Message:           message,
+		ConcreteNode: node,
+		Code:         code,
+		Message:      message,
 	})
 }
 

@@ -3,8 +3,6 @@ package lint
 
 import (
 	"fmt"
-	"go/ast"
-	"go/parser"
 	"go/scanner"
 	"go/token"
 	"os"
@@ -145,14 +143,9 @@ func (r *Registry) activeRules(filename string) []builtinrules.Rule {
 
 type Context struct {
 	filename        string
-	fset            *token.FileSet
 	diagnostics     []diagnostic.Diagnostic
-	ancestors       []ast.Node
-	fileIgnores     map[string]bool
-	nodeIgnores     map[ast.Node]map[string]bool
 	concreteIgnores map[string]bool
 	concreteNodes   []concreteSuppression
-	current         ast.Node
 }
 
 type concreteSuppression struct {
@@ -161,53 +154,10 @@ type concreteSuppression struct {
 	codes map[string]bool
 }
 
-func (c *Context) report(node ast.Node, code, message string, severity diagnostic.Severity) {
-	if c.suppressed(code) {
-		return
-	}
-	start := c.fset.Position(node.Pos())
-	end := c.fset.Position(node.End())
-	display := source.DisplayPath(c.filename)
-	start.Filename = display
-	end.Filename = display
-	c.diagnostics = append(
-		c.diagnostics,
-		diagnostic.Diagnostic{
-			Code:     code,
-			Message:  message,
-			Severity: severity,
-			File:     display,
-			Start:    start,
-			End:      end,
-		},
-	)
-}
-
-func (c *Context) suppressed(code string) bool {
-	if c.fileIgnores["all"] || c.fileIgnores[code] {
-		return true
-	}
-	nodes := append(append([]ast.Node(nil), c.ancestors...), c.current)
-	for _, node := range nodes {
-		ignored := c.nodeIgnores[node]
-		if ignored["all"] || ignored[code] {
-			return true
-		}
-	}
-	return false
-}
-
 type fileResult struct {
 	filename    string
 	diagnostics []diagnostic.Diagnostic
 	err         error
-}
-
-type suppressionSet struct {
-	file        *ast.File
-	candidates  []ast.Node
-	fileIgnores map[string]bool
-	nodeIgnores map[ast.Node]map[string]bool
 }
 
 func Run(files []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
@@ -297,49 +247,6 @@ func lintFile(filename string, registry *Registry) ([]diagnostic.Diagnostic, err
 			Rules:    activeRules,
 			Report: func(finding builtinrules.Finding) {
 				context.reportConcrete(concreteTree, finding, registry.Severity(finding.Code))
-			},
-		},
-	)
-	legacyRules := make([]builtinrules.Rule, 0, len(activeRules))
-	for _, rule := range activeRules {
-		if !builtinrules.UsesCST(rule.Meta().Code) {
-			legacyRules = append(legacyRules, rule)
-		}
-	}
-	if len(legacyRules) == 0 {
-		return context.diagnostics, nil
-	}
-	fset := token.NewFileSet()
-	file, err := parser.ParseFile(
-		fset,
-		filename,
-		content,
-		parser.ParseComments|parser.AllErrors|parser.SkipObjectResolution,
-	)
-	if err != nil {
-		return nil, err
-	}
-	context.fset = fset
-	context.fileIgnores, context.nodeIgnores = suppressions(file)
-	builtinrules.Analyze(
-		builtinrules.Input{
-			Filename: filename,
-			FileSet:  fset,
-			File:     file,
-			Content:  content,
-			Rules:    legacyRules,
-			Report: func(finding builtinrules.Finding) {
-				context.current = finding.Scope
-				if context.current == nil {
-					context.current = finding.Node
-				}
-				context.ancestors = finding.Ancestors
-				context.report(
-					finding.Node,
-					finding.Code,
-					finding.Message,
-					registry.Severity(finding.Code),
-				)
 			},
 		},
 	)
@@ -454,74 +361,6 @@ func concreteSuppressionCandidates(tree *cst.Tree) []concreteSuppression {
 		return result[i].end > result[j].end
 	})
 	return result
-}
-
-func suppressions(file *ast.File) (map[string]bool, map[ast.Node]map[string]bool) {
-	set := suppressionSet{
-		file:        file,
-		candidates:  suppressionCandidates(file),
-		fileIgnores: make(map[string]bool),
-		nodeIgnores: make(map[ast.Node]map[string]bool),
-	}
-	for _, group := range file.Comments {
-		for _, comment := range group.List {
-			set.apply(group, comment.Text)
-		}
-	}
-	return set.fileIgnores, set.nodeIgnores
-}
-
-func suppressionCandidates(file *ast.File) []ast.Node {
-	candidates := []ast.Node{}
-	ast.Inspect(
-		file,
-		func(node ast.Node) bool {
-			switch node.(type) {
-			case ast.Decl, ast.Stmt:
-				candidates = append(candidates, node)
-			}
-			return true
-		},
-	)
-	sort.SliceStable(
-		candidates,
-		func(i, j int) bool {
-			if candidates[i].Pos() != candidates[j].Pos() {
-				return candidates[i].Pos() < candidates[j].Pos()
-			}
-			return candidates[i].End() > candidates[j].End()
-		},
-	)
-	return candidates
-}
-
-func (set *suppressionSet) apply(group *ast.CommentGroup, comment string) {
-	if codes, ok := directiveCodes(comment, "strider:ignore-file"); ok &&
-		group.End() < set.file.Package {
-		for _, code := range codes {
-			set.fileIgnores[code] = true
-		}
-	}
-	codes, ok := directiveCodes(comment, "strider:ignore")
-	if !ok {
-		return
-	}
-	index := sort.Search(
-		len(set.candidates),
-		func(index int) bool {
-			return set.candidates[index].Pos() > group.End()
-		},
-	)
-	if index == len(set.candidates) {
-		return
-	}
-	target := set.candidates[index]
-	if set.nodeIgnores[target] == nil {
-		set.nodeIgnores[target] = make(map[string]bool)
-	}
-	for _, code := range codes {
-		set.nodeIgnores[target][code] = true
-	}
 }
 
 func directiveCodes(comment, directive string) ([]string, bool) {

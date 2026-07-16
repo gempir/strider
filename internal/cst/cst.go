@@ -9,6 +9,7 @@ import (
 	"go/scanner"
 	"go/token"
 	"reflect"
+	"sort"
 	"strings"
 
 	gc "modernc.org/gc/v3"
@@ -32,6 +33,7 @@ type (
 	DeferStmt         = gc.DeferStmtNode
 	ExprSwitchCase    = gc.ExprSwitchCaseNode
 	ExprSwitchCase2   = gc.ExprSwitchCase2Node
+	FieldDecl         = gc.FieldDeclNode
 	ForStmt           = gc.ForStmtNode
 	FunctionDecl      = gc.FunctionDeclNode
 	FunctionLit       = gc.FunctionLitNode
@@ -46,6 +48,7 @@ type (
 	Parameters        = gc.ParametersNode
 	ParenthesizedExpr = gc.ParenthesizedExpressionNode
 	ReturnStmt        = gc.ReturnStmtNode
+	Result            = gc.ResultNode
 	ShortVarDecl      = gc.ShortVarDeclNode
 	StatementList     = gc.StatementListNode
 	TypeSwitchCase    = gc.TypeSwitchCaseNode
@@ -240,6 +243,9 @@ func NodeTokens(node Node) []Token {
 	}
 	result := []Token{}
 	collectTokens(reflect.ValueOf(node), &result)
+	sort.SliceStable(result, func(i, j int) bool {
+		return result[i].Position().Offset < result[j].Position().Offset
+	})
 	return result
 }
 

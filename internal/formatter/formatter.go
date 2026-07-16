@@ -4,9 +4,6 @@ package formatter
 import (
 	"bytes"
 	"fmt"
-	"go/ast"
-	"go/parser"
-	"go/scanner"
 	"go/token"
 	"strings"
 
@@ -85,22 +82,7 @@ func formatInternal(filename string, source []byte, options Options) ([]byte, er
 	if err := validateConcreteSyntax(filename, concreteTree); err != nil {
 		return nil, err
 	}
-	fset, file, err := parse(filename, source)
-	if err != nil {
-		return nil, err
-	}
-	builder, err := newASTBuilder(filename, fset, file)
-	if err != nil {
-		return nil, err
-	}
-	output := strings.TrimRight(
-		RenderWithIndentWidth(builder.file(file), options.PrintWidth, options.IndentWidth),
-		" \t\r\n",
-	) + "\n"
-	if options.EndOfLine == "crlf" {
-		output = strings.ReplaceAll(output, "\n", "\r\n")
-	}
-	return []byte(output), nil
+	return []byte(renderConcrete(filename, concreteTree, options)), nil
 }
 
 func validateConcreteSyntax(filename string, tree *cst.Tree) error {
@@ -137,26 +119,4 @@ func validateConcreteSyntax(filename string, tree *cst.Tree) error {
 		Column:   position.Column,
 		Feature:  feature,
 	}
-}
-
-func parse(filename string, source []byte) (*token.FileSet, *ast.File, error) {
-	fset := token.NewFileSet()
-	file, err := parser.ParseFile(fset, filename, source, parser.ParseComments|parser.AllErrors|parser.SkipObjectResolution)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	var scan scanner.Scanner
-	tokenFile := fset.AddFile(filename+"#scan", -1, len(source))
-	scan.Init(tokenFile, source, nil, scanner.ScanComments)
-	for {
-		_, tok, _ := scan.Scan()
-		if tok == token.EOF {
-			break
-		}
-	}
-	if scan.ErrorCount != 0 {
-		return nil, nil, fmt.Errorf("%s: scanner found %d error(s)", filename, scan.ErrorCount)
-	}
-	return fset, file, nil
 }

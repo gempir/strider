@@ -237,6 +237,39 @@ var values = map[string]string{
 	}
 }
 
+func TestFormatConcreteDeclarationsAndHeaders(t *testing.T) {
+	input := []byte(`package p
+const(alpha=1;beta=2)
+type values struct{Items []int}
+func(v *values) first() []int { if result:=v.Items;len(result)>0{return result};return nil }
+`)
+	want := `package p
+
+const (
+	alpha = 1
+	beta = 2
+)
+
+type values struct {
+	Items []int
+}
+
+func (v *values) first() []int {
+	if result := v.Items; len(result) > 0 {
+		return result
+	}
+	return nil
+}
+`
+	result, err := Format("declarations.go", input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(result.Source) != want {
+		t.Fatalf("formatted source:\n%s\nwant:\n%s", result.Source, want)
+	}
+}
+
 func TestFormatPreservesFreeFloatingCommentSeparation(t *testing.T) {
 	input := []byte(`package p
 

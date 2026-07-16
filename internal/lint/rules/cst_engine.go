@@ -9,11 +9,16 @@ import (
 
 var cstRuleCodes = map[string]bool{
 	"bidirectional-control-character": true,
+	"bool-literal-in-expr":            true,
 	"comment-spacings":                true,
 	"cyclomatic-complexity":           true,
+	"double-negation":                 true,
 	"filename-format":                 true,
+	"ineffective-pointer-copy":        true,
+	"increment-decrement":             true,
 	"line-length-limit":               true,
 	"max-parameters":                  true,
+	"modulo-one":                      true,
 	"no-defer-in-loop":                true,
 	"no-else-after-return":            true,
 	"no-init":                         true,
@@ -24,6 +29,8 @@ var cstRuleCodes = map[string]bool{
 	"package-naming":                  true,
 	"redundant-build-tag":             true,
 	"spaced-compiler-directive":       true,
+	"use-any":                         true,
+	"zero-integer-division":           true,
 }
 
 // UsesCST reports whether a rule has moved to the concrete-syntax pass.
@@ -87,6 +94,16 @@ func (a *cstAnalyzer) check(node cst.Node) {
 		a.checkElseAfterReturn(current)
 	case *cst.VarDecl:
 		a.checkPackageVar(current)
+	case *cst.BinaryExpression:
+		a.checkBinaryExpression(current)
+	case *cst.UnaryExpr:
+		a.checkUnaryExpression(current)
+	case *cst.InterfaceType:
+		a.checkInterfaceType(current)
+	case *cst.Assignment:
+		a.checkIncrementAssignment(current)
+	case *cst.ShortVarDecl:
+		a.checkIncrementShortDeclaration(current)
 	}
 }
 

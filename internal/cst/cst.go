@@ -24,6 +24,8 @@ type Token = gc.Token
 // Grammar node aliases keep consumers coupled to Strider's CST vocabulary
 // rather than to the parser implementation package.
 type (
+	Assignment        = gc.AssignmentNode
+	BasicLit          = gc.BasicLitNode
 	BinaryExpression  = gc.BinaryExpressionNode
 	Block             = gc.BlockNode
 	CommCase          = gc.CommCaseNode
@@ -35,14 +37,18 @@ type (
 	FunctionLit       = gc.FunctionLitNode
 	IdentifierList    = gc.IdentifierListNode
 	IfElseStmt        = gc.IfElseStmtNode
+	InterfaceType     = gc.InterfaceTypeNode
 	MethodDecl        = gc.MethodDeclNode
 	ParameterDecl     = gc.ParameterDeclNode
 	ParameterDeclList = gc.ParameterDeclListNode
 	Parameters        = gc.ParametersNode
+	ParenthesizedExpr = gc.ParenthesizedExpressionNode
 	ReturnStmt        = gc.ReturnStmtNode
+	ShortVarDecl      = gc.ShortVarDeclNode
 	StatementList     = gc.StatementListNode
 	TypeSwitchCase    = gc.TypeSwitchCaseNode
 	TypeSwitchStmt    = gc.TypeSwitchStmtNode
+	UnaryExpr         = gc.UnaryExprNode
 	VarDecl           = gc.VarDeclNode
 	VarSpec           = gc.VarSpecNode
 	VarSpec2          = gc.VarSpec2Node
@@ -127,6 +133,18 @@ func Text(node Node) string {
 		return ""
 	}
 	return node.Source(true)
+}
+
+// Spelling returns only the lexical spelling of a node, without comments or
+// whitespace trivia.
+func Spelling(node Node) string {
+	var result strings.Builder
+	for _, current := range NodeTokens(node) {
+		if concreteToken(current) {
+			result.WriteString(current.Src())
+		}
+	}
+	return result.String()
 }
 
 // Kind returns a stable production name without the implementation's Node

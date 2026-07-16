@@ -1,6 +1,8 @@
 package rules
 
 import (
+	"strings"
+
 	"github.com/gempir/strider/internal/cst"
 )
 
@@ -41,6 +43,7 @@ func (a *cstAnalyzer) checkConcreteIfElse(statement *cst.IfElseStmt) {
 
 func (a *cstAnalyzer) checkConcreteConditional(statement concreteIf) {
 	a.checkConcreteControlNesting(statement.node)
+	a.checkConcreteMapLookup(statement)
 	if statement.init != nil {
 		start, end := cst.Range(statement.init)
 		if a.tree.Position(end).Line > a.tree.Position(start).Line {
@@ -87,6 +90,35 @@ func (a *cstAnalyzer) checkConcreteConditional(statement concreteIf) {
 		}
 	}
 	a.checkConcreteIfChain(statement)
+}
+
+func (a *cstAnalyzer) checkConcreteMapLookup(statement concreteIf) {
+	declaration, ok := statement.init.(*cst.ShortVarDecl)
+	if !ok || declaration.IdentifierList == nil || declaration.IdentifierList.Len() != 2 ||
+		declaration.ExpressionList == nil || declaration.ExpressionList.Len() != 1 ||
+		statement.body == nil {
+		return
+	}
+	value := declaration.ExpressionList.Expression
+	lookup := cst.Spelling(value)
+	if !strings.Contains(lookup, "[") {
+		return
+	}
+	names := concreteIdentifierTokens(declaration.IdentifierList)
+	if len(names) != 2 || !concreteContainsIdentifier(statement.condition, names[1].Src()) {
+		return
+	}
+	cst.Walk(statement.body, func(node cst.Node) bool {
+		if cst.Spelling(node) == lookup {
+			a.report(
+				"inefficient-map-lookup",
+				node,
+				"reuse the map value obtained by the comma-ok lookup",
+			)
+			return false
+		}
+		return true
+	})
 }
 
 func (a *cstAnalyzer) checkConcreteIfChain(first concreteIf) {

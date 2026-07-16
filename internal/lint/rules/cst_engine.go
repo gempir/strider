@@ -9,6 +9,7 @@ import (
 
 var cstRuleCodes = map[string]bool{
 	"add-constant":                    true,
+	"atomic":                          true,
 	"bidirectional-control-character": true,
 	"banned-characters":               true,
 	"argument-limit":                  true,
@@ -42,10 +43,12 @@ var cstRuleCodes = map[string]bool{
 	"error-return":                    true,
 	"error-naming":                    true,
 	"errorf":                          true,
+	"epoch-naming":                    true,
 	"file-header":                     true,
 	"exported":                        true,
 	"file-length-limit":               true,
 	"flag-parameter":                  true,
+	"forbidden-call-in-wg-go":         true,
 	"filename-format":                 true,
 	"function-length":                 true,
 	"function-result-limit":           true,
@@ -58,6 +61,7 @@ var cstRuleCodes = map[string]bool{
 	"if-return":                       true,
 	"import-alias-naming":             true,
 	"import-shadowing":                true,
+	"inefficient-map-lookup":          true,
 	"imports-blocklist":               true,
 	"ineffective-pointer-copy":        true,
 	"increment-decrement":             true,
@@ -68,6 +72,8 @@ var cstRuleCodes = map[string]bool{
 	"max-public-structs":              true,
 	"marshal-receiver":                true,
 	"modulo-one":                      true,
+	"modifies-parameter":              true,
+	"modifies-value-receiver":         true,
 	"multiline-if-init":               true,
 	"nested-structs":                  true,
 	"no-defer-in-loop":                true,
@@ -89,15 +95,18 @@ var cstRuleCodes = map[string]bool{
 	"redundant-test-main-exit":        true,
 	"spaced-compiler-directive":       true,
 	"spinning-select-default":         true,
+	"string-of-int":                   true,
 	"string-format":                   true,
 	"struct-tag":                      true,
 	"superfluous-else":                true,
 	"time-naming":                     true,
+	"time-equal":                      true,
 	"time-date":                       true,
 	"unchecked-type-assertion":        true,
 	"unnecessary-format":              true,
 	"unnecessary-if":                  true,
 	"unnecessary-stmt":                true,
+	"unhandled-error":                 true,
 	"unreachable-code":                true,
 	"unexported-return":               true,
 	"unsecure-url-scheme":             true,
@@ -200,9 +209,11 @@ func (a *cstAnalyzer) check(node cst.Node) {
 		a.checkInterfaceType(current)
 	case *cst.Assignment:
 		a.checkIncrementAssignment(current)
+		a.checkConcreteAssignmentPolicy(current)
 	case *cst.ShortVarDecl:
 		a.checkIncrementShortDeclaration(current)
 		a.checkConcreteIdentifierList(current.IdentifierList)
+		a.checkConcreteShortDeclarationPolicy(current)
 	case *cst.PrimaryExpr:
 		a.checkConcreteCall(current)
 	case *cst.StructType:
@@ -307,6 +318,7 @@ func (a *cstAnalyzer) checkFunction(function *cst.FunctionDecl) {
 	a.checkSignature(name, function.Signature.Parameters, function.FunctionBody)
 	a.checkConcreteFunctionRules(name, function.Signature, function.FunctionBody, nil)
 	a.checkConcreteTestMain(function)
+	a.checkConcreteFunctionMutation(function.Signature.Parameters, nil, function.FunctionBody)
 }
 
 func (a *cstAnalyzer) checkMethod(method *cst.MethodDecl) {
@@ -318,6 +330,11 @@ func (a *cstAnalyzer) checkMethod(method *cst.MethodDecl) {
 			method.Signature,
 			method.FunctionBody,
 			method.Receiver,
+		)
+		a.checkConcreteFunctionMutation(
+			method.Signature.Parameters,
+			method.Receiver,
+			method.FunctionBody,
 		)
 	}
 }

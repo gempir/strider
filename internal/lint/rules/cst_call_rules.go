@@ -54,9 +54,63 @@ func (a *cstAnalyzer) checkConcreteCall(call *cst.PrimaryExpr) {
 	if isDeepExit(name) && !a.insideConcreteMainOrInit() {
 		a.report("deep-exit", call, "process-exit calls should be confined to main or init")
 	}
+	if name == "string" && len(arguments) == 1 && concreteIntegerLooking(arguments[0]) {
+		a.report(
+			"string-of-int",
+			call,
+			"integer-to-string conversion yields one rune; use string(rune(value)) or strconv.Itoa",
+		)
+	}
 	if isErrorConstructor(name) {
 		a.checkConcreteErrorMessage(arguments)
 	}
+	if a.concreteExpressionStatement(call) && likelyReturnsError(name) {
+		a.report("unhandled-error", call, fmt.Sprintf("error returned by %s is ignored", name))
+	}
+	if a.insideConcreteWaitGroupGo() &&
+		(name == "panic" || name == "recover" || strings.HasSuffix(name, ".Done")) {
+		a.report(
+			"forbidden-call-in-wg-go",
+			call,
+			fmt.Sprintf("%s must not be called inside WaitGroup.Go", name),
+		)
+	}
+}
+
+func concreteIntegerLooking(node cst.Node) bool {
+	if literal, ok := node.(*cst.BasicLit); ok {
+		return literal.Ch() == token.INT
+	}
+	call, ok := node.(*cst.PrimaryExpr)
+	if !ok {
+		return false
+	}
+	name := concreteCallName(call)
+	return name == "int" || strings.HasPrefix(name, "int") || strings.HasPrefix(name, "uint")
+}
+
+func (a *cstAnalyzer) concreteExpressionStatement(call *cst.PrimaryExpr) bool {
+	if len(a.ancestors) == 0 {
+		return false
+	}
+	list, ok := a.ancestors[len(a.ancestors)-1].(*cst.StatementList)
+	return ok && list.Statement == call
+}
+
+func (a *cstAnalyzer) insideConcreteWaitGroupGo() bool {
+	for index := len(a.ancestors) - 1; index >= 0; index-- {
+		call, ok := a.ancestors[index].(*cst.PrimaryExpr)
+		if !ok || !strings.HasSuffix(concreteCallName(call), ".Go") {
+			continue
+		}
+		arguments := concreteCallArguments(call.Postfix)
+		if len(arguments) > 0 {
+			if _, ok := arguments[0].(*cst.FunctionLit); ok {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (a *cstAnalyzer) checkConcreteTimeDate(arguments []cst.Node) {

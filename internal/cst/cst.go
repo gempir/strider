@@ -57,6 +57,7 @@ type (
 	IfStmt            = gc.IfStmtNode
 	ImportDecl        = gc.ImportDeclNode
 	ImportSpec        = gc.ImportSpecNode
+	IncDecStmt        = gc.IncDecStmtNode
 	InterfaceType     = gc.InterfaceTypeNode
 	MethodDecl        = gc.MethodDeclNode
 	ParameterDecl     = gc.ParameterDeclNode
@@ -68,6 +69,7 @@ type (
 	ReturnStmt        = gc.ReturnStmtNode
 	Result            = gc.ResultNode
 	SelectStmt        = gc.SelectStmtNode
+	Selector          = gc.SelectorNode
 	ShortVarDecl      = gc.ShortVarDeclNode
 	Signature         = gc.SignatureNode
 	StatementList     = gc.StatementListNode

@@ -37,6 +37,8 @@ type (
 	FunctionLit       = gc.FunctionLitNode
 	IdentifierList    = gc.IdentifierListNode
 	IfElseStmt        = gc.IfElseStmtNode
+	ImportDecl        = gc.ImportDeclNode
+	ImportSpec        = gc.ImportSpecNode
 	InterfaceType     = gc.InterfaceTypeNode
 	MethodDecl        = gc.MethodDeclNode
 	ParameterDecl     = gc.ParameterDeclNode
@@ -324,6 +326,9 @@ func collectTokens(value reflect.Value, result *[]Token) {
 
 func nodeValue(value reflect.Value) (Node, bool) {
 	if !value.IsValid() || (nilable(value.Kind()) && value.IsNil()) || !value.CanInterface() {
+		return nil, false
+	}
+	if current, ok := value.Interface().(Token); ok && !current.IsValid() {
 		return nil, false
 	}
 	node, ok := value.Interface().(Node)

@@ -17,6 +17,27 @@ The binary is written to `./strider`. The equivalent Go command is:
 CGO_ENABLED=0 go build -trimpath -o strider ./cmd/strider
 ```
 
+## Add project configuration
+
+Create `strider.toml` at the repository root. Strider discovers it from the
+current directory or any parent:
+
+```toml
+version = 1
+
+[formatter]
+print-width = 100
+
+[linter.rules.line-length-limit]
+enabled = true
+
+[analyzer.rules.possible-nil-dereference]
+severity = "error"
+```
+
+See [Configuration](/configuration/) for every formatter, tool, rule, path,
+and baseline setting.
+
 ## Format a project
 
 Run the formatter without paths to recursively format the current directory:
@@ -58,6 +79,20 @@ Select one analyzer while investigating a finding:
 ```sh
 strider analyze --only invalid-regexp ./...
 ```
+
+## Adopt existing findings
+
+If an established repository has a backlog, generate separate lint and
+analysis baselines. Existing matches are suppressed while new findings remain
+visible:
+
+```sh
+strider lint --generate-baseline --baseline lint-baseline.toml ./...
+strider analyze --generate-baseline --baseline analysis-baseline.toml ./...
+```
+
+Commit the files and configure their paths. See [Baselines](/baselines/) before
+regenerating or pruning them.
 
 ## Exit status
 

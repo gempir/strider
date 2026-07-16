@@ -4,7 +4,7 @@ description: Avoid implicit package initialization.
 ---
 
 **Default severity:** `warning`  
-**Configuration:** no options
+**Configuration:** `enabled`, `severity`, and path `excludes`
 
 Reports package `init` functions. Initialization functions hide side effects
 and ordering constraints from callers, which makes packages harder to test and

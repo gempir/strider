@@ -4,7 +4,7 @@ description: Avoid accumulating deferred calls across loop iterations.
 ---
 
 **Default severity:** `warning`  
-**Configuration:** no options
+**Configuration:** `enabled`, `severity`, and path `excludes`
 
 Reports `defer` statements nested inside `for` or `range` loops. Deferred calls
 run when the surrounding function returns, not when the current iteration

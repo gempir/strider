@@ -18,6 +18,32 @@ Strider is hugely inspired by
 its speed, configuration design, and clear separation between formatting,
 linting, analysis, and reporting.
 
+## Configuration
+
+Strider discovers the nearest `strider.toml` from the current directory upward.
+Every lint rule and analyzer supports `enabled`, `severity`, and path
+`excludes`; the formatter exposes print width, visual indentation width, line
+endings, and filesystem exclusions.
+
+```toml
+version = 1
+
+[formatter]
+print-width = 100
+
+[linter.rules.line-length-limit]
+enabled = true
+severity = "warning"
+
+[analyzer.rules.possible-nil-dereference]
+severity = "error"
+excludes = ["internal/legacy/**"]
+```
+
+Use `strider --config PATH COMMAND` to select a file explicitly or
+`strider --no-config COMMAND` to run with built-in defaults. The schema is
+strict: unknown keys and rule codes are errors.
+
 ## Format
 
 ```sh
@@ -85,11 +111,37 @@ running deeper correctness and data-flow checks. Analyzer names are descriptive
 kebab-case codes such as `invalid-regexp`, `nil-context`, and
 `swapped-seek-arguments`.
 
+## Baselines
+
+Lint and analysis baselines record existing findings without hiding new ones:
+
+```sh
+strider lint --generate-baseline --baseline lint-baseline.toml ./...
+strider analyze --generate-baseline --baseline analysis-baseline.toml ./...
+```
+
+Configure the paths for ordinary runs:
+
+```toml
+[linter]
+baseline = "lint-baseline.toml"
+baseline-variant = "loose"
+
+[analyzer]
+baseline = "analysis-baseline.toml"
+baseline-variant = "loose"
+```
+
+Loose baselines match file, code, message, and count while surviving line
+movement. Strict baselines match exact line ranges. Use `--ignore-baseline` to
+see the full backlog and `--remove-outdated-baseline-entries` to prune fixed
+issues without absorbing new findings.
+
 ## Exit codes
 
 - `0`: success with no findings or formatting differences.
 - `1`: lint/analyze findings or files that differ in `--check`/`--diff` mode.
 - `2`: command, parsing, unsupported-syntax, or I/O error.
 
-Configuration, vet integration, analysis baselines, and staged-file workflows
-remain deferred while the command contracts are evolving.
+Vet integration and staged-file workflows remain deferred while those command
+contracts are evolving.

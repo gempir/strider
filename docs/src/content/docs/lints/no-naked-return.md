@@ -4,7 +4,7 @@ description: Require explicit values when returning from named-result functions.
 ---
 
 **Default severity:** `warning`  
-**Configuration:** no options
+**Configuration:** `enabled`, `severity`, and path `excludes`
 
 Reports a bare `return` when the nearest function declaration or function
 literal has at least one named result. Naked returns make data flow implicit:

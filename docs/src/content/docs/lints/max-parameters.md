@@ -5,7 +5,7 @@ description: Limit declared functions to five parameters.
 
 **Default severity:** `warning`  
 **Maximum:** `5`  
-**Configuration:** fixed in the current draft
+**Configuration:** `enabled`, `severity`, and path `excludes`; maximum remains `5`
 
 Reports function declarations with more than five parameters. Long parameter
 lists are difficult to call correctly and often reveal a missing domain type.

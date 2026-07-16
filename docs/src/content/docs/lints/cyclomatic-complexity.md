@@ -5,7 +5,7 @@ description: Limit branching complexity in declared functions.
 
 **Default severity:** `warning`  
 **Maximum:** `10`  
-**Configuration:** fixed in the current draft
+**Configuration:** `enabled`, `severity`, and path `excludes`; maximum remains `10`
 
 Reports a declared function when its calculated complexity is greater than
 10. A low complexity score makes control flow easier to understand, test, and

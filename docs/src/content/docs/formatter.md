@@ -4,7 +4,8 @@ description: Strider's strict formatting profile, workflows, and safety model.
 ---
 
 The formatter parses Go source with comments, converts supported syntax to a
-small width-aware document model, and renders deterministically at 100 columns.
+small width-aware document model, and renders deterministically at a configured
+width (100 columns by default).
 It is intentionally independent from `gofmt`: output remains valid and
 semantically equivalent Go, but byte-for-byte `gofmt` compatibility is not a
 goal.
@@ -38,13 +39,27 @@ strider fmt --stdin --stdin-filename main.go < main.go
 ## Style
 
 Strider uses tabs for indentation, LF line endings, one final newline, and a
-strict 100-column print width. Imports are sorted into standard-library,
+100-column print width by default. Imports are sorted into standard-library,
 third-party, and current-module groups. Lists that break across lines use one
 item per line and a trailing comma.
 
 Function signatures, calls, composite literals, and expressions use the same
 bounded group-fitting algorithm. Binary operators remain on the preceding
 line so automatic semicolon insertion cannot change the program.
+
+Configure the wrap target, visual indentation width, line endings, and excluded
+filesystem paths in `strider.toml`:
+
+```toml
+[formatter]
+print-width = 120
+indent-width = 4
+end-of-line = "lf"
+excludes = ["internal/generated/**"]
+```
+
+See [Configuration](/configuration/#formatter) for ranges and the fixed parts
+of Strider's formatting profile.
 
 ## Safety checks
 

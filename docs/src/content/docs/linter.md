@@ -16,10 +16,16 @@ constants propagated through values, or control-flow analysis belong to
 
 ## Run rules
 
-Run every rule:
+Run the configured rule set (the seven-rule profile by default):
 
 ```sh
 strider lint [PATH]...
+```
+
+Run the complete built-in registry:
+
+```sh
+strider lint --all-rules [PATH]...
 ```
 
 Run a subset:
@@ -45,6 +51,38 @@ strider lint --explain cyclomatic-complexity
 
 See the [lint reference](/lints/) for the complete behavior and examples
 for every rule.
+
+## Configure rules
+
+Every registered lint code accepts `enabled`, `severity`, and path `excludes`
+in `strider.toml`. The seven profile rules are enabled by default; extended
+rules can be enabled individually.
+
+```toml
+[linter.rules.no-package-var]
+enabled = false
+
+[linter.rules.line-length-limit]
+enabled = true
+severity = "error"
+excludes = ["testdata/golden/**"]
+```
+
+Tool-wide exclusions and a default baseline also live under `[linter]`. See
+[Configuration](/configuration/#linter) for the complete contract.
+
+## Adopt with a baseline
+
+Record current debt while keeping new findings visible:
+
+```sh
+strider lint --generate-baseline --baseline lint-baseline.toml ./...
+```
+
+Configure that path for ordinary runs, temporarily bypass it with
+`--ignore-baseline`, and safely remove fixed entries with
+`--remove-outdated-baseline-entries`. The [baseline guide](/baselines/) covers
+variants and the recommended lifecycle.
 
 ## Reports
 

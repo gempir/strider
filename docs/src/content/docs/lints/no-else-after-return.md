@@ -4,7 +4,7 @@ description: Remove unnecessary nesting after a terminal return.
 ---
 
 **Default severity:** `warning`  
-**Configuration:** no options
+**Configuration:** `enabled`, `severity`, and path `excludes`
 
 Reports an `else` when the final direct statement of the corresponding `if`
 body is a `return`. Since control flow cannot continue past that return, the

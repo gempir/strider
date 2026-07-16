@@ -5,11 +5,12 @@ sidebar:
   order: 0
 ---
 
-Every profile rule is enabled by default at `warning` severity. Warnings cause
-`strider lint` to exit with code `1`. Severity and thresholds are fixed in the
-current draft.
+Every profile rule is enabled by default at `warning` severity. Any visible
+finding causes `strider lint` to exit with code `1`. Every rule supports common
+`enabled`, `severity`, and path `excludes` configuration. Behavioral thresholds
+shown below remain fixed rule contracts.
 
-| Rule | Purpose | Fixed option |
+| Rule | Purpose | Behavioral default |
 | --- | --- | --- |
 | [`cyclomatic-complexity`](./cyclomatic-complexity/) | Limit independent control-flow paths. | Maximum `10` |
 | [`max-parameters`](./max-parameters/) | Limit function parameter count. | Maximum `5` |
@@ -26,10 +27,13 @@ Use `strider lint --list-rules` to inspect the executable's registry or
 
 Strider includes 109 additional native rules alongside its seven-rule default
 profile. Each rule has a page in this section describing its behavior and
-fixed Strider default.
+Strider default.
 
 ```sh
 strider lint --all-rules ./...
 ```
 
 The extended rules share one native AST traversal per source file.
+
+Enable extended rules individually in `strider.toml` or select them on the
+CLI. See [Configuration](/configuration/#configure-any-lint-rule).

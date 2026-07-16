@@ -4,7 +4,7 @@ description: Avoid mutable variables at package scope.
 ---
 
 **Default severity:** `warning`  
-**Configuration:** blank identifiers are exempt; no other options
+**Configuration:** `enabled`, `severity`, and path `excludes`; blank identifiers remain exempt
 
 Reports every non-blank name declared by a package-level `var`. Package
 variables create shared mutable state and hide dependencies, making tests and

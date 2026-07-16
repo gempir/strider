@@ -23,6 +23,32 @@ Use `--list-rules` to see the implemented registry and `--explain CODE` for
 the built-in summary and examples. Analyzer codes are descriptive kebab-case
 names.
 
+## Configuration and baselines
+
+All analyzers are enabled by default. Every analyzer can be disabled, assigned
+`note`, `warning`, or `error` severity, and excluded from selected paths:
+
+```toml
+[analyzer]
+baseline = "analysis-baseline.toml"
+
+[analyzer.rules.deprecated-api-usage]
+enabled = false
+
+[analyzer.rules.possible-nil-dereference]
+severity = "error"
+excludes = ["internal/legacy/**"]
+```
+
+Generate a separate analysis baseline with:
+
+```sh
+strider analyze --generate-baseline --baseline analysis-baseline.toml ./...
+```
+
+See [Configuration](/configuration/#analyzer) and
+[Baselines](/baselines/) for the complete behavior.
+
 ## Available analyzers
 
 - [`invalid-regexp`](./invalid-regexp/)

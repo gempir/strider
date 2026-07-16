@@ -1,82 +1,255 @@
 ---
 title: Configuration
-description: Every setting and command option supported by the current Strider draft.
+description: Configure formatter layout, file exclusions, every lint rule, every analyzer, and baselines.
 ---
 
-## Configuration status
+Strider reads project settings from one strict TOML file named `strider.toml`.
+The file can configure all registered lint rules and analyzers through common
+rule options, select the formatter's supported layout settings, exclude paths,
+and make lint or analysis baselines automatic.
 
-Strider does **not** currently read a `strider.toml` file, environment
-overrides, or global user configuration. Unknown configuration files therefore
-have no effect. Current behavior is controlled through command-line options,
-source directives, and a small set of fixed defaults.
+```toml
+version = 1
 
-The configuration contract remains provisional. A strict, versioned TOML
-schema is planned only after the formatter and linter behavior stabilizes.
+[formatter]
+print-width = 100
+indent-width = 4
+end-of-line = "lf"
+excludes = ["internal/generated/**"]
 
-## Formatter options
+[linter]
+excludes = ["testdata/**"]
+baseline = "lint-baseline.toml"
+baseline-variant = "loose"
 
-| Option | Default | Effect |
-| --- | --- | --- |
-| `--check` | Off | Print files that would change. Never writes. |
-| `--diff` | Off | Print full unified diffs. Never writes. |
-| `--write` | Off explicitly | Write formatted files in place. This is the effective mode when no mode option is supplied. |
-| `--stdin` | Off | Read one Go source file from standard input and write formatted source to standard output. |
-| `--stdin-filename PATH` | `<stdin>` | Logical filename used while formatting standard input. Requires `--stdin`. |
+[linter.rules.no-init]
+enabled = false
 
-`--check`, `--diff`, and `--write` are mutually exclusive. Standard-input mode
-does not accept paths or any of those three mode options.
+[linter.rules.cyclomatic-complexity]
+enabled = true
+severity = "error"
+excludes = ["cmd/migrations/**"]
 
-## Linter options
+[analyzer]
+baseline = "analysis-baseline.toml"
+baseline-variant = "loose"
 
-| Option | Default | Effect |
-| --- | --- | --- |
-| `--format text\|json` | `text` | Select the diagnostic report format. |
-| `--only CODE` | Seven-rule profile | Run only the selected code. Repeat the option or provide comma-separated codes. |
-| `--all-rules` | Off | Enable all 116 native rules. Mutually exclusive with `--only`. |
-| `--list-rules` | Off | List selected rule codes, severities, and summaries, then exit. |
-| `--explain CODE` | None | Print the registry explanation and examples for one selected rule, then exit. |
+[analyzer.rules.invalid-regexp]
+enabled = true
+severity = "error"
+```
 
-The seven Strider profile rules are enabled at `warning` severity by default.
-The 109 additional rules are selectable individually or together with
-`--all-rules`. Rule severities and thresholds cannot yet be changed; each
-rule reference records the fixed default used when that rule is enabled.
+Only the settings you want to change are required. Omitted values retain
+Strider's built-in defaults.
 
-## Analyzer options
+## Discovery
 
-| Option | Default | Effect |
-| --- | --- | --- |
-| `--format text\|json` | `text` | Select the diagnostic report format. |
-| `--only CODE` | All implemented checks | Run only the selected analysis code. Repeatable, comma-separated, and case-insensitive. |
-| `--list-rules` | Off | List selected analysis codes, severities, and summaries, then exit. |
-| `--explain CODE` | None | Print the explanation and examples for one selected analysis rule, then exit. |
+Without a global option, Strider starts in the current working directory and
+looks for `strider.toml`. If it is absent, Strider checks each parent directory
+up to the filesystem root. The nearest file wins. This lets commands run from
+a nested package while still using the repository configuration.
 
-## Fixed formatter settings
+Choose a file explicitly when testing another policy:
 
-| Setting | Current value |
-| --- | --- |
-| Print width | 100 columns |
-| Indentation | Tabs; spaces are reserved for alignment |
-| Line endings | LF |
-| End of file | Exactly one final newline |
-| Imports | Sorted into standard library, third-party, and current-module groups |
-| Broken lists | One item per line with a mandatory trailing comma |
-| Binary wrapping | Operators remain at the end of the preceding line |
-| Generated files | Skipped |
+```sh
+strider --config configs/strict.toml lint ./...
+```
 
-These settings form one strict Strider profile and have no command-line
-overrides.
+Temporarily use only built-in defaults:
 
-## Source discovery
+```sh
+strider --no-config lint ./...
+```
 
-Paths may be Go files, directories, or recursive `./...` notation. When no
-path is supplied, Strider uses `.` and walks recursively. Discovery is
-deterministic and includes test files.
+`--config` and `--no-config` are global options, so they must appear before the
+command. They are mutually exclusive. An explicit path must exist; automatic
+discovery quietly falls back to defaults when no file exists.
 
-The `.git`, `.hg`, `.svn`, and `vendor` directories are skipped. Symlinked Go
-files and files with the standard `// Code generated ... DO NOT EDIT.` marker
-are also skipped.
+## Strict validation
+
+The configuration version is `1`. `version = 1` documents that contract and
+is recommended; an omitted version currently defaults to version 1.
+
+Strider rejects malformed TOML, unsupported versions, unknown section keys,
+unknown rule names, invalid severities, invalid baseline variants, and
+formatter values outside their accepted ranges. A configuration error exits
+with status `2` before source files are changed or diagnostics are reported.
+
+This strictness catches misspellings such as `severty = "error"` instead of
+silently running with a different policy.
+
+Strider does not currently support inherited configuration, environment
+variable overrides, user-wide configuration, or a published JSON Schema.
+
+## Precedence
+
+Effective behavior is assembled in this order:
+
+1. Built-in defaults.
+2. The discovered or explicitly selected `strider.toml`.
+3. Command-line selection and baseline flags.
+
+CLI rule selection has the final say. `lint --only CODE`, `analyze --only
+CODE`, and `lint --all-rules` enable the requested rules even when their
+configuration says `enabled = false`. Their configured severity and per-rule
+exclusions still apply. This makes `--only` useful for investigating a disabled
+rule without editing the project file.
+
+An explicit `--baseline PATH` overrides the baseline path in the relevant tool
+section. `--baseline-variant` overrides the configured variant for generation.
+
+## Path patterns
+
+`excludes` is supported by the formatter, linter, analyzer, and every individual
+rule. Paths are evaluated relative to the directory containing `strider.toml`.
+
+- A plain path such as `testdata` or `internal/generated` matches that path and
+  everything below it.
+- A glob may use `*`, `?`, character classes such as `[a-z]`, and `**` for
+  recursive directory matching.
+- Paths use slash-separated project-relative spelling in configuration, on all
+  operating systems.
+
+```toml
+[formatter]
+excludes = ["vendor-tools", "**/*.generated.go"]
+
+[linter]
+excludes = ["testdata/**"]
+
+[linter.rules.package-comments]
+excludes = ["cmd/**", "examples/**"]
+```
+
+Tool-level exclusions remove a file from that tool's reported results. A
+per-rule exclusion disables only that rule for matching files. Formatter
+exclusions do not apply to `--stdin`, because standard-input mode has no
+discovery pass.
+
+## Formatter
+
+Formatter settings live under `[formatter]`.
+
+| Setting | Type | Default | Accepted values and effect |
+| --- | --- | --- | --- |
+| `print-width` | integer | `100` | Wrap target from `40` through `500` columns. |
+| `indent-width` | integer | `4` | Display width of one indentation tab, from `1` through `16`; affects fit calculations. Output indentation remains tabs. |
+| `end-of-line` | string | `"lf"` | `"lf"` or `"crlf"`. |
+| `excludes` | string list | `[]` | Plain paths or globs skipped by filesystem formatting. |
+
+```toml
+[formatter]
+print-width = 120
+indent-width = 8
+end-of-line = "crlf"
+excludes = ["internal/generated/**"]
+```
+
+The formatter remains intentionally opinionated. Imports are sorted into
+standard-library, third-party, and current-module groups; indentation uses
+tabs; broken lists use trailing commas; binary operators remain on the
+preceding line; and output has exactly one final newline. Those decisions are
+not configurable in version 1.
+
+## Linter
+
+Tool-wide settings live under `[linter]`.
+
+| Setting | Type | Default | Effect |
+| --- | --- | --- | --- |
+| `excludes` | string list | `[]` | Skip matching files for every lint rule. |
+| `baseline` | string | unset | Apply this baseline unless the CLI overrides or ignores it. Relative paths resolve from `strider.toml`. |
+| `baseline-variant` | string | `"loose"` | Variant used the next time a baseline is generated: `"loose"` or `"strict"`. |
+| `rules` | table | `{}` | Common configuration keyed by any registered lint code. |
+
+With no selection flags and no rule configuration, the seven-rule default
+profile is enabled: `cyclomatic-complexity`, `max-parameters`,
+`no-naked-return`, `no-init`, `no-package-var`, `no-defer-in-loop`, and
+`no-else-after-return`. Other lint rules are disabled until selected by
+`--all-rules`, `--only`, or `enabled = true`.
+
+### Configure any lint rule
+
+Every code listed by `strider lint --all-rules --list-rules` accepts the same
+three options:
+
+| Setting | Type | Default | Effect |
+| --- | --- | --- | --- |
+| `enabled` | boolean | Rule profile default | Include or omit the rule during an ordinary configured run. |
+| `severity` | string | Rule default | Report as `"note"`, `"warning"`, or `"error"`. Any reported severity still makes the command exit `1`. |
+| `excludes` | string list | `[]` | Skip only this rule on matching paths. |
+
+```toml
+[linter.rules.line-length-limit]
+enabled = true
+severity = "warning"
+excludes = ["testdata/golden/**"]
+
+[linter.rules.no-package-var]
+enabled = false
+```
+
+Changing the severity of an extended rule does not implicitly enable it. Set
+`enabled = true` as well, or select it on the CLI.
+
+Rule-specific behavioral thresholds remain part of each rule's current
+contract. Version 1 configures whether every rule runs, how it is classified,
+and where it runs; it does not yet expose individual thresholds such as the
+cyclomatic-complexity limit.
+
+## Analyzer
+
+Analyzer settings mirror the linter:
+
+| Setting | Type | Default | Effect |
+| --- | --- | --- | --- |
+| `excludes` | string list | `[]` | Suppress analyzer results from matching files. Packages are still loaded so other files can be type-checked correctly. |
+| `baseline` | string | unset | Apply this analysis baseline by default. |
+| `baseline-variant` | string | `"loose"` | Variant used for newly generated analysis baselines. |
+| `rules` | table | `{}` | Common configuration keyed by any registered analyzer code. |
+
+All implemented analyzers are enabled by default. Every code listed by
+`strider analyze --list-rules` accepts `enabled`, `severity`, and `excludes`
+with the same types and behavior as lint rules.
+
+```toml
+[analyzer]
+excludes = ["examples/broken/**"]
+
+[analyzer.rules.deprecated-api-usage]
+enabled = false
+
+[analyzer.rules.possible-nil-dereference]
+severity = "error"
+excludes = ["internal/legacy/**"]
+```
+
+Analyzer codes are case-insensitive on `--only`, but configuration keys should
+use the canonical kebab-case spelling printed by `--list-rules`.
+
+## Baseline paths
+
+The linter and analyzer have separate baselines because their diagnostic sets
+and adoption timelines differ:
+
+```toml
+[linter]
+baseline = "lint-baseline.toml"
+baseline-variant = "loose"
+
+[analyzer]
+baseline = "analysis-baseline.toml"
+baseline-variant = "strict"
+```
+
+Relative baseline paths resolve from the configuration directory, not the
+shell's current directory. See the complete [baseline guide](/baselines/) for
+generation, matching, pruning, backups, and CI adoption.
 
 ## Source directives
+
+Configuration controls project policy; source directives record local
+exceptions.
 
 Skip formatting for an entire file:
 
@@ -84,13 +257,13 @@ Skip formatting for an entire file:
 //strider:format-ignore
 ```
 
-Suppress linter findings for the next declaration or statement:
+Suppress lint findings for the next declaration or statement:
 
 ```go
 //strider:ignore no-package-var,no-init
 ```
 
-Suppress findings for a whole file by placing this directive before the
+Suppress lint findings for a whole file by placing the directive before the
 package clause:
 
 ```go
@@ -98,5 +271,6 @@ package clause:
 package example
 ```
 
-Use the special code `all` to suppress every rule at that location. Strider
-does not yet support checked `expect` directives or region suppressions.
+Use the special code `all` to suppress every lint rule at that location.
+Analyzer findings currently use configuration exclusions or baselines rather
+than source suppression directives.

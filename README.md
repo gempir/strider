@@ -50,6 +50,22 @@ override it with `strider --color always|never COMMAND`. `NO_COLOR` and
 `FORCE_COLOR` are also honored. The schema is strict: unknown keys and rule
 codes are errors.
 
+## Shell completion
+
+Strider generates completion scripts for Bash, Zsh, Fish, and PowerShell:
+
+```sh
+strider completion bash
+strider completion zsh
+strider completion fish
+strider completion powershell
+```
+
+Each shell command's help includes installation instructions. For example,
+`strider completion fish > ~/.config/fish/completions/strider.fish` enables
+completion for future Fish sessions. Completions include commands, flags,
+fixed values such as `--format json`, paths, and lint/analyzer rule codes.
+
 ## Format
 
 ```sh

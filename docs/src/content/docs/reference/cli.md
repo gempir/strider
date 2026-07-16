@@ -12,17 +12,18 @@ strider [--config PATH|--no-config] [--color auto|always|never] COMMAND [OPTIONS
 | Command | Description |
 | --- | --- |
 | `strider help` | Print top-level usage. `-h` and `--help` are aliases. |
-| `strider version` | Print the current version string. `--version` is an alias. |
+| `strider version` | Print the current version string. `-v` and `--version` are aliases. |
 | `strider fmt` | Format Go source. `format` is an alias. |
 | `strider lint` | Run the file-local CST lint rules. |
 | `strider analyze` | Run package-aware static-analysis checks. |
+| `strider completion` | Generate completion scripts for common shells. |
 
 Calling Strider without a command is an error. Source commands recursively use
 the current directory when no path is provided.
 
 ## Global options
 
-Global options must precede the command.
+Global options may appear before or after the command.
 
 | Flag | Description |
 | --- | --- |
@@ -40,6 +41,30 @@ from the current directory through its parents and uses the nearest
 `NO_COLOR` disables color and a non-empty `FORCE_COLOR` forces it;
 `FORCE_COLOR=0` explicitly disables it. `FORCE_COLOR` has highest precedence.
 JSON and formatted source are never decorated with ANSI escapes.
+
+## Shell completion
+
+The `completion` command generates native scripts for Bash, Zsh, Fish, and
+PowerShell:
+
+```sh
+# Bash
+strider completion bash > ~/.local/share/bash-completion/completions/strider
+
+# Zsh (after adding ~/.zsh/completions to fpath)
+strider completion zsh > ~/.zsh/completions/_strider
+
+# Fish
+strider completion fish > ~/.config/fish/completions/strider.fish
+
+# PowerShell
+strider completion powershell > strider.ps1
+```
+
+Run `strider completion SHELL --help` for shell-specific setup instructions.
+Completion covers commands and aliases, flags, paths, enumerated flag values,
+and rule codes accepted by `--only` and `--explain`. Comma-separated `--only`
+values are completed one code at a time.
 
 ## `strider fmt`
 

@@ -11,12 +11,14 @@ import (
 )
 
 func TestVersion(t *testing.T) {
-	var stdout, stderr bytes.Buffer
-	if code := Run([]string{"version"}, strings.NewReader(""), &stdout, &stderr); code != exitSuccess {
-		t.Fatalf("exit %d, stderr %q", code, stderr.String())
-	}
-	if stdout.String() != "strider dev\n" || stderr.Len() != 0 {
-		t.Fatalf("stdout %q, stderr %q", stdout.String(), stderr.String())
+	for _, args := range [][]string{{"version"}, {"--version"}, {"-v"}} {
+		var stdout, stderr bytes.Buffer
+		if code := Run(args, strings.NewReader(""), &stdout, &stderr); code != exitSuccess {
+			t.Fatalf("%v: exit %d, stderr %q", args, code, stderr.String())
+		}
+		if stdout.String() != "strider dev\n" || stderr.Len() != 0 {
+			t.Fatalf("%v: stdout %q, stderr %q", args, stdout.String(), stderr.String())
+		}
 	}
 }
 
@@ -289,8 +291,126 @@ func TestLintAllRulesAndOnlyAreMutuallyExclusive(t *testing.T) {
 		&stdout,
 		&stderr,
 	)
-	if code != exitError || !strings.Contains(stderr.String(), "mutually exclusive") {
+	if code != exitError || !strings.Contains(stderr.String(), "all-rules") ||
+		!strings.Contains(stderr.String(), "only") {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+}
+
+func TestCobraHelpListsCommandsAndCompletion(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run([]string{"--help"}, strings.NewReader(""), &stdout, &stderr)
+	if code != exitSuccess || stderr.Len() != 0 {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	for _, expected := range []string{"Available Commands:", "completion", "fmt", "lint", "analyze"} {
+		if !strings.Contains(stdout.String(), expected) {
+			t.Fatalf("help missing %q: %q", expected, stdout.String())
+		}
+	}
+}
+
+func TestGlobalFlagsMayFollowCommand(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(
+		[]string{"lint", "--no-config", "--only", "no-init", "--list-rules"},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitSuccess || stderr.Len() != 0 || !strings.Contains(stdout.String(), "no-init") {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+}
+
+func TestCobraValidatesOptions(t *testing.T) {
+	tests := []struct {
+		name     string
+		args     []string
+		expected []string
+	}{
+		{name: "empty config", args: []string{"--config=", "version"}, expected: []string{"requires a path"}},
+		{name: "invalid color", args: []string{"version", "--color", "sometimes"}, expected: []string{"auto, always, or never"}},
+		{name: "format modes", args: []string{"fmt", "--stdin", "--check"}, expected: []string{"stdin", "check"}},
+		{
+			name:     "baseline modes",
+			args:     []string{"analyze", "--generate-baseline", "--ignore-baseline"},
+			expected: []string{"generate-baseline", "ignore-baseline"},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+			code := Run(test.args, strings.NewReader(""), &stdout, &stderr)
+			if code != exitError {
+				t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+			}
+			for _, expected := range test.expected {
+				if !strings.Contains(stderr.String(), expected) {
+					t.Fatalf("error missing %q: %q", expected, stderr.String())
+				}
+			}
+		})
+	}
+}
+
+func TestGeneratesCompletionsForCommonShells(t *testing.T) {
+	for shell, marker := range map[string]string{
+		"bash":       "__start_strider",
+		"zsh":        "#compdef strider",
+		"fish":       "complete -c strider",
+		"powershell": "Register-ArgumentCompleter",
+	} {
+		t.Run(shell, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+			code := Run([]string{"completion", shell}, strings.NewReader(""), &stdout, &stderr)
+			if code != exitSuccess || stderr.Len() != 0 || !strings.Contains(stdout.String(), marker) {
+				t.Fatalf("exit %d, marker %q, stdout %q, stderr %q", code, marker, stdout.String(), stderr.String())
+			}
+		})
+	}
+}
+
+func TestCompletionOffersEnumAndRuleValues(t *testing.T) {
+	tests := []struct {
+		name     string
+		args     []string
+		expected []string
+	}{
+		{
+			name:     "format",
+			args:     []string{"__complete", "lint", "--format", ""},
+			expected: []string{"text", "json"},
+		},
+		{
+			name:     "lint rule",
+			args:     []string{"__complete", "lint", "--only", "no-i"},
+			expected: []string{"no-init"},
+		},
+		{
+			name:     "comma-separated lint rule",
+			args:     []string{"__complete", "lint", "--only", "no-init,no-p"},
+			expected: []string{"no-init,no-package-var"},
+		},
+		{
+			name:     "analyzer rule",
+			args:     []string{"__complete", "analyze", "--explain", "invalid-reg"},
+			expected: []string{"invalid-regexp"},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+			code := Run(test.args, strings.NewReader(""), &stdout, &stderr)
+			if code != exitSuccess {
+				t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+			}
+			for _, value := range test.expected {
+				if !strings.Contains(stdout.String(), value) {
+					t.Fatalf("completion missing %q: stdout %q, stderr %q", value, stdout.String(), stderr.String())
+				}
+			}
+		})
 	}
 }
 

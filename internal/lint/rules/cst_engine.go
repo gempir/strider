@@ -33,6 +33,7 @@ var cstRuleCodes = map[string]bool{
 	"enforce-map-style":               true,
 	"enforce-repeated-arg-type-style": true,
 	"enforce-slice-style":             true,
+	"enforce-switch-style":            true,
 	"empty-block":                     true,
 	"empty-lines":                     true,
 	"early-return":                    true,
@@ -51,6 +52,8 @@ var cstRuleCodes = map[string]bool{
 	"identical-branches":              true,
 	"identical-ifelseif-branches":     true,
 	"identical-ifelseif-conditions":   true,
+	"identical-switch-branches":       true,
+	"identical-switch-conditions":     true,
 	"import-alias-naming":             true,
 	"import-shadowing":                true,
 	"imports-blocklist":               true,
@@ -98,6 +101,7 @@ var cstRuleCodes = map[string]bool{
 	"use-slices-sort":                 true,
 	"unused-parameter":                true,
 	"unused-receiver":                 true,
+	"useless-fallthrough":             true,
 	"var-declaration":                 true,
 	"var-naming":                      true,
 	"waitgroup-by-value":              true,
@@ -207,6 +211,10 @@ func (a *cstAnalyzer) check(node cst.Node) {
 		a.checkConcreteControlNesting(current)
 	case *cst.TypeSwitchStmt:
 		a.checkConcreteControlNesting(current)
+		a.checkConcreteSwitch(current)
+	case *cst.ExprSwitchStmt:
+		a.checkConcreteControlNesting(current)
+		a.checkConcreteSwitch(current)
 	case *cst.TypeAssertion:
 		a.checkConcreteTypeAssertion(current)
 	case *cst.ParameterDecl:

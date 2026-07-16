@@ -40,6 +40,8 @@ type (
 	DeferStmt         = gc.DeferStmtNode
 	ExprSwitchCase    = gc.ExprSwitchCaseNode
 	ExprSwitchCase2   = gc.ExprSwitchCase2Node
+	ExprCaseClause    = gc.ExprCaseClauseListNode
+	ExprSwitchStmt    = gc.ExprSwitchStmtNode
 	ExpressionList    = gc.ExpressionListNode
 	FieldDecl         = gc.FieldDeclNode
 	ForStmt           = gc.ForStmtNode
@@ -70,6 +72,7 @@ type (
 	TypeSwitchStmt    = gc.TypeSwitchStmtNode
 	TypeArgs          = gc.TypeArgsNode
 	TypeAssertion     = gc.TypeAssertionNode
+	TypeCaseClause    = gc.TypeCaseClauseNode
 	TypeParameters    = gc.TypeParametersNode
 	UnaryExpr         = gc.UnaryExprNode
 	VarDecl           = gc.VarDeclNode

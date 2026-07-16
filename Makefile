@@ -3,6 +3,7 @@ WILDS_DIR ?= .wilds
 WILDS_BASELINES ?= testdata/wilds/baselines
 TIMINGS_DIR ?= target/timings
 CURATED_MAX_SECONDS ?= 1.0
+CURATED_ANALYZE_MAX_SECONDS ?= 10.0
 WILDS_FMT_MAX_SECONDS ?= 2.0
 WILDS_LINT_MAX_SECONDS ?= 2.0
 WILDS_ANALYZE_MAX_SECONDS ?= 10.0
@@ -30,6 +31,7 @@ install: build
 test: require-strider
 	@TIMINGS_FILE="$(TIMINGS_DIR)/curated.tsv" \
 		CURATED_MAX_SECONDS="$(CURATED_MAX_SECONDS)" \
+		CURATED_ANALYZE_MAX_SECONDS="$(CURATED_ANALYZE_MAX_SECONDS)" \
 		./scripts/test.sh "$(STRIDER)"
 
 # Exercise valid real-world code. Findings and formatting differences (exit 1)

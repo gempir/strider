@@ -40,8 +40,10 @@ curated cases are the source of truth used by `make test`.
 Every Strider invocation reports elapsed time and enforces a deliberately
 generous speed budget. Timing reports are written as TSV files under
 `target/timings/`. Override `CURATED_MAX_SECONDS`, `WILDS_FMT_MAX_SECONDS`, or
-`WILDS_LINT_MAX_SECONDS` to tune the budgets for a machine. GitHub Actions adds
-the measurements to the job summary and uploads the reports as build artifacts.
+`WILDS_LINT_MAX_SECONDS` to tune the budgets for a machine. Analyzer runs have
+separate `CURATED_ANALYZE_MAX_SECONDS` and `WILDS_ANALYZE_MAX_SECONDS` budgets.
+GitHub Actions adds the measurements to the job summary and uploads the reports
+as build artifacts.
 
 Add `name,repository,commit` entries to `WILDS_PROJECTS` in the Makefile to
 extend the corpus. Override `STRIDER` to test another binary, for example:

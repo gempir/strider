@@ -92,6 +92,10 @@ func TestFormatCheckDiffAndWrite(t *testing.T) {
 	if err := os.WriteFile(filename, original, 0o640); err != nil {
 		t.Fatal(err)
 	}
+	originalInfo, err := os.Stat(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
 	for _, test := range []struct {
 		flag string
 		text string
@@ -117,8 +121,8 @@ func TestFormatCheckDiffAndWrite(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if info.Mode().Perm() != 0o640 {
-		t.Fatalf("mode changed to %v", info.Mode().Perm())
+	if info.Mode().Perm() != originalInfo.Mode().Perm() {
+		t.Fatalf("mode changed from %v to %v", originalInfo.Mode().Perm(), info.Mode().Perm())
 	}
 }
 

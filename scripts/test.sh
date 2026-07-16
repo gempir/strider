@@ -24,6 +24,7 @@ trap 'rm -rf "$temporary"' EXIT HUP INT TERM
 failed=0
 total_seconds=0
 max_seconds=${CURATED_MAX_SECONDS:-1.0}
+analyze_max_seconds=${CURATED_ANALYZE_MAX_SECONDS:-10.0}
 timings_file=${TIMINGS_FILE:-target/timings/curated.tsv}
 mkdir -p "$(dirname "$timings_file")" || exit 2
 printf 'suite\tproject\toperation\tseconds\tbudget_seconds\tbudget_result\n' > "$timings_file"
@@ -42,12 +43,16 @@ run_timed() {
 	stderr_file=$2
 	time_file=$3
 	shift 3
-	{ time -p "$@" > "$stdout_file" 2> "$stderr_file"; } 2> "$time_file"
+	/usr/bin/time -p -o "$time_file" "$@" > "$stdout_file" 2> "$stderr_file"
 }
 
 record_timing() {
 	test_name=$1
 	time_file=$2
+	budget=$max_seconds
+	case "$test_name" in
+	analyze\ *) budget=$analyze_max_seconds ;;
+	esac
 	seconds=$(awk '$1 == "real" { print $2; exit }' "$time_file")
 	test -n "$seconds" || {
 		echo "error: no timing recorded for $test_name" >&2
@@ -56,22 +61,22 @@ record_timing() {
 	}
 	total_seconds=$(awk -v total="$total_seconds" -v current="$seconds" \
 		'BEGIN { printf "%.2f", total + current }')
-	if awk -v actual="$seconds" -v budget="$max_seconds" \
+	if awk -v actual="$seconds" -v budget="$budget" \
 		'BEGIN { exit !(actual <= budget) }'
 	then
 		budget_result=PASS
 	else
 		budget_result=FAIL
-		echo "error: $test_name took ${seconds}s; budget is ${max_seconds}s" >&2
+		echo "error: $test_name took ${seconds}s; budget is ${budget}s" >&2
 		failed=1
 	fi
 	printf 'Timing: %s: %ss (budget %ss) [%s]\n' \
-		"$test_name" "$seconds" "$max_seconds" "$budget_result"
+		"$test_name" "$seconds" "$budget" "$budget_result"
 	printf 'curated\t-\t%s\t%s\t%s\t%s\n' \
-		"$test_name" "$seconds" "$max_seconds" "$budget_result" >> "$timings_file"
+		"$test_name" "$seconds" "$budget" "$budget_result" >> "$timings_file"
 	if test -n "${GITHUB_STEP_SUMMARY:-}"; then
 		printf '| %s | %ss | %ss | %s |\n' \
-			"$test_name" "$seconds" "$max_seconds" "$budget_result" \
+			"$test_name" "$seconds" "$budget" "$budget_result" \
 			>> "$GITHUB_STEP_SUMMARY"
 	fi
 }

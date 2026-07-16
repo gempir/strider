@@ -44,7 +44,8 @@ func check(pattern string) {
 		if item.Code != "invalid-regexp" || !strings.Contains(item.Message, "error parsing regexp") {
 			t.Fatalf("unexpected diagnostic: %#v", item)
 		}
-		if item.Start.Filename != "main.go" {
+		if item.Start.Filename != "main.go" &&
+			!(runtime.GOOS == "windows" && filepath.Base(filepath.FromSlash(item.Start.Filename)) == "main.go") {
 			t.Fatalf("unexpected display path: %q", item.Start.Filename)
 		}
 	}
@@ -534,7 +535,13 @@ func returning() <-chan time.Time {
 }
 
 func TestUntrappableSignalReportsKernelHandledSignals(t *testing.T) {
-	root := analysisModule(t, `package sample
+	stopArgument := ", syscall.SIGSTOP"
+	want := 4
+	if runtime.GOOS == "windows" {
+		stopArgument = ""
+		want = 3
+	}
+	root := analysisModule(t, fmt.Sprintf(`package sample
 
 import (
 	"os"
@@ -543,11 +550,11 @@ import (
 )
 
 func configure(ch chan<- os.Signal) {
-	signal.Notify(ch, os.Kill, syscall.SIGKILL, syscall.SIGSTOP)
+	signal.Notify(ch, os.Kill, syscall.SIGKILL%s)
 	signal.Ignore(os.Signal(syscall.SIGKILL))
 	signal.Reset(syscall.SIGTERM)
 }
-`)
+`, stopArgument))
 	registry, err := NewRegistry([]string{"untrappable-signal"})
 	if err != nil {
 		t.Fatal(err)
@@ -556,8 +563,8 @@ func configure(ch chan<- os.Signal) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(diagnostics) != 4 {
-		t.Fatalf("got %d diagnostics, want 4: %#v", len(diagnostics), diagnostics)
+	if len(diagnostics) != want {
+		t.Fatalf("got %d diagnostics, want %d: %#v", len(diagnostics), want, diagnostics)
 	}
 }
 

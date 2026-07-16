@@ -126,6 +126,14 @@ normalize_output() {
 	' "$input_file" > "$output_file"
 }
 
+run_timed() {
+	stdout_file=$1
+	stderr_file=$2
+	time_file=$3
+	shift 3
+	/usr/bin/time -p -o "$time_file" "$@" > "$stdout_file" 2> "$stderr_file"
+}
+
 capture_project() {
 	output_dir=$1
 	mkdir -p "$output_dir" || die "cannot create $output_dir"
@@ -138,10 +146,9 @@ capture_project() {
 			printf 'real 0.00\nuser 0.00\nsys 0.00\n' > "$output_dir/format.time"
 			printf '0\n' > "$output_dir/format.status"
 		else
-			{ time -p "$strider" fmt --diff . \
-				> "$output_dir/format.stdout.raw" \
-				2> "$output_dir/format.stderr.raw"; } \
-				2> "$output_dir/format.time"
+			run_timed "$output_dir/format.stdout.raw" \
+				"$output_dir/format.stderr.raw" "$output_dir/format.time" \
+				"$strider" fmt --diff .
 			printf '%s\n' "$?" > "$output_dir/format.status"
 		fi
 		normalize_output "$output_dir/format.stdout.raw" "$output_dir/format.stdout"
@@ -157,10 +164,9 @@ capture_project() {
 		else
 			# lint_args is an intentionally word-split list of trusted harness flags.
 			# shellcheck disable=SC2086
-			{ time -p "$strider" lint $lint_args . \
-				> "$output_dir/lint.stdout.raw" \
-				2> "$output_dir/lint.stderr.raw"; } \
-				2> "$output_dir/lint.time"
+			run_timed "$output_dir/lint.stdout.raw" \
+				"$output_dir/lint.stderr.raw" "$output_dir/lint.time" \
+				"$strider" lint $lint_args .
 			printf '%s\n' "$?" > "$output_dir/lint.status"
 		fi
 		normalize_output "$output_dir/lint.stdout.raw" "$output_dir/lint.stdout"
@@ -189,10 +195,9 @@ capture_project() {
 		if test "$run_analyze" = 1; then
 			# analyze_args is an intentionally word-split list of trusted harness flags.
 			# shellcheck disable=SC2086
-			{ time -p "$strider" analyze $analyze_args . \
-				> "$output_dir/analyze.stdout.raw" \
-				2> "$output_dir/analyze.stderr.raw"; } \
-				2> "$output_dir/analyze.time"
+			run_timed "$output_dir/analyze.stdout.raw" \
+				"$output_dir/analyze.stderr.raw" "$output_dir/analyze.time" \
+				"$strider" analyze $analyze_args .
 			printf '%s\n' "$?" > "$output_dir/analyze.status"
 			normalize_output "$output_dir/analyze.stdout.raw" "$output_dir/analyze.stdout"
 			normalize_output "$output_dir/analyze.stderr.raw" "$output_dir/analyze.stderr"

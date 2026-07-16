@@ -95,8 +95,8 @@ var defaultCatalog = []definition{
 }
 
 // The non-default rules share the same native analysis pass as the default
-// profile. This compact list supplies metadata that does not need custom
-// examples.
+// profile. Examples live in examples.go because they are also used to generate
+// the lint reference pages.
 var extendedCatalog = []spec{
 	{"add-constant", "suggest named constants for repeated literals", "strings after 2 repetitions"},
 	{"argument-limit", "limit function parameter count", "maximum 8"},
@@ -249,6 +249,10 @@ func allRules() []Rule {
 		rules = append(rules, rule)
 	}
 	for _, item := range extendedCatalog {
+		example, ok := extendedExamples[item.Code]
+		if !ok {
+			panic("lint rule has no examples: " + item.Code)
+		}
 		explanation := item.Summary + "."
 		if item.Defaults != "" {
 			explanation += " Strider default: " + item.Defaults + "."
@@ -260,8 +264,8 @@ func allRules() []Rule {
 					Code:            item.Code,
 					Summary:         item.Summary,
 					Explanation:     explanation,
-					GoodExample:     "See the rule reference for accepted forms.",
-					BadExample:      "See the rule reference for reported forms.",
+					GoodExample:     example.Good,
+					BadExample:      example.Bad,
 					DefaultSeverity: diagnostic.SeverityWarning,
 				},
 			},

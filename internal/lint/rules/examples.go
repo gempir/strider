@@ -1,0 +1,447 @@
+package rules
+
+type ruleExample struct {
+	Good string
+	Bad  string
+}
+
+// extendedExamples is the source of truth for examples shown by both
+// `strider lint --explain` and the generated lint reference pages.
+var extendedExamples = map[string]ruleExample{
+	"add-constant": {
+		Good: "const stateReady = \"ready\"\nif state == stateReady { start() }",
+		Bad:  "if state == \"ready\" { start() }\nif next == \"ready\" { queue() }",
+	},
+	"argument-limit": {
+		Good: "func Open(path string, options Options) error",
+		Bad:  "func Open(path string, read, write, create, truncate, appendMode, sync, exclusive, temporary bool) error",
+	},
+	"atomic": {
+		Good: "atomic.AddInt64(&counter, 1)",
+		Bad:  "counter = atomic.AddInt64(&counter, 1)",
+	},
+	"banned-characters": {
+		Good: "var userID string",
+		Bad:  "var user_id string // when underscore is configured as banned",
+	},
+	"bare-return": {
+		Good: "func count() (n int) { n = 1; return n }",
+		Bad:  "func count() (n int) { n = 1; return }",
+	},
+	"bidirectional-control-character": {
+		Good: "// access denied",
+		Bad:  "// access \u202edenied",
+	},
+	"blank-imports": {
+		Good: "import _ \"example.com/driver\" // register the driver",
+		Bad:  "import _ \"example.com/driver\"",
+	},
+	"bool-literal-in-expr": {
+		Good: "if ready { start() }",
+		Bad:  "if ready == true { start() }",
+	},
+	"call-to-gc": {
+		Good: "buffer = nil // let Go collect it when appropriate",
+		Bad:  "runtime.GC() // in normal application code",
+	},
+	"cognitive-complexity": {
+		Good: "if !ready { return }\nprocess()",
+		Bad:  "if ready {\n\tfor _, item := range items {\n\t\tif valid(item) { process(item) }\n\t}\n}",
+	},
+	"comment-spacings": {
+		Good: "// Explain why this is necessary.",
+		Bad:  "//Explain why this is necessary.",
+	},
+	"comments-density": {
+		Good: "// retry reconnects after a transient failure.\nfunc retry() { reconnect() }",
+		Bad:  "func retry() { reconnect() } // with a positive minimum configured",
+	},
+	"confusing-naming": {
+		Good: "type User struct { ID string; Name string }",
+		Bad:  "type User struct { ID string; Id string }",
+	},
+	"confusing-results": {
+		Good: "func bounds() (min int, max int)",
+		Bad:  "func bounds() (int, int)",
+	},
+	"constant-logical-expr": {
+		Good: "if ready && connected { start() }",
+		Bad:  "if false && connected { start() }",
+	},
+	"context-as-argument": {
+		Good: "func Load(ctx context.Context, id string) error",
+		Bad:  "func Load(id string, ctx context.Context) error",
+	},
+	"cyclomatic": {
+		Good: "func sign(n int) int { if n < 0 { return -1 }; return 1 }",
+		Bad:  "func tangled() { /* more than ten independent branches */ }",
+	},
+	"datarace": {
+		Good: "for _, value := range values { go func(current int) { use(current) }(value) }",
+		Bad:  "for _, value := range values { go func() { use(value) }() }",
+	},
+	"deep-exit": {
+		Good: "func run() error { return load() }",
+		Bad:  "func loadConfig() { if failed() { os.Exit(1) } }",
+	},
+	"defer": {
+		Good: "defer func() { _ = recover() }()",
+		Bad:  "defer recover()",
+	},
+	"dot-imports": {
+		Good: "import \"fmt\"\nfmt.Println(message)",
+		Bad:  "import . \"fmt\"\nPrintln(message)",
+	},
+	"double-negation": {
+		Good: "return ready",
+		Bad:  "return !!ready",
+	},
+	"duplicated-imports": {
+		Good: "import \"strings\"",
+		Bad:  "import (\n\t\"strings\"\n\ttext \"strings\"\n)",
+	},
+	"early-return": {
+		Good: "if !ready { return }\nprocess()",
+		Bad:  "if ready { process() } else { return }",
+	},
+	"empty-block": {
+		Good: "if ready { process() }",
+		Bad:  "if ready {}",
+	},
+	"empty-lines": {
+		Good: "func run() {\n\tstart()\n}",
+		Bad:  "func run() {\n\n\tstart()\n\n}",
+	},
+	"enforce-map-style": {
+		Good: "values := map[string]int{} // with literal style configured",
+		Bad:  "values := make(map[string]int) // with literal style configured",
+	},
+	"enforce-repeated-arg-type-style": {
+		Good: "func add(left, right int) int // with short style configured",
+		Bad:  "func add(left int, right int) int // with short style configured",
+	},
+	"enforce-slice-style": {
+		Good: "values := []string{} // with literal style configured",
+		Bad:  "values := make([]string, 0) // with literal style configured",
+	},
+	"enforce-switch-style": {
+		Good: "switch value { case 1: one(); default: fallback() }",
+		Bad:  "switch value { default: fallback(); case 1: one() }",
+	},
+	"epoch-naming": {
+		Good: "createdSeconds := time.Now().Unix()",
+		Bad:  "createdAt := time.Now().Unix()",
+	},
+	"error-naming": {
+		Good: "var ErrNotFound = errors.New(\"not found\")",
+		Bad:  "var NotFoundError = errors.New(\"not found\")",
+	},
+	"error-return": {
+		Good: "func Load() (string, error)",
+		Bad:  "func Load() (error, string)",
+	},
+	"error-strings": {
+		Good: "errors.New(\"connection refused\")",
+		Bad:  "errors.New(\"Connection refused.\")",
+	},
+	"errorf": {
+		Good: "fmt.Errorf(\"load %s\", name)",
+		Bad:  "errors.New(fmt.Sprintf(\"load %s\", name))",
+	},
+	"exported": {
+		Good: "// Client sends requests.\ntype Client struct{}",
+		Bad:  "type Client struct{}",
+	},
+	"file-header": {
+		Good: "// Copyright Example Corp.\npackage service",
+		Bad:  "package service // when a copyright header is required",
+	},
+	"file-length-limit": {
+		Good: "// A source file within the configured line limit.",
+		Bad:  "// A source file longer than the configured line limit.",
+	},
+	"filename-format": {
+		Good: "// user_service.go",
+		Bad:  "// user.service.go",
+	},
+	"flag-parameter": {
+		Good: "func Open(path string, mode Mode) error",
+		Bad:  "func Open(path string, readOnly bool) error",
+	},
+	"forbidden-call-in-wg-go": {
+		Good: "group.Go(func() { work() })",
+		Bad:  "group.Go(func() { defer group.Done(); work() })",
+	},
+	"function-length": {
+		Good: "func run() { load(); process(); save() }",
+		Bad:  "func run() { /* more than 50 statements or 75 lines */ }",
+	},
+	"function-result-limit": {
+		Good: "func Parse() (Value, error)",
+		Bad:  "func Parse() (Value, Metadata, Warnings, error)",
+	},
+	"get-return": {
+		Good: "func GetClient() *Client { return client }",
+		Bad:  "func GetClient() { initializeClient() }",
+	},
+	"identical-branches": {
+		Good: "if ready { start() } else { wait() }",
+		Bad:  "if ready { start() } else { start() }",
+	},
+	"identical-ifelseif-branches": {
+		Good: "if first { one() } else if second { two() }",
+		Bad:  "if first { run() } else if second { run() }",
+	},
+	"identical-ifelseif-conditions": {
+		Good: "if first { one() } else if second { two() }",
+		Bad:  "if ready { one() } else if ready { two() }",
+	},
+	"identical-switch-branches": {
+		Good: "switch value { case 1: one(); case 2: two() }",
+		Bad:  "switch value { case 1: run(); case 2: run() }",
+	},
+	"identical-switch-conditions": {
+		Good: "switch { case first: one(); case second: two() }",
+		Bad:  "switch { case ready: one(); case ready: two() }",
+	},
+	"if-return": {
+		Good: "err := save()\nreturn err",
+		Bad:  "if err := save(); err != nil { return err }\nreturn nil",
+	},
+	"ineffective-pointer-copy": {
+		Good: "copy := *pointer",
+		Bad:  "copy := &*pointer",
+	},
+	"import-alias-naming": {
+		Good: "import jsonapi \"example.com/json-api\"",
+		Bad:  "import JSON_API \"example.com/json-api\"",
+	},
+	"import-shadowing": {
+		Good: "encoded := json.Marshal(value)",
+		Bad:  "json := loadConfig() // shadows the json import",
+	},
+	"imports-blocklist": {
+		Good: "import \"log/slog\"",
+		Bad:  "import \"log\" // when log is configured as blocked",
+	},
+	"increment-decrement": {
+		Good: "count++",
+		Bad:  "count += 1",
+	},
+	"indent-error-flow": {
+		Good: "if err != nil { return err }\nuse(value)",
+		Bad:  "if err != nil { return err } else { use(value) }",
+	},
+	"inefficient-map-lookup": {
+		Good: "if value, ok := values[key]; ok { use(value) }",
+		Bad:  "if _, ok := values[key]; ok { use(values[key]) }",
+	},
+	"line-length-limit": {
+		Good: "message := \"keep source lines readable\"",
+		Bad:  "message := \"a source line that extends beyond the configured maximum line length is reported\"",
+	},
+	"marshal-receiver": {
+		Good: "func (value *Value) MarshalJSON() ([]byte, error)\nfunc (value *Value) UnmarshalJSON([]byte) error",
+		Bad:  "func (value Value) MarshalJSON() ([]byte, error)\nfunc (value *Value) UnmarshalJSON([]byte) error",
+	},
+	"max-control-nesting": {
+		Good: "if !ready { return }\nfor _, item := range items { process(item) }",
+		Bad:  "if ready { for { switch value { case 1: if valid { process() } } } }",
+	},
+	"max-public-structs": {
+		Good: "type Request struct{}\ntype Response struct{}",
+		Bad:  "// More than five exported struct types in one file.",
+	},
+	"modifies-parameter": {
+		Good: "func normalize(value string) string { normalized := strings.TrimSpace(value); return normalized }",
+		Bad:  "func normalize(value string) string { value = strings.TrimSpace(value); return value }",
+	},
+	"modifies-value-receiver": {
+		Good: "func (item *Item) Rename(name string) { item.Name = name }",
+		Bad:  "func (item Item) Rename(name string) { item.Name = name }",
+	},
+	"modulo-one": {
+		Good: "remainder := value % divisor",
+		Bad:  "remainder := value % 1",
+	},
+	"multiline-if-init": {
+		Good: "value, err := load()\nif err != nil { return err }",
+		Bad:  "if value, err :=\n\tload(); err != nil { return err }",
+	},
+	"nested-structs": {
+		Good: "type Address struct { City string }\ntype User struct { Address Address }",
+		Bad:  "type User struct { Address struct { City string } }",
+	},
+	"optimize-operands-order": {
+		Good: "if ready && expensiveCheck() { start() }",
+		Bad:  "if expensiveCheck() && ready { start() }",
+	},
+	"package-comments": {
+		Good: "// Package store persists application data.\npackage store",
+		Bad:  "package store",
+	},
+	"package-directory-mismatch": {
+		Good: "// store/client.go\npackage store",
+		Bad:  "// storage/client.go\npackage store",
+	},
+	"package-naming": {
+		Good: "package httputil",
+		Bad:  "package http_util",
+	},
+	"range": {
+		Good: "for _, character := range text { use(character) }",
+		Bad:  "for _, character := range []rune(text) { use(character) }",
+	},
+	"range-val-address": {
+		Good: "for index := range values { pointers = append(pointers, &values[index]) }",
+		Bad:  "for _, value := range values { pointers = append(pointers, &value) }",
+	},
+	"range-val-in-closure": {
+		Good: "for _, value := range values { use(func(current int) func() { return func() { print(current) } }(value)) }",
+		Bad:  "for _, value := range values { use(func() { print(value) }) }",
+	},
+	"receiver-naming": {
+		Good: "func (c *Client) Send() error",
+		Bad:  "func (self *Client) Send() error",
+	},
+	"redefines-builtin-id": {
+		Good: "func parse(input string) error",
+		Bad:  "func parse(error string) error",
+	},
+	"redundant-build-tag": {
+		Good: "//go:build linux || darwin",
+		Bad:  "//go:build linux || darwin\n// +build linux darwin",
+	},
+	"redundant-import-alias": {
+		Good: "import \"strings\"",
+		Bad:  "import strings \"strings\"",
+	},
+	"redundant-test-main-exit": {
+		Good: "func TestMain(m *testing.M) { m.Run() }",
+		Bad:  "func TestMain(m *testing.M) { os.Exit(m.Run()) }",
+	},
+	"spaced-compiler-directive": {
+		Good: "//go:noinline\nfunc call() {}",
+		Bad:  "// go:noinline\nfunc call() {}",
+	},
+	"spinning-select-default": {
+		Good: "for { select { case value := <-values: use(value) } }",
+		Bad:  "for { select { case value := <-values: use(value); default: } }",
+	},
+	"string-format": {
+		Good: "const identifier = \"abc-123\" // matching the configured format",
+		Bad:  "const identifier = \"ABC 123\" // violating the configured format",
+	},
+	"string-of-int": {
+		Good: "text := strconv.Itoa(value)",
+		Bad:  "text := string(value)",
+	},
+	"struct-tag": {
+		Good: "type User struct { Name string `json:\"name\"` }",
+		Bad:  "type User struct { Name string `json:name` }",
+	},
+	"superfluous-else": {
+		Good: "if err != nil { return err }\nuse(value)",
+		Bad:  "if err != nil { return err } else { use(value) }",
+	},
+	"time-date": {
+		Good: "time.Date(2026, time.July, 16, 12, 0, 0, 0, time.UTC)",
+		Bad:  "time.Date(2026, 13, 16, 12, 0, 0, 0, time.UTC)",
+	},
+	"time-equal": {
+		Good: "if first.Equal(second) { match() }",
+		Bad:  "if first.Time == second.Time { match() }",
+	},
+	"time-naming": {
+		Good: "var timeout time.Duration",
+		Bad:  "var timeoutSeconds time.Duration",
+	},
+	"unchecked-type-assertion": {
+		Good: "value, ok := input.(string)",
+		Bad:  "value := input.(string)",
+	},
+	"unexported-naming": {
+		Good: "var clientID string",
+		Bad:  "var _clientID string",
+	},
+	"unexported-return": {
+		Good: "func NewClient() *Client",
+		Bad:  "func NewClient() *client",
+	},
+	"unhandled-error": {
+		Good: "if err := file.Close(); err != nil { return err }",
+		Bad:  "file.Close()",
+	},
+	"unnecessary-format": {
+		Good: "fmt.Sprint(value)",
+		Bad:  "fmt.Sprintf(\"static message\")",
+	},
+	"unnecessary-if": {
+		Good: "return ready",
+		Bad:  "if ready { return true } else { return false }",
+	},
+	"unnecessary-stmt": {
+		Good: "switch value { case 1: use() }",
+		Bad:  "switch value { case 1: use(); break }",
+	},
+	"unreachable-code": {
+		Good: "save()\nreturn nil",
+		Bad:  "return nil\nsave()",
+	},
+	"unsecure-url-scheme": {
+		Good: "endpoint := \"https://example.com\"",
+		Bad:  "endpoint := \"http://example.com\"",
+	},
+	"unused-parameter": {
+		Good: "func greet(name string) { fmt.Println(name) }",
+		Bad:  "func greet(name string) { fmt.Println(\"hello\") }",
+	},
+	"unused-receiver": {
+		Good: "func (client *Client) Send() { client.flush() }",
+		Bad:  "func (client *Client) Version() string { return version }",
+	},
+	"use-any": {
+		Good: "var value any",
+		Bad:  "var value interface{}",
+	},
+	"use-errors-new": {
+		Good: "errors.New(\"not found\")",
+		Bad:  "fmt.Errorf(\"not found\")",
+	},
+	"use-fmt-print": {
+		Good: "fmt.Print(message)",
+		Bad:  "print(message)",
+	},
+	"use-slices-sort": {
+		Good: "slices.Sort(values)",
+		Bad:  "sort.Slice(values, func(i, j int) bool { return values[i] < values[j] })",
+	},
+	"use-waitgroup-go": {
+		Good: "group.Go(func() { work() })",
+		Bad:  "group.Add(1)\ngo func() { defer group.Done(); work() }()",
+	},
+	"useless-break": {
+		Good: "switch value { case 1: use() }",
+		Bad:  "switch value { case 1: use(); break }",
+	},
+	"useless-fallthrough": {
+		Good: "switch value { case 1: use() }",
+		Bad:  "switch value { case 1: use(); fallthrough }",
+	},
+	"var-declaration": {
+		Good: "var count int",
+		Bad:  "count := 0",
+	},
+	"var-naming": {
+		Good: "var userID string",
+		Bad:  "var userId string",
+	},
+	"waitgroup-by-value": {
+		Good: "func wait(group *sync.WaitGroup)",
+		Bad:  "func wait(group sync.WaitGroup)",
+	},
+	"zero-integer-division": {
+		Good: "ratio := 2.0 / 3.0",
+		Bad:  "ratio := 2 / 3",
+	},
+}

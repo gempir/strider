@@ -658,6 +658,13 @@ func TestCatalogIsCompleteDocumentedAndRunnable(t *testing.T) {
 		}
 		seen[meta.Code] = true
 		names = append(names, meta.Code)
+		if strings.TrimSpace(meta.GoodExample) == "" || strings.TrimSpace(meta.BadExample) == "" {
+			t.Errorf("rule %s has incomplete examples", meta.Code)
+		}
+		if strings.HasPrefix(meta.GoodExample, "See the rule reference") ||
+			strings.HasPrefix(meta.BadExample, "See the rule reference") {
+			t.Errorf("rule %s still has placeholder examples", meta.Code)
+		}
 		if _, err := os.Stat(filepath.Join(docsDirectory, meta.Code+".md")); err != nil {
 			t.Errorf("rule %s has no documentation: %v", meta.Code, err)
 		}

@@ -3,9 +3,10 @@ title: Formatter
 description: Strider's strict formatting profile, workflows, and safety model.
 ---
 
-The formatter parses Go source with comments, converts supported syntax to a
-small width-aware document model, and renders deterministically at a configured
-width (100 columns by default).
+The formatter parses Go source into a lossless concrete syntax tree and renders
+that tree directly at a configured width (100 columns by default). Because the
+CST retains comments, whitespace, separators, and original token spellings, the
+formatter does not need a parallel AST or document model.
 It is intentionally independent from `gofmt`: output remains valid and
 semantically equivalent Go, but byte-for-byte `gofmt` compatibility is not a
 goal.

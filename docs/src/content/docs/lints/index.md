@@ -33,7 +33,7 @@ Strider default.
 strider lint --all-rules ./...
 ```
 
-The extended rules share one native AST traversal per source file.
+The extended rules share one lossless CST traversal per source file.
 
 Enable extended rules individually in `strider.toml` or select them on the
 CLI. See [Configuration](/configuration/#configure-any-lint-rule).

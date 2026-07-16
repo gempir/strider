@@ -1,10 +1,12 @@
 ---
 title: Linter
-description: Run Strider's fast AST-only lint engine and manage findings.
+description: Run Strider's fast lossless-CST lint engine and manage findings.
 ---
 
-Strider's linter parses each file once and dispatches AST nodes only to rules
-that registered interest in that node type. Files run concurrently up to
+Strider's linter parses each file once into a lossless concrete syntax tree
+(CST), then dispatches concrete grammar nodes to the registered rules. Comments,
+whitespace, separators, and original token spelling remain available to checks.
+Files run concurrently up to
 `GOMAXPROCS`; diagnostics are sorted by path, byte offset, and rule code before
 reporting, so output remains deterministic.
 

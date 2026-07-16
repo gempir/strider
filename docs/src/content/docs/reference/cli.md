@@ -14,7 +14,7 @@ strider [--config PATH|--no-config] [--color auto|always|never] COMMAND [OPTIONS
 | `strider help` | Print top-level usage. `-h` and `--help` are aliases. |
 | `strider version` | Print the current version string. `--version` is an alias. |
 | `strider fmt` | Format Go source. `format` is an alias. |
-| `strider lint` | Run the AST-only lint rules. |
+| `strider lint` | Run the file-local CST lint rules. |
 | `strider analyze` | Run package-aware static-analysis checks. |
 
 Calling Strider without a command is an error. Source commands recursively use

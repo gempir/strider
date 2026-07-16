@@ -2,8 +2,9 @@
 
 # Strider
 
-Strider is an experimental Go 1.26 toolchain with a strict formatter, an
-AST-only linter, and package-aware static analysis.
+Strider is an experimental Go 1.26 toolchain with a lossless CST formatter and
+linter, plus package-aware static analysis built on Go's AST, type information,
+and SSA.
 
 # Slopclaimer
 

@@ -11,7 +11,7 @@ even when written in a different order.
 
 ## Behavior
 
-Strider implements this rule natively in its shared Go AST analysis pass. It
+Strider implements this rule natively in its shared lossless Go CST traversal. It
 runs entirely inside Strider. Findings use the rule code
 Purpose: and warning severity.
 

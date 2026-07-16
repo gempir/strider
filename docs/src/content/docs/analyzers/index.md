@@ -5,9 +5,9 @@ sidebar:
   order: 0
 ---
 
-`strider analyze` complements the fast AST-only linter. It loads complete Go
-packages, resolves types, and constructs SSA so checks can follow constants,
-calls, and control flow.
+`strider analyze` complements the fast CST linter. It deliberately keeps Go's
+AST as its syntax model, loads complete packages, resolves types, and constructs
+SSA so checks can follow constants, calls, and control flow.
 
 Use analyzers for correctness questions that depend on what an identifier or
 call resolves to, how values flow, or which Go and API contracts apply. Use

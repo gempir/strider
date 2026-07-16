@@ -48,6 +48,8 @@ type (
 	StatementList     = gc.StatementListNode
 	TypeSwitchCase    = gc.TypeSwitchCaseNode
 	TypeSwitchStmt    = gc.TypeSwitchStmtNode
+	TypeArgs          = gc.TypeArgsNode
+	TypeParameters    = gc.TypeParametersNode
 	UnaryExpr         = gc.UnaryExprNode
 	VarDecl           = gc.VarDeclNode
 	VarSpec           = gc.VarSpecNode

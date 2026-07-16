@@ -79,8 +79,10 @@ func TestFormatOptionsControlWidthAndLineEndings(t *testing.T) {
 
 func TestFormatRefusesUnsupportedSyntax(t *testing.T) {
 	tests := map[string]string{
-		"generics": "package p\nfunc F[T any](v T) T { return v }\n",
-		"goto":     "package p\nfunc F() { goto done; done: return }\n",
+		"fallthrough":           "package p\nfunc F(v int) { switch v { case 1: fallthrough; default: return } }\n",
+		"generic declaration":   "package p\nfunc F[T any](v T) T { return v }\n",
+		"generic instantiation": "package p\nvar _ = F[int, string]\n",
+		"goto":                  "package p\nfunc F() { goto done; done: return }\n",
 	}
 	for name, input := range tests {
 		t.Run(name, func(t *testing.T) {

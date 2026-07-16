@@ -13,6 +13,8 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+
+	"github.com/gempir/strider/internal/cst"
 )
 
 const PrintWidth = 100
@@ -80,11 +82,15 @@ func FormatWithOptions(filename string, source []byte, options Options) (Result,
 }
 
 func formatInternal(filename string, source []byte, options Options) ([]byte, error) {
-	fset, file, err := parse(filename, source)
+	concreteTree, err := cst.Parse(filename, source)
 	if err != nil {
 		return nil, err
 	}
-	if err := validateSupported(filename, fset, file); err != nil {
+	if err := validateConcreteSyntax(filename, concreteTree); err != nil {
+		return nil, err
+	}
+	fset, file, err := parse(filename, source)
+	if err != nil {
 		return nil, err
 	}
 	builder, err := newASTBuilder(filename, fset, file)
@@ -99,6 +105,42 @@ func formatInternal(filename string, source []byte, options Options) ([]byte, er
 		output = strings.ReplaceAll(output, "\n", "\r\n")
 	}
 	return []byte(output), nil
+}
+
+func validateConcreteSyntax(filename string, tree *cst.Tree) error {
+	var unsupported cst.Node
+	feature := ""
+	cst.Walk(tree.Root(), func(node cst.Node) bool {
+		if unsupported != nil {
+			return false
+		}
+		switch current := node.(type) {
+		case cst.Token:
+			switch current.Ch() {
+			case token.GOTO, token.FALLTHROUGH:
+				unsupported = node
+				feature = strings.ToLower(current.Ch().String()) + " statements"
+			}
+		case *cst.TypeParameters:
+			unsupported = node
+			feature = "type parameters"
+		case *cst.TypeArgs:
+			unsupported = node
+			feature = "generic instantiations"
+		}
+		return unsupported == nil
+	})
+	if unsupported == nil {
+		return nil
+	}
+	start, _ := cst.Range(unsupported)
+	position := tree.Position(start)
+	return &UnsupportedError{
+		Filename: filename,
+		Line:     position.Line,
+		Column:   position.Column,
+		Feature:  feature,
+	}
 }
 
 func parse(filename string, source []byte) (*token.FileSet, *ast.File, error) {
@@ -121,61 +163,6 @@ func parse(filename string, source []byte) (*token.FileSet, *ast.File, error) {
 		return nil, nil, fmt.Errorf("%s: scanner found %d error(s)", filename, scan.ErrorCount)
 	}
 	return fset, file, nil
-}
-
-func validateSupported(filename string, fset *token.FileSet, file *ast.File) error {
-	var unsupported ast.Node
-	feature := ""
-	ast.Inspect(file, func(node ast.Node) bool {
-		if node == nil || unsupported != nil {
-			return unsupported == nil
-		}
-		feature = unsupportedFeature(node)
-		if feature != "" {
-			unsupported = node
-		}
-		return unsupported == nil
-	})
-	if unsupported == nil {
-		return nil
-	}
-	position := fset.Position(unsupported.Pos())
-	return &UnsupportedError{Filename: filename, Line: position.Line, Column: position.Column, Feature: feature}
-}
-
-func unsupportedFeature(node ast.Node) string {
-	if feature := unsupportedNodeKind(node); feature != "" {
-		return feature
-	}
-	return unsupportedTypeParameters(node)
-}
-
-func unsupportedNodeKind(node ast.Node) string {
-	switch current := node.(type) {
-	case *ast.BadDecl, *ast.BadExpr, *ast.BadStmt:
-		return "invalid AST node"
-	case *ast.IndexListExpr:
-		return "generic instantiations"
-	case *ast.BranchStmt:
-		if current.Tok == token.GOTO || current.Tok == token.FALLTHROUGH {
-			return strings.ToLower(current.Tok.String()) + " statements"
-		}
-	}
-	return ""
-}
-
-func unsupportedTypeParameters(node ast.Node) string {
-	switch current := node.(type) {
-	case *ast.FuncType:
-		if current.TypeParams != nil && len(current.TypeParams.List) != 0 {
-			return "type parameters"
-		}
-	case *ast.TypeSpec:
-		if current.TypeParams != nil && len(current.TypeParams.List) != 0 {
-			return "type parameters"
-		}
-	}
-	return ""
 }
 
 func equivalent(filename string, original, formatted []byte) error {

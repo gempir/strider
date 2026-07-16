@@ -357,9 +357,12 @@ func (l *concreteLayout) markDelimited(
 	opens map[int]int,
 	closes map[int]bool,
 ) {
-	tokens := cst.NodeTokens(node)
 	open, close := -1, -1
-	for _, current := range tokens {
+	for _, child := range cst.Children(node) {
+		current, ok := child.(cst.Token)
+		if !ok {
+			continue
+		}
 		index, ok := l.tokenIndex(current)
 		if !ok {
 			continue

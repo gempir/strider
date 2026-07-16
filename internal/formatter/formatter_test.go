@@ -148,6 +148,34 @@ func TestFormatBreaksLongGenericLists(t *testing.T) {
 	}
 }
 
+func TestFormatLongInterfaceMethodFollowedByFunction(t *testing.T) {
+	input := []byte(`package p
+
+type Client interface {
+	PushNewBulk(ctx context.Context, ssoIDs []int32, pushTitle string, pushMessage string, pushAction string, pushAttachmentURL *string, pushExpires *time.Time) (*[]Response, error)
+	Get(ctx context.Context) (*Data, error)
+}
+
+func New(cfg *config.Config, configService app_config.ConfigProvider) (Client, error) {
+	return nil, nil
+}
+`)
+	result, err := Format("interface.go", input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	formatted := string(result.Source)
+	for _, want := range []string{
+		"\tPushNewBulk(\n\t\tctx context.Context,",
+		"\tGet(ctx context.Context) (*Data, error)",
+		"func New(cfg *config.Config, configService app_config.ConfigProvider) (Client, error) {",
+	} {
+		if !strings.Contains(formatted, want) {
+			t.Fatalf("formatted source does not contain %q:\n%s", want, formatted)
+		}
+	}
+}
+
 func TestFormatIgnoreReturnsExactInput(t *testing.T) {
 	input := []byte("package p\n//strider:format-ignore\nfunc F( ){ }\n")
 	result, err := Format("ignored.go", input)

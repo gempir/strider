@@ -1,2 +1,13 @@
-testdata/cases/analyze/invalid_template.go:11:29: error[invalid-template]: template: :1: bad character U+007D '}'
-testdata/cases/analyze/invalid_template.go:12:29: error[invalid-template]: template: :1: bad character U+007D '}'
+error[invalid-template]: template: :1: bad character U+007D '}'
+  ┌─ testdata/cases/analyze/invalid_template.go:11:29
+   │
+11 │ 	texttemplate.New("").Parse(invalidTemplate)
+   │ 	                           ^^^^^^^^^^^^^^^
+
+error[invalid-template]: template: :1: bad character U+007D '}'
+  ┌─ testdata/cases/analyze/invalid_template.go:12:29
+   │
+12 │ 	htmltemplate.New("").Parse(invalidTemplate)
+   │ 	                           ^^^^^^^^^^^^^^^
+
+found 2 issues: 2 errors

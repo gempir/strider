@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"github.com/gempir/strider/internal/ui"
 )
 
 const Filename = "strider.toml"
@@ -17,6 +18,7 @@ const Filename = "strider.toml"
 // Config is the complete version 1 configuration document.
 type Config struct {
 	Version   int             `toml:"version"`
+	Color     string          `toml:"color"`
 	Formatter FormatterConfig `toml:"formatter"`
 	Linter    ToolConfig      `toml:"linter"`
 	Analyzer  ToolConfig      `toml:"analyzer"`
@@ -48,6 +50,7 @@ type RuleConfig struct {
 func Defaults() Config {
 	return Config{
 		Version: 1,
+		Color:   string(ui.ColorAuto),
 		Formatter: FormatterConfig{
 			PrintWidth:  100,
 			IndentWidth: 4,
@@ -134,6 +137,9 @@ func discover() (string, error) {
 func (configuration Config) validate() error {
 	if configuration.Version != 1 {
 		return fmt.Errorf("unsupported configuration version %d; expected 1", configuration.Version)
+	}
+	if !ui.ValidColorMode(configuration.Color) {
+		return fmt.Errorf("color must be \"auto\", \"always\", or \"never\"")
 	}
 	if configuration.Formatter.PrintWidth < 40 || configuration.Formatter.PrintWidth > 500 {
 		return fmt.Errorf("formatter.print-width must be between 40 and 500")

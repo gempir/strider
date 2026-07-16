@@ -1,1 +1,7 @@
-testdata/cases/analyze/decimal_file_mode.go:6:34: warning[decimal-file-mode]: decimal file mode 644 evaluates to 01204; use 0o644 if octal permissions were intended
+warning[decimal-file-mode]: decimal file mode 644 evaluates to 01204; use 0o644 if octal permissions were intended
+  ┌─ testdata/cases/analyze/decimal_file_mode.go:6:34
+  │
+6 │ 	return os.WriteFile(path, data, 644)
+  │ 	                                ^^^
+
+found 1 issue: 1 warning

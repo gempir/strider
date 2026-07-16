@@ -1,1 +1,7 @@
-testdata/cases/analyze/timer_reset_drain_race.go:6:17: warning[timer-reset-drain-race]: do not use Timer.Reset's return value to decide whether to drain the timer channel
+warning[timer-reset-drain-race]: do not use Timer.Reset's return value to decide whether to drain the timer channel
+  ┌─ testdata/cases/analyze/timer_reset_drain_race.go:6:17
+  │
+6 │ 	if !timer.Reset(delay) {
+  │ 	               ^^^^^^^^^
+
+found 1 issue: 1 warning

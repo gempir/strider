@@ -1,1 +1,7 @@
-testdata/cases/analyze/duration_multiplied_by_duration.go:6:9: warning[duration-multiplied-by-duration]: multiplying two time.Duration values produces squared time units; multiply a duration by a unitless count
+warning[duration-multiplied-by-duration]: multiplying two time.Duration values produces squared time units; multiply a duration by a unitless count
+  ┌─ testdata/cases/analyze/duration_multiplied_by_duration.go:6:9
+  │
+6 │ 	return duration * time.Second
+  │ 	       ^^^^^^^^^^^^^^^^^^^^^^
+
+found 1 issue: 1 warning

@@ -89,8 +89,18 @@ variants and the recommended lifecycle.
 Text is the default human-readable report format:
 
 ```text
-main.go:12:6: warning[no-init]: replace init with explicit initialization
+warning[no-init]: replace init with explicit initialization
+  ┌─ main.go:12:1
+  │
+12 │ func init() {
+   │ ^^^^^^^^^^^^^
+
+found 1 issue: 1 warning
 ```
+
+On a terminal, severity, rule code, path, source gutter, and underline use
+distinct semantic colors. Use the global `--color` option or top-level
+configuration setting to override automatic terminal detection.
 
 Use JSON for integrations:
 

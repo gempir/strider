@@ -159,6 +159,80 @@ func TestLintJSONAndExitCode(t *testing.T) {
 	}
 }
 
+func TestColorFlagRendersRichDiagnosticsAndLeavesJSONPlain(t *testing.T) {
+	t.Setenv("FORCE_COLOR", "")
+	t.Setenv("NO_COLOR", "")
+	root := t.TempDir()
+	filename := filepath.Join(root, "main.go")
+	if err := os.WriteFile(filename, []byte("package p\nfunc init() {}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	var stdout, stderr bytes.Buffer
+	code := Run(
+		[]string{"--color", "always", "lint", "--only", "no-init", filename},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitFindings || stderr.Len() != 0 {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	for _, wanted := range []string{"\x1b[", "func init() {}", "┌─", "found 1 issue"} {
+		if !strings.Contains(stdout.String(), wanted) {
+			t.Fatalf("rich output missing %q: %q", wanted, stdout.String())
+		}
+	}
+
+	stdout.Reset()
+	code = Run(
+		[]string{"--color=always", "lint", "--format", "json", "--only", "no-init", filename},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitFindings || strings.Contains(stdout.String(), "\x1b[") {
+		t.Fatalf("JSON output should remain unstyled: exit %d, stdout %q", code, stdout.String())
+	}
+}
+
+func TestConfiguredColorAndCLIOverride(t *testing.T) {
+	t.Setenv("FORCE_COLOR", "")
+	t.Setenv("NO_COLOR", "")
+	root := t.TempDir()
+	configuration := "version = 1\ncolor = \"always\"\n"
+	if err := os.WriteFile(filepath.Join(root, "strider.toml"), []byte(configuration), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	filename := filepath.Join(root, "main.go")
+	if err := os.WriteFile(filename, []byte("package p\nfunc init() {}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	var stdout, stderr bytes.Buffer
+	code := Run(
+		[]string{"--config", filepath.Join(root, "strider.toml"), "lint", "--only", "no-init", filename},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitFindings || !strings.Contains(stdout.String(), "\x1b[") {
+		t.Fatalf("configured color not applied: exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(
+		[]string{"--config", filepath.Join(root, "strider.toml"), "--color", "never", "lint", "--only", "no-init", filename},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitFindings || strings.Contains(stdout.String(), "\x1b[") {
+		t.Fatalf("CLI color override not applied: exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+}
+
 func TestLintWithoutPathsScansCurrentDirectory(t *testing.T) {
 	root := t.TempDir()
 	if err := os.WriteFile(

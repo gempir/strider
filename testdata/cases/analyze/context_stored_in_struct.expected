@@ -1,1 +1,7 @@
-testdata/cases/analyze/context_stored_in_struct.go:6:2: warning[context-stored-in-struct]: do not store context.Context in a struct; pass it explicitly to each operation
+warning[context-stored-in-struct]: do not store context.Context in a struct; pass it explicitly to each operation
+  ┌─ testdata/cases/analyze/context_stored_in_struct.go:6:2
+  │
+6 │ 	ctx context.Context
+  │ 	^^^^^^^^^^^^^^^^^^^
+
+found 1 issue: 1 warning

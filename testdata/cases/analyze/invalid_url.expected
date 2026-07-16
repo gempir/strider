@@ -1,1 +1,7 @@
-testdata/cases/analyze/invalid_url.go:6:12: error[invalid-url]: ":" is not a valid URL: parse ":": missing protocol scheme
+error[invalid-url]: ":" is not a valid URL: parse ":": missing protocol scheme
+  ┌─ testdata/cases/analyze/invalid_url.go:6:12
+  │
+6 │ 	url.Parse(":")
+  │ 	          ^^^
+
+found 1 issue: 1 error

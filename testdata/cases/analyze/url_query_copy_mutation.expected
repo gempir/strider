@@ -1,1 +1,7 @@
-testdata/cases/analyze/url_query_copy_mutation.go:6:2: warning[url-query-copy-mutation]: URL.Query returns a copy; encode the modified values back into RawQuery
+warning[url-query-copy-mutation]: URL.Query returns a copy; encode the modified values back into RawQuery
+  ┌─ testdata/cases/analyze/url_query_copy_mutation.go:6:2
+  │
+6 │ 	address.Query().Add("mode", "fast")
+  │ 	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+found 1 issue: 1 warning

@@ -1,1 +1,7 @@
-testdata/cases/analyze/deferred_lock_after_lock.go:7:2: warning[deferred-lock-after-lock]: defer Unlock after locking; deferring Lock is likely a typo
+warning[deferred-lock-after-lock]: defer Unlock after locking; deferring Lock is likely a typo
+  ┌─ testdata/cases/analyze/deferred_lock_after_lock.go:7:2
+  │
+7 │ 	defer mutex.Lock()
+  │ 	^^^^^^^^^^^^^^^^^^
+
+found 1 issue: 1 warning

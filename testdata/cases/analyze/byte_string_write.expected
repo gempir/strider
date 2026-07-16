@@ -1,1 +1,7 @@
-testdata/cases/analyze/byte_string_write.go:9:2: warning[byte-string-write]: write the byte slice directly instead of converting it for io.WriteString
+warning[byte-string-write]: write the byte slice directly instead of converting it for io.WriteString
+  ┌─ testdata/cases/analyze/byte_string_write.go:9:2
+  │
+9 │ 	io.WriteString(os.Stdout, string(bytes))
+  │ 	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+found 1 issue: 1 warning

@@ -1,1 +1,7 @@
-testdata/cases/analyze/dynamic_printf.go:6:2: warning[dynamic-printf]: printf-style function with dynamic format string and no further arguments should use print-style function instead
+warning[dynamic-printf]: printf-style function with dynamic format string and no further arguments should use print-style function instead
+  ┌─ testdata/cases/analyze/dynamic_printf.go:6:2
+  │
+6 │ 	fmt.Printf(message)
+  │ 	^^^^^^^^^^^^^^^^^^^
+
+found 1 issue: 1 warning

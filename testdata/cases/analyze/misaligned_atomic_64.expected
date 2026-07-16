@@ -1,1 +1,7 @@
-testdata/cases/analyze/misaligned_atomic_64.go:11:19: warning[misaligned-atomic-64]: field total is not 64-bit aligned for atomic access on this target
+warning[misaligned-atomic-64]: field total is not 64-bit aligned for atomic access on this target
+  ┌─ testdata/cases/analyze/misaligned_atomic_64.go:11:19
+   │
+11 │ 	atomic.AddUint64(&value.total, 1)
+   │ 	                 ^^^^^^^^^^^^
+
+found 1 issue: 1 warning

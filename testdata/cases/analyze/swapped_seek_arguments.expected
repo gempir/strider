@@ -1,1 +1,7 @@
-testdata/cases/analyze/swapped_seek_arguments.go:6:9: warning[swapped-seek-arguments]: the first argument of io.Seeker is the offset, but an io.Seek* constant is being used instead
+warning[swapped-seek-arguments]: the first argument of io.Seeker is the offset, but an io.Seek* constant is being used instead
+  ┌─ testdata/cases/analyze/swapped_seek_arguments.go:6:9
+  │
+6 │ 	return seeker.Seek(io.SeekStart, 0)
+  │ 	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+found 1 issue: 1 warning

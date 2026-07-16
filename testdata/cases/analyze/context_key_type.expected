@@ -1,1 +1,7 @@
-testdata/cases/analyze/context_key_type.go:6:32: warning[context-key-type]: do not use built-in type string as a context key; define a dedicated named type
+warning[context-key-type]: do not use built-in type string as a context key; define a dedicated named type
+  ┌─ testdata/cases/analyze/context_key_type.go:6:32
+  │
+6 │ 	return context.WithValue(ctx, "request-id", "value")
+  │ 	                              ^^^^^^^^^^^^
+
+found 1 issue: 1 warning

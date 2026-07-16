@@ -6,7 +6,7 @@ description: Commands, global configuration, baseline flags, streams, and exit c
 ## Synopsis
 
 ```text
-strider [--config PATH|--no-config] COMMAND [OPTIONS] [FILE|DIR]...
+strider [--config PATH|--no-config] [--color auto|always|never] COMMAND [OPTIONS] [FILE|DIR]...
 ```
 
 | Command | Description |
@@ -29,10 +29,17 @@ Global options must precede the command.
 | `--config PATH` | Use this `strider.toml` instead of automatic discovery. |
 | `--config=PATH` | Equivalent inline form. |
 | `--no-config` | Disable discovery and use built-in defaults. |
+| `--color auto\|always\|never` | Control ANSI color. Default: configured value or `auto`. |
+| `--colors auto\|always\|never` | Alias for `--color`, matching Mago's spelling. |
 
 `--config` and `--no-config` are mutually exclusive. Normally Strider searches
 from the current directory through its parents and uses the nearest
 `strider.toml`.
+
+`auto` emits color only when the destination stream is a terminal. A non-empty
+`NO_COLOR` disables color and a non-empty `FORCE_COLOR` forces it;
+`FORCE_COLOR=0` explicitly disables it. `FORCE_COLOR` has highest precedence.
+JSON and formatted source are never decorated with ANSI escapes.
 
 ## `strider fmt`
 
@@ -42,7 +49,7 @@ strider fmt [--check|--diff|--write|--stdin] [FILE|DIR]...
 
 | Flag | Description |
 | --- | --- |
-| `--check` | Print paths that differ and exit `1`; do not write. |
+| `--check` | Print styled `would reformat` notices and exit `1`; do not write. |
 | `--diff` | Print full unified diffs and exit `1`; do not write. |
 | `--write` | Write files in place. Writing is already the default filesystem mode. |
 | `--stdin` | Read one source file from standard input and write it to standard output. |
@@ -132,6 +139,11 @@ marker are skipped. Configuration can add tool-wide and per-rule exclusions.
 - Usage errors, parsing failures, unsupported syntax, baseline failures, and
   stale-baseline warnings go to standard error.
 - Successful baseline generation writes the file without printing diagnostics.
+
+Text diagnostics use a rich, source-annotated layout with a severity-colored
+heading, file location, source line, underlined span, notes/fixes, and an
+aggregate severity summary. Redirected output remains plain under the default
+`auto` mode.
 
 ## Exit codes
 

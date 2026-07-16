@@ -1,1 +1,7 @@
-testdata/cases/analyze/benchmark_iteration_mutation_test.go:6:2: error[benchmark-iteration-mutation]: do not assign to testing.B.N; the benchmark runner controls it
+error[benchmark-iteration-mutation]: do not assign to testing.B.N; the benchmark runner controls it
+  ┌─ testdata/cases/analyze/benchmark_iteration_mutation_test.go:6:2
+  │
+6 │ 	b.N = 1000
+  │ 	^^^
+
+found 1 issue: 1 error

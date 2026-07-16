@@ -1,1 +1,7 @@
-testdata/cases/analyze/impossible_interface_nil_comparison.go:13:25: warning[impossible-interface-nil-comparison]: interface has a concrete dynamic type; this comparison is never true
+warning[impossible-interface-nil-comparison]: interface has a concrete dynamic type; this comparison is never true
+  ┌─ testdata/cases/analyze/impossible_interface_nil_comparison.go:13:25
+   │
+13 │ 	return typedNilError() == nil
+   │ 	                       ^^^^^^
+
+found 1 issue: 1 warning

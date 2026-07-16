@@ -1,1 +1,7 @@
-testdata/cases/analyze/discarded_pure_result.go:6:19: warning[discarded-pure-result]: TrimSpace has no side effects and its return value is ignored
+warning[discarded-pure-result]: TrimSpace has no side effects and its return value is ignored
+  ┌─ testdata/cases/analyze/discarded_pure_result.go:6:19
+  │
+6 │ 	strings.TrimSpace(value)
+  │ 	                 ^^^^^^^
+
+found 1 issue: 1 warning

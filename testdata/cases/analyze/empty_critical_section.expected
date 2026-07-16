@@ -1,1 +1,7 @@
-testdata/cases/analyze/empty_critical_section.go:7:2: warning[empty-critical-section]: empty critical section; did you mean to defer the unlock?
+warning[empty-critical-section]: empty critical section; did you mean to defer the unlock?
+  ┌─ testdata/cases/analyze/empty_critical_section.go:7:2
+  │
+7 │ 	mutex.Unlock()
+  │ 	^^^^^^^^^^^^^^
+
+found 1 issue: 1 warning

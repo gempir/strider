@@ -1,2 +1,13 @@
-testdata/cases/lint/findings.go:3:5: warning[no-package-var]: package variables introduce mutable global state
-testdata/cases/lint/findings.go:5:6: warning[no-init]: replace init with explicit initialization
+warning[no-package-var]: package variables introduce mutable global state
+  ┌─ testdata/cases/lint/findings.go:3:5
+  │
+3 │ var state int
+  │     ^^^^^
+
+warning[no-init]: replace init with explicit initialization
+  ┌─ testdata/cases/lint/findings.go:5:6
+  │
+5 │ func init() {}
+  │      ^^^^
+
+found 2 issues: 2 warnings

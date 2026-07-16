@@ -1,1 +1,7 @@
-testdata/cases/analyze/invalid_listen_address.go:6:29: error[invalid-listen-address]: "localhost" is not a valid host:port listen address
+error[invalid-listen-address]: "localhost" is not a valid host:port listen address
+  ┌─ testdata/cases/analyze/invalid_listen_address.go:6:29
+  │
+6 │ 	return http.ListenAndServe("localhost", handler)
+  │ 	                           ^^^^^^^^^^^
+
+found 1 issue: 1 error

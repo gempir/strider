@@ -10,6 +10,7 @@ and make lint or analysis baselines automatic.
 
 ```toml
 version = 1
+color = "auto"
 
 [formatter]
 print-width = 100
@@ -97,6 +98,32 @@ rule without editing the project file.
 
 An explicit `--baseline PATH` overrides the baseline path in the relevant tool
 section. `--baseline-variant` overrides the configured variant for generation.
+The global `--color` option similarly overrides the top-level `color` setting.
+
+## Terminal output
+
+The top-level `color` setting controls ANSI styling for human-readable output.
+
+| Setting | Type | Default | Accepted values and effect |
+| --- | --- | --- | --- |
+| `color` | string | `"auto"` | `"auto"` uses color for terminals, `"always"` forces it, and `"never"` disables it. |
+
+Strider applies semantic colors throughout its human interface: errors are red,
+warnings yellow, notes blue, rule codes magenta, paths and source gutters cyan,
+successful examples/additions green, and removals red. Rich lint and analysis
+reports include source context and a severity summary. JSON and formatter
+standard-input source stay machine-clean.
+
+For one run, place the global override before the command:
+
+```sh
+strider --color always lint ./...
+strider --color never analyze ./...
+```
+
+Strider also honors the `NO_COLOR` and `FORCE_COLOR` conventions. A non-empty
+`FORCE_COLOR` has precedence over `NO_COLOR` and the configured/CLI mode;
+`FORCE_COLOR=0` explicitly disables color.
 
 ## Path patterns
 

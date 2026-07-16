@@ -2,29 +2,16 @@ package analyze
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 
 	"github.com/gempir/strider/internal/diagnostic"
+	"github.com/gempir/strider/internal/report"
+	"github.com/gempir/strider/internal/ui"
 )
 
 // ReportText writes diagnostics in Strider's human-readable format.
-func ReportText(writer io.Writer, diagnostics []diagnostic.Diagnostic) error {
-	for _, item := range diagnostics {
-		if _, err := fmt.Fprintf(
-			writer,
-			"%s:%d:%d: %s[%s]: %s\n",
-			item.File,
-			item.Start.Line,
-			item.Start.Column,
-			item.Severity,
-			item.Code,
-			item.Message,
-		); err != nil {
-			return err
-		}
-	}
-	return nil
+func ReportText(writer io.Writer, diagnostics []diagnostic.Diagnostic, colorMode ui.ColorMode) error {
+	return report.Text(writer, diagnostics, colorMode)
 }
 
 // ReportJSON writes diagnostics as indented JSON.

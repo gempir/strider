@@ -1,1 +1,7 @@
-testdata/cases/analyze/partially_typed_constant_group.go:6:2: warning[partially-typed-constant-group]: only the first constant with an explicit value has the declared type; repeat the type on the remaining constants
+warning[partially-typed-constant-group]: only the first constant with an explicit value has the declared type; repeat the type on the remaining constants
+  ┌─ testdata/cases/analyze/partially_typed_constant_group.go:6:2
+  │
+6 │ 	responseOK     responseKind = 1
+  │ 	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+found 1 issue: 1 warning

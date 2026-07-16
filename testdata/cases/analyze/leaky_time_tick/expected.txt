@@ -1,1 +1,7 @@
-check.go:6:9: warning[leaky-time-tick]: time.Tick can leak its ticker on this Go version; use time.NewTicker and stop it when the function returns
+warning[leaky-time-tick]: time.Tick can leak its ticker on this Go version; use time.NewTicker and stop it when the function returns
+  ┌─ check.go:6:9
+  │
+6 │ 	return time.Tick(time.Second)
+  │ 	       ^^^^^^^^^^^^^^^^^^^^^^
+
+found 1 issue: 1 warning

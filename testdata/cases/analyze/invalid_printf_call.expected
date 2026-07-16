@@ -1,1 +1,7 @@
-testdata/cases/analyze/invalid_printf_call.go:6:21: error[invalid-printf-call]: fmt.Sprintf format %d has argument 1 of incompatible type string
+error[invalid-printf-call]: fmt.Sprintf format %d has argument 1 of incompatible type string
+  ┌─ testdata/cases/analyze/invalid_printf_call.go:6:21
+  │
+6 │ 	return fmt.Sprintf("count: %d", "many")
+  │ 	                   ^^^^^^^^^^^
+
+found 1 issue: 1 error

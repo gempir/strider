@@ -1,1 +1,7 @@
-testdata/cases/analyze/finalizer_captures_object.go:9:22: warning[finalizer-captures-object]: finalizer captures the finalized object and prevents it from being collected; use the finalizer parameter instead
+warning[finalizer-captures-object]: finalizer captures the finalized object and prevents it from being collected; use the finalizer parameter instead
+  ┌─ testdata/cases/analyze/finalizer_captures_object.go:9:22
+  │
+9 │ 	runtime.SetFinalizer(object, func(*finalizerResource) {
+  │ 	                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+found 1 issue: 1 warning

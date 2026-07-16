@@ -1,1 +1,7 @@
-testdata/cases/analyze/ineffective_bitwise_zero.go:4:9: warning[ineffective-bitwise-zero]: value ^ 0 always equals value
+warning[ineffective-bitwise-zero]: value ^ 0 always equals value
+  ┌─ testdata/cases/analyze/ineffective_bitwise_zero.go:4:9
+  │
+4 │ 	return value ^ 0
+  │ 	       ^^^^^^^^^
+
+found 1 issue: 1 warning

@@ -1,1 +1,7 @@
-testdata/cases/analyze/invalid_regexp.go:8:21: error[invalid-regexp]: error parsing regexp: missing closing ]: `[`
+error[invalid-regexp]: error parsing regexp: missing closing ]: `[`
+  ┌─ testdata/cases/analyze/invalid_regexp.go:8:21
+  │
+8 │ 	regexp.MustCompile(invalidRegexp)
+  │ 	                   ^^^^^^^^^^^^^
+
+found 1 issue: 1 error

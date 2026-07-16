@@ -1,1 +1,7 @@
-testdata/cases/analyze/unsupported_binary_write.go:9:48: error[unsupported-binary-write]: value of type int cannot be used with binary.Write
+error[unsupported-binary-write]: value of type int cannot be used with binary.Write
+  ┌─ testdata/cases/analyze/unsupported_binary_write.go:9:48
+  │
+9 │ 	binary.Write(io.Discard, binary.LittleEndian, value)
+  │ 	                                              ^^^^^
+
+found 1 issue: 1 error

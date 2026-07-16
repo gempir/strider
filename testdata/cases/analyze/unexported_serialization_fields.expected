@@ -1,1 +1,7 @@
-testdata/cases/analyze/unexported_serialization_fields.go:10:22: warning[unexported-serialization-fields]: JSON marshaling sees no exported fields in privatePayload and no custom serialization method
+warning[unexported-serialization-fields]: JSON marshaling sees no exported fields in privatePayload and no custom serialization method
+  ┌─ testdata/cases/analyze/unexported_serialization_fields.go:10:22
+   │
+10 │ 	return json.Marshal(privatePayload{value: "hidden"})
+   │ 	                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+found 1 issue: 1 warning

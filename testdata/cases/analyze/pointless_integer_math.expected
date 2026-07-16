@@ -1,1 +1,7 @@
-testdata/cases/analyze/pointless_integer_math.go:6:18: warning[pointless-integer-math]: calling math.Ceil on a converted integer is pointless
+warning[pointless-integer-math]: calling math.Ceil on a converted integer is pointless
+  ┌─ testdata/cases/analyze/pointless_integer_math.go:6:18
+  │
+6 │ 	return math.Ceil(float64(count))
+  │ 	                ^^^^^^^^^^^^^^^^
+
+found 1 issue: 1 warning

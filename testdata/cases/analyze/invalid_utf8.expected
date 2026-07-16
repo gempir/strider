@@ -1,1 +1,7 @@
-testdata/cases/analyze/invalid_utf8.go:6:29: error[invalid-utf8]: argument is not a valid UTF-8 encoded string
+error[invalid-utf8]: argument is not a valid UTF-8 encoded string
+  ┌─ testdata/cases/analyze/invalid_utf8.go:6:29
+  │
+6 │ 	return strings.Trim(value, "\xff")
+  │ 	                           ^^^^^^
+
+found 1 issue: 1 error

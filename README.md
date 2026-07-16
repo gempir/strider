@@ -27,6 +27,7 @@ endings, and filesystem exclusions.
 
 ```toml
 version = 1
+color = "auto"
 
 [formatter]
 print-width = 100
@@ -41,8 +42,11 @@ excludes = ["internal/legacy/**"]
 ```
 
 Use `strider --config PATH COMMAND` to select a file explicitly or
-`strider --no-config COMMAND` to run with built-in defaults. The schema is
-strict: unknown keys and rule codes are errors.
+`strider --no-config COMMAND` to run with built-in defaults. Rich terminal
+output uses color automatically; set `color = "always"` or `"never"`, or
+override it with `strider --color always|never COMMAND`. `NO_COLOR` and
+`FORCE_COLOR` are also honored. The schema is strict: unknown keys and rule
+codes are errors.
 
 ## Format
 

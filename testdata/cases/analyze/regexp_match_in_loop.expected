@@ -1,1 +1,7 @@
-testdata/cases/analyze/regexp_match_in_loop.go:7:21: warning[regexp-match-in-loop]: regexp.MatchString recompiles a constant pattern on every loop iteration; compile it once before the loop
+warning[regexp-match-in-loop]: regexp.MatchString recompiles a constant pattern on every loop iteration; compile it once before the loop
+  ┌─ testdata/cases/analyze/regexp_match_in_loop.go:7:21
+  │
+7 │ 		regexp.MatchString("^[a-z]+$", value)
+  │ 		                  ^^^^^^^^^^^^^^^^^^^
+
+found 1 issue: 1 warning

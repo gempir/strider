@@ -1,1 +1,7 @@
-testdata/cases/analyze/testing_fatal_in_goroutine_test.go:6:2: error[testing-fatal-in-goroutine]: Fatal must be called from the test goroutine, not a child goroutine
+error[testing-fatal-in-goroutine]: Fatal must be called from the test goroutine, not a child goroutine
+  ┌─ testdata/cases/analyze/testing_fatal_in_goroutine_test.go:6:2
+  │
+6 │ 	go func() {
+  │ 	^^^^^^^^^^^
+
+found 1 issue: 1 error

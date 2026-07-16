@@ -32,6 +32,9 @@ severity = "note"
 	if configuration.Formatter.PrintWidth != 120 || configuration.Formatter.IndentWidth != 4 {
 		t.Fatalf("unexpected formatter config: %#v", configuration.Formatter)
 	}
+	if configuration.Color != "auto" {
+		t.Fatalf("unexpected default color mode %q", configuration.Color)
+	}
 	if enabled := configuration.Linter.Rules["no-init"].Enabled; enabled == nil || *enabled {
 		t.Fatalf("unexpected rule config: %#v", configuration.Linter.Rules["no-init"])
 	}
@@ -53,6 +56,7 @@ func TestLoadRejectsUnknownAndInvalidSettings(t *testing.T) {
 		"version":  {"version = 2\n", "unsupported configuration version"},
 		"width":    {"version = 1\n[formatter]\nprint-width = 20\n", "print-width"},
 		"severity": {"version = 1\n[linter.rules.no-init]\nseverity = \"fatal\"\n", "severity"},
+		"color":    {"version = 1\ncolor = \"sometimes\"\n", "color"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), Filename)

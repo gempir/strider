@@ -1,1 +1,7 @@
-main_test.go:5:1: warning[testmain-missing-exit]: TestMain must call os.Exit with the result of m.Run on this Go version
+warning[testmain-missing-exit]: TestMain must call os.Exit with the result of m.Run on this Go version
+  ┌─ main_test.go:5:1
+  │
+5 │ func TestMain(m *testing.M) {
+  │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+found 1 issue: 1 warning

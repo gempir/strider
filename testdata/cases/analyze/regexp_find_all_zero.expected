@@ -1,1 +1,7 @@
-testdata/cases/analyze/regexp_find_all_zero.go:6:41: warning[regexp-find-all-zero]: calling a FindAll method with n == 0 will return no results, did you mean -1?
+warning[regexp-find-all-zero]: calling a FindAll method with n == 0 will return no results, did you mean -1?
+  ┌─ testdata/cases/analyze/regexp_find_all_zero.go:6:41
+  │
+6 │ 	return expression.FindAllString(input, 0)
+  │ 	                                       ^
+
+found 1 issue: 1 warning

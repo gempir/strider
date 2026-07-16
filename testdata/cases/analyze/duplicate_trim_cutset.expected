@@ -1,1 +1,7 @@
-testdata/cases/analyze/duplicate_trim_cutset.go:6:33: warning[duplicate-trim-cutset]: trim cutset contains duplicate character 't'
+warning[duplicate-trim-cutset]: trim cutset contains duplicate character 't'
+  ┌─ testdata/cases/analyze/duplicate_trim_cutset.go:6:33
+  │
+6 │ 	return strings.TrimLeft(value, "letter")
+  │ 	                               ^^^^^^^^
+
+found 1 issue: 1 warning

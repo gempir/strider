@@ -1,1 +1,7 @@
-testdata/cases/analyze/zero_replacement_limit.go:6:46: warning[zero-replacement-limit]: a replacement limit of zero replaces nothing; use -1 or ReplaceAll to replace every occurrence
+warning[zero-replacement-limit]: a replacement limit of zero replaces nothing; use -1 or ReplaceAll to replace every occurrence
+  ┌─ testdata/cases/analyze/zero_replacement_limit.go:6:46
+  │
+6 │ 	return strings.Replace(value, "old", "new", 0)
+  │ 	                                            ^
+
+found 1 issue: 1 warning

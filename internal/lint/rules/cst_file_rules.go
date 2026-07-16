@@ -1,0 +1,178 @@
+package rules
+
+import (
+	"bytes"
+	"fmt"
+	"path/filepath"
+	"regexp"
+	"slices"
+	"strings"
+	"unicode/utf8"
+
+	"github.com/gempir/strider/internal/cst"
+)
+
+func (a *cstAnalyzer) checkFilenameAndPackage() {
+	nameToken := a.packageNameToken()
+	if !nameToken.IsValid() {
+		return
+	}
+	name := nameToken.Src()
+	base := filepath.Base(a.filename)
+	validFile := regexp.MustCompile(`^[_A-Za-z0-9][_A-Za-z0-9-]*\.go$`)
+	if a.enabled["filename-format"] && !validFile.MatchString(base) {
+		a.report("filename-format", nameToken, "filename does not match the supported Go filename format")
+	}
+	validPackage := regexp.MustCompile(`^[a-z][a-z0-9]*$`)
+	if a.enabled["package-naming"] && name != "main" && !validPackage.MatchString(name) {
+		a.report(
+			"package-naming",
+			nameToken,
+			"package name should be short, lower-case, and contain no separators",
+		)
+	}
+	if a.enabled["package-directory-mismatch"] && name != "main" &&
+		!pathContains(a.filename, "testdata") {
+		directory := filepath.Base(filepath.Dir(a.filename))
+		normalized := strings.ReplaceAll(strings.ReplaceAll(directory, "-", ""), "_", "")
+		if normalized != "" && normalized != name && !strings.HasPrefix(directory, ".") {
+			a.report(
+				"package-directory-mismatch",
+				nameToken,
+				fmt.Sprintf("package %s does not match directory %s", name, directory),
+			)
+		}
+	}
+}
+
+func (a *cstAnalyzer) checkLinesAndComments() {
+	lines := bytes.Split(a.content, []byte("\n"))
+	if a.enabled["bidirectional-control-character"] {
+		for offset := 0; offset < len(a.content); {
+			character, width := utf8.DecodeRune(a.content[offset:])
+			if width == 0 {
+				break
+			}
+			if bidirectionalControl(character) {
+				a.reportRange(
+					"bidirectional-control-character",
+					offset,
+					offset+width,
+					fmt.Sprintf(
+						"source contains invisible bidirectional control character U+%04X",
+						character,
+					),
+				)
+			}
+			offset += width
+		}
+	}
+	if a.enabled["line-length-limit"] {
+		offset := 0
+		for _, line := range lines {
+			count := utf8.RuneCount(line)
+			if count > 80 {
+				a.reportRange(
+					"line-length-limit",
+					offset,
+					offset+len(line),
+					fmt.Sprintf("line has %d runes; maximum is 80", count),
+				)
+			}
+			offset += len(line) + 1
+		}
+	}
+	comments := a.tree.Comments()
+	a.checkCommentSpacing(comments)
+	a.checkPackageComment(comments)
+	a.checkBuildTags(comments)
+}
+
+func (a *cstAnalyzer) checkCommentSpacing(comments []cst.Comment) {
+	for _, comment := range comments {
+		if a.enabled["comment-spacings"] && strings.HasPrefix(comment.Text, "//") &&
+			len(comment.Text) > 2 && comment.Text[2] != ' ' && comment.Text[2] != '\t' &&
+			!commentDirective(comment.Text[2:]) {
+			a.reportRange(
+				"comment-spacings",
+				comment.Start,
+				comment.End,
+				"line comment should have a space after //",
+			)
+		}
+		if !a.enabled["spaced-compiler-directive"] || comment.Column != 1 ||
+			!strings.HasPrefix(comment.Text, "//") {
+			continue
+		}
+		body := comment.Text[2:]
+		trimmed := strings.TrimLeft(body, " \t")
+		name := strings.TrimPrefix(trimmed, "go:")
+		if len(trimmed) != len(body) && strings.HasPrefix(trimmed, "go:") && name != "" &&
+			name[0] >= 'a' && name[0] <= 'z' {
+			a.reportRange(
+				"spaced-compiler-directive",
+				comment.Start,
+				comment.End,
+				"compiler directive is ignored because whitespace follows //",
+			)
+		}
+	}
+}
+
+func (a *cstAnalyzer) checkPackageComment(comments []cst.Comment) {
+	if !a.enabled["package-comments"] || strings.HasSuffix(a.filename, "_test.go") {
+		return
+	}
+	nameToken := a.packageNameToken()
+	packageStart, _ := cst.Range(nameToken)
+	for _, comment := range comments {
+		if comment.End >= packageStart {
+			break
+		}
+		text := strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(comment.Text, "//"), "/*"))
+		text = strings.TrimSpace(strings.TrimSuffix(text, "*/"))
+		if strings.HasPrefix(text, "Package "+nameToken.Src()) ||
+			strings.HasPrefix(strings.TrimPrefix(text, "Package "), nameToken.Src()) {
+			return
+		}
+	}
+	a.report("package-comments", nameToken, "package should have a documentation comment")
+}
+
+func (a *cstAnalyzer) checkBuildTags(comments []cst.Comment) {
+	if !a.enabled["redundant-build-tag"] {
+		return
+	}
+	hasGoBuild := false
+	plusBuild := []cst.Comment{}
+	for _, comment := range comments {
+		hasGoBuild = hasGoBuild || strings.HasPrefix(comment.Text, "//go:build")
+		if strings.HasPrefix(comment.Text, "// +build") {
+			plusBuild = append(plusBuild, comment)
+		}
+	}
+	if hasGoBuild {
+		for _, comment := range plusBuild {
+			a.reportRange(
+				"redundant-build-tag",
+				comment.Start,
+				comment.End,
+				"legacy +build line is redundant with go:build",
+			)
+		}
+	}
+	for index, comment := range plusBuild {
+		constraint := legacyBuildTerms(comment.Text)
+		for earlier := range index {
+			if slices.Equal(constraint, legacyBuildTerms(plusBuild[earlier].Text)) {
+				a.reportRange(
+					"redundant-build-tag",
+					comment.Start,
+					comment.End,
+					"legacy build constraint duplicates an earlier constraint",
+				)
+				break
+			}
+		}
+	}
+}

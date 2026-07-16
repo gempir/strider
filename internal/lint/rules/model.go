@@ -47,6 +47,9 @@ type Finding struct {
 	ConcreteNode      cst.Node
 	ConcreteScope     cst.Node
 	ConcreteAncestors []cst.Node
+	ConcreteStart     int
+	ConcreteEnd       int
+	HasConcreteRange  bool
 	Code              string
 	Message           string
 }

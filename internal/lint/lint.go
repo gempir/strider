@@ -352,6 +352,9 @@ func (c *Context) reportConcrete(
 	severity diagnostic.Severity,
 ) {
 	startOffset, endOffset := cst.Range(finding.ConcreteNode)
+	if finding.HasConcreteRange {
+		startOffset, endOffset = finding.ConcreteStart, finding.ConcreteEnd
+	}
 	if c.suppressedRange(finding.Code, startOffset, endOffset) {
 		return
 	}

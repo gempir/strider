@@ -8,19 +8,31 @@ import (
 )
 
 var cstRuleCodes = map[string]bool{
-	"cyclomatic-complexity": true,
-	"max-parameters":        true,
-	"no-defer-in-loop":      true,
-	"no-else-after-return":  true,
-	"no-init":               true,
-	"no-naked-return":       true,
-	"no-package-var":        true,
+	"bidirectional-control-character": true,
+	"comment-spacings":                true,
+	"cyclomatic-complexity":           true,
+	"filename-format":                 true,
+	"line-length-limit":               true,
+	"max-parameters":                  true,
+	"no-defer-in-loop":                true,
+	"no-else-after-return":            true,
+	"no-init":                         true,
+	"no-naked-return":                 true,
+	"no-package-var":                  true,
+	"package-comments":                true,
+	"package-directory-mismatch":      true,
+	"package-naming":                  true,
+	"redundant-build-tag":             true,
+	"spaced-compiler-directive":       true,
 }
 
 // UsesCST reports whether a rule has moved to the concrete-syntax pass.
 func UsesCST(code string) bool { return cstRuleCodes[code] }
 
 type cstAnalyzer struct {
+	filename  string
+	tree      *cst.Tree
+	content   []byte
 	enabled   map[string]bool
 	reporter  func(Finding)
 	ancestors []cst.Node
@@ -38,7 +50,14 @@ func AnalyzeCST(input CSTInput) {
 	if len(enabled) == 0 || input.Tree == nil {
 		return
 	}
-	analyzer := &cstAnalyzer{enabled: enabled, reporter: input.Report}
+	analyzer := &cstAnalyzer{
+		filename: input.Filename,
+		tree:     input.Tree,
+		content:  input.Tree.Source(),
+		enabled:  enabled,
+		reporter: input.Report,
+	}
+	analyzer.checkFile()
 	stack := []cst.Node{}
 	var visit func(cst.Node)
 	visit = func(node cst.Node) {
@@ -82,6 +101,34 @@ func (a *cstAnalyzer) report(code string, node cst.Node, message string) {
 		Code:              code,
 		Message:           message,
 	})
+}
+
+func (a *cstAnalyzer) reportRange(code string, start, end int, message string) {
+	if !a.enabled[code] || a.reporter == nil {
+		return
+	}
+	a.reporter(Finding{
+		ConcreteStart:    start,
+		ConcreteEnd:      end,
+		HasConcreteRange: true,
+		Code:             code,
+		Message:          message,
+	})
+}
+
+func (a *cstAnalyzer) checkFile() {
+	a.checkFilenameAndPackage()
+	a.checkLinesAndComments()
+}
+
+func (a *cstAnalyzer) packageNameToken() cst.Token {
+	tokens := a.tree.Tokens()
+	for index, current := range tokens {
+		if current.Ch() == token.PACKAGE && index+1 < len(tokens) {
+			return tokens[index+1]
+		}
+	}
+	return cst.Token{}
 }
 
 func (a *cstAnalyzer) checkFunction(function *cst.FunctionDecl) {

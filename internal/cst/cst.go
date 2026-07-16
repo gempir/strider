@@ -6,6 +6,7 @@
 package cst
 
 import (
+	"go/scanner"
 	"go/token"
 	"reflect"
 	"strings"
@@ -49,8 +50,18 @@ type (
 
 // Tree owns one parsed source file and its lossless concrete representation.
 type Tree struct {
-	root   *gc.AST
-	source []byte
+	filename string
+	root     *gc.AST
+	source   []byte
+}
+
+// Comment is a concrete source comment and its exact byte range.
+type Comment struct {
+	Text   string
+	Start  int
+	End    int
+	Line   int
+	Column int
 }
 
 // Parse parses one complete Go source file into a CST.
@@ -59,7 +70,7 @@ func Parse(filename string, source []byte) (*Tree, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Tree{root: root, source: append([]byte(nil), source...)}, nil
+	return &Tree{filename: filename, root: root, source: append([]byte(nil), source...)}, nil
 }
 
 // Root returns the source-file production. The EOF token is available through
@@ -77,6 +88,37 @@ func (t *Tree) Source() []byte {
 		return nil
 	}
 	return append([]byte(nil), t.source...)
+}
+
+// Comments returns all comments in source order without grouping or rewriting
+// their original spelling.
+func (t *Tree) Comments() []Comment {
+	if t == nil {
+		return nil
+	}
+	fset := token.NewFileSet()
+	file := fset.AddFile(t.filename, -1, len(t.source))
+	var lexer scanner.Scanner
+	lexer.Init(file, t.source, nil, scanner.ScanComments)
+	result := []Comment{}
+	for {
+		position, kind, literal := lexer.Scan()
+		if kind == token.EOF {
+			return result
+		}
+		if kind != token.COMMENT {
+			continue
+		}
+		start := file.Offset(position)
+		location := file.Position(position)
+		result = append(result, Comment{
+			Text:   literal,
+			Start:  start,
+			End:    start + len(literal),
+			Line:   location.Line,
+			Column: location.Column,
+		})
+	}
 }
 
 // Text reconstructs a node with all of its original whitespace and comments.

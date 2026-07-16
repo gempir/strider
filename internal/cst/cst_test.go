@@ -69,3 +69,23 @@ func TestTokensIncludeImplicitSemicolonAndEOF(t *testing.T) {
 		t.Fatalf("unexpected tokens: %#v", tokens)
 	}
 }
+
+func TestCommentsRetainSpellingAndRanges(t *testing.T) {
+	source := []byte("// first\npackage p // second\n")
+	tree, err := Parse("fixture.go", source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	comments := tree.Comments()
+	if len(comments) != 2 {
+		t.Fatalf("got %d comments", len(comments))
+	}
+	for _, comment := range comments {
+		if string(source[comment.Start:comment.End]) != comment.Text {
+			t.Errorf("comment range does not select %q", comment.Text)
+		}
+	}
+	if comments[1].Line != 2 || comments[1].Column != 11 {
+		t.Fatalf("unexpected second comment position: %#v", comments[1])
+	}
+}

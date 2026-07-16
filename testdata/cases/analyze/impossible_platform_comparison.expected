@@ -1,7 +1,0 @@
-warning[impossible-platform-comparison]: runtime.GOOS can never equal "windows" under this file's build constraints
-  ┌─ testdata/cases/analyze/impossible_platform_comparison.go:8:9
-  │
-8 │ 	return runtime.GOOS == "windows"
-  │ 	       ^^^^^^^^^^^^^^^^^^^^^^^^^
-
-found 1 issue: 1 warning

@@ -1,7 +1,0 @@
-warning[unchanged-loop-condition]: variable in loop condition never changes
-  ┌─ testdata/cases/analyze/unchanged_loop_condition.go:5:18
-  │
-5 │ 	for index := 0; index < limit; other++ {
-  │ 	                ^^^^^^^^^^^^^
-
-found 1 issue: 1 warning

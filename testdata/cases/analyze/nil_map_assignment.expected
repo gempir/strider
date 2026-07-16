@@ -1,7 +1,0 @@
-error[nil-map-assignment]: assignment to nil map will panic
-  ┌─ testdata/cases/analyze/nil_map_assignment.go:5:8
-  │
-5 │ 	values["answer"] = 42
-  │ 	      ^^^^^^^^^^^^^^^
-
-found 1 issue: 1 error

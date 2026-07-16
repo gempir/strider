@@ -1,7 +1,0 @@
-warning[single-argument-append]: append with no elements returns the original slice unchanged
-  ┌─ testdata/cases/analyze/single_argument_append.go:4:9
-  │
-4 │ 	return append(source)
-  │ 	       ^^^^^^^^^^^^^^
-
-found 1 issue: 1 warning

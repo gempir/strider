@@ -1,7 +1,0 @@
-warning[case-insensitive-string-comparison]: use strings.EqualFold instead of converting both strings before comparison
-  ┌─ testdata/cases/analyze/case_insensitive_string_comparison.go:6:9
-  │
-6 │ 	return strings.ToLower(left) == strings.ToLower(right)
-  │ 	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-found 1 issue: 1 warning

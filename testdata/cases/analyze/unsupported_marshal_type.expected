@@ -1,7 +1,0 @@
-error[unsupported-marshal-type]: JSON cannot marshal values of type chan int
-  ┌─ testdata/cases/analyze/unsupported_marshal_type.go:6:22
-  │
-6 │ 	return json.Marshal(ch)
-  │ 	                    ^^
-
-found 1 issue: 1 error

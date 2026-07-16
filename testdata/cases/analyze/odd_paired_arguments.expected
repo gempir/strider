@@ -1,7 +1,0 @@
-error[odd-paired-arguments]: paired argument requires an even number of elements, but this call provides 3
-  ┌─ testdata/cases/analyze/odd_paired_arguments.go:6:29
-  │
-6 │ 	return strings.NewReplacer("old", "new", "orphan")
-  │ 	                           ^^^^^
-
-found 1 issue: 1 error

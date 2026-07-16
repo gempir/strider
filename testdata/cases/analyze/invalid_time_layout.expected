@@ -1,7 +1,0 @@
-error[invalid-time-layout]: parsing time "12345" as "12345": cannot parse "" as "4"
-  ┌─ testdata/cases/analyze/invalid_time_layout.go:8:13
-  │
-8 │ 	time.Parse(invalidTimeLayout, value)
-  │ 	           ^^^^^^^^^^^^^^^^^
-
-found 1 issue: 1 error

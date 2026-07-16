@@ -1,78 +1,78 @@
 name: ci
 
 on:
-  push:
-  pull_request:
+    push:
+    pull_request:
 
 permissions:
-  contents: read
+    contents: read
 
 jobs:
-  test:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: "1.26.x"
-      - run: go test ./...
-      - run: go vet ./...
+    test:
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest, macos-latest, windows-latest]
+        runs-on: ${{ matrix.os }}
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-go@v5
+              with:
+                  go-version: "1.26.x"
+            - run: go test ./...
+            - run: go vet ./...
 
-  race-and-build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: "1.26.x"
-      - run: go test -race ./...
-      - run: CGO_ENABLED=0 go build -trimpath -o strider ./cmd/strider
-      - name: Upload Strider binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: strider-linux
-          path: strider
-          if-no-files-found: error
-          retention-days: 7
+    race-and-build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-go@v5
+              with:
+                  go-version: "1.26.x"
+            - run: go test -race ./...
+            - run: CGO_ENABLED=0 go build -trimpath -o strider ./cmd/strider
+            - name: Upload Strider binary
+              uses: actions/upload-artifact@v4
+              with:
+                  name: strider-linux
+                  path: strider
+                  if-no-files-found: error
+                  retention-days: 7
 
-  binary-suites:
-    name: binary suites and performance
-    needs: race-and-build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Download Strider binary
-        uses: actions/download-artifact@v4
-        with:
-          name: strider-linux
-          path: .
-      - name: Prepare binary
-        run: chmod +x strider
-      - name: Curated correctness and speed
-        run: make test
-      - name: Wilds smoke and speed
-        run: |
-          mkdir -p target
-          if make wilds > target/wilds-smoke.log 2>&1; then
-            grep '^Timing:' target/wilds-smoke.log
-          else
-            result=$?
-            cat target/wilds-smoke.log
-            exit "$result"
-          fi
-      - name: Wilds regression baseline
-        run: make wilds-check
-      - name: Upload timing reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: strider-timings
-          path: |
-            target/timings/*.tsv
-            target/wilds-smoke.log
-          if-no-files-found: warn
-          retention-days: 30
+    binary-suites:
+        name: binary suites and performance
+        needs: race-and-build
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - name: Download Strider binary
+              uses: actions/download-artifact@v4
+              with:
+                  name: strider-linux
+                  path: .
+            - name: Prepare binary
+              run: chmod +x strider
+            - name: Curated correctness and speed
+              run: make test
+            - name: Wilds smoke and speed
+              run: |
+                  mkdir -p target
+                  if make wilds > target/wilds-smoke.log 2>&1; then
+                    grep '^Timing:' target/wilds-smoke.log
+                  else
+                    result=$?
+                    cat target/wilds-smoke.log
+                    exit "$result"
+                  fi
+            - name: Wilds regression baseline
+              run: make wilds-check
+            - name: Upload timing reports
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: strider-timings
+                  path: |
+                      target/timings/*.tsv
+                      target/wilds-smoke.log
+                  if-no-files-found: warn
+                  retention-days: 30

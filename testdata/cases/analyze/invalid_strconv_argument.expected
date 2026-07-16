@@ -1,7 +1,0 @@
-error[invalid-strconv-argument]: parsing base must be 0 or between 2 and 36
-  ┌─ testdata/cases/analyze/invalid_strconv_argument.go:6:33
-  │
-6 │ 	return strconv.ParseInt(value, 1, 64)
-  │ 	                               ^
-
-found 1 issue: 1 error

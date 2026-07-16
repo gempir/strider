@@ -1,7 +1,0 @@
-warning[unreachable-type-switch-case]: unreachable type-switch case: streamReader always matches before streamReadCloser
-  ┌─ testdata/cases/analyze/unreachable_type_switch_case.go:15:2
-   │
-15 │ 	case streamReadCloser:
-   │ 	^^^^^^^^^^^^^^^^^^^^^^
-
-found 1 issue: 1 warning

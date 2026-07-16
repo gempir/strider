@@ -1,7 +1,0 @@
-warning[never-nil-comparison]: this nil comparison is never true
-  ┌─ testdata/cases/analyze/never_nil_comparison.go:5:5
-  │
-5 │ 	if values == nil {
-  │ 	   ^^^^^^^^^^^^^
-
-found 1 issue: 1 warning

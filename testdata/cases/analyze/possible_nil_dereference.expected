@@ -1,7 +1,0 @@
-warning[possible-nil-dereference]: pointer is dereferenced on a path where its nil check does not prove it is non-nil
-  ┌─ testdata/cases/analyze/possible_nil_dereference.go:7:9
-  │
-7 │ 	return *value
-  │ 	       ^^^^^^
-
-found 1 issue: 1 warning

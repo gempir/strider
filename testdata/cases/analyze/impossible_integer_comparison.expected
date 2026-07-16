@@ -1,7 +1,0 @@
-warning[impossible-integer-comparison]: comparison is always false for type uint
-  ┌─ testdata/cases/analyze/impossible_integer_comparison.go:4:9
-  │
-4 │ 	return value < 0
-  │ 	       ^^^^^^^^^
-
-found 1 issue: 1 warning

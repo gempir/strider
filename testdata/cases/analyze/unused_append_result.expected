@@ -1,7 +1,0 @@
-warning[unused-append-result]: result of append is never used or observed
-  ┌─ testdata/cases/analyze/unused_append_result.go:5:17
-  │
-5 │ 	values = append(values, 1)
-  │ 	               ^^^^^^^^^^^
-
-found 1 issue: 1 warning

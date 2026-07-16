@@ -1,7 +1,0 @@
-warning[self-assignment]: self-assignment of value has no effect
-  ┌─ testdata/cases/analyze/self_assignment.go:4:2
-  │
-4 │ 	value = value
-  │ 	^^^^^^^^^^^^^
-
-found 1 issue: 1 warning

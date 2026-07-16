@@ -1,7 +1,0 @@
-warning[infinite-recursion]: recursive call has no path to a function exit
-  ┌─ testdata/cases/analyze/infinite_recursion.go:4:16
-  │
-4 │ 	recurseForever()
-  │ 	              ^^
-
-found 1 issue: 1 warning

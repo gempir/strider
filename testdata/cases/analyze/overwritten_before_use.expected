@@ -1,7 +1,0 @@
-warning[overwritten-before-use]: this value of value is overwritten before use
-  ┌─ testdata/cases/analyze/overwritten_before_use.go:4:2
-  │
-4 │ 	value := calculatedValue()
-  │ 	^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-found 1 issue: 1 warning

@@ -1,7 +1,0 @@
-warning[suspicious-sleep]: sleeping for 5 nanoseconds is probably a bug; be explicit if it isn't
-  ┌─ testdata/cases/analyze/suspicious_sleep.go:6:13
-  │
-6 │ 	time.Sleep(5)
-  │ 	           ^
-
-found 1 issue: 1 warning

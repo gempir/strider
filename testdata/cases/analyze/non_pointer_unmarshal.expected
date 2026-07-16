@@ -1,7 +1,0 @@
-error[non-pointer-unmarshal]: json.Unmarshal expects to unmarshal into a pointer, but the provided value is not a pointer
-  ┌─ testdata/cases/analyze/non_pointer_unmarshal.go:6:30
-  │
-6 │ 	return json.Unmarshal(data, value)
-  │ 	                            ^^^^^
-
-found 1 issue: 1 error

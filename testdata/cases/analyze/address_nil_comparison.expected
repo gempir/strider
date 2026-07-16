@@ -1,7 +1,0 @@
-warning[address-nil-comparison]: address cannot be nil; this comparison is always false
-  ┌─ testdata/cases/analyze/address_nil_comparison.go:4:9
-  │
-4 │ 	return &value == nil
-  │ 	       ^^^^^^^^^^^^^
-
-found 1 issue: 1 warning

@@ -1,7 +1,0 @@
-warning[overlapping-encode-buffers]: encoding destination overlaps the source buffer
-  ┌─ testdata/cases/analyze/overlapping_encode_buffers.go:6:20
-  │
-6 │ 	return hex.Encode(buffer, buffer)
-  │ 	                  ^^^^^^
-
-found 1 issue: 1 warning

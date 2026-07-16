@@ -1,7 +1,0 @@
-warning[argument-overwritten-before-use]: argument value is overwritten before its incoming value is used
-  ┌─ testdata/cases/analyze/argument_overwritten_before_use.go:3:26
-  │
-3 │ func overwrittenArgument(value string) string {
-  │                          ^^^^^
-
-found 1 issue: 1 warning

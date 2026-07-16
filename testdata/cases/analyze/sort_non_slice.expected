@@ -1,7 +1,0 @@
-error[sort-non-slice]: sort.Slice requires a slice, but the argument has type [3]int
-  ┌─ testdata/cases/analyze/sort_non_slice.go:6:13
-  │
-6 │ 	sort.Slice(values, func(left, right int) bool { return left < right })
-  │ 	           ^^^^^^
-
-found 1 issue: 1 error

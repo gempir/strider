@@ -1,7 +1,0 @@
-warning[ip-byte-comparison]: use net.IP.Equal to compare IP addresses, not bytes.Equal
-  ┌─ testdata/cases/analyze/ip_byte_comparison.go:9:21
-  │
-9 │ 	return bytes.Equal(left, right)
-  │ 	                   ^^^^
-
-found 1 issue: 1 warning

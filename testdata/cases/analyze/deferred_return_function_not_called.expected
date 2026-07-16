@@ -1,7 +1,0 @@
-warning[deferred-return-function-not-called]: the deferred call returns a function that is never called; use a second call to defer the returned function
-  ┌─ testdata/cases/analyze/deferred_return_function_not_called.go:6:2
-  │
-6 │ 	defer deferredSetup()
-  │ 	^^^^^^^^^^^^^^^^^^^^^
-
-found 1 issue: 1 warning

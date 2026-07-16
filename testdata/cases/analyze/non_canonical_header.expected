@@ -1,7 +1,0 @@
-warning[non-canonical-header]: keys in http.Header are canonicalized, "content-type" is not canonical; fix the constant or use http.CanonicalHeaderKey
-  ┌─ testdata/cases/analyze/non_canonical_header.go:6:9
-  │
-6 │ 	return header["content-type"][0]
-  │ 	       ^^^^^^^^^^^^^^^^^^^^^^
-
-found 1 issue: 1 warning

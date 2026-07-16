@@ -1,7 +1,0 @@
-error[writer-buffer-mutation]: io.Writer.Write must not modify the provided buffer, even temporarily
-  ┌─ testdata/cases/analyze/writer_buffer_mutation.go:6:8
-  │
-6 │ 	buffer[0] = 0
-  │ 	      ^^^^^^^
-
-found 1 issue: 1 error

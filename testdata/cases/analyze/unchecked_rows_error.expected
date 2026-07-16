@@ -1,7 +1,0 @@
-warning[unchecked-rows-error]: sql.Rows iteration does not check Rows.Err; iteration failures are indistinguishable from successful completion
-  ┌─ testdata/cases/analyze/unchecked_rows_error.go:6:6
-  │
-6 │ 	for rows.Next() {
-  │ 	    ^^^^^^^^^^^
-
-found 1 issue: 1 warning

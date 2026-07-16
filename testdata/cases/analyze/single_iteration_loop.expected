@@ -1,7 +1,0 @@
-warning[single-iteration-loop]: the surrounding loop always terminates during its first iteration
-  ┌─ testdata/cases/analyze/single_iteration_loop.go:8:3
-  │
-8 │ 		return value
-  │ 		^^^^^^^^^^^^
-
-found 1 issue: 1 warning

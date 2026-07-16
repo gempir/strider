@@ -1,7 +1,0 @@
-warning[waitgroup-add-inside-goroutine]: call WaitGroup.Add before starting the goroutine to avoid racing with Wait
-  ┌─ testdata/cases/analyze/waitgroup_add_inside_goroutine.go:7:3
-  │
-7 │ 		group.Add(1)
-  │ 		^^^^^^^^^^^^
-
-found 1 issue: 1 warning

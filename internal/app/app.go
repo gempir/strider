@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/gempir/strider/internal/analyze"
+	"github.com/gempir/strider/internal/baseline"
 	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/diagnostic"
 	"github.com/gempir/strider/internal/formatter"
@@ -36,6 +37,15 @@ type formatOptions struct {
 	formatter     formatter.Options
 	root          string
 	excludes      []string
+}
+
+type baselineOptions struct {
+	path     string
+	variant  baseline.Variant
+	generate bool
+	prune    bool
+	ignore   bool
+	backup   bool
 }
 
 const (
@@ -421,6 +431,16 @@ func runLint(args []string, configuration config.Config, stdout, stderr io.Write
 	listRules := flags.Bool("list-rules", false, "list enabled lint rules")
 	allRules := flags.Bool("all-rules", false, "run every built-in rule")
 	explain := flags.String("explain", "", "explain a lint rule")
+	baselinePath := flags.String("baseline", "", "path to the lint baseline")
+	baselineVariant := flags.String("baseline-variant", "", "generated baseline variant: loose or strict")
+	generateBaseline := flags.Bool("generate-baseline", false, "replace the baseline with all current findings")
+	removeOutdated := flags.Bool(
+		"remove-outdated-baseline-entries",
+		false,
+		"remove baseline entries that no longer match",
+	)
+	ignoreBaseline := flags.Bool("ignore-baseline", false, "report findings without applying a baseline")
+	backupBaseline := flags.Bool("backup-baseline", false, "back up a baseline before replacing it")
 	var only stringList
 	flags.Var(&only, "only", "run only these rule codes (repeatable or comma-separated)")
 	flags.Usage = func() {
@@ -432,6 +452,22 @@ func runLint(args []string, configuration config.Config, stdout, stderr io.Write
 	}
 	if *allRules && len(only) != 0 {
 		fmt.Fprintln(stderr, "strider lint: --all-rules and --only are mutually exclusive")
+		return exitError
+	}
+	baselineConfig, ok := resolveBaselineOptions(
+		flags,
+		configuration,
+		configuration.Linter,
+		*baselinePath,
+		*baselineVariant,
+		*generateBaseline,
+		*removeOutdated,
+		*ignoreBaseline,
+		*backupBaseline,
+		stderr,
+		"lint",
+	)
+	if !ok {
 		return exitError
 	}
 	var registry *lint.Registry
@@ -462,6 +498,7 @@ func runLint(args []string, configuration config.Config, stdout, stderr io.Write
 		registry,
 		configuration.Root,
 		configuration.Linter.Excludes,
+		baselineConfig,
 		stdout,
 		stderr,
 	)
@@ -509,6 +546,7 @@ func lintPaths(
 	registry *lint.Registry,
 	root string,
 	excludes []string,
+	baselineConfig baselineOptions,
 	stdout, stderr io.Writer,
 ) int {
 	files, err := source.Discover(paths, source.Options{SkipGenerated: true})
@@ -521,6 +559,14 @@ func lintPaths(
 	if err != nil {
 		fmt.Fprintf(stderr, "strider lint: %v\n", err)
 		return exitError
+	}
+	diagnostics, handled, err := applyBaseline("lint", diagnostics, baselineConfig, stderr)
+	if err != nil {
+		fmt.Fprintf(stderr, "strider lint: %v\n", err)
+		return exitError
+	}
+	if handled {
+		return exitSuccess
 	}
 	if format == "json" {
 		err = lint.ReportJSON(stdout, diagnostics)
@@ -543,6 +589,16 @@ func runAnalyze(args []string, configuration config.Config, stdout, stderr io.Wr
 	format := flags.String("format", "text", "report format: text or json")
 	listRules := flags.Bool("list-rules", false, "list enabled analysis rules")
 	explain := flags.String("explain", "", "explain an analysis rule")
+	baselinePath := flags.String("baseline", "", "path to the analysis baseline")
+	baselineVariant := flags.String("baseline-variant", "", "generated baseline variant: loose or strict")
+	generateBaseline := flags.Bool("generate-baseline", false, "replace the baseline with all current findings")
+	removeOutdated := flags.Bool(
+		"remove-outdated-baseline-entries",
+		false,
+		"remove baseline entries that no longer match",
+	)
+	ignoreBaseline := flags.Bool("ignore-baseline", false, "report findings without applying a baseline")
+	backupBaseline := flags.Bool("backup-baseline", false, "back up a baseline before replacing it")
 	var only stringList
 	flags.Var(&only, "only", "run only these rule codes (repeatable or comma-separated)")
 	flags.Usage = func() {
@@ -550,6 +606,22 @@ func runAnalyze(args []string, configuration config.Config, stdout, stderr io.Wr
 		flags.PrintDefaults()
 	}
 	if err := flags.Parse(args); err != nil {
+		return exitError
+	}
+	baselineConfig, ok := resolveBaselineOptions(
+		flags,
+		configuration,
+		configuration.Analyzer,
+		*baselinePath,
+		*baselineVariant,
+		*generateBaseline,
+		*removeOutdated,
+		*ignoreBaseline,
+		*backupBaseline,
+		stderr,
+		"analyze",
+	)
+	if !ok {
 		return exitError
 	}
 	registry, err := analyze.NewRegistryConfigured(only, configuration.Analyzer.Rules, configuration.Root)
@@ -573,6 +645,7 @@ func runAnalyze(args []string, configuration config.Config, stdout, stderr io.Wr
 		registry,
 		configuration.Root,
 		configuration.Analyzer.Excludes,
+		baselineConfig,
 		stdout,
 		stderr,
 	)
@@ -624,6 +697,7 @@ func analyzePaths(
 	registry *analyze.Registry,
 	root string,
 	excludes []string,
+	baselineConfig baselineOptions,
 	stdout, stderr io.Writer,
 ) int {
 	diagnostics, err := analyze.Run(paths, registry)
@@ -632,6 +706,14 @@ func analyzePaths(
 		return exitError
 	}
 	diagnostics = filterDiagnostics(diagnostics, root, excludes)
+	diagnostics, handled, err := applyBaseline("analyze", diagnostics, baselineConfig, stderr)
+	if err != nil {
+		fmt.Fprintf(stderr, "strider analyze: %v\n", err)
+		return exitError
+	}
+	if handled {
+		return exitSuccess
+	}
 	if format == "json" {
 		err = analyze.ReportJSON(stdout, diagnostics)
 	} else {
@@ -645,6 +727,101 @@ func analyzePaths(
 		return exitFindings
 	}
 	return exitSuccess
+}
+
+func resolveBaselineOptions(
+	flags *flag.FlagSet,
+	configuration config.Config,
+	tool config.ToolConfig,
+	path, variant string,
+	generate, prune, ignore, backup bool,
+	stderr io.Writer,
+	command string,
+) (baselineOptions, bool) {
+	if !flagWasSet(flags, "baseline") {
+		path = configuration.Resolve(tool.Baseline)
+	}
+	if !flagWasSet(flags, "baseline-variant") {
+		variant = tool.BaselineVariant
+	}
+	if variant != "loose" && variant != "strict" {
+		fmt.Fprintf(stderr, "strider %s: --baseline-variant must be loose or strict\n", command)
+		return baselineOptions{}, false
+	}
+	if generate && prune {
+		fmt.Fprintf(
+			stderr,
+			"strider %s: --generate-baseline and --remove-outdated-baseline-entries are mutually exclusive\n",
+			command,
+		)
+		return baselineOptions{}, false
+	}
+	if ignore && (generate || prune) {
+		fmt.Fprintf(stderr, "strider %s: --ignore-baseline cannot be combined with baseline updates\n", command)
+		return baselineOptions{}, false
+	}
+	if backup && !generate && !prune {
+		fmt.Fprintf(stderr, "strider %s: --backup-baseline requires a baseline update option\n", command)
+		return baselineOptions{}, false
+	}
+	if path == "" && (generate || prune) {
+		fmt.Fprintf(stderr, "strider %s: baseline update requires --baseline or a configured baseline\n", command)
+		return baselineOptions{}, false
+	}
+	if path != "" {
+		absolute, err := filepath.Abs(path)
+		if err != nil {
+			fmt.Fprintf(stderr, "strider %s: baseline path: %v\n", command, err)
+			return baselineOptions{}, false
+		}
+		path = absolute
+	}
+	return baselineOptions{
+		path: path, variant: baseline.Variant(variant), generate: generate,
+		prune: prune, ignore: ignore, backup: backup,
+	}, true
+}
+
+func applyBaseline(
+	command string,
+	diagnostics []diagnostic.Diagnostic,
+	options baselineOptions,
+	stderr io.Writer,
+) ([]diagnostic.Diagnostic, bool, error) {
+	if options.path == "" || options.ignore {
+		return diagnostics, false, nil
+	}
+	if options.generate {
+		generated, err := baseline.Generate(options.path, options.variant, diagnostics)
+		if err != nil {
+			return nil, false, err
+		}
+		if err := baseline.Write(options.path, generated, options.backup); err != nil {
+			return nil, false, err
+		}
+		return nil, true, nil
+	}
+	loaded, err := baseline.Load(options.path)
+	if err != nil {
+		return nil, false, fmt.Errorf("load baseline %s: %w", options.path, err)
+	}
+	result, err := baseline.Apply(options.path, loaded, diagnostics)
+	if err != nil {
+		return nil, false, err
+	}
+	if options.prune {
+		if err := baseline.Write(options.path, result.Matched, options.backup); err != nil {
+			return nil, false, err
+		}
+	} else if result.Stale != 0 {
+		fmt.Fprintf(
+			stderr,
+			"strider %s: baseline has %d outdated issue(s); run with --remove-outdated-baseline-entries to prune them\n",
+			command,
+			result.Stale,
+		)
+	}
+	return result.Diagnostics, false, nil
 }
 
 func filterFiles(files []string, root string, excludes []string) []string {

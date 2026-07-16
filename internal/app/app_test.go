@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/gempir/strider/internal/baseline"
 )
 
 func TestFormatStdin(t *testing.T) {
@@ -319,5 +321,122 @@ enabled = false
 	)
 	if code != exitSuccess || !strings.Contains(stdout.String(), "\r\n") {
 		t.Fatalf("format exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+}
+
+func TestLintBaselineGenerateApplyIgnoreAndPrune(t *testing.T) {
+	root := t.TempDir()
+	filename := filepath.Join(root, "main.go")
+	baselinePath := filepath.Join(root, "lint-baseline.toml")
+	write := func(source string) {
+		t.Helper()
+		if err := os.WriteFile(filename, []byte(source), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("package p\nfunc init() {}\n")
+	previous, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(previous) })
+
+	run := func(extra ...string) (int, string, string) {
+		t.Helper()
+		args := []string{"lint", "--only", "no-init", "--baseline", baselinePath}
+		args = append(args, extra...)
+		args = append(args, filename)
+		var stdout, stderr bytes.Buffer
+		code := Run(args, strings.NewReader(""), &stdout, &stderr)
+		return code, stdout.String(), stderr.String()
+	}
+	if code, stdout, stderr := run("--generate-baseline"); code != exitSuccess || stdout != "" || stderr != "" {
+		t.Fatalf("generate exit %d, stdout %q, stderr %q", code, stdout, stderr)
+	}
+	if code, stdout, stderr := run(); code != exitSuccess || stdout != "" || stderr != "" {
+		t.Fatalf("apply exit %d, stdout %q, stderr %q", code, stdout, stderr)
+	}
+	write("package p\nfunc init() {}\nfunc init() {}\n")
+	if code, stdout, stderr := run(); code != exitFindings ||
+		strings.Count(stdout, "warning[no-init]") != 1 || stderr != "" {
+		t.Fatalf("new issue exit %d, stdout %q, stderr %q", code, stdout, stderr)
+	}
+	if code, stdout, stderr := run("--ignore-baseline"); code != exitFindings ||
+		strings.Count(stdout, "warning[no-init]") != 2 || stderr != "" {
+		t.Fatalf("ignore exit %d, stdout %q, stderr %q", code, stdout, stderr)
+	}
+	write("package p\n")
+	if code, stdout, stderr := run(); code != exitSuccess || stdout != "" ||
+		!strings.Contains(stderr, "1 outdated issue") {
+		t.Fatalf("stale exit %d, stdout %q, stderr %q", code, stdout, stderr)
+	}
+	if code, stdout, stderr := run("--remove-outdated-baseline-entries"); code != exitSuccess ||
+		stdout != "" || stderr != "" {
+		t.Fatalf("prune exit %d, stdout %q, stderr %q", code, stdout, stderr)
+	}
+	loaded, err := baseline.Load(baselinePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(loaded.Issues) != 0 {
+		t.Fatalf("pruned baseline still has issues: %#v", loaded)
+	}
+}
+
+func TestConfiguredAnalyzerBaseline(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(
+		filepath.Join(root, "go.mod"),
+		[]byte("module example.com/baseline\n\ngo 1.26\n"),
+		0o600,
+	); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(
+		filepath.Join(root, "strider.toml"),
+		[]byte("version = 1\n[analyzer]\nbaseline = \"analysis-baseline.toml\"\n"),
+		0o600,
+	); err != nil {
+		t.Fatal(err)
+	}
+	filename := filepath.Join(root, "main.go")
+	if err := os.WriteFile(
+		filename,
+		[]byte("package p\nimport \"regexp\"\nvar _ = regexp.MustCompile(\"[\")\n"),
+		0o600,
+	); err != nil {
+		t.Fatal(err)
+	}
+	previous, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(previous) })
+	var stdout, stderr bytes.Buffer
+	code := Run(
+		[]string{"analyze", "--only", "invalid-regexp", "--generate-baseline", filename},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitSuccess || stdout.Len() != 0 || stderr.Len() != 0 {
+		t.Fatalf("generate exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(
+		[]string{"analyze", "--only", "invalid-regexp", filename},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitSuccess || stdout.Len() != 0 || stderr.Len() != 0 {
+		t.Fatalf("apply exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 }

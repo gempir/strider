@@ -57,6 +57,9 @@ type (
 	Result            = gc.ResultNode
 	ShortVarDecl      = gc.ShortVarDeclNode
 	StatementList     = gc.StatementListNode
+	StructType        = gc.StructTypeNode
+	Tag               = gc.TagNode
+	TypeDef           = gc.TypeDefNode
 	TypeSwitchCase    = gc.TypeSwitchCaseNode
 	TypeSwitchStmt    = gc.TypeSwitchStmtNode
 	TypeArgs          = gc.TypeArgsNode

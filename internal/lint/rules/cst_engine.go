@@ -35,6 +35,7 @@ var cstRuleCodes = map[string]bool{
 	"line-length-limit":               true,
 	"max-parameters":                  true,
 	"modulo-one":                      true,
+	"nested-structs":                  true,
 	"no-defer-in-loop":                true,
 	"no-else-after-return":            true,
 	"no-init":                         true,
@@ -47,7 +48,9 @@ var cstRuleCodes = map[string]bool{
 	"redundant-import-alias":          true,
 	"spaced-compiler-directive":       true,
 	"string-format":                   true,
+	"struct-tag":                      true,
 	"unnecessary-format":              true,
+	"unsecure-url-scheme":             true,
 	"use-any":                         true,
 	"use-errors-new":                  true,
 	"use-fmt-print":                   true,
@@ -128,6 +131,12 @@ func (a *cstAnalyzer) check(node cst.Node) {
 		a.checkIncrementShortDeclaration(current)
 	case *cst.PrimaryExpr:
 		a.checkConcreteCall(current)
+	case *cst.StructType:
+		a.checkConcreteStruct(current)
+	case *cst.FieldDecl:
+		a.checkConcreteStructField(current)
+	case *cst.BasicLit:
+		a.checkConcreteStringLiteral(current)
 	}
 }
 

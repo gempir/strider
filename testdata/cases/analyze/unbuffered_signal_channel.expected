@@ -1,0 +1,1 @@
+testdata/cases/analyze/unbuffered_signal_channel.go:10:16: warning[unbuffered-signal-channel]: the channel used with signal.Notify is unbuffered and can drop signals

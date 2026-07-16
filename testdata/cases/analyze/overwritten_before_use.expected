@@ -1,0 +1,1 @@
+testdata/cases/analyze/overwritten_before_use.go:4:2: warning[overwritten-before-use]: this value of value is overwritten before use

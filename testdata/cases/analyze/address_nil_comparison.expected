@@ -1,0 +1,1 @@
+testdata/cases/analyze/address_nil_comparison.go:4:9: warning[address-nil-comparison]: address cannot be nil; this comparison is always false

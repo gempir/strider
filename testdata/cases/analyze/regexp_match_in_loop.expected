@@ -1,0 +1,1 @@
+testdata/cases/analyze/regexp_match_in_loop.go:7:21: warning[regexp-match-in-loop]: regexp.MatchString recompiles a constant pattern on every loop iteration; compile it once before the loop

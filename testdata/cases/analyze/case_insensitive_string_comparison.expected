@@ -1,0 +1,1 @@
+testdata/cases/analyze/case_insensitive_string_comparison.go:6:9: warning[case-insensitive-string-comparison]: use strings.EqualFold instead of converting both strings before comparison

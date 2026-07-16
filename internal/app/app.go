@@ -283,7 +283,7 @@ func stageFile(file formattedFile) (stagedFile, error) {
 		return stagedFile{}, err
 	}
 	name := temporary.Name()
-	if err := temporary.Chmod(info.Mode().Perm()); err == nil {
+	if err = temporary.Chmod(info.Mode().Perm()); err == nil {
 		_, err = temporary.Write(file.result.Source)
 	}
 	if closeErr := temporary.Close(); err == nil {

@@ -1,0 +1,1 @@
+testdata/cases/analyze/impossible_integer_comparison.go:4:9: warning[impossible-integer-comparison]: comparison is always false for type uint

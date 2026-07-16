@@ -1,0 +1,1 @@
+testdata/cases/analyze/never_nil_comparison.go:5:5: warning[never-nil-comparison]: this nil comparison is never true

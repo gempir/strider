@@ -1,0 +1,1 @@
+testdata/cases/analyze/url_query_copy_mutation.go:6:2: warning[url-query-copy-mutation]: URL.Query returns a copy; encode the modified values back into RawQuery

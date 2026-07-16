@@ -1,0 +1,51 @@
+package analyze
+
+import (
+	"go/constant"
+	"go/token"
+
+	"github.com/gempir/strider/internal/diagnostic"
+	"golang.org/x/tools/go/ssa"
+)
+
+type zeroReplacementLimitRule struct{}
+
+func (zeroReplacementLimitRule) Meta() Meta {
+	return Meta{
+		Code:            "zero-replacement-limit",
+		Summary:         "detect replacement calls with a zero limit",
+		Explanation:     "The final argument to strings.Replace and bytes.Replace is the maximum number of replacements. Zero replaces nothing; use a negative value or ReplaceAll to replace every occurrence.",
+		GoodExample:     "strings.ReplaceAll(value, old, replacement)",
+		BadExample:      "strings.Replace(value, old, replacement, 0)",
+		DefaultSeverity: diagnostic.SeverityWarning,
+	}
+}
+
+func (zeroReplacementLimitRule) Run(pass *Pass) {
+	calls := argumentsByCallPosition(pass.Files)
+	for _, function := range pass.Functions {
+		for _, block := range function.Blocks {
+			for _, instruction := range block.Instrs {
+				call, ok := instruction.(ssa.CallInstruction)
+				if !ok || len(call.Common().Args) <= 3 || !isReplacementCall(call) {
+					continue
+				}
+				limit := ssaConstant(call.Common().Args[3])
+				if limit == nil || limit.Value == nil || limit.Value.Kind() != constant.Int ||
+					!constant.Compare(limit.Value, token.EQL, constant.MakeInt64(0)) {
+					continue
+				}
+				node := explicitCallArgument(calls[call.Pos()], 3, call.Pos())
+				pass.Report(
+					node,
+					"a replacement limit of zero replaces nothing; use -1 or ReplaceAll to replace every occurrence",
+				)
+			}
+		}
+	}
+}
+
+func isReplacementCall(call ssa.CallInstruction) bool {
+	return isStaticFunction(call, "strings", "Replace") ||
+		isStaticFunction(call, "bytes", "Replace")
+}

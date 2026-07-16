@@ -1,0 +1,1 @@
+testdata/cases/analyze/nan_comparison.go:6:15: warning[nan-comparison]: direct comparison with NaN can never test for NaN; use math.IsNaN

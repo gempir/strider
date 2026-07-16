@@ -1,0 +1,1 @@
+testdata/cases/analyze/constant_negative_zero.go:3:28: warning[constant-negative-zero]: Go constants cannot represent negative zero; use math.Copysign(0, -1)

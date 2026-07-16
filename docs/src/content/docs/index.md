@@ -12,6 +12,6 @@ hero:
       link: /getting-started/
       icon: right-arrow
     - text: Explore lint rules
-      link: /rules/
+      link: /lints/
       variant: minimal
 ---

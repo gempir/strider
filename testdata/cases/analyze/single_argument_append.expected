@@ -1,0 +1,1 @@
+testdata/cases/analyze/single_argument_append.go:4:9: warning[single-argument-append]: append with no elements returns the original slice unchanged

@@ -1,0 +1,1 @@
+testdata/cases/analyze/invalid_exec_command.go:6:15: warning[invalid-exec-command]: first argument to exec.Command looks like a shell command, but a program name or path are expected

@@ -1,0 +1,1 @@
+testdata/cases/analyze/negative_length_capacity_comparison.go:4:9: warning[negative-length-capacity-comparison]: len never returns a negative value

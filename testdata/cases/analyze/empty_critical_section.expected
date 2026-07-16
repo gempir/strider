@@ -1,0 +1,1 @@
+testdata/cases/analyze/empty_critical_section.go:7:2: warning[empty-critical-section]: empty critical section; did you mean to defer the unlock?

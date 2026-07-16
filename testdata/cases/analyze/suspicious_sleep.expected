@@ -1,0 +1,1 @@
+testdata/cases/analyze/suspicious_sleep.go:6:13: warning[suspicious-sleep]: sleeping for 5 nanoseconds is probably a bug; be explicit if it isn't

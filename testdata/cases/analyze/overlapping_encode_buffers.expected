@@ -1,0 +1,1 @@
+testdata/cases/analyze/overlapping_encode_buffers.go:6:20: warning[overlapping-encode-buffers]: encoding destination overlaps the source buffer

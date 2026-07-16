@@ -43,7 +43,7 @@ strider lint [OPTIONS] [FILE|DIR]...
 | --- | --- |
 | `--format text\|json` | Select text or JSON diagnostics. Default: `text`. |
 | `--only CODE` | Select rule codes. Repeatable and comma-separated. |
-| `--all-rules` | Enable all 111 built-in rules. Mutually exclusive with `--only`. |
+| `--all-rules` | Enable all 116 built-in rules. Mutually exclusive with `--only`. |
 | `--list-rules` | List the selected registry and exit. |
 | `--explain CODE` | Explain one selected rule and exit. |
 
@@ -64,8 +64,8 @@ strider analyze [OPTIONS] [FILE|DIR]...
 | `--list-rules` | List the selected analysis registry and exit. |
 | `--explain CODE` | Explain one selected analysis rule and exit. |
 
-The analyzer loads and type-checks complete packages and constructs SSA. Its
-first implemented rule is `SA1000`, invalid regular expressions.
+The analyzer loads and type-checks complete packages and constructs SSA.
+Analyzer codes use readable kebab-case names such as `invalid-regexp`.
 
 ## Streams
 

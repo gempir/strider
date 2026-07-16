@@ -103,9 +103,296 @@ func TestOnlyAndUnknownRule(t *testing.T) {
 	}
 }
 
+func TestIneffectivePointerCopyReportsPointerRoundTrips(t *testing.T) {
+	fixture := writeFixture(
+		t,
+		"package sample\nfunc copy(pointer *int, value int) { _ = &*pointer; _ = *&value }\n",
+	)
+	registry, err := NewRegistry([]string{"ineffective-pointer-copy"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{fixture}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diagnostics) != 2 {
+		t.Fatalf("got %d diagnostics, want 2: %#v", len(diagnostics), diagnostics)
+	}
+}
+
+func TestDoubleNegationReportsRedundantBooleanNegation(t *testing.T) {
+	fixture := writeFixture(
+		t,
+		"package sample\nfunc ready(value bool) bool { return !!value }\n",
+	)
+	registry, err := NewRegistry([]string{"double-negation"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{fixture}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diagnostics) != 1 {
+		t.Fatalf("got %d diagnostics, want 1: %#v", len(diagnostics), diagnostics)
+	}
+}
+
+func TestIdenticalIfElseIfConditionsRequireSideEffectFreeChain(t *testing.T) {
+	fixture := writeFixture(t, `package sample
+
+func pure(value int) int {
+	if value > 0 {
+		return 1
+	} else if value > 0 {
+		return 2
+	}
+	return 0
+}
+
+func changing(next func() bool) int {
+	if next() {
+		return 1
+	} else if next() {
+		return 2
+	}
+	return 0
+}
+`)
+	registry, err := NewRegistry([]string{"identical-ifelseif-conditions"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{fixture}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diagnostics) != 1 {
+		t.Fatalf("got %d diagnostics, want 1: %#v", len(diagnostics), diagnostics)
+	}
+}
+
+func TestRedundantBuildTagReportsEquivalentLegacyConstraints(t *testing.T) {
+	fixture := writeFixture(t, `// +build linux darwin
+// +build darwin linux
+
+package sample
+`)
+	registry, err := NewRegistry([]string{"redundant-build-tag"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{fixture}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diagnostics) != 1 {
+		t.Fatalf("got %d diagnostics, want 1: %#v", len(diagnostics), diagnostics)
+	}
+}
+
+func TestZeroIntegerDivisionReportsLiteralTruncation(t *testing.T) {
+	fixture := writeFixture(t, `package sample
+
+func ratio() int { return 2 / 3 }
+func useful() int { return 4 / 3 }
+func floating() float64 { return 2 / 3.0 }
+`)
+	registry, err := NewRegistry([]string{"zero-integer-division"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{fixture}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diagnostics) != 1 {
+		t.Fatalf("got %d diagnostics, want 1: %#v", len(diagnostics), diagnostics)
+	}
+}
+
+func TestModuloOneReportsConstantZeroRemainder(t *testing.T) {
+	fixture := writeFixture(t, `package sample
+
+func remainder(value int) int { return value % 1 }
+func useful(value int) int { return value % 2 }
+`)
+	registry, err := NewRegistry([]string{"modulo-one"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{fixture}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diagnostics) != 1 {
+		t.Fatalf("got %d diagnostics, want 1: %#v", len(diagnostics), diagnostics)
+	}
+}
+
+func TestSpinningSelectDefaultReportsEmptyDefault(t *testing.T) {
+	fixture := writeFixture(t, `package sample
+
+func spin(messages <-chan string) {
+	for {
+		select {
+		case <-messages:
+		default:
+		}
+	}
+}
+`)
+	registry, err := NewRegistry([]string{"spinning-select-default"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{fixture}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diagnostics) != 1 {
+		t.Fatalf("got %d diagnostics, want 1: %#v", len(diagnostics), diagnostics)
+	}
+}
+
+func TestStructTagReportsDuplicateKeysAndInvalidOptions(t *testing.T) {
+	fixture := writeFixture(t, `package sample
+type tagged struct {
+	A string `+"`json:\"a\" json:\"b\"`"+`
+	B string `+"`xml:\"b,attr,attr\"`"+`
+	C string `+"`xml:\"c,mystery\"`"+`
+	D string `+"`json:\"d,omitEmpty\"`"+`
+}
+`)
+	registry, err := NewRegistry([]string{"struct-tag"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{fixture}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diagnostics) != 4 {
+		t.Fatalf("got %d diagnostics, want 4: %#v", len(diagnostics), diagnostics)
+	}
+}
+
+func TestRangeReportsUnnecessaryRuneSliceConversion(t *testing.T) {
+	fixture := writeFixture(t, `package sample
+
+func runes(text string) {
+	for _, value := range []rune(text) {
+		_ = value
+	}
+	for index, value := range []rune(text) {
+		_, _ = index, value
+	}
+}
+`)
+	registry, err := NewRegistry([]string{"range"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{fixture}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diagnostics) != 1 {
+		t.Fatalf("got %d diagnostics, want 1: %#v", len(diagnostics), diagnostics)
+	}
+}
+
+func TestEmptyBlockReportsConditionalBranchesOnly(t *testing.T) {
+	fixture := writeFixture(t, `package sample
+
+type marker struct{}
+func (marker) mark() {}
+
+func branches(value bool) {
+	if value {
+	}
+	if value {
+		println(value)
+	} else {
+	}
+}
+`)
+	registry, err := NewRegistry([]string{"empty-block"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{fixture}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diagnostics) != 2 {
+		t.Fatalf("got %d diagnostics, want 2: %#v", len(diagnostics), diagnostics)
+	}
+}
+
+func TestSpacedCompilerDirectiveReportsIgnoredDirective(t *testing.T) {
+	fixture := writeFixture(t, `package sample
+
+// go:noinline
+func ignored() {}
+
+//go:noinline
+func active() {}
+
+func local() { // go:noinline
+}
+`)
+	registry, err := NewRegistry([]string{"spaced-compiler-directive"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{fixture}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diagnostics) != 1 {
+		t.Fatalf("got %d diagnostics, want 1: %#v", len(diagnostics), diagnostics)
+	}
+}
+
+func TestDeferAllowsReturnedFunctionInvocation(t *testing.T) {
+	fixture := writeFixture(t, `package sample
+
+func setup() func() { return func() {} }
+func run() { defer setup()() }
+`)
+	registry, err := NewRegistry([]string{"defer"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{fixture}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diagnostics) != 0 {
+		t.Fatalf("got unexpected diagnostics: %#v", diagnostics)
+	}
+}
+
+func TestBidirectionalControlCharacterReportsInvisibleSourceControl(t *testing.T) {
+	fixture := writeFixture(t, "package sample\n\n// visible text \u202e hidden ordering\nfunc safe() {}\n")
+	registry, err := NewRegistry([]string{"bidirectional-control-character"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{fixture}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diagnostics) != 1 {
+		t.Fatalf("got %d diagnostics, want 1: %#v", len(diagnostics), diagnostics)
+	}
+}
+
 func TestCatalogIsCompleteDocumentedAndRunnable(t *testing.T) {
-	const expectedCount = 111
-	const expectedNamesSHA256 = "f8662a9d714c585704b3790d37397fcc2f3e4307cb5f1052689d1aba9ed99d2d"
+	const expectedCount = 116
+	const expectedNamesSHA256 = "915035c9aeff444086db5beafb9f0dcae18ba97e187850c26fee428666e2ae75"
 	all, err := NewRegistryAll()
 	if err != nil {
 		t.Fatal(err)
@@ -125,7 +412,7 @@ func TestCatalogIsCompleteDocumentedAndRunnable(t *testing.T) {
 		"src",
 		"content",
 		"docs",
-		"rules",
+		"lints",
 	)
 	fixture := writeFixture(t, "// Package p is a fixture.\npackage p\n")
 	for _, rule := range rules {

@@ -1,0 +1,1 @@
+testdata/cases/analyze/byte_string_write.go:9:2: warning[byte-string-write]: write the byte slice directly instead of converting it for io.WriteString

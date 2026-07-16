@@ -1,0 +1,1 @@
+testdata/cases/analyze/argument_overwritten_before_use.go:3:26: warning[argument-overwritten-before-use]: argument value is overwritten before its incoming value is used

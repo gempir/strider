@@ -1,0 +1,1 @@
+testdata/cases/analyze/deferred_lock_after_lock.go:7:2: warning[deferred-lock-after-lock]: defer Unlock after locking; deferring Lock is likely a typo

@@ -1,0 +1,1 @@
+testdata/cases/analyze/failed_assertion_shadow_read.go:9:36: warning[failed-assertion-shadow-read]: value is the zero value produced by the failed type assertion, not the original interface value

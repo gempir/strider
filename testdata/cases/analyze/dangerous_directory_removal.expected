@@ -1,0 +1,1 @@
+testdata/cases/analyze/dangerous_directory_removal.go:7:21: error[dangerous-directory-removal]: os.RemoveAll receives the entire temporary directory from os.TempDir; remove only an application-owned subdirectory

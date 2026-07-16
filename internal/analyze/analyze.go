@@ -3,6 +3,7 @@ package analyze
 import (
 	"fmt"
 	"go/ast"
+	"go/types"
 	"os"
 	"path/filepath"
 	"sort"
@@ -21,6 +22,7 @@ const loadMode = packages.NeedName |
 	packages.NeedImports |
 	packages.NeedDeps |
 	packages.NeedTypes |
+	packages.NeedTypesSizes |
 	packages.NeedSyntax |
 	packages.NeedTypesInfo |
 	packages.NeedModule
@@ -48,11 +50,28 @@ func Run(paths []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
 	if err := packageError(loaded); err != nil {
 		return nil, err
 	}
-	ssaProgram, ssaPackages := ssautil.Packages(loaded, ssa.InstantiateGenerics)
+	var deprecatedObjects map[types.Object]string
+	var deprecatedPackages map[*types.Package]string
+	if registry.hasRule("deprecated-api-usage") {
+		deprecatedObjects, deprecatedPackages = collectDeprecations(loaded)
+	}
+	builderMode := ssa.InstantiateGenerics
+	if registry.hasRule("overwritten-before-use") || registry.hasRule("unchanged-loop-condition") ||
+		registry.hasRule("never-nil-comparison") {
+		builderMode |= ssa.GlobalDebug
+	}
+	ssaProgram, ssaPackages := ssautil.Packages(loaded, builderMode)
 	ssaProgram.Build()
-	functionsByPackage := make(map[*ssa.Package][]*ssa.Function)
+	functionsByPackage := collectPackageFunctions(ssaProgram, ssaPackages)
+	seenFunctions := make(map[*ssa.Function]bool)
+	for _, functions := range functionsByPackage {
+		for _, function := range functions {
+			seenFunctions[function] = true
+		}
+	}
 	for function := range ssautil.AllFunctions(ssaProgram) {
-		if function.Pkg != nil {
+		if function.Pkg != nil && !seenFunctions[function] {
+			seenFunctions[function] = true
 			functionsByPackage[function.Pkg] = append(
 				functionsByPackage[function.Pkg],
 				function,
@@ -76,15 +95,24 @@ func Run(paths []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
 		}
 		for _, rule := range registry.rules {
 			meta := rule.Meta()
+			goVersion := ""
+			if pkg.Module != nil {
+				goVersion = pkg.Module.GoVersion
+			}
 			pass := &Pass{
 				PackagePath: pkg.PkgPath,
+				GoVersion:   goVersion,
 				Files:       pkg.Syntax,
 				FileSet:     pkg.Fset,
 				Types:       pkg.Types,
+				TypesSizes:  pkg.TypesSizes,
 				TypesInfo:   pkg.TypesInfo,
 				SSAProgram:  ssaProgram,
 				SSAPackage:  ssaPackage,
 				Functions:   functionsByPackage[ssaPackage],
+
+				deprecatedObjects:  deprecatedObjects,
+				deprecatedPackages: deprecatedPackages,
 			}
 			pass.report = func(node ast.Node, message string) {
 				position := pkg.Fset.Position(node.Pos())
@@ -132,6 +160,52 @@ func Run(paths []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
 	}
 	sortDiagnostics(diagnostics)
 	return diagnostics, nil
+}
+
+func collectPackageFunctions(
+	program *ssa.Program,
+	ssaPackages []*ssa.Package,
+) map[*ssa.Package][]*ssa.Function {
+	functions := make(map[*ssa.Package][]*ssa.Function)
+	seen := make(map[*ssa.Function]bool)
+	var add func(*ssa.Function)
+	add = func(function *ssa.Function) {
+		if function == nil || function.Pkg == nil || seen[function] {
+			return
+		}
+		seen[function] = true
+		functions[function.Pkg] = append(functions[function.Pkg], function)
+		for _, nested := range function.AnonFuncs {
+			add(nested)
+		}
+	}
+	for _, pkg := range ssaPackages {
+		if pkg == nil {
+			continue
+		}
+		for _, member := range pkg.Members {
+			if function, ok := member.(*ssa.Function); ok {
+				add(function)
+			}
+		}
+		for _, name := range pkg.Pkg.Scope().Names() {
+			typeName, ok := pkg.Pkg.Scope().Lookup(name).(*types.TypeName)
+			if !ok {
+				continue
+			}
+			named, ok := types.Unalias(typeName.Type()).(*types.Named)
+			if !ok {
+				continue
+			}
+			for _, receiver := range []types.Type{named, types.NewPointer(named)} {
+				methodSet := types.NewMethodSet(receiver)
+				for index := range methodSet.Len() {
+					add(program.MethodValue(methodSet.At(index)))
+				}
+			}
+		}
+	}
+	return functions
 }
 
 func loadInputs(paths []string) ([]string, []target, error) {

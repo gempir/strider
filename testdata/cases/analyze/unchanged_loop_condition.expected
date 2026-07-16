@@ -1,0 +1,1 @@
+testdata/cases/analyze/unchanged_loop_condition.go:5:18: warning[unchanged-loop-condition]: variable in loop condition never changes

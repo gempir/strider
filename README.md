@@ -51,8 +51,8 @@ With no path, `lint` also recursively scans the current directory.
 
 The initial rules are `cyclomatic-complexity`, `max-parameters`,
 `no-naked-return`, `no-init`, `no-package-var`, `no-defer-in-loop`, and
-`no-else-after-return`. Strider also includes 104 additional native rules. Run
-the complete 111-rule registry with:
+`no-else-after-return`. Strider also includes 109 additional native rules. Run
+the complete 116-rule registry with:
 
 ```sh
 strider lint --all-rules ./...
@@ -75,16 +75,15 @@ file-level suppression.
 ```sh
 strider analyze ./...
 strider analyze --format json ./...
-strider analyze --only SA1000 ./...
+strider analyze --only invalid-regexp ./...
 strider analyze --list-rules
-strider analyze --explain SA1000
+strider analyze --explain invalid-regexp
 ```
 
 `analyze` loads complete packages, type-checks them, and builds SSA before
-running deeper correctness and data-flow checks. The first implemented check
-is Staticcheck-compatible `SA1000`, which detects invalid constant regular
-expressions passed to `regexp.Compile`, `regexp.MustCompile`, `regexp.Match`,
-`regexp.MatchReader`, and `regexp.MatchString`.
+running deeper correctness and data-flow checks. Analyzer names are descriptive
+kebab-case codes such as `invalid-regexp`, `nil-context`, and
+`swapped-seek-arguments`.
 
 ## Exit codes
 

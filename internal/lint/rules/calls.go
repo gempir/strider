@@ -39,14 +39,6 @@ func (a *analyzer) checkCall(call *ast.CallExpr) {
 		a.report("use-fmt-print", call, "use fmt.Print or fmt.Println instead of the builtin")
 	case "sort.Slice", "sort.SliceStable":
 		a.report("use-slices-sort", call, "use slices.Sort or slices.SortFunc when possible")
-	case "context.WithValue":
-		if len(call.Args) >= 2 && basicContextKey(call.Args[1]) {
-			a.report(
-				"context-keys-type",
-				call.Args[1],
-				"context key should use a dedicated, unexported type",
-			)
-		}
 	case "time.Date":
 		a.checkTimeDate(call)
 	}

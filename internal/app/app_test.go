@@ -186,8 +186,8 @@ func TestLintAllRulesListsCompleteRegistry(t *testing.T) {
 	if code != exitSuccess {
 		t.Fatalf("exit %d, stderr %s", code, stderr.String())
 	}
-	if got := strings.Count(strings.TrimSpace(stdout.String()), "\n") + 1; got != 111 {
-		t.Fatalf("listed %d rules; want 111", got)
+	if got := strings.Count(strings.TrimSpace(stdout.String()), "\n") + 1; got != 116 {
+		t.Fatalf("listed %d rules; want 116", got)
 	}
 	if !strings.Contains(stdout.String(), "marshal-receiver\t") ||
 		!strings.Contains(stdout.String(), "multiline-if-init\t") {
@@ -208,7 +208,7 @@ func TestLintAllRulesAndOnlyAreMutuallyExclusive(t *testing.T) {
 	}
 }
 
-func TestAnalyzeSA1000JSONAndExitCode(t *testing.T) {
+func TestAnalyzeInvalidRegexpJSONAndExitCode(t *testing.T) {
 	root := t.TempDir()
 	if err := os.WriteFile(
 		filepath.Join(root, "go.mod"),
@@ -239,7 +239,7 @@ func TestAnalyzeSA1000JSONAndExitCode(t *testing.T) {
 
 	var stdout, stderr bytes.Buffer
 	code := Run(
-		[]string{"analyze", "--format", "json", "--only", "sa1000"},
+		[]string{"analyze", "--format", "json", "--only", "invalid-regexp"},
 		strings.NewReader(""),
 		&stdout,
 		&stderr,
@@ -247,7 +247,7 @@ func TestAnalyzeSA1000JSONAndExitCode(t *testing.T) {
 	if code != exitFindings {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
-	if !strings.Contains(stdout.String(), `"code": "SA1000"`) {
+	if !strings.Contains(stdout.String(), `"code": "invalid-regexp"`) {
 		t.Fatalf("unexpected JSON: %s", stdout.String())
 	}
 }
@@ -260,7 +260,7 @@ func TestAnalyzeListsRules(t *testing.T) {
 		&stdout,
 		&stderr,
 	)
-	if code != exitSuccess || !strings.Contains(stdout.String(), "SA1000\terror\t") {
+	if code != exitSuccess || !strings.Contains(stdout.String(), "invalid-regexp\terror\t") {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 }

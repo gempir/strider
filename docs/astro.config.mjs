@@ -14,15 +14,19 @@ export default defineConfig({
         },
         {
           label: 'Guides',
-          items: ['formatter', 'linter', 'analyzer'],
+          items: ['formatter', 'linter', 'analyzers'],
         },
         {
           label: 'Reference',
           items: [
             'reference/cli',
             {
-              label: 'Lint rules',
-              items: [{ autogenerate: { directory: 'rules' } }],
+              label: 'Lints',
+              items: [{ autogenerate: { directory: 'lints' } }],
+            },
+            {
+              label: 'Analyzers',
+              items: [{ autogenerate: { directory: 'analyzers' } }],
             },
           ],
         },

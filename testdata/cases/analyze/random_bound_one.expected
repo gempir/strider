@@ -1,0 +1,1 @@
+testdata/cases/analyze/random_bound_one.go:6:18: warning[random-bound-one]: rand.Intn with an upper bound of one always returns zero

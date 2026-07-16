@@ -1,0 +1,1 @@
+testdata/cases/analyze/sort_conversion_without_sort.go:6:2: warning[sort-conversion-without-sort]: sort.IntSlice is only a type conversion and does not sort; use sort.Ints

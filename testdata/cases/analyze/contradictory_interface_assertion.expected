@@ -1,0 +1,1 @@
+testdata/cases/analyze/contradictory_interface_assertion.go:12:9: warning[contradictory-interface-assertion]: interface assertion can never succeed: method Read has type func() int in the source interface and func() string in the asserted interface

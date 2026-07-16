@@ -1,0 +1,1 @@
+testdata/cases/analyze/defer_close_before_error_check.go:7:2: warning[defer-close-before-error-check]: check the error from os.Open before deferring file.Close

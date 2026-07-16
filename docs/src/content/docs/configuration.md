@@ -32,12 +32,12 @@ does not accept paths or any of those three mode options.
 | --- | --- | --- |
 | `--format text\|json` | `text` | Select the diagnostic report format. |
 | `--only CODE` | Seven-rule profile | Run only the selected code. Repeat the option or provide comma-separated codes. |
-| `--all-rules` | Off | Enable all 111 native rules. Mutually exclusive with `--only`. |
+| `--all-rules` | Off | Enable all 116 native rules. Mutually exclusive with `--only`. |
 | `--list-rules` | Off | List selected rule codes, severities, and summaries, then exit. |
 | `--explain CODE` | None | Print the registry explanation and examples for one selected rule, then exit. |
 
 The seven Strider profile rules are enabled at `warning` severity by default.
-The 104 additional rules are selectable individually or together with
+The 109 additional rules are selectable individually or together with
 `--all-rules`. Rule severities and thresholds cannot yet be changed; each
 rule reference records the fixed default used when that rule is enabled.
 

@@ -53,10 +53,10 @@ Run the package-aware checks, including type checking and SSA construction:
 strider analyze ./...
 ```
 
-Select one Staticcheck-compatible rule while investigating a finding:
+Select one analyzer while investigating a finding:
 
 ```sh
-strider analyze --only SA1000 ./...
+strider analyze --only invalid-regexp ./...
 ```
 
 ## Exit status

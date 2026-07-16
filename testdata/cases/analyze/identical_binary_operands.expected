@@ -1,0 +1,1 @@
+testdata/cases/analyze/identical_binary_operands.go:4:9: warning[identical-binary-operands]: identical expressions appear on both sides of ==

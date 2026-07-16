@@ -1,0 +1,22 @@
+---
+title: spinning-empty-loop
+description: Detect empty loops that consume a core while waiting unsafely.
+---
+
+**Default severity:** `warning`
+
+An empty unconditional loop spins at full speed. An empty loop that only
+rereads variables can terminate only through unsynchronized mutation, which is
+a data race. Use synchronization or a blocking operation instead.
+
+Conditions containing calls or channel receives are accepted because their
+result can change dynamically. Constant-false loops are accepted as disabled
+debug scaffolding.
+
+```go
+for !ready { // reported
+}
+
+for !ready() { // accepted
+}
+```

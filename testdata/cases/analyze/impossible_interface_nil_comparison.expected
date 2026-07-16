@@ -1,0 +1,1 @@
+testdata/cases/analyze/impossible_interface_nil_comparison.go:13:25: warning[impossible-interface-nil-comparison]: interface has a concrete dynamic type; this comparison is never true

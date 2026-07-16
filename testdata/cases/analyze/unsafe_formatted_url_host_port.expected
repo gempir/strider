@@ -1,0 +1,1 @@
+testdata/cases/analyze/unsafe_formatted_url_host_port.go:6:21: warning[unsafe-formatted-url-host-port]: formatted URL host and port may be invalid for IPv6; build the authority with net.JoinHostPort

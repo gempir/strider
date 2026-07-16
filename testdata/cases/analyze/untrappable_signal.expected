@@ -1,0 +1,2 @@
+testdata/cases/analyze/untrappable_signal.go:10:20: warning[untrappable-signal]: os.Kill cannot be trapped by a process
+testdata/cases/analyze/untrappable_signal.go:11:16: warning[untrappable-signal]: syscall.SIGSTOP cannot be trapped by a process

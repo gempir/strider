@@ -42,5 +42,10 @@ func (a *analyzer) checkNode(node ast.Node) {
 		a.checkLiteral(n)
 	case *ast.ReturnStmt:
 		a.checkReturn(n)
+	case *ast.UnaryExpr:
+		a.checkPointerRoundTrip(n)
+		a.checkDoubleNegation(n)
+	case *ast.StarExpr:
+		a.checkPointerRoundTrip(n)
 	}
 }

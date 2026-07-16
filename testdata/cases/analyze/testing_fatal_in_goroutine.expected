@@ -1,0 +1,1 @@
+testdata/cases/analyze/testing_fatal_in_goroutine_test.go:6:2: error[testing-fatal-in-goroutine]: Fatal must be called from the test goroutine, not a child goroutine

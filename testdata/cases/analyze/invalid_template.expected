@@ -1,0 +1,2 @@
+testdata/cases/analyze/invalid_template.go:11:29: error[invalid-template]: template: :1: bad character U+007D '}'
+testdata/cases/analyze/invalid_template.go:12:29: error[invalid-template]: template: :1: bad character U+007D '}'

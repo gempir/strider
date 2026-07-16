@@ -1,0 +1,1 @@
+testdata/cases/analyze/pointless_integer_math.go:6:18: warning[pointless-integer-math]: calling math.Ceil on a converted integer is pointless

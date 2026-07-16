@@ -1,0 +1,1 @@
+testdata/cases/analyze/zero_replacement_limit.go:6:46: warning[zero-replacement-limit]: a replacement limit of zero replaces nothing; use -1 or ReplaceAll to replace every occurrence

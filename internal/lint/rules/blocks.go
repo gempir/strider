@@ -7,7 +7,7 @@ import (
 )
 
 func (a *analyzer) checkBlock(block *ast.BlockStmt) {
-	if len(block.List) == 0 && !a.intentionalEmptyLoop(block) {
+	if len(block.List) == 0 && a.emptyConditionalBranch(block) {
 		a.report("empty-block", block, "empty block should be removed or documented")
 	}
 	for index, statement := range block.List {
@@ -16,13 +16,12 @@ func (a *analyzer) checkBlock(block *ast.BlockStmt) {
 		}
 		if index+1 < len(block.List) {
 			if add, ok := waitGroupAdd(statement); ok {
-				if goStatement, ok := block.List[index+1].(*ast.GoStmt); ok {
+				if _, ok := block.List[index+1].(*ast.GoStmt); ok {
 					a.report(
 						"use-waitgroup-go",
 						add,
 						"replace WaitGroup.Add followed by go with WaitGroup.Go",
 					)
-					_ = goStatement
 				}
 			}
 		}
@@ -46,6 +45,11 @@ func (a *analyzer) checkBlock(block *ast.BlockStmt) {
 		}
 	}
 	a.checkBlockWhitespace(block)
+}
+
+func (a *analyzer) emptyConditionalBranch(block *ast.BlockStmt) bool {
+	conditional, ok := a.parent().(*ast.IfStmt)
+	return ok && (conditional.Body == block || conditional.Else == block)
 }
 
 func (a *analyzer) checkRedundantErrorIf(current, next ast.Stmt) {
@@ -91,31 +95,6 @@ func waitGroupAdd(statement ast.Stmt) (*ast.CallExpr, bool) {
 		return nil, false
 	}
 	return call, true
-}
-
-func (a *analyzer) intentionalEmptyLoop(block *ast.BlockStmt) bool {
-	switch parent := a.parent().(type) {
-	case *ast.RangeStmt:
-		return parent.Body == block
-	case *ast.ForStmt:
-		return parent.Body == block &&
-			(containsCall(parent.Cond) || containsCall(parent.Post) || containsCall(parent.Init))
-	}
-	return false
-}
-
-func containsCall(node ast.Node) bool {
-	found := false
-	ast.Inspect(
-		node,
-		func(child ast.Node) bool {
-			if _, ok := child.(*ast.CallExpr); ok {
-				found = true
-			}
-			return !found
-		},
-	)
-	return found
 }
 
 func (a *analyzer) checkBlockWhitespace(block *ast.BlockStmt) {

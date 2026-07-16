@@ -1,0 +1,1 @@
+testdata/cases/analyze/misaligned_atomic_64.go:11:19: warning[misaligned-atomic-64]: field total is not 64-bit aligned for atomic access on this target

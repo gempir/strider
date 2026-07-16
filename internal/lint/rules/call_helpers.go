@@ -49,16 +49,6 @@ func literalWithoutFormatting(expr ast.Expr) bool {
 	return err == nil && !strings.Contains(value, "%")
 }
 
-func basicContextKey(expr ast.Expr) bool {
-	switch n := expr.(type) {
-	case *ast.BasicLit:
-		return true
-	case *ast.Ident:
-		return n.Name == "true" || n.Name == "false" || n.Name == "nil"
-	}
-	return false
-}
-
 func isDeepExit(name string) bool {
 	return name == "os.Exit" || strings.HasPrefix(name, "log.Fatal") ||
 		strings.HasPrefix(name, "log.Panic")

@@ -1,0 +1,1 @@
+testdata/cases/analyze/odd_paired_arguments.go:6:29: error[odd-paired-arguments]: paired argument requires an even number of elements, but this call provides 3

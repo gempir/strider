@@ -23,7 +23,7 @@ Use `make wilds-analyze` to run all implemented package-aware checks, or select
 one while developing it:
 
 ```sh
-make wilds-analyze STRIDER_ANALYZE_ARGS='--only SA1000'
+make wilds-analyze STRIDER_ANALYZE_ARGS='--only invalid-regexp'
 ```
 
 `make wilds` is a smoke test. Formatting differences and lint findings are

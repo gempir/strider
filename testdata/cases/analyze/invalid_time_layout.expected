@@ -1,0 +1,1 @@
+testdata/cases/analyze/invalid_time_layout.go:8:13: error[invalid-time-layout]: parsing time "12345" as "12345": cannot parse "" as "4"

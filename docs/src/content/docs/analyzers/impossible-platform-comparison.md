@@ -1,0 +1,21 @@
+---
+title: impossible-platform-comparison
+description: Detect GOOS and GOARCH comparisons excluded by build constraints.
+---
+
+**Default severity:** `warning`
+
+A file's build constraints limit the operating systems and architectures on
+which its code can run. Comparing `runtime.GOOS` or `runtime.GOARCH` with an
+excluded known target has a fixed result.
+
+Platform aliases are respected: Android satisfies the `linux` tag, iOS
+satisfies `darwin`, and Illumos satisfies `solaris`.
+
+```go
+//go:build linux
+
+if runtime.GOOS == "windows" { // reported
+    unreachable()
+}
+```

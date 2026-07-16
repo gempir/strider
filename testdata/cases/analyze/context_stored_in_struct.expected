@@ -1,0 +1,1 @@
+testdata/cases/analyze/context_stored_in_struct.go:6:2: warning[context-stored-in-struct]: do not store context.Context in a struct; pass it explicitly to each operation

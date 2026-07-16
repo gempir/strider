@@ -8,6 +8,12 @@ that registered interest in that node type. Files run concurrently up to
 `GOMAXPROCS`; diagnostics are sorted by path, byte offset, and rule code before
 reporting, so output remains deterministic.
 
+Lint rules stay deliberately file-local: they cover style, naming,
+readability, complexity, and syntactic maintainability without loading or
+type-checking a package. Checks that need resolved APIs, package metadata,
+constants propagated through values, or control-flow analysis belong to
+[`strider analyze`](/analyzers/).
+
 ## Run rules
 
 Run every rule:
@@ -37,7 +43,7 @@ strider lint --list-rules
 strider lint --explain cyclomatic-complexity
 ```
 
-See the [lint-rule reference](/rules/) for the complete behavior and examples
+See the [lint reference](/lints/) for the complete behavior and examples
 for every rule.
 
 ## Reports

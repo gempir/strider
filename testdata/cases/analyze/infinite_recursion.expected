@@ -1,0 +1,1 @@
+testdata/cases/analyze/infinite_recursion.go:4:16: warning[infinite-recursion]: recursive call has no path to a function exit

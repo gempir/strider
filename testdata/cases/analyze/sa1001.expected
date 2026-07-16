@@ -1,2 +1,0 @@
-testdata/cases/analyze/sa1001.go:11:29: error[SA1001]: template: :1: bad character U+007D '}'
-testdata/cases/analyze/sa1001.go:12:29: error[SA1001]: template: :1: bad character U+007D '}'

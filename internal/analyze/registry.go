@@ -21,13 +21,16 @@ func NewRegistry(only []string) (*Registry, error) {
 	}
 
 	wanted := make(map[string]bool, len(only))
+	original := make(map[string]string, len(only))
 	for _, code := range only {
-		wanted[strings.ToUpper(code)] = true
+		normalized := strings.ToUpper(code)
+		wanted[normalized] = true
+		original[normalized] = code
 	}
 	unknown := make([]string, 0)
 	for code := range wanted {
 		if byCode[code] == nil {
-			unknown = append(unknown, code)
+			unknown = append(unknown, original[code])
 		}
 	}
 	if len(unknown) != 0 {
@@ -50,6 +53,102 @@ func (registry *Registry) Rules() []Rule {
 	return append([]Rule(nil), registry.rules...)
 }
 
+func (registry *Registry) hasRule(code string) bool {
+	for _, rule := range registry.rules {
+		if rule.Meta().Code == code {
+			return true
+		}
+	}
+	return false
+}
+
 func allRules() []Rule {
-	return []Rule{invalidRegexpRule{}, invalidTemplateRule{}, invalidTimeParseRule{}}
+	return []Rule{
+		invalidRegexpRule{},
+		invalidTemplateRule{},
+		invalidTimeParseRule{},
+		unsupportedBinaryWriteRule{},
+		suspiciousSleepRule{},
+		invalidExecCommandRule{},
+		dynamicPrintfRule{},
+		invalidURLRule{},
+		nonCanonicalHeaderRule{},
+		regexpFindAllZeroRule{},
+		invalidUTF8StringArgumentRule{},
+		nilContextRule{},
+		swappedSeekArgumentsRule{},
+		nonPointerUnmarshalRule{},
+		leakyTimeTickRule{},
+		untrappableSignalRule{},
+		unbufferedSignalChannelRule{},
+		zeroReplacementLimitRule{},
+		deprecatedAPIUsageRule{},
+		invalidListenAddressRule{},
+		ipByteComparisonRule{},
+		writerBufferMutationRule{},
+		duplicateTrimCutsetRule{},
+		timerResetDrainRaceRule{},
+		unsupportedMarshalTypeRule{},
+		misalignedAtomic64Rule{},
+		sortNonSliceRule{},
+		contextKeyTypeRule{},
+		invalidStrconvArgumentRule{},
+		overlappingEncodeBuffersRule{},
+		swappedErrorsIsArgumentsRule{},
+		waitGroupAddInsideGoroutineRule{},
+		emptyCriticalSectionRule{},
+		testingFatalInGoroutineRule{},
+		deferredLockAfterLockRule{},
+		testMainMissingExitRule{},
+		benchmarkIterationMutationRule{},
+		identicalBinaryOperandsRule{},
+		impossibleIntegerComparisonRule{},
+		singleIterationLoopRule{},
+		ineffectiveValueReceiverAssignmentRule{},
+		overwrittenBeforeUseRule{},
+		unchangedLoopConditionRule{},
+		argumentOverwrittenBeforeUseRule{},
+		unusedAppendResultRule{},
+		nanComparisonRule{},
+		pointlessIntegerMathRule{},
+		ineffectiveBitwiseZeroRule{},
+		discardedPureResultRule{},
+		selfAssignmentRule{},
+		unreachableTypeSwitchCaseRule{},
+		singleArgumentAppendRule{},
+		addressNilComparisonRule{},
+		impossibleInterfaceNilComparisonRule{},
+		negativeLengthCapacityComparisonRule{},
+		constantNegativeZeroRule{},
+		urlQueryCopyMutationRule{},
+		sortConversionWithoutSortRule{},
+		randomBoundOneRule{},
+		neverNilComparisonRule{},
+		impossiblePlatformComparisonRule{},
+		nilMapAssignmentRule{},
+		deferCloseBeforeErrorCheckRule{},
+		spinningEmptyLoopRule{},
+		finalizerCapturesObjectRule{},
+		infiniteRecursionRule{},
+		invalidPrintfCallRule{},
+		contradictoryInterfaceAssertionRule{},
+		possibleNilDereferenceRule{},
+		oddPairedArgumentsRule{},
+		regexpMatchInLoopRule{},
+		separateByteStringMapKeyRule{},
+		nonPointerSyncPoolValueRule{},
+		caseInsensitiveStringComparisonRule{},
+		byteStringWriteRule{},
+		decimalFileModeRule{},
+		partiallyTypedConstantGroupRule{},
+		unexportedSerializationFieldsRule{},
+		oversizedFixedWidthShiftRule{},
+		dangerousDirectoryRemovalRule{},
+		failedAssertionShadowReadRule{},
+		deferredReturnFunctionNotCalledRule{},
+		durationMultipliedByDurationRule{},
+		contextStoredInStructRule{},
+		unsafeFormattedURLHostPortRule{},
+		uncheckedRowsErrorRule{},
+	}
 }

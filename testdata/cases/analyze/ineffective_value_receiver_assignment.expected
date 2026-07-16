@@ -1,0 +1,1 @@
+testdata/cases/analyze/ineffective_value_receiver_assignment.go:8:10: warning[ineffective-value-receiver-assignment]: assignment to value receiver field localCounter.value has no observable effect

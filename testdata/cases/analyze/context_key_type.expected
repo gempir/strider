@@ -1,0 +1,1 @@
+testdata/cases/analyze/context_key_type.go:6:32: warning[context-key-type]: do not use built-in type string as a context key; define a dedicated named type

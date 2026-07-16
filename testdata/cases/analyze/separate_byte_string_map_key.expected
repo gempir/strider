@@ -1,0 +1,1 @@
+testdata/cases/analyze/separate_byte_string_map_key.go:4:9: warning[separate-byte-string-map-key]: inline this byte-to-string conversion in each map lookup to avoid an allocation

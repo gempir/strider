@@ -1,0 +1,1 @@
+testdata/cases/analyze/self_assignment.go:4:2: warning[self-assignment]: self-assignment of value has no effect

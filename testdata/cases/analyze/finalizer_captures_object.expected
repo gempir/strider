@@ -1,0 +1,1 @@
+testdata/cases/analyze/finalizer_captures_object.go:9:22: warning[finalizer-captures-object]: finalizer captures the finalized object and prevents it from being collected; use the finalizer parameter instead

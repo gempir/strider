@@ -1,0 +1,1 @@
+testdata/cases/analyze/nil_context.go:8:18: warning[nil-context]: do not pass a nil Context, even if a function permits it; pass context.TODO if you are unsure about which Context to use

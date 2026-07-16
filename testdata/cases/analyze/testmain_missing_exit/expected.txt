@@ -1,0 +1,1 @@
+main_test.go:5:1: warning[testmain-missing-exit]: TestMain must call os.Exit with the result of m.Run on this Go version

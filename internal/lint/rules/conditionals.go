@@ -83,9 +83,15 @@ func mapLookupInitializer(statement ast.Stmt) (string, string) {
 }
 
 func (a *analyzer) checkIfChain(statement *ast.IfStmt) {
+	if parent, ok := a.parent().(*ast.IfStmt); ok && parent.Else == statement {
+		return
+	}
 	conditions := map[string]ast.Expr{}
 	branches := map[string]*ast.BlockStmt{}
 	for current := statement; current != nil; {
+		if current.Init != nil || expressionHasPotentialSideEffects(current.Cond) {
+			return
+		}
 		condition := nodeText(current.Cond)
 		if first := conditions[condition]; first != nil {
 			a.report(
@@ -112,6 +118,27 @@ func (a *analyzer) checkIfChain(statement *ast.IfStmt) {
 		}
 		current = next
 	}
+}
+
+func expressionHasPotentialSideEffects(expression ast.Expr) bool {
+	hasSideEffects := false
+	ast.Inspect(expression, func(node ast.Node) bool {
+		if hasSideEffects {
+			return false
+		}
+		switch node := node.(type) {
+		case *ast.CallExpr:
+			hasSideEffects = true
+			return false
+		case *ast.UnaryExpr:
+			if node.Op == token.ARROW {
+				hasSideEffects = true
+				return false
+			}
+		}
+		return true
+	})
+	return hasSideEffects
 }
 
 func (a *analyzer) checkBooleanReturn(statement *ast.IfStmt) {

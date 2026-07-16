@@ -1,0 +1,1 @@
+testdata/cases/analyze/non_pointer_sync_pool_value.go:6:11: warning[non-pointer-sync-pool-value]: store a pointer-like value in sync.Pool to avoid an allocation during Put

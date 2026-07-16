@@ -1,0 +1,1 @@
+testdata/cases/analyze/swapped_errors_is_arguments.go:9:19: error[swapped-errors-is-arguments]: errors.Is arguments appear reversed; inspect the local error first

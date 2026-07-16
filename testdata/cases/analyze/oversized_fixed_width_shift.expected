@@ -1,0 +1,1 @@
+testdata/cases/analyze/oversized_fixed_width_shift.go:4:9: warning[oversized-fixed-width-shift]: shifting a 16-bit value by 16 bits always clears it

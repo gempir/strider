@@ -1,0 +1,1 @@
+testdata/cases/analyze/nil_map_assignment.go:5:8: error[nil-map-assignment]: assignment to nil map will panic

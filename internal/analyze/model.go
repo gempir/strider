@@ -29,13 +29,18 @@ type Rule interface {
 // Pass contains the syntax and type information for one loaded Go package.
 type Pass struct {
 	PackagePath string
+	GoVersion   string
 	Files       []*ast.File
 	FileSet     *token.FileSet
 	Types       *types.Package
+	TypesSizes  types.Sizes
 	TypesInfo   *types.Info
 	SSAProgram  *ssa.Program
 	SSAPackage  *ssa.Package
 	Functions   []*ssa.Function
+
+	deprecatedObjects  map[types.Object]string
+	deprecatedPackages map[*types.Package]string
 
 	report func(ast.Node, string)
 }

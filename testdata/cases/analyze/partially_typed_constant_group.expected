@@ -1,0 +1,1 @@
+testdata/cases/analyze/partially_typed_constant_group.go:6:2: warning[partially-typed-constant-group]: only the first constant with an explicit value has the declared type; repeat the type on the remaining constants

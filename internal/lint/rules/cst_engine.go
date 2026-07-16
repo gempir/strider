@@ -16,6 +16,7 @@ var cstRuleCodes = map[string]bool{
 	"comment-spacings":                true,
 	"comments-density":                true,
 	"cognitive-complexity":            true,
+	"confusing-naming":                true,
 	"confusing-results":               true,
 	"context-as-argument":             true,
 	"cyclomatic-complexity":           true,
@@ -39,6 +40,7 @@ var cstRuleCodes = map[string]bool{
 	"function-result-limit":           true,
 	"get-return":                      true,
 	"import-alias-naming":             true,
+	"import-shadowing":                true,
 	"imports-blocklist":               true,
 	"ineffective-pointer-copy":        true,
 	"increment-decrement":             true,
@@ -58,6 +60,7 @@ var cstRuleCodes = map[string]bool{
 	"redundant-build-tag":             true,
 	"redundant-import-alias":          true,
 	"receiver-naming":                 true,
+	"redefines-builtin-id":            true,
 	"spaced-compiler-directive":       true,
 	"string-format":                   true,
 	"struct-tag":                      true,
@@ -66,12 +69,14 @@ var cstRuleCodes = map[string]bool{
 	"unnecessary-stmt":                true,
 	"unexported-return":               true,
 	"unsecure-url-scheme":             true,
+	"unexported-naming":               true,
 	"use-any":                         true,
 	"use-errors-new":                  true,
 	"use-fmt-print":                   true,
 	"use-slices-sort":                 true,
 	"unused-parameter":                true,
 	"unused-receiver":                 true,
+	"var-naming":                      true,
 	"waitgroup-by-value":              true,
 	"zero-integer-division":           true,
 }
@@ -89,6 +94,8 @@ type cstAnalyzer struct {
 	current       cst.Node
 	receiverNames map[string]string
 	marshalKinds  map[string]string
+	importNames   map[string]bool
+	foldedNames   map[string]map[string]string
 }
 
 // AnalyzeCST runs selected native CST rules over one lossless source tree.
@@ -110,6 +117,8 @@ func AnalyzeCST(input CSTInput) {
 		reporter:      input.Report,
 		receiverNames: make(map[string]string),
 		marshalKinds:  make(map[string]string),
+		importNames:   make(map[string]bool),
+		foldedNames:   make(map[string]map[string]string),
 	}
 	analyzer.checkFile()
 	stack := []cst.Node{}
@@ -131,8 +140,10 @@ func (a *cstAnalyzer) check(node cst.Node) {
 	switch current := node.(type) {
 	case *cst.FunctionDecl:
 		a.checkFunction(current)
+		a.checkConcreteFoldedName("_", current.FunctionName.IDENT)
 	case *cst.MethodDecl:
 		a.checkMethod(current)
+		a.checkConcreteMethodName(current)
 	case *cst.ReturnStmt:
 		a.checkNakedReturn(current)
 	case *cst.DeferStmt:
@@ -151,14 +162,30 @@ func (a *cstAnalyzer) check(node cst.Node) {
 		a.checkIncrementAssignment(current)
 	case *cst.ShortVarDecl:
 		a.checkIncrementShortDeclaration(current)
+		a.checkConcreteIdentifierList(current.IdentifierList)
 	case *cst.PrimaryExpr:
 		a.checkConcreteCall(current)
 	case *cst.StructType:
 		a.checkConcreteStruct(current)
 	case *cst.FieldDecl:
 		a.checkConcreteStructField(current)
+		a.checkConcreteFieldNames(current)
 	case *cst.BasicLit:
 		a.checkConcreteStringLiteral(current)
+	case *cst.ParameterDecl:
+		a.checkConcreteIdentifierList(current.IdentifierList)
+	case *cst.VarSpec:
+		a.checkConcreteIdentifier(current.IDENT)
+	case *cst.VarSpec2:
+		a.checkConcreteIdentifierList(current.IdentifierList)
+	case *cst.ConstSpec:
+		a.checkConcreteIdentifier(current.IDENT)
+	case *cst.ConstSpec2:
+		a.checkConcreteIdentifierList(current.IdentifierList)
+	case *cst.TypeDef:
+		a.checkConcreteIdentifier(current.IDENT)
+	case *cst.AliasDecl:
+		a.checkConcreteIdentifier(current.IDENT)
 	}
 }
 

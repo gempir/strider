@@ -434,6 +434,41 @@ func TestBidirectionalControlCharacterReportsInvisibleSourceControl(t *testing.T
 	}
 }
 
+func TestConcreteNamingRules(t *testing.T) {
+	fixture := writeFixture(t, `package sample
+
+import "fmt"
+
+var _hidden = 1
+type record struct { Name int; name int }
+func use(fmt int, len int, bad_name int) { _, _, _ = fmt, len, bad_name }
+`)
+	codes := []string{
+		"confusing-naming",
+		"import-shadowing",
+		"redefines-builtin-id",
+		"unexported-naming",
+		"var-naming",
+	}
+	registry, err := NewRegistry(codes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{fixture}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	seen := map[string]bool{}
+	for _, item := range diagnostics {
+		seen[item.Code] = true
+	}
+	for _, code := range codes {
+		if !seen[code] {
+			t.Errorf("%s did not report: %#v", code, diagnostics)
+		}
+	}
+}
+
 func TestConcreteFunctionRules(t *testing.T) {
 	fixture := writeFixture(t, `package sample
 

@@ -97,6 +97,13 @@ func (a *cstAnalyzer) checkConcreteImports() {
 				)
 			}
 		}
+		importName := filepath.Base(path)
+		if alias != "" && alias != "." && alias != "_" {
+			importName = alias
+		}
+		if importName != "." && importName != "_" {
+			a.importNames[importName] = true
+		}
 		return false
 	})
 }

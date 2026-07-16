@@ -25,6 +25,7 @@ type Token = gc.Token
 // Grammar node aliases keep consumers coupled to Strider's CST vocabulary
 // rather than to the parser implementation package.
 type (
+	AliasDecl         = gc.AliasDeclNode
 	Assignment        = gc.AssignmentNode
 	Arguments         = gc.ArgumentsNode
 	Arguments1        = gc.Arguments1Node
@@ -34,6 +35,8 @@ type (
 	BinaryExpression  = gc.BinaryExpressionNode
 	Block             = gc.BlockNode
 	CommCase          = gc.CommCaseNode
+	ConstSpec         = gc.ConstSpecNode
+	ConstSpec2        = gc.ConstSpec2Node
 	DeferStmt         = gc.DeferStmtNode
 	ExprSwitchCase    = gc.ExprSwitchCaseNode
 	ExprSwitchCase2   = gc.ExprSwitchCase2Node

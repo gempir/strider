@@ -99,12 +99,6 @@ func validateConcreteSyntax(filename string, tree *cst.Tree) error {
 				unsupported = node
 				feature = strings.ToLower(current.Ch().String()) + " statements"
 			}
-		case *cst.TypeParameters:
-			unsupported = node
-			feature = "type parameters"
-		case *cst.TypeArgs:
-			unsupported = node
-			feature = "generic instantiations"
 		}
 		return unsupported == nil
 	})

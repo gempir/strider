@@ -67,7 +67,7 @@ func TestFormatBatchDoesNotWriteWhenAnyFileIsUnsupported(t *testing.T) {
 	if err := os.WriteFile(good, original, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(bad, []byte("package p\nfunc F[T any](v T) T { return v }\n"), 0o600); err !=
+	if err := os.WriteFile(bad, []byte("package p\nfunc F() { goto done; done: return }\n"), 0o600); err !=
 		nil {
 		t.Fatal(err)
 	}

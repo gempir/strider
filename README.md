@@ -63,10 +63,9 @@ or `--diff` is used. With no path, Strider recursively scans the current
 directory. Use `--stdin` to read source from stdin and write it to stdout. A
 file containing `//strider:format-ignore` is passed through unchanged.
 
-The formatter spike supports ordinary, non-generic application code. It
-currently rejects generics, `goto`, `fallthrough`, and some comments embedded
-inside expressions. Type switches, `select`, channel sends, and labeled
-statements are supported.
+The formatter spike supports ordinary application code, including generics,
+type switches, `select`, channel sends, and labeled statements. It currently
+rejects `goto`, `fallthrough`, and some comments embedded inside expressions.
 
 ## Lint
 

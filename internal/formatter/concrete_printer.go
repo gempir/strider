@@ -245,7 +245,7 @@ func (l *concreteLayout) indexTree() {
 			l.markDelimited(node, token.LBRACE, token.RBRACE, l.hardOpen, l.hardClose)
 		case "ConstDecl", "TypeDecl", "VarDecl":
 			l.markDelimited(node, token.LPAREN, token.RPAREN, l.hardOpen, l.hardClose)
-		case "Parameters", "LiteralValue":
+		case "Parameters", "LiteralValue", "TypeParameters", "TypeArgs":
 			l.markAnyDelimited(node, l.softOpen, l.softClose)
 		default:
 			if strings.HasPrefix(kind, "Arguments") {
@@ -293,6 +293,12 @@ func (l *concreteLayout) indexTree() {
 			if current.Receiver != nil {
 				l.markFirstToken(current.Receiver, l.spaceBefore)
 			}
+		case *cst.TypeDef:
+			l.markFirstToken(current.TypeNode, l.spaceBefore)
+		case *cst.TypeParamDecl:
+			l.markFirstToken(current.TypeConstraint, l.spaceBefore)
+		case *cst.TypeElemList:
+			l.markToken(current.OR, l.spacedOps)
 		}
 		if kind == "SendStmt" || kind == "RangeClause" || kind == "TypeSwitchGuard" {
 			for _, current := range cst.NodeTokens(node) {
@@ -339,6 +345,7 @@ func (l *concreteLayout) markAnyDelimited(node cst.Node, opens map[int]int, clos
 	}
 	open, close := tokens[0].Ch(), tokens[len(tokens)-1].Ch()
 	if (open == token.LPAREN && close == token.RPAREN) ||
+		(open == token.LBRACK && close == token.RBRACK) ||
 		(open == token.LBRACE && close == token.RBRACE) {
 		l.markDelimited(node, open, close, opens, closes)
 	}

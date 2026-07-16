@@ -79,10 +79,8 @@ func TestFormatOptionsControlWidthAndLineEndings(t *testing.T) {
 
 func TestFormatRefusesUnsupportedSyntax(t *testing.T) {
 	tests := map[string]string{
-		"fallthrough":           "package p\nfunc F(v int) { switch v { case 1: fallthrough; default: return } }\n",
-		"generic declaration":   "package p\nfunc F[T any](v T) T { return v }\n",
-		"generic instantiation": "package p\nvar _ = F[int, string]\n",
-		"goto":                  "package p\nfunc F() { goto done; done: return }\n",
+		"fallthrough": "package p\nfunc F(v int) { switch v { case 1: fallthrough; default: return } }\n",
+		"goto":        "package p\nfunc F() { goto done; done: return }\n",
 	}
 	for name, input := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -91,6 +89,62 @@ func TestFormatRefusesUnsupportedSyntax(t *testing.T) {
 				t.Fatalf("got %v, want ErrUnsupported", err)
 			}
 		})
+	}
+}
+
+func TestFormatGenerics(t *testing.T) {
+	input := []byte(`package p
+type Pair[Left,Right any]struct{First Left;Second Right}
+type Number interface{~int|~int64|~float64}
+func Map[Input any,Output comparable](values []Input,convert func(Input)Output)map[Output]Input{result:=map[Output]Input{};for _,value:=range values{result[convert(value)]=value};return result}
+var _=Map[string,int]
+`)
+	want := `package p
+
+type Pair[Left, Right any] struct {
+	First Left
+	Second Right
+}
+
+type Number interface {
+	~int | ~int64 | ~float64
+}
+
+func Map[Input any, Output comparable](values []Input, convert func(Input) Output) map[Output]Input {
+	result := map[Output]Input{}
+	for _, value := range values {
+		result[convert(value)] = value
+	}
+	return result
+}
+
+var _ = Map[string, int]
+`
+	result, err := Format("generics.go", input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := string(result.Source); got != want {
+		t.Fatalf("formatted source:\n%s\nwant:\n%s", got, want)
+	}
+}
+
+func TestFormatBreaksLongGenericLists(t *testing.T) {
+	input := []byte("package p\nfunc Transform[VeryLongInputType any,VeryLongOutputType comparable](value VeryLongInputType)VeryLongOutputType{return Convert[VeryLongInputType,VeryLongOutputType](value)}\n")
+	result, err := FormatWithOptions("generics.go", input, Options{
+		PrintWidth: 40, IndentWidth: 4, EndOfLine: "lf",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	formatted := string(result.Source)
+	for _, want := range []string{
+		"func Transform[\n\tVeryLongInputType any,\n\tVeryLongOutputType comparable,\n]",
+		"return Convert[\n\t\tVeryLongInputType,\n\t\tVeryLongOutputType,\n\t](value)",
+	} {
+		if !strings.Contains(formatted, want) {
+			t.Fatalf("formatted source does not contain %q:\n%s", want, formatted)
+		}
 	}
 }
 

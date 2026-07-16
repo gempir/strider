@@ -76,6 +76,8 @@ type (
 	StructType        = gc.StructTypeNode
 	Tag               = gc.TagNode
 	TypeDef           = gc.TypeDefNode
+	TypeElemList      = gc.TypeElemListNode
+	TypeParamDecl     = gc.TypeParamDeclNode
 	TypeSwitchCase    = gc.TypeSwitchCaseNode
 	TypeSwitchStmt    = gc.TypeSwitchStmtNode
 	TypeArgs          = gc.TypeArgsNode

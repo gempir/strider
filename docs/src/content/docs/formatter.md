@@ -78,11 +78,10 @@ from being written.
 
 ## Current syntax boundary
 
-The formatter supports ordinary application code, including type switches,
-`select`, channel sends, and labeled statements. It currently refuses
-generics, `goto`, `fallthrough`, and some comments embedded deeply inside
-expressions. Refusal is an exit-code `2` error and never produces a partial
-file.
+The formatter supports ordinary application code, including generics, type
+switches, `select`, channel sends, and labeled statements. It currently refuses
+`goto`, `fallthrough`, and some comments embedded deeply inside expressions.
+Refusal is an exit-code `2` error and never produces a partial file.
 
 Use `//strider:format-ignore` anywhere in a file to return that file unchanged.
 This is currently a file-level escape hatch; region and next-node formatting

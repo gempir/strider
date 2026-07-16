@@ -16,11 +16,14 @@ WILDS_PROJECTS ?= \
 	helix,https://github.com/nicklaw5/helix.git,15cffe632969bd9f5b99a19fa2fee8e55a13ce2f \
 	tailscale,https://github.com/tailscale/tailscale.git,168b20d3b42088aafa30e73dd57e8590ad8d5fbd
 
-.PHONY: build test require-strider wilds wilds-all wilds-analyze wilds-clone wilds-check wilds-accept
+.PHONY: build install test require-strider wilds wilds-all wilds-analyze wilds-clone wilds-check wilds-accept
 .PHONY: test-projects test-projects-clone
 
 build:
 	CGO_ENABLED=0 go build -trimpath -o strider ./cmd/strider
+
+install: build
+	mv ./strider ~/.local/bin/strider
 
 # Deterministic, curated formatter and linter expectations. This uses only the
 # existing Strider binary; it does not invoke Go.

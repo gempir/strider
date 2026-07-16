@@ -780,6 +780,68 @@ func Assert(v interface{}) { _ = v.(string) }
 	}
 }
 
+func TestCSTPolicyRulesReportRepresentativeFindings(t *testing.T) {
+	filename := writeFixture(t, `package sample
+import (
+	"sync"
+	"sync/atomic"
+	"time"
+)
+var counter int64
+type item struct{ count int }
+func (current item) mutate(value int, group sync.WaitGroup, closer interface{ Close() error }) {
+	value = 2
+	current.count++
+	counter = atomic.AddInt64(&counter, 1)
+	epoch := time.Now().Unix()
+	_ = epoch
+	values := map[string]int{"answer": 42}
+	if found, ok := values["answer"]; ok {
+		_ = found
+		_ = values["answer"]
+	}
+	group.Go(func() { group.Done() })
+	_ = time.Now() == time.Now()
+	closer.Close()
+}
+`)
+	registry, err := NewRegistry([]string{
+		"atomic",
+		"epoch-naming",
+		"forbidden-call-in-wg-go",
+		"inefficient-map-lookup",
+		"modifies-parameter",
+		"modifies-value-receiver",
+		"time-equal",
+		"unhandled-error",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{filename}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	codes := map[string]bool{}
+	for _, item := range diagnostics {
+		codes[item.Code] = true
+	}
+	for _, code := range []string{
+		"atomic",
+		"epoch-naming",
+		"forbidden-call-in-wg-go",
+		"inefficient-map-lookup",
+		"modifies-parameter",
+		"modifies-value-receiver",
+		"time-equal",
+		"unhandled-error",
+	} {
+		if !codes[code] {
+			t.Errorf("expected %s finding; got codes %v", code, codes)
+		}
+	}
+}
+
 func TestExtendedRuleOrderingIsDeterministic(t *testing.T) {
 	filename := writeFixture(
 		t,

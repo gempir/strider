@@ -434,6 +434,64 @@ func TestBidirectionalControlCharacterReportsInvisibleSourceControl(t *testing.T
 	}
 }
 
+func TestConcreteFunctionRules(t *testing.T) {
+	fixture := writeFixture(t, `package sample
+
+type item struct{}
+
+func overloaded(a, b, c, d, e, f, g, h, i int) {}
+
+func Get(
+	flag bool,
+	ctx int,
+	context context.Context,
+	wg sync.WaitGroup,
+	delaySeconds time.Duration,
+	unused int,
+) (int, int, error, int) {
+	if flag { return 0, 0, nil, 0 }
+	return 0, 0, nil, 0
+}
+
+func GetNothing() {}
+func done() { return }
+func (i item) MarshalJSON() ([]byte, error) { _ = i; return nil, nil }
+func (other *item) UnmarshalJSON([]byte) error { _ = other; return nil }
+`)
+	codes := []string{
+		"argument-limit",
+		"confusing-results",
+		"context-as-argument",
+		"error-return",
+		"flag-parameter",
+		"function-result-limit",
+		"get-return",
+		"marshal-receiver",
+		"receiver-naming",
+		"time-naming",
+		"unnecessary-stmt",
+		"unused-parameter",
+		"waitgroup-by-value",
+	}
+	registry, err := NewRegistry(codes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{fixture}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	seen := map[string]bool{}
+	for _, item := range diagnostics {
+		seen[item.Code] = true
+	}
+	for _, code := range codes {
+		if !seen[code] {
+			t.Errorf("%s did not report: %#v", code, diagnostics)
+		}
+	}
+}
+
 func TestConcreteCallRules(t *testing.T) {
 	fixture := writeFixture(t, `package sample
 

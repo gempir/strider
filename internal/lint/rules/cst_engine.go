@@ -10,11 +10,16 @@ import (
 var cstRuleCodes = map[string]bool{
 	"bidirectional-control-character": true,
 	"banned-characters":               true,
+	"argument-limit":                  true,
 	"blank-imports":                   true,
 	"bool-literal-in-expr":            true,
 	"comment-spacings":                true,
 	"comments-density":                true,
+	"cognitive-complexity":            true,
+	"confusing-results":               true,
+	"context-as-argument":             true,
 	"cyclomatic-complexity":           true,
+	"cyclomatic":                      true,
 	"double-negation":                 true,
 	"call-to-gc":                      true,
 	"deep-exit":                       true,
@@ -24,16 +29,22 @@ var cstRuleCodes = map[string]bool{
 	"enforce-repeated-arg-type-style": true,
 	"enforce-slice-style":             true,
 	"error-strings":                   true,
+	"error-return":                    true,
 	"errorf":                          true,
 	"file-header":                     true,
 	"file-length-limit":               true,
+	"flag-parameter":                  true,
 	"filename-format":                 true,
+	"function-length":                 true,
+	"function-result-limit":           true,
+	"get-return":                      true,
 	"import-alias-naming":             true,
 	"imports-blocklist":               true,
 	"ineffective-pointer-copy":        true,
 	"increment-decrement":             true,
 	"line-length-limit":               true,
 	"max-parameters":                  true,
+	"marshal-receiver":                true,
 	"modulo-one":                      true,
 	"nested-structs":                  true,
 	"no-defer-in-loop":                true,
@@ -46,15 +57,22 @@ var cstRuleCodes = map[string]bool{
 	"package-naming":                  true,
 	"redundant-build-tag":             true,
 	"redundant-import-alias":          true,
+	"receiver-naming":                 true,
 	"spaced-compiler-directive":       true,
 	"string-format":                   true,
 	"struct-tag":                      true,
+	"time-naming":                     true,
 	"unnecessary-format":              true,
+	"unnecessary-stmt":                true,
+	"unexported-return":               true,
 	"unsecure-url-scheme":             true,
 	"use-any":                         true,
 	"use-errors-new":                  true,
 	"use-fmt-print":                   true,
 	"use-slices-sort":                 true,
+	"unused-parameter":                true,
+	"unused-receiver":                 true,
+	"waitgroup-by-value":              true,
 	"zero-integer-division":           true,
 }
 
@@ -62,13 +80,15 @@ var cstRuleCodes = map[string]bool{
 func UsesCST(code string) bool { return cstRuleCodes[code] }
 
 type cstAnalyzer struct {
-	filename  string
-	tree      *cst.Tree
-	content   []byte
-	enabled   map[string]bool
-	reporter  func(Finding)
-	ancestors []cst.Node
-	current   cst.Node
+	filename      string
+	tree          *cst.Tree
+	content       []byte
+	enabled       map[string]bool
+	reporter      func(Finding)
+	ancestors     []cst.Node
+	current       cst.Node
+	receiverNames map[string]string
+	marshalKinds  map[string]string
 }
 
 // AnalyzeCST runs selected native CST rules over one lossless source tree.
@@ -83,11 +103,13 @@ func AnalyzeCST(input CSTInput) {
 		return
 	}
 	analyzer := &cstAnalyzer{
-		filename: input.Filename,
-		tree:     input.Tree,
-		content:  input.Tree.Source(),
-		enabled:  enabled,
-		reporter: input.Report,
+		filename:      input.Filename,
+		tree:          input.Tree,
+		content:       input.Tree.Source(),
+		enabled:       enabled,
+		reporter:      input.Report,
+		receiverNames: make(map[string]string),
+		marshalKinds:  make(map[string]string),
 	}
 	analyzer.checkFile()
 	stack := []cst.Node{}
@@ -191,11 +213,18 @@ func (a *cstAnalyzer) checkFunction(function *cst.FunctionDecl) {
 		a.report("no-init", name, "replace init with explicit initialization")
 	}
 	a.checkSignature(name, function.Signature.Parameters, function.FunctionBody)
+	a.checkConcreteFunctionRules(name, function.Signature, function.FunctionBody, nil)
 }
 
 func (a *cstAnalyzer) checkMethod(method *cst.MethodDecl) {
 	if method.Signature != nil {
 		a.checkSignature(method.MethodName, method.Signature.Parameters, method.FunctionBody)
+		a.checkConcreteFunctionRules(
+			method.MethodName,
+			method.Signature,
+			method.FunctionBody,
+			method.Receiver,
+		)
 	}
 }
 

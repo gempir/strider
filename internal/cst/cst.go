@@ -56,6 +56,7 @@ type (
 	ReturnStmt        = gc.ReturnStmtNode
 	Result            = gc.ResultNode
 	ShortVarDecl      = gc.ShortVarDeclNode
+	Signature         = gc.SignatureNode
 	StatementList     = gc.StatementListNode
 	StructType        = gc.StructTypeNode
 	Tag               = gc.TagNode

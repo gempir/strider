@@ -11,6 +11,7 @@ var cstRuleCodes = map[string]bool{
 	"bidirectional-control-character": true,
 	"banned-characters":               true,
 	"argument-limit":                  true,
+	"bare-return":                     true,
 	"blank-imports":                   true,
 	"bool-literal-in-expr":            true,
 	"comment-spacings":                true,
@@ -24,11 +25,15 @@ var cstRuleCodes = map[string]bool{
 	"double-negation":                 true,
 	"call-to-gc":                      true,
 	"deep-exit":                       true,
+	"defer":                           true,
 	"dot-imports":                     true,
 	"duplicated-imports":              true,
 	"enforce-map-style":               true,
 	"enforce-repeated-arg-type-style": true,
 	"enforce-slice-style":             true,
+	"empty-block":                     true,
+	"empty-lines":                     true,
+	"early-return":                    true,
 	"error-strings":                   true,
 	"error-return":                    true,
 	"errorf":                          true,
@@ -39,15 +44,21 @@ var cstRuleCodes = map[string]bool{
 	"function-length":                 true,
 	"function-result-limit":           true,
 	"get-return":                      true,
+	"identical-branches":              true,
+	"identical-ifelseif-branches":     true,
+	"identical-ifelseif-conditions":   true,
 	"import-alias-naming":             true,
 	"import-shadowing":                true,
 	"imports-blocklist":               true,
 	"ineffective-pointer-copy":        true,
 	"increment-decrement":             true,
+	"indent-error-flow":               true,
 	"line-length-limit":               true,
 	"max-parameters":                  true,
+	"max-control-nesting":             true,
 	"marshal-receiver":                true,
 	"modulo-one":                      true,
+	"multiline-if-init":               true,
 	"nested-structs":                  true,
 	"no-defer-in-loop":                true,
 	"no-else-after-return":            true,
@@ -64,9 +75,13 @@ var cstRuleCodes = map[string]bool{
 	"spaced-compiler-directive":       true,
 	"string-format":                   true,
 	"struct-tag":                      true,
+	"superfluous-else":                true,
 	"time-naming":                     true,
+	"unchecked-type-assertion":        true,
 	"unnecessary-format":              true,
+	"unnecessary-if":                  true,
 	"unnecessary-stmt":                true,
+	"unreachable-code":                true,
 	"unexported-return":               true,
 	"unsecure-url-scheme":             true,
 	"unexported-naming":               true,
@@ -150,6 +165,9 @@ func (a *cstAnalyzer) check(node cst.Node) {
 		a.checkDefer(current)
 	case *cst.IfElseStmt:
 		a.checkElseAfterReturn(current)
+		a.checkConcreteIfElse(current)
+	case *cst.IfStmt:
+		a.checkConcreteIf(current)
 	case *cst.VarDecl:
 		a.checkPackageVar(current)
 	case *cst.BinaryExpression:
@@ -172,6 +190,16 @@ func (a *cstAnalyzer) check(node cst.Node) {
 		a.checkConcreteFieldNames(current)
 	case *cst.BasicLit:
 		a.checkConcreteStringLiteral(current)
+	case *cst.Block:
+		a.checkConcreteBlock(current)
+	case *cst.ForStmt:
+		a.checkConcreteControlNesting(current)
+	case *cst.SelectStmt:
+		a.checkConcreteControlNesting(current)
+	case *cst.TypeSwitchStmt:
+		a.checkConcreteControlNesting(current)
+	case *cst.TypeAssertion:
+		a.checkConcreteTypeAssertion(current)
 	case *cst.ParameterDecl:
 		a.checkConcreteIdentifierList(current.IdentifierList)
 	case *cst.VarSpec:
@@ -315,6 +343,7 @@ func (a *cstAnalyzer) checkNakedReturn(statement *cst.ReturnStmt) {
 		return
 	}
 	a.report("no-naked-return", statement, "return values must be explicit")
+	a.report("bare-return", statement, "avoid bare returns; add explicit return expressions")
 }
 
 func cstEnclosingFunctionHasNamedResults(ancestors []cst.Node) bool {
@@ -350,19 +379,40 @@ func cstEnclosingFunctionHasNamedResults(ancestors []cst.Node) bool {
 }
 
 func (a *cstAnalyzer) checkDefer(statement *cst.DeferStmt) {
+	insideLoop := false
 	for index := len(a.ancestors) - 1; index >= 0; index-- {
 		switch a.ancestors[index].(type) {
 		case *cst.FunctionDecl, *cst.MethodDecl, *cst.FunctionLit:
-			return
+			index = -1
 		case *cst.ForStmt:
-			a.report(
-				"no-defer-in-loop",
-				statement,
-				"defer inside a loop runs at function exit, not iteration exit",
-			)
-			return
+			insideLoop = true
+			index = -1
 		}
 	}
+	if insideLoop {
+		a.report(
+			"no-defer-in-loop",
+			statement,
+			"defer inside a loop runs at function exit, not iteration exit",
+		)
+	}
+	call, ok := statement.Expression.(*cst.PrimaryExpr)
+	if !ok {
+		return
+	}
+	if concreteCallName(call) == "recover" {
+		a.report("defer", statement, "defer recover() evaluates recover immediately")
+	}
+	cst.Walk(call.PrimaryExpr, func(node cst.Node) bool {
+		literal, ok := node.(*cst.FunctionLit)
+		if !ok || literal.Signature == nil || literal.Signature.Result == nil {
+			return true
+		}
+		if concreteDeclCount(concreteResultDecls(literal.Signature.Result)) > 0 {
+			a.report("defer", statement, "return values from a deferred function are ignored")
+		}
+		return false
+	})
 }
 
 func (a *cstAnalyzer) checkElseAfterReturn(statement *cst.IfElseStmt) {

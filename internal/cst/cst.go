@@ -47,6 +47,7 @@ type (
 	FunctionLit       = gc.FunctionLitNode
 	IdentifierList    = gc.IdentifierListNode
 	IfElseStmt        = gc.IfElseStmtNode
+	IfStmt            = gc.IfStmtNode
 	ImportDecl        = gc.ImportDeclNode
 	ImportSpec        = gc.ImportSpecNode
 	InterfaceType     = gc.InterfaceTypeNode
@@ -58,6 +59,7 @@ type (
 	PrimaryExpr       = gc.PrimaryExprNode
 	ReturnStmt        = gc.ReturnStmtNode
 	Result            = gc.ResultNode
+	SelectStmt        = gc.SelectStmtNode
 	ShortVarDecl      = gc.ShortVarDeclNode
 	Signature         = gc.SignatureNode
 	StatementList     = gc.StatementListNode
@@ -67,6 +69,7 @@ type (
 	TypeSwitchCase    = gc.TypeSwitchCaseNode
 	TypeSwitchStmt    = gc.TypeSwitchStmtNode
 	TypeArgs          = gc.TypeArgsNode
+	TypeAssertion     = gc.TypeAssertionNode
 	TypeParameters    = gc.TypeParametersNode
 	UnaryExpr         = gc.UnaryExprNode
 	VarDecl           = gc.VarDeclNode

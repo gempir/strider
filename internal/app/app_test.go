@@ -10,6 +10,16 @@ import (
 	"github.com/gempir/strider/internal/baseline"
 )
 
+func TestVersion(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	if code := Run([]string{"version"}, strings.NewReader(""), &stdout, &stderr); code != exitSuccess {
+		t.Fatalf("exit %d, stderr %q", code, stderr.String())
+	}
+	if stdout.String() != "strider dev\n" || stderr.Len() != 0 {
+		t.Fatalf("stdout %q, stderr %q", stdout.String(), stderr.String())
+	}
+}
+
 func TestFormatStdin(t *testing.T) {
 	stdin := strings.NewReader("package p\nfunc F( ){return}\n")
 	var stdout, stderr bytes.Buffer

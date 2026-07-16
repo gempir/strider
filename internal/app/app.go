@@ -54,6 +54,8 @@ const (
 	exitError    = 2
 )
 
+var version = "dev"
+
 func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	args, configPath, noConfig, ok := parseGlobalOptions(args, stderr)
 	if !ok {
@@ -89,7 +91,7 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		usage(stdout)
 		return exitSuccess
 	case "version", "--version":
-		fmt.Fprintln(stdout, "strider dev")
+		fmt.Fprintln(stdout, "strider "+version)
 		return exitSuccess
 	default:
 		fmt.Fprintf(stderr, "strider: unknown command %q\n\n", args[0])

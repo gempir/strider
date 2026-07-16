@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -43,6 +44,76 @@ func (a *cstAnalyzer) checkFilenameAndPackage() {
 			)
 		}
 	}
+}
+
+func (a *cstAnalyzer) checkConcreteImports() {
+	seen := map[string]bool{}
+	packageName := a.packageNameToken().Src()
+	cst.Walk(a.tree.Root(), func(node cst.Node) bool {
+		spec, ok := node.(*cst.ImportSpec)
+		if !ok {
+			return true
+		}
+		path, _ := strconv.Unquote(spec.ImportPath.Src())
+		if seen[path] {
+			a.report(
+				"duplicated-imports",
+				spec,
+				fmt.Sprintf("package %s is imported more than once", path),
+			)
+		} else {
+			seen[path] = true
+		}
+		alias := ""
+		var aliasNode cst.Node
+		switch {
+		case spec.PERIOD.IsValid():
+			alias, aliasNode = ".", spec.PERIOD
+		case spec.PackageName.IsValid():
+			alias, aliasNode = spec.PackageName.Src(), spec.PackageName
+		}
+		switch alias {
+		case "":
+		case ".":
+			a.report("dot-imports", spec, "dot imports obscure where identifiers come from")
+		case "_":
+			if packageName != "main" && !strings.HasSuffix(a.filename, "_test.go") &&
+				!concreteImportHasComment(a.tree, spec) {
+				a.report("blank-imports", spec, "blank import should be justified by a comment")
+			}
+		default:
+			if !regexp.MustCompile(`^[a-z][a-z0-9]*$`).MatchString(alias) {
+				a.report(
+					"import-alias-naming",
+					aliasNode,
+					"import alias should contain lower-case letters and digits",
+				)
+			}
+			if alias == filepath.Base(path) {
+				a.report(
+					"redundant-import-alias",
+					aliasNode,
+					"import alias is identical to the package name",
+				)
+			}
+		}
+		return false
+	})
+}
+
+func concreteImportHasComment(tree *cst.Tree, spec *cst.ImportSpec) bool {
+	start, end := cst.Range(spec)
+	startPosition := tree.Position(start)
+	endPosition := tree.Position(end)
+	source := tree.Source()
+	for _, comment := range tree.Comments() {
+		if comment.Line == endPosition.Line ||
+			(comment.End <= start && strings.Count(string(source[comment.End:start]), "\n") <= 1 &&
+				comment.Line+1 >= startPosition.Line) {
+			return true
+		}
+	}
+	return false
 }
 
 func (a *cstAnalyzer) checkLinesAndComments() {

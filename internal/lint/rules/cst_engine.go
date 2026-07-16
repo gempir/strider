@@ -9,11 +9,23 @@ import (
 
 var cstRuleCodes = map[string]bool{
 	"bidirectional-control-character": true,
+	"banned-characters":               true,
+	"blank-imports":                   true,
 	"bool-literal-in-expr":            true,
 	"comment-spacings":                true,
+	"comments-density":                true,
 	"cyclomatic-complexity":           true,
 	"double-negation":                 true,
+	"dot-imports":                     true,
+	"duplicated-imports":              true,
+	"enforce-map-style":               true,
+	"enforce-repeated-arg-type-style": true,
+	"enforce-slice-style":             true,
+	"file-header":                     true,
+	"file-length-limit":               true,
 	"filename-format":                 true,
+	"import-alias-naming":             true,
+	"imports-blocklist":               true,
 	"ineffective-pointer-copy":        true,
 	"increment-decrement":             true,
 	"line-length-limit":               true,
@@ -28,7 +40,9 @@ var cstRuleCodes = map[string]bool{
 	"package-directory-mismatch":      true,
 	"package-naming":                  true,
 	"redundant-build-tag":             true,
+	"redundant-import-alias":          true,
 	"spaced-compiler-directive":       true,
+	"string-format":                   true,
 	"use-any":                         true,
 	"zero-integer-division":           true,
 }
@@ -136,6 +150,7 @@ func (a *cstAnalyzer) reportRange(code string, start, end int, message string) {
 func (a *cstAnalyzer) checkFile() {
 	a.checkFilenameAndPackage()
 	a.checkLinesAndComments()
+	a.checkConcreteImports()
 }
 
 func (a *cstAnalyzer) packageNameToken() cst.Token {

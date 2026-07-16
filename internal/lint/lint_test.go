@@ -434,6 +434,47 @@ func TestBidirectionalControlCharacterReportsInvisibleSourceControl(t *testing.T
 	}
 }
 
+func TestConcreteImportRules(t *testing.T) {
+	fixture := writeFixture(t, `package sample
+
+import (
+	. "fmt"
+	_ "net/http"
+	Bad_Alias "strings"
+	strings "strings"
+)
+`)
+	registry, err := NewRegistry([]string{
+		"blank-imports",
+		"dot-imports",
+		"duplicated-imports",
+		"import-alias-naming",
+		"redundant-import-alias",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{fixture}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	counts := map[string]int{}
+	for _, item := range diagnostics {
+		counts[item.Code]++
+	}
+	for _, code := range []string{
+		"blank-imports",
+		"dot-imports",
+		"duplicated-imports",
+		"import-alias-naming",
+		"redundant-import-alias",
+	} {
+		if counts[code] != 1 {
+			t.Errorf("%s produced %d findings; want 1: %#v", code, counts[code], diagnostics)
+		}
+	}
+}
+
 func TestCatalogIsCompleteDocumentedAndRunnable(t *testing.T) {
 	const expectedCount = 116
 	const expectedNamesSHA256 = "915035c9aeff444086db5beafb9f0dcae18ba97e187850c26fee428666e2ae75"

@@ -12,13 +12,22 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/diagnostic"
 	builtinrules "github.com/gempir/strider/internal/lint/rules"
+	"github.com/gempir/strider/internal/pathfilter"
 	"github.com/gempir/strider/internal/source"
 )
 
 type Registry struct {
-	rules []builtinrules.Rule
+	rules    []builtinrules.Rule
+	settings map[string]configuredRule
+	root     string
+}
+
+type configuredRule struct {
+	severity diagnostic.Severity
+	excludes []string
 }
 
 func NewRegistry(only []string) (*Registry, error) {
@@ -30,15 +39,106 @@ func NewRegistryAll() (*Registry, error) {
 }
 
 func newRegistry(only []string, enableAll bool) (*Registry, error) {
-	selected, err := builtinrules.Select(only, enableAll)
+	return NewRegistryConfigured(only, enableAll, nil, "")
+}
+
+// NewRegistryConfigured applies project rule settings. Explicit CLI selection
+// takes precedence over configured enabled states.
+func NewRegistryConfigured(
+	only []string,
+	enableAll bool,
+	settings map[string]config.RuleConfig,
+	root string,
+) (*Registry, error) {
+	all, err := builtinrules.Select(nil, true)
 	if err != nil {
 		return nil, err
 	}
-	return &Registry{rules: selected}, nil
+	byCode := make(map[string]builtinrules.Rule, len(all))
+	for _, rule := range all {
+		byCode[rule.Meta().Code] = rule
+	}
+	if err := validateConfiguredRules("lint", settings, byCode); err != nil {
+		return nil, err
+	}
+	if len(only) != 0 {
+		if _, err := builtinrules.Select(only, false); err != nil {
+			return nil, err
+		}
+	}
+	defaults, _ := builtinrules.Select(nil, false)
+	enabledByDefault := make(map[string]bool, len(defaults))
+	for _, rule := range defaults {
+		enabledByDefault[rule.Meta().Code] = true
+	}
+	wanted := make(map[string]bool, len(only))
+	for _, code := range only {
+		wanted[code] = true
+	}
+	registry := &Registry{
+		settings: make(map[string]configuredRule, len(all)),
+		root:     root,
+	}
+	for _, rule := range all {
+		meta := rule.Meta()
+		ruleConfig := settings[meta.Code]
+		enabled := enabledByDefault[meta.Code]
+		switch {
+		case len(only) != 0:
+			enabled = wanted[meta.Code]
+		case enableAll:
+			enabled = true
+		case ruleConfig.Enabled != nil:
+			enabled = *ruleConfig.Enabled
+		}
+		if !enabled {
+			continue
+		}
+		severity := meta.DefaultSeverity
+		if ruleConfig.Severity != "" {
+			severity = diagnostic.Severity(ruleConfig.Severity)
+		}
+		registry.rules = append(registry.rules, rule)
+		registry.settings[meta.Code] = configuredRule{severity: severity, excludes: ruleConfig.Excludes}
+	}
+	return registry, nil
+}
+
+func validateConfiguredRules(
+	tool string,
+	settings map[string]config.RuleConfig,
+	available map[string]builtinrules.Rule,
+) error {
+	unknown := make([]string, 0)
+	for code := range settings {
+		if available[code] == nil {
+			unknown = append(unknown, code)
+		}
+	}
+	if len(unknown) == 0 {
+		return nil
+	}
+	sort.Strings(unknown)
+	return fmt.Errorf("unknown %s rule(s) in configuration: %s", tool, strings.Join(unknown, ", "))
 }
 
 func (r *Registry) Rules() []builtinrules.Rule {
 	return append([]builtinrules.Rule(nil), r.rules...)
+}
+
+func (r *Registry) Severity(code string) diagnostic.Severity {
+	return r.settings[code].severity
+}
+
+func (r *Registry) activeRules(filename string) []builtinrules.Rule {
+	active := make([]builtinrules.Rule, 0, len(r.rules))
+	for _, rule := range r.rules {
+		if pathfilter.Matches(r.root, filename, r.settings[rule.Meta().Code].excludes) {
+			continue
+		}
+		active = append(active, rule)
+	}
+	return active
 }
 
 type Context struct {
@@ -51,7 +151,7 @@ type Context struct {
 	current     ast.Node
 }
 
-func (c *Context) report(node ast.Node, code, message string) {
+func (c *Context) report(node ast.Node, code, message string, severity diagnostic.Severity) {
 	if c.suppressed(code) {
 		return
 	}
@@ -65,7 +165,7 @@ func (c *Context) report(node ast.Node, code, message string) {
 		diagnostic.Diagnostic{
 			Code:     code,
 			Message:  message,
-			Severity: diagnostic.SeverityWarning,
+			Severity: severity,
 			File:     display,
 			Start:    start,
 			End:      end,
@@ -192,14 +292,19 @@ func lintFile(filename string, registry *Registry) ([]diagnostic.Diagnostic, err
 			FileSet:  fset,
 			File:     file,
 			Content:  content,
-			Rules:    registry.rules,
+			Rules:    registry.activeRules(filename),
 			Report: func(finding builtinrules.Finding) {
 				context.current = finding.Scope
 				if context.current == nil {
 					context.current = finding.Node
 				}
 				context.ancestors = finding.Ancestors
-				context.report(finding.Node, finding.Code, finding.Message)
+				context.report(
+					finding.Node,
+					finding.Code,
+					finding.Message,
+					registry.Severity(finding.Code),
+				)
 			},
 		},
 	)

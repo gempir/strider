@@ -17,6 +17,16 @@ import (
 
 const PrintWidth = 100
 
+type Options struct {
+	PrintWidth  int
+	IndentWidth int
+	EndOfLine   string
+}
+
+func DefaultOptions() Options {
+	return Options{PrintWidth: PrintWidth, IndentWidth: 4, EndOfLine: "lf"}
+}
+
 type unsupportedErrorValue string
 
 func (value unsupportedErrorValue) Error() string { return string(value) }
@@ -43,19 +53,23 @@ type Result struct {
 }
 
 func Format(filename string, source []byte) (Result, error) {
+	return FormatWithOptions(filename, source, DefaultOptions())
+}
+
+func FormatWithOptions(filename string, source []byte, options Options) (Result, error) {
 	if bytes.Contains(source, []byte("//strider:format-ignore")) {
 		copyOfSource := append([]byte(nil), source...)
 		return Result{Source: copyOfSource, Ignored: true}, nil
 	}
 
-	formatted, err := formatInternal(filename, source)
+	formatted, err := formatInternal(filename, source, options)
 	if err != nil {
 		return Result{}, err
 	}
 	if err := equivalent(filename, source, formatted); err != nil {
 		return Result{}, fmt.Errorf("formatter safety check: %w", err)
 	}
-	second, err := formatInternal(filename, formatted)
+	second, err := formatInternal(filename, formatted, options)
 	if err != nil {
 		return Result{}, fmt.Errorf("formatter idempotence check: %w", err)
 	}
@@ -65,7 +79,7 @@ func Format(filename string, source []byte) (Result, error) {
 	return Result{Source: formatted, Changed: !bytes.Equal(source, formatted)}, nil
 }
 
-func formatInternal(filename string, source []byte) ([]byte, error) {
+func formatInternal(filename string, source []byte, options Options) ([]byte, error) {
 	fset, file, err := parse(filename, source)
 	if err != nil {
 		return nil, err
@@ -77,7 +91,13 @@ func formatInternal(filename string, source []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	output := strings.TrimRight(Render(builder.file(file), PrintWidth), " \t\r\n") + "\n"
+	output := strings.TrimRight(
+		RenderWithIndentWidth(builder.file(file), options.PrintWidth, options.IndentWidth),
+		" \t\r\n",
+	) + "\n"
+	if options.EndOfLine == "crlf" {
+		output = strings.ReplaceAll(output, "\n", "\r\n")
+	}
 	return []byte(output), nil
 }
 

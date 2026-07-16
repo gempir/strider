@@ -1,6 +1,7 @@
 package formatter
 
 import (
+	"bytes"
 	"errors"
 	"strings"
 	"testing"
@@ -54,6 +55,25 @@ func VeryLongFunctionName(
 	}
 	if got := string(result.Source); got != want {
 		t.Fatalf("formatted source:\n%s\nwant:\n%s", got, want)
+	}
+}
+
+func TestFormatOptionsControlWidthAndLineEndings(t *testing.T) {
+	source := []byte("package p\nfunc f(){call(alpha,beta,gamma,delta,epsilon)}\n")
+	wide, err := FormatWithOptions("fixture.go", source, Options{
+		PrintWidth: 100, IndentWidth: 4, EndOfLine: "lf",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	narrow, err := FormatWithOptions("fixture.go", source, Options{
+		PrintWidth: 40, IndentWidth: 8, EndOfLine: "crlf",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Equal(wide.Source, narrow.Source) || !bytes.Contains(narrow.Source, []byte("\r\n")) {
+		t.Fatalf("formatter options had no effect:\n%s", narrow.Source)
 	}
 }
 

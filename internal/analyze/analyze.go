@@ -95,6 +95,7 @@ func Run(paths []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
 		}
 		for _, rule := range registry.rules {
 			meta := rule.Meta()
+			severity := registry.Severity(meta.Code)
 			goVersion := ""
 			if pkg.Module != nil {
 				goVersion = pkg.Module.GoVersion
@@ -127,6 +128,9 @@ func Run(paths []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
 				if generated[filename] {
 					return
 				}
+				if registry.Excluded(meta.Code, filename) {
+					return
+				}
 				end := pkg.Fset.Position(node.End())
 				display := source.DisplayPath(filename)
 				position.Filename = display
@@ -148,7 +152,7 @@ func Run(paths []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
 					diagnostic.Diagnostic{
 						Code:     meta.Code,
 						Message:  message,
-						Severity: meta.DefaultSeverity,
+						Severity: severity,
 						File:     display,
 						Start:    position,
 						End:      end,

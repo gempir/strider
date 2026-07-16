@@ -7,6 +7,9 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/gempir/strider/internal/config"
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
 func TestInvalidRegexpReportsConstantInvalidRegexps(t *testing.T) {
@@ -2461,6 +2464,26 @@ func TestRegistryRejectsUnknownRule(t *testing.T) {
 	if _, err := NewRegistry([]string{"missing-analyzer"}); err == nil ||
 		!strings.Contains(err.Error(), "missing-analyzer") {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestEveryAnalyzerAcceptsCommonConfiguration(t *testing.T) {
+	enabled := true
+	settings := make(map[string]config.RuleConfig, len(allRules()))
+	for _, rule := range allRules() {
+		settings[rule.Meta().Code] = config.RuleConfig{Enabled: &enabled, Severity: "note"}
+	}
+	registry, err := NewRegistryConfigured(nil, settings, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := len(registry.Rules()), len(allRules()); got != want {
+		t.Fatalf("configured %d analyzers; want %d", got, want)
+	}
+	for _, rule := range registry.Rules() {
+		if severity := registry.Severity(rule.Meta().Code); severity != diagnostic.SeverityNote {
+			t.Errorf("%s severity = %s", rule.Meta().Code, severity)
+		}
 	}
 }
 

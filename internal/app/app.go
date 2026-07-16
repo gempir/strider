@@ -12,8 +12,11 @@ import (
 	"strings"
 
 	"github.com/gempir/strider/internal/analyze"
+	"github.com/gempir/strider/internal/config"
+	"github.com/gempir/strider/internal/diagnostic"
 	"github.com/gempir/strider/internal/formatter"
 	"github.com/gempir/strider/internal/lint"
+	"github.com/gempir/strider/internal/pathfilter"
 	"github.com/gempir/strider/internal/source"
 )
 
@@ -30,6 +33,9 @@ type formatOptions struct {
 	stdin         bool
 	stdinFilename string
 	paths         []string
+	formatter     formatter.Options
+	root          string
+	excludes      []string
 }
 
 const (
@@ -39,17 +45,36 @@ const (
 )
 
 func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+	args, configPath, noConfig, ok := parseGlobalOptions(args, stderr)
+	if !ok {
+		return exitError
+	}
 	if len(args) == 0 {
 		usage(stderr)
 		return exitError
 	}
 	switch args[0] {
 	case "fmt", "format":
-		return runFormat(args[1:], stdin, stdout, stderr)
+		configuration, err := config.Load(configPath, noConfig)
+		if err != nil {
+			fmt.Fprintf(stderr, "strider: %v\n", err)
+			return exitError
+		}
+		return runFormat(args[1:], configuration, stdin, stdout, stderr)
 	case "lint":
-		return runLint(args[1:], stdout, stderr)
+		configuration, err := config.Load(configPath, noConfig)
+		if err != nil {
+			fmt.Fprintf(stderr, "strider: %v\n", err)
+			return exitError
+		}
+		return runLint(args[1:], configuration, stdout, stderr)
 	case "analyze":
-		return runAnalyze(args[1:], stdout, stderr)
+		configuration, err := config.Load(configPath, noConfig)
+		if err != nil {
+			fmt.Fprintf(stderr, "strider: %v\n", err)
+			return exitError
+		}
+		return runAnalyze(args[1:], configuration, stdout, stderr)
 	case "help", "-h", "--help":
 		usage(stdout)
 		return exitSuccess
@@ -63,13 +88,46 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	}
 }
 
+func parseGlobalOptions(args []string, stderr io.Writer) ([]string, string, bool, bool) {
+	configPath := ""
+	noConfig := false
+	for len(args) != 0 {
+		switch {
+		case args[0] == "--config":
+			if len(args) < 2 || args[1] == "" {
+				fmt.Fprintln(stderr, "strider: --config requires a path")
+				return nil, "", false, false
+			}
+			configPath = args[1]
+			args = args[2:]
+		case strings.HasPrefix(args[0], "--config="):
+			configPath = strings.TrimPrefix(args[0], "--config=")
+			if configPath == "" {
+				fmt.Fprintln(stderr, "strider: --config requires a path")
+				return nil, "", false, false
+			}
+			args = args[1:]
+		case args[0] == "--no-config":
+			noConfig = true
+			args = args[1:]
+		default:
+			if configPath != "" && noConfig {
+				fmt.Fprintln(stderr, "strider: --config and --no-config are mutually exclusive")
+				return nil, "", false, false
+			}
+			return args, configPath, noConfig, true
+		}
+	}
+	return args, configPath, noConfig, true
+}
+
 func usage(writer io.Writer) {
 	fmt.Fprintln(
 		writer,
 		`Strider formats, lints, and statically analyzes Go code.
 
 Usage:
-  strider fmt [--check|--diff|--write|--stdin] [FILE|DIR]...
+  strider [--config PATH|--no-config] fmt [--check|--diff|--write|--stdin] [FILE|DIR]...
   strider fmt --stdin                      # stdin to stdout
   strider lint [OPTIONS] [FILE|DIR]...
   strider analyze [OPTIONS] [FILE|DIR]...
@@ -82,13 +140,25 @@ Commands:
 	)
 }
 
-func runFormat(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+func runFormat(
+	args []string,
+	configuration config.Config,
+	stdin io.Reader,
+	stdout, stderr io.Writer,
+) int {
 	options, ok := parseFormatOptions(args, stderr)
 	if !ok {
 		return exitError
 	}
+	options.formatter = formatter.Options{
+		PrintWidth:  configuration.Formatter.PrintWidth,
+		IndentWidth: configuration.Formatter.IndentWidth,
+		EndOfLine:   configuration.Formatter.EndOfLine,
+	}
+	options.root = configuration.Root
+	options.excludes = configuration.Formatter.Excludes
 	if options.stdin {
-		return formatStdin(options.stdinFilename, stdin, stdout, stderr)
+		return formatStdin(options.stdinFilename, options.formatter, stdin, stdout, stderr)
 	}
 	return formatPaths(options, stdout, stderr)
 }
@@ -160,13 +230,18 @@ func flagWasSet(flags *flag.FlagSet, name string) bool {
 	return found
 }
 
-func formatStdin(filename string, stdin io.Reader, stdout, stderr io.Writer) int {
+func formatStdin(
+	filename string,
+	formatOptions formatter.Options,
+	stdin io.Reader,
+	stdout, stderr io.Writer,
+) int {
 	input, err := io.ReadAll(stdin)
 	if err != nil {
 		fmt.Fprintf(stderr, "strider fmt: %v\n", err)
 		return exitError
 	}
-	result, err := formatter.Format(filename, input)
+	result, err := formatter.FormatWithOptions(filename, input, formatOptions)
 	if err != nil {
 		fmt.Fprintf(stderr, "strider fmt: %v\n", err)
 		return exitError
@@ -184,6 +259,7 @@ func formatPaths(options formatOptions, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "strider fmt: %v\n", err)
 		return exitError
 	}
+	files = filterFiles(files, options.root, options.excludes)
 	formatted := make([]formattedFile, 0, len(files))
 	for _, filename := range files {
 		original, readErr := os.ReadFile(filename)
@@ -191,7 +267,7 @@ func formatPaths(options formatOptions, stdout, stderr io.Writer) int {
 			fmt.Fprintf(stderr, "strider fmt: %s: %v\n", source.DisplayPath(filename), readErr)
 			return exitError
 		}
-		result, formatErr := formatter.Format(filename, original)
+		result, formatErr := formatter.FormatWithOptions(filename, original, options.formatter)
 		if formatErr != nil {
 			fmt.Fprintf(stderr, "strider fmt: %v\n", formatErr)
 			return exitError
@@ -338,7 +414,7 @@ func (values *stringList) Set(value string) error {
 	return nil
 }
 
-func runLint(args []string, stdout, stderr io.Writer) int {
+func runLint(args []string, configuration config.Config, stdout, stderr io.Writer) int {
 	flags := flag.NewFlagSet("lint", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	format := flags.String("format", "text", "report format: text or json")
@@ -360,11 +436,12 @@ func runLint(args []string, stdout, stderr io.Writer) int {
 	}
 	var registry *lint.Registry
 	var err error
-	if *allRules {
-		registry, err = lint.NewRegistryAll()
-	} else {
-		registry, err = lint.NewRegistry(only)
-	}
+	registry, err = lint.NewRegistryConfigured(
+		only,
+		*allRules,
+		configuration.Linter.Rules,
+		configuration.Root,
+	)
 	if err != nil {
 		fmt.Fprintf(stderr, "strider lint: %v\n", err)
 		return exitError
@@ -379,7 +456,15 @@ func runLint(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "strider lint: unsupported report format %q\n", *format)
 		return exitError
 	}
-	return lintPaths(flags.Args(), *format, registry, stdout, stderr)
+	return lintPaths(
+		flags.Args(),
+		*format,
+		registry,
+		configuration.Root,
+		configuration.Linter.Excludes,
+		stdout,
+		stderr,
+	)
 }
 
 func listLintRules(registry *lint.Registry, stdout io.Writer) int {
@@ -392,7 +477,7 @@ func listLintRules(registry *lint.Registry, stdout io.Writer) int {
 	)
 	for _, rule := range rules {
 		meta := rule.Meta()
-		fmt.Fprintf(stdout, "%s\t%s\t%s\n", meta.Code, meta.DefaultSeverity, meta.Summary)
+		fmt.Fprintf(stdout, "%s\t%s\t%s\n", meta.Code, registry.Severity(meta.Code), meta.Summary)
 	}
 	return exitSuccess
 }
@@ -407,7 +492,7 @@ func explainLintRule(registry *lint.Registry, code string, stdout, stderr io.Wri
 			stdout,
 			"%s (%s)\n\n%s\n\nGood:\n%s\n\nBad:\n%s\n",
 			meta.Code,
-			meta.DefaultSeverity,
+			registry.Severity(meta.Code),
 			meta.Explanation,
 			meta.GoodExample,
 			meta.BadExample,
@@ -418,12 +503,20 @@ func explainLintRule(registry *lint.Registry, code string, stdout, stderr io.Wri
 	return exitError
 }
 
-func lintPaths(paths []string, format string, registry *lint.Registry, stdout, stderr io.Writer) int {
+func lintPaths(
+	paths []string,
+	format string,
+	registry *lint.Registry,
+	root string,
+	excludes []string,
+	stdout, stderr io.Writer,
+) int {
 	files, err := source.Discover(paths, source.Options{SkipGenerated: true})
 	if err != nil {
 		fmt.Fprintf(stderr, "strider lint: %v\n", err)
 		return exitError
 	}
+	files = filterFiles(files, root, excludes)
 	diagnostics, err := lint.Run(files, registry)
 	if err != nil {
 		fmt.Fprintf(stderr, "strider lint: %v\n", err)
@@ -444,7 +537,7 @@ func lintPaths(paths []string, format string, registry *lint.Registry, stdout, s
 	return exitSuccess
 }
 
-func runAnalyze(args []string, stdout, stderr io.Writer) int {
+func runAnalyze(args []string, configuration config.Config, stdout, stderr io.Writer) int {
 	flags := flag.NewFlagSet("analyze", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	format := flags.String("format", "text", "report format: text or json")
@@ -459,7 +552,7 @@ func runAnalyze(args []string, stdout, stderr io.Writer) int {
 	if err := flags.Parse(args); err != nil {
 		return exitError
 	}
-	registry, err := analyze.NewRegistry(only)
+	registry, err := analyze.NewRegistryConfigured(only, configuration.Analyzer.Rules, configuration.Root)
 	if err != nil {
 		fmt.Fprintf(stderr, "strider analyze: %v\n", err)
 		return exitError
@@ -474,7 +567,15 @@ func runAnalyze(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "strider analyze: unsupported report format %q\n", *format)
 		return exitError
 	}
-	return analyzePaths(flags.Args(), *format, registry, stdout, stderr)
+	return analyzePaths(
+		flags.Args(),
+		*format,
+		registry,
+		configuration.Root,
+		configuration.Analyzer.Excludes,
+		stdout,
+		stderr,
+	)
 }
 
 func listAnalyzeRules(registry *analyze.Registry, stdout io.Writer) int {
@@ -487,7 +588,7 @@ func listAnalyzeRules(registry *analyze.Registry, stdout io.Writer) int {
 	)
 	for _, rule := range rules {
 		meta := rule.Meta()
-		fmt.Fprintf(stdout, "%s\t%s\t%s\n", meta.Code, meta.DefaultSeverity, meta.Summary)
+		fmt.Fprintf(stdout, "%s\t%s\t%s\n", meta.Code, registry.Severity(meta.Code), meta.Summary)
 	}
 	return exitSuccess
 }
@@ -506,7 +607,7 @@ func explainAnalyzeRule(
 			stdout,
 			"%s (%s)\n\n%s\n\nGood:\n%s\n\nBad:\n%s\n",
 			meta.Code,
-			meta.DefaultSeverity,
+			registry.Severity(meta.Code),
 			meta.Explanation,
 			meta.GoodExample,
 			meta.BadExample,
@@ -521,6 +622,8 @@ func analyzePaths(
 	paths []string,
 	format string,
 	registry *analyze.Registry,
+	root string,
+	excludes []string,
 	stdout, stderr io.Writer,
 ) int {
 	diagnostics, err := analyze.Run(paths, registry)
@@ -528,6 +631,7 @@ func analyzePaths(
 		fmt.Fprintf(stderr, "strider analyze: %v\n", err)
 		return exitError
 	}
+	diagnostics = filterDiagnostics(diagnostics, root, excludes)
 	if format == "json" {
 		err = analyze.ReportJSON(stdout, diagnostics)
 	} else {
@@ -541,4 +645,28 @@ func analyzePaths(
 		return exitFindings
 	}
 	return exitSuccess
+}
+
+func filterFiles(files []string, root string, excludes []string) []string {
+	filtered := make([]string, 0, len(files))
+	for _, filename := range files {
+		if !pathfilter.Matches(root, filename, excludes) {
+			filtered = append(filtered, filename)
+		}
+	}
+	return filtered
+}
+
+func filterDiagnostics(
+	diagnostics []diagnostic.Diagnostic,
+	root string,
+	excludes []string,
+) []diagnostic.Diagnostic {
+	filtered := make([]diagnostic.Diagnostic, 0, len(diagnostics))
+	for _, item := range diagnostics {
+		if !pathfilter.Matches(root, item.File, excludes) {
+			filtered = append(filtered, item)
+		}
+	}
+	return filtered
 }

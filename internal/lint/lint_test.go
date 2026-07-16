@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
@@ -441,6 +442,53 @@ func TestCatalogIsCompleteDocumentedAndRunnable(t *testing.T) {
 	}
 	if got, want := len(all.Rules()), expectedCount; got != want {
 		t.Errorf("all-rules registry contains %d rules; want %d", got, want)
+	}
+}
+
+func TestEveryLintRuleAcceptsCommonConfiguration(t *testing.T) {
+	all, err := NewRegistryAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	enabled := true
+	settings := make(map[string]config.RuleConfig, len(all.Rules()))
+	for _, rule := range all.Rules() {
+		settings[rule.Meta().Code] = config.RuleConfig{Enabled: &enabled, Severity: "note"}
+	}
+	configured, err := NewRegistryConfigured(nil, false, settings, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := len(configured.Rules()), len(all.Rules()); got != want {
+		t.Fatalf("configured %d rules; want %d", got, want)
+	}
+	for _, rule := range configured.Rules() {
+		if severity := configured.Severity(rule.Meta().Code); severity != diagnostic.SeverityNote {
+			t.Errorf("%s severity = %s", rule.Meta().Code, severity)
+		}
+	}
+}
+
+func TestLintRuleConfigurationCanExcludePaths(t *testing.T) {
+	fixture := writeFixture(t, "package p\nfunc init() {}\n")
+	enabled := true
+	registry, err := NewRegistryConfigured(
+		nil,
+		false,
+		map[string]config.RuleConfig{
+			"no-init": {Enabled: &enabled, Excludes: []string{"**/*.go"}},
+		},
+		filepath.Dir(fixture),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{fixture}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diagnostics) != 0 {
+		t.Fatalf("excluded rule reported diagnostics: %#v", diagnostics)
 	}
 }
 

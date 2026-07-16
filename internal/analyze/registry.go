@@ -4,16 +4,37 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	"github.com/gempir/strider/internal/config"
+	"github.com/gempir/strider/internal/diagnostic"
+	"github.com/gempir/strider/internal/pathfilter"
 )
 
 // Registry is an immutable selection of analysis rules.
 type Registry struct {
-	rules []Rule
+	rules    []Rule
+	settings map[string]configuredRule
+	root     string
+}
+
+type configuredRule struct {
+	severity diagnostic.Severity
+	excludes []string
 }
 
 // NewRegistry selects all implemented rules, or only the explicitly named
 // rules when only is non-empty. Rule codes are case-insensitive.
 func NewRegistry(only []string) (*Registry, error) {
+	return NewRegistryConfigured(only, nil, "")
+}
+
+// NewRegistryConfigured applies analyzer rule settings. Explicit --only
+// selection enables the named analyzers even when configuration disables them.
+func NewRegistryConfigured(
+	only []string,
+	settings map[string]config.RuleConfig,
+	root string,
+) (*Registry, error) {
 	all := allRules()
 	byCode := make(map[string]Rule, len(all))
 	for _, rule := range all {
@@ -33,19 +54,48 @@ func NewRegistry(only []string) (*Registry, error) {
 			unknown = append(unknown, original[code])
 		}
 	}
+	for code := range settings {
+		normalized := strings.ToUpper(code)
+		if byCode[normalized] == nil {
+			unknown = append(unknown, code)
+		}
+	}
 	if len(unknown) != 0 {
 		sort.Strings(unknown)
 		return nil, fmt.Errorf("unknown analysis rule(s): %s", strings.Join(unknown, ", "))
 	}
 
-	selected := make([]Rule, 0, len(all))
+	configured := make(map[string]config.RuleConfig, len(settings))
+	for code, setting := range settings {
+		configured[strings.ToUpper(code)] = setting
+	}
+	registry := &Registry{settings: make(map[string]configuredRule, len(all)), root: root}
 	for _, rule := range all {
-		if len(wanted) != 0 && !wanted[strings.ToUpper(rule.Meta().Code)] {
+		meta := rule.Meta()
+		normalized := strings.ToUpper(meta.Code)
+		setting := configured[normalized]
+		if len(wanted) != 0 && !wanted[normalized] {
 			continue
 		}
-		selected = append(selected, rule)
+		if len(wanted) == 0 && setting.Enabled != nil && !*setting.Enabled {
+			continue
+		}
+		severity := meta.DefaultSeverity
+		if setting.Severity != "" {
+			severity = diagnostic.Severity(setting.Severity)
+		}
+		registry.rules = append(registry.rules, rule)
+		registry.settings[meta.Code] = configuredRule{severity: severity, excludes: setting.Excludes}
 	}
-	return &Registry{rules: selected}, nil
+	return registry, nil
+}
+
+func (registry *Registry) Severity(code string) diagnostic.Severity {
+	return registry.settings[code].severity
+}
+
+func (registry *Registry) Excluded(code, filename string) bool {
+	return pathfilter.Matches(registry.root, filename, registry.settings[code].excludes)
 }
 
 // Rules returns a copy of the selected rules.

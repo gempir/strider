@@ -84,7 +84,7 @@ func join(separator Doc, docs []Doc) Doc {
 	if len(docs) == 0 {
 		return Text{}
 	}
-	result := make([]Doc, 0, len(docs) * 2 - 1)
+	result := make([]Doc, 0, len(docs)*2-1)
 	for index, item := range docs {
 		if index != 0 {
 			result = append(result, separator)
@@ -95,21 +95,31 @@ func join(separator Doc, docs []Doc) Doc {
 }
 
 type renderItem struct {
-	doc Doc
+	doc    Doc
 	indent int
-	flat bool
+	flat   bool
 }
 
 type renderer struct {
-	output strings.Builder
-	column int
+	output        strings.Builder
+	column        int
 	pendingIndent int
-	width int
-	stack []renderItem
+	width         int
+	indentWidth   int
+	stack         []renderItem
 }
 
 func Render(doc Doc, width int) string {
-	renderer := renderer{pendingIndent: -1, width: width, stack: []renderItem{{doc: doc}}}
+	return RenderWithIndentWidth(doc, width, 4)
+}
+
+func RenderWithIndentWidth(doc Doc, width, indentWidth int) string {
+	renderer := renderer{
+		pendingIndent: -1,
+		width:         width,
+		indentWidth:   indentWidth,
+		stack:         []renderItem{{doc: doc}},
+	}
 	for len(renderer.stack) > 0 {
 		renderer.renderNext()
 	}
@@ -137,9 +147,9 @@ func (r *renderer) renderNext() {
 		r.stack = append(
 			r.stack,
 			renderItem{
-				doc: node.Doc,
+				doc:    node.Doc,
 				indent: item.indent,
-				flat: fits(r.width - r.column, candidate, r.stack),
+				flat:   fits(r.width-r.column, candidate, r.stack),
 			},
 		)
 	case IfBreak:
@@ -148,8 +158,8 @@ func (r *renderer) renderNext() {
 }
 
 func (r *renderer) pop() renderItem {
-	item := r.stack[len(r.stack) - 1]
-	r.stack = r.stack[:len(r.stack) - 1]
+	item := r.stack[len(r.stack)-1]
+	r.stack = r.stack[:len(r.stack)-1]
 	return item
 }
 
@@ -160,7 +170,7 @@ func (r *renderer) renderText(node Text) {
 	}
 	r.output.WriteString(node.Value)
 	if newline := strings.LastIndexByte(node.Value, '\n'); newline >= 0 {
-		r.column = utf8.RuneCountInString(node.Value[newline + 1:])
+		r.column = utf8.RuneCountInString(node.Value[newline+1:])
 		return
 	}
 	r.column += utf8.RuneCountInString(node.Value)
@@ -182,7 +192,7 @@ func (r *renderer) renderSoftLine(item renderItem, node SoftLine) {
 func (r *renderer) newline(indent int) {
 	r.output.WriteByte('\n')
 	r.pendingIndent = indent
-	r.column = indent * 4
+	r.column = indent * r.indentWidth
 }
 
 func (r *renderer) pushConcat(item renderItem, docs []Doc) {
@@ -204,15 +214,15 @@ func (r *renderer) renderIfBreak(item renderItem, node IfBreak) {
 
 type fitState struct {
 	remaining int
-	stack []renderItem
-	boundary int
+	stack     []renderItem
+	boundary  int
 }
 
 func fits(remaining int, first renderItem, rest []renderItem) bool {
 	state := fitState{
 		remaining: remaining,
-		stack: append([]renderItem(nil), rest...),
-		boundary: len(rest),
+		stack:     append([]renderItem(nil), rest...),
+		boundary:  len(rest),
 	}
 	state.stack = append(state.stack, first)
 	for state.remaining >= 0 && len(state.stack) > state.boundary {
@@ -254,8 +264,8 @@ func (state *fitState) step() bool {
 }
 
 func (state *fitState) pop() renderItem {
-	item := state.stack[len(state.stack) - 1]
-	state.stack = state.stack[:len(state.stack) - 1]
+	item := state.stack[len(state.stack)-1]
+	state.stack = state.stack[:len(state.stack)-1]
 	return item
 }
 

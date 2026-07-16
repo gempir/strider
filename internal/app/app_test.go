@@ -264,3 +264,60 @@ func TestAnalyzeListsRules(t *testing.T) {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 }
+
+func TestProjectConfigurationControlsFormatterLintAndAnalyzer(t *testing.T) {
+	root := t.TempDir()
+	configuration := `version = 1
+[formatter]
+end-of-line = "crlf"
+[linter.rules.no-init]
+severity = "error"
+[analyzer.rules.invalid-regexp]
+enabled = false
+`
+	if err := os.WriteFile(filepath.Join(root, "strider.toml"), []byte(configuration), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/configured\n\ngo 1.26\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	filename := filepath.Join(root, "main.go")
+	if err := os.WriteFile(
+		filename,
+		[]byte("package p\nimport \"regexp\"\nfunc init() { regexp.MustCompile(\"[\") }\n"),
+		0o600,
+	); err != nil {
+		t.Fatal(err)
+	}
+	previous, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(previous) })
+
+	var stdout, stderr bytes.Buffer
+	code := Run([]string{"lint", "--only", "no-init", filename}, strings.NewReader(""), &stdout, &stderr)
+	if code != exitFindings || !strings.Contains(stdout.String(), "error[no-init]") {
+		t.Fatalf("lint exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	stdout.Reset()
+	stderr.Reset()
+	code = Run([]string{"analyze", filename}, strings.NewReader(""), &stdout, &stderr)
+	if code != exitSuccess || stdout.Len() != 0 {
+		t.Fatalf("analyze exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(
+		[]string{"fmt", "--stdin"},
+		strings.NewReader("package p\nfunc f( ){return}\n"),
+		&stdout,
+		&stderr,
+	)
+	if code != exitSuccess || !strings.Contains(stdout.String(), "\r\n") {
+		t.Fatalf("format exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+}

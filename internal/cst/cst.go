@@ -26,6 +26,10 @@ type Token = gc.Token
 // rather than to the parser implementation package.
 type (
 	Assignment        = gc.AssignmentNode
+	Arguments         = gc.ArgumentsNode
+	Arguments1        = gc.Arguments1Node
+	Arguments2        = gc.Arguments2Node
+	Arguments3        = gc.Arguments3Node
 	BasicLit          = gc.BasicLitNode
 	BinaryExpression  = gc.BinaryExpressionNode
 	Block             = gc.BlockNode
@@ -33,6 +37,7 @@ type (
 	DeferStmt         = gc.DeferStmtNode
 	ExprSwitchCase    = gc.ExprSwitchCaseNode
 	ExprSwitchCase2   = gc.ExprSwitchCase2Node
+	ExpressionList    = gc.ExpressionListNode
 	FieldDecl         = gc.FieldDeclNode
 	ForStmt           = gc.ForStmtNode
 	FunctionDecl      = gc.FunctionDeclNode
@@ -47,6 +52,7 @@ type (
 	ParameterDeclList = gc.ParameterDeclListNode
 	Parameters        = gc.ParametersNode
 	ParenthesizedExpr = gc.ParenthesizedExpressionNode
+	PrimaryExpr       = gc.PrimaryExprNode
 	ReturnStmt        = gc.ReturnStmtNode
 	Result            = gc.ResultNode
 	ShortVarDecl      = gc.ShortVarDeclNode

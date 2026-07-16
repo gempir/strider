@@ -434,6 +434,64 @@ func TestBidirectionalControlCharacterReportsInvisibleSourceControl(t *testing.T
 	}
 }
 
+func TestConcreteCallRules(t *testing.T) {
+	fixture := writeFixture(t, `package sample
+
+func helper() {
+	runtime.GC()
+	_ = errors.New(fmt.Sprintf("value %d", 1))
+	_ = fmt.Errorf("static message")
+	fmt.Printf("static message")
+	print("message")
+	sort.Slice(nil, nil)
+	os.Exit(1)
+	_ = errors.New("Bad message.")
+}
+`)
+	registry, err := NewRegistry([]string{
+		"call-to-gc",
+		"deep-exit",
+		"error-strings",
+		"errorf",
+		"unnecessary-format",
+		"use-errors-new",
+		"use-fmt-print",
+		"use-slices-sort",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{fixture}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	counts := map[string]int{}
+	for _, item := range diagnostics {
+		counts[item.Code]++
+	}
+	wanted := map[string]int{
+		"call-to-gc":         1,
+		"deep-exit":          1,
+		"error-strings":      2,
+		"errorf":             1,
+		"unnecessary-format": 1,
+		"use-errors-new":     1,
+		"use-fmt-print":      1,
+		"use-slices-sort":    1,
+	}
+	for code, count := range wanted {
+		if counts[code] != count {
+			t.Errorf(
+				"%s produced %d findings; want %d: %#v",
+				code,
+				counts[code],
+				count,
+				diagnostics,
+			)
+		}
+	}
+}
+
 func TestConcreteImportRules(t *testing.T) {
 	fixture := writeFixture(t, `package sample
 

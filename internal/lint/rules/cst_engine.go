@@ -16,11 +16,15 @@ var cstRuleCodes = map[string]bool{
 	"comments-density":                true,
 	"cyclomatic-complexity":           true,
 	"double-negation":                 true,
+	"call-to-gc":                      true,
+	"deep-exit":                       true,
 	"dot-imports":                     true,
 	"duplicated-imports":              true,
 	"enforce-map-style":               true,
 	"enforce-repeated-arg-type-style": true,
 	"enforce-slice-style":             true,
+	"error-strings":                   true,
+	"errorf":                          true,
 	"file-header":                     true,
 	"file-length-limit":               true,
 	"filename-format":                 true,
@@ -43,7 +47,11 @@ var cstRuleCodes = map[string]bool{
 	"redundant-import-alias":          true,
 	"spaced-compiler-directive":       true,
 	"string-format":                   true,
+	"unnecessary-format":              true,
 	"use-any":                         true,
+	"use-errors-new":                  true,
+	"use-fmt-print":                   true,
+	"use-slices-sort":                 true,
 	"zero-integer-division":           true,
 }
 
@@ -118,6 +126,8 @@ func (a *cstAnalyzer) check(node cst.Node) {
 		a.checkIncrementAssignment(current)
 	case *cst.ShortVarDecl:
 		a.checkIncrementShortDeclaration(current)
+	case *cst.PrimaryExpr:
+		a.checkConcreteCall(current)
 	}
 }
 

@@ -61,19 +61,65 @@ func VeryLongFunctionName(
 func TestFormatOptionsControlWidthAndLineEndings(t *testing.T) {
 	source := []byte("package p\nfunc f(){call(alpha,beta,gamma,delta,epsilon)}\n")
 	wide, err := FormatWithOptions("fixture.go", source, Options{
-		PrintWidth: 100, IndentWidth: 4, EndOfLine: "lf",
+		PrintWidth: 100, IndentWidth: 4, MaxEmptyLines: 1, EndOfLine: "lf",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	narrow, err := FormatWithOptions("fixture.go", source, Options{
-		PrintWidth: 40, IndentWidth: 8, EndOfLine: "crlf",
+		PrintWidth: 40, IndentWidth: 8, MaxEmptyLines: 1, EndOfLine: "crlf",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if bytes.Equal(wide.Source, narrow.Source) || !bytes.Contains(narrow.Source, []byte("\r\n")) {
 		t.Fatalf("formatter options had no effect:\n%s", narrow.Source)
+	}
+}
+
+func TestFormatCapsPreservedEmptyLines(t *testing.T) {
+	if got := DefaultOptions().MaxEmptyLines; got != 1 {
+		t.Fatalf("default max empty lines = %d, want 1", got)
+	}
+	input := []byte("package p\n\n\n\nfunc F() {\n\tfirst()\n\n\n\n\tsecond()\n}\n")
+	tests := []struct {
+		name    string
+		maximum int
+		want    string
+	}{
+		{
+			name:    "none",
+			maximum: 0,
+			want:    "package p\nfunc F() {\n\tfirst()\n\tsecond()\n}\n",
+		},
+		{
+			name:    "default",
+			maximum: 1,
+			want:    "package p\n\nfunc F() {\n\tfirst()\n\n\tsecond()\n}\n",
+		},
+		{
+			name:    "two",
+			maximum: 2,
+			want:    "package p\n\n\nfunc F() {\n\tfirst()\n\n\n\tsecond()\n}\n",
+		},
+		{
+			name:    "more than source",
+			maximum: 5,
+			want:    string(input),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			options := DefaultOptions()
+			options.MaxEmptyLines = test.maximum
+			result, err := FormatWithOptions("empty_lines.go", input, options)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := string(result.Source); got != test.want {
+				t.Fatalf("formatted source:\n%s\nwant:\n%s", got, test.want)
+			}
+		})
 	}
 }
 
@@ -132,7 +178,7 @@ var _ = Map[string, int]
 func TestFormatBreaksLongGenericLists(t *testing.T) {
 	input := []byte("package p\nfunc Transform[VeryLongInputType any,VeryLongOutputType comparable](value VeryLongInputType)VeryLongOutputType{return Convert[VeryLongInputType,VeryLongOutputType](value)}\n")
 	result, err := FormatWithOptions("generics.go", input, Options{
-		PrintWidth: 40, IndentWidth: 4, EndOfLine: "lf",
+		PrintWidth: 40, IndentWidth: 4, MaxEmptyLines: 1, EndOfLine: "lf",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -196,6 +242,15 @@ func TestFormatPreservesBuildConstraintSeparation(t *testing.T) {
 	wantPrefix := "//go:build linux\n\n// Package p is a fixture.\npackage p\n"
 	if !strings.HasPrefix(string(result.Source), wantPrefix) {
 		t.Fatalf("build constraint moved:\n%s", result.Source)
+	}
+	options := DefaultOptions()
+	options.MaxEmptyLines = 0
+	result, err = FormatWithOptions("constraint.go", input, options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(string(result.Source), wantPrefix) {
+		t.Fatalf("build constraint separation removed:\n%s", result.Source)
 	}
 }
 

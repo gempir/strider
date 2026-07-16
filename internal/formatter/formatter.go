@@ -13,13 +13,14 @@ import (
 const PrintWidth = 100
 
 type Options struct {
-	PrintWidth  int
-	IndentWidth int
-	EndOfLine   string
+	PrintWidth    int
+	IndentWidth   int
+	MaxEmptyLines int
+	EndOfLine     string
 }
 
 func DefaultOptions() Options {
-	return Options{PrintWidth: PrintWidth, IndentWidth: 4, EndOfLine: "lf"}
+	return Options{PrintWidth: PrintWidth, IndentWidth: 4, MaxEmptyLines: 1, EndOfLine: "lf"}
 }
 
 type unsupportedErrorValue string

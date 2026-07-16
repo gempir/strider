@@ -27,6 +27,7 @@ version = 1
 
 [formatter]
 print-width = 100
+max-empty-lines = 1
 
 [linter.rules.line-length-limit]
 enabled = true

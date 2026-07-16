@@ -61,31 +61,38 @@ type concreteWriter struct {
 	forceSpace      bool
 	lineStart       bool
 	indentWidth     int
+	maxEmptyLines   int
 }
 
 func renderConcrete(filename string, tree *cst.Tree, options Options) string {
 	layout := newConcreteLayout(filename, tree)
-	writer := concreteWriter{lineStart: true, indentWidth: options.IndentWidth}
+	writer := concreteWriter{
+		lineStart:     true,
+		indentWidth:   options.IndentWidth,
+		maxEmptyLines: options.MaxEmptyLines,
+	}
+	source := tree.Source()
 	comments := tree.Comments()
 	commentIndex := 0
 	groups := []concreteGroup{}
 	previous := token.ILLEGAL
-	previousLine := 0
+	sourceEnd := 0
 
 	for index := 0; index < len(layout.tokens); index++ {
 		current := layout.tokens[index]
 		if current.Ch() == token.EOF {
-			layout.renderCommentsBefore(&writer, comments, &commentIndex, len(tree.Source())+1, previousLine)
+			layout.renderCommentsBefore(&writer, comments, &commentIndex, source, &sourceEnd, len(source)+1)
 			break
 		}
 		position := current.Position()
-		layout.renderCommentsBefore(&writer, comments, &commentIndex, position.Offset, previousLine)
+		layout.renderCommentsBefore(&writer, comments, &commentIndex, source, &sourceEnd, position.Offset)
 
 		if layout.importStart >= 0 && index == layout.importStart {
 			layout.renderImports(&writer)
 			index = layout.importEnd
+			last := layout.tokens[layout.importEnd]
+			sourceEnd = max(sourceEnd, concreteSourceEnd(last))
 			previous = token.SEMICOLON
-			previousLine = position.Line
 			continue
 		}
 		if layout.importStart >= 0 && index > layout.importStart && index <= layout.importEnd {
@@ -122,7 +129,15 @@ func renderConcrete(filename string, tree *cst.Tree, options Options) string {
 			}
 			writer.write(current.Src(), -1)
 			close := layout.softOpen[index]
-			broken := layout.shouldBreak(index, close, writer.column, options.PrintWidth, comments)
+			broken := layout.shouldBreak(
+				index,
+				close,
+				writer.column,
+				options.PrintWidth,
+				comments,
+				source,
+				options.MaxEmptyLines > 0,
+			)
 			groups = append(groups, concreteGroup{close: close, broken: broken})
 			if broken && close != index+1 {
 				writer.indent++
@@ -188,7 +203,7 @@ func renderConcrete(filename string, tree *cst.Tree, options Options) string {
 			writer.write(current.Src(), -1)
 		}
 		previous = kind
-		previousLine = position.Line
+		sourceEnd = max(sourceEnd, concreteSourceEnd(current))
 	}
 
 	result := strings.TrimRight(writer.output.String(), " \t\r\n") + "\n"
@@ -196,6 +211,14 @@ func renderConcrete(filename string, tree *cst.Tree, options Options) string {
 		result = strings.ReplaceAll(result, "\n", "\r\n")
 	}
 	return result
+}
+
+func concreteSourceEnd(current cst.Token) int {
+	end := current.Position().Offset
+	if current.Ch() != token.SEMICOLON || current.Src() == ";" {
+		end += len(current.Src())
+	}
+	return end
 }
 
 func newConcreteLayout(filename string, tree *cst.Tree) *concreteLayout {
@@ -563,6 +586,8 @@ func findModulePath(filename string) string {
 func (l *concreteLayout) shouldBreak(
 	open, close, column, width int,
 	comments []cst.Comment,
+	source []byte,
+	preserveEmptyLines bool,
 ) bool {
 	if close <= open+1 {
 		return false
@@ -572,6 +597,16 @@ func (l *concreteLayout) shouldBreak(
 	for _, comment := range comments {
 		if comment.Start >= start && comment.End <= end {
 			return true
+		}
+	}
+	if preserveEmptyLines {
+		previousEnd := l.tokens[open].Position().Offset + len(l.tokens[open].Src())
+		for index := open + 1; index <= close; index++ {
+			current := l.tokens[index]
+			if countNewlines(source, previousEnd, current.Position().Offset) > 1 {
+				return true
+			}
+			previousEnd = current.Position().Offset + len(current.Src())
 		}
 	}
 	length := 0
@@ -598,29 +633,44 @@ func (l *concreteLayout) renderCommentsBefore(
 	writer *concreteWriter,
 	comments []cst.Comment,
 	commentIndex *int,
-	beforeOffset, previousLine int,
+	source []byte,
+	sourceEnd *int,
+	beforeOffset int,
 ) {
+	previousBuildConstraint := false
 	for *commentIndex < len(comments) && comments[*commentIndex].Start < beforeOffset {
 		comment := comments[*commentIndex]
-		inline := previousLine != 0 && comment.Line == previousLine
+		inline := *sourceEnd > 0 && countNewlines(source, *sourceEnd, comment.Start) == 0
 		if inline {
 			writer.pendingNewlines = 0
 			writer.forceSpace = true
 		} else if writer.output.Len() != 0 {
 			writer.requestNewlines(1)
 		}
+		writer.preserveEmptyLines(source, *sourceEnd, comment.Start, previousBuildConstraint)
 		writer.write(comment.Text, -1)
 		writer.requestNewlines(1)
-		gapEnd := beforeOffset
-		if *commentIndex+1 < len(comments) && comments[*commentIndex+1].Start < beforeOffset {
-			gapEnd = comments[*commentIndex+1].Start
-		}
-		source := l.tree.Source()
-		if comment.End <= gapEnd && strings.Count(string(source[comment.End:gapEnd]), "\n") > 1 {
-			writer.requestNewlines(2)
-		}
+		*sourceEnd = comment.End
+		previousBuildConstraint = isBuildConstraint(comment.Text)
 		*commentIndex++
 	}
+	writer.preserveEmptyLines(source, *sourceEnd, beforeOffset, previousBuildConstraint)
+}
+
+func countNewlines(source []byte, start, end int) int {
+	start = max(0, min(start, len(source)))
+	end = max(start, min(end, len(source)))
+	count := 0
+	for _, current := range source[start:end] {
+		if current == '\n' {
+			count++
+		}
+	}
+	return count
+}
+
+func isBuildConstraint(comment string) bool {
+	return strings.HasPrefix(comment, "//go:build") || strings.HasPrefix(comment, "// +build")
 }
 
 func (w *concreteWriter) beforeToken(previous, current token.Token, force bool) {
@@ -692,8 +742,34 @@ func (w *concreteWriter) write(value string, indentOverride int) {
 
 func (w *concreteWriter) requestNewlines(count int) {
 	w.forceSpace = false
+	count = min(count, w.maxEmptyLines+1)
 	if count > w.pendingNewlines {
 		w.pendingNewlines = count
+	}
+}
+
+func (w *concreteWriter) requestRequiredNewlines(count int) {
+	w.forceSpace = false
+	if count > w.pendingNewlines {
+		w.pendingNewlines = count
+	}
+}
+
+func (w *concreteWriter) preserveEmptyLines(
+	source []byte,
+	start, end int,
+	buildConstraint bool,
+) {
+	if w.output.Len() == 0 {
+		return
+	}
+	newlines := countNewlines(source, start, end)
+	if newlines <= 1 {
+		return
+	}
+	w.requestNewlines(newlines)
+	if buildConstraint {
+		w.requestRequiredNewlines(2)
 	}
 }
 

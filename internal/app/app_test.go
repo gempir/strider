@@ -356,6 +356,7 @@ func TestProjectConfigurationControlsFormatterLintAndAnalyzer(t *testing.T) {
 	configuration := `version = 1
 [formatter]
 end-of-line = "crlf"
+max-empty-lines = 0
 [linter.rules.no-init]
 severity = "error"
 [analyzer.rules.invalid-regexp]
@@ -403,7 +404,8 @@ enabled = false
 		&stdout,
 		&stderr,
 	)
-	if code != exitSuccess || !strings.Contains(stdout.String(), "\r\n") {
+	if code != exitSuccess || !strings.Contains(stdout.String(), "\r\n") ||
+		strings.Contains(stdout.String(), "\r\n\r\n") {
 		t.Fatalf("format exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 }

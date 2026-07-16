@@ -220,9 +220,10 @@ func runFormat(
 		return exitError
 	}
 	options.formatter = formatter.Options{
-		PrintWidth:  configuration.Formatter.PrintWidth,
-		IndentWidth: configuration.Formatter.IndentWidth,
-		EndOfLine:   configuration.Formatter.EndOfLine,
+		PrintWidth:    configuration.Formatter.PrintWidth,
+		IndentWidth:   configuration.Formatter.IndentWidth,
+		MaxEmptyLines: configuration.Formatter.MaxEmptyLines,
+		EndOfLine:     configuration.Formatter.EndOfLine,
 	}
 	options.root = configuration.Root
 	options.excludes = configuration.Formatter.Excludes

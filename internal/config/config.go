@@ -28,10 +28,11 @@ type Config struct {
 }
 
 type FormatterConfig struct {
-	PrintWidth  int      `toml:"print-width"`
-	IndentWidth int      `toml:"indent-width"`
-	EndOfLine   string   `toml:"end-of-line"`
-	Excludes    []string `toml:"excludes"`
+	PrintWidth    int      `toml:"print-width"`
+	IndentWidth   int      `toml:"indent-width"`
+	MaxEmptyLines int      `toml:"max-empty-lines"`
+	EndOfLine     string   `toml:"end-of-line"`
+	Excludes      []string `toml:"excludes"`
 }
 
 type ToolConfig struct {
@@ -52,9 +53,10 @@ func Defaults() Config {
 		Version: 1,
 		Color:   string(ui.ColorAuto),
 		Formatter: FormatterConfig{
-			PrintWidth:  100,
-			IndentWidth: 4,
-			EndOfLine:   "lf",
+			PrintWidth:    100,
+			IndentWidth:   4,
+			MaxEmptyLines: 1,
+			EndOfLine:     "lf",
 		},
 		Linter: ToolConfig{
 			BaselineVariant: "loose",
@@ -146,6 +148,9 @@ func (configuration Config) validate() error {
 	}
 	if configuration.Formatter.IndentWidth < 1 || configuration.Formatter.IndentWidth > 16 {
 		return fmt.Errorf("formatter.indent-width must be between 1 and 16")
+	}
+	if configuration.Formatter.MaxEmptyLines < 0 {
+		return fmt.Errorf("formatter.max-empty-lines must be zero or greater")
 	}
 	if configuration.Formatter.EndOfLine != "lf" && configuration.Formatter.EndOfLine != "crlf" {
 		return fmt.Errorf("formatter.end-of-line must be \"lf\" or \"crlf\"")

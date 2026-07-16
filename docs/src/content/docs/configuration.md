@@ -15,6 +15,7 @@ color = "auto"
 [formatter]
 print-width = 100
 indent-width = 4
+max-empty-lines = 1
 end-of-line = "lf"
 excludes = ["internal/generated/**"]
 
@@ -161,6 +162,7 @@ Formatter settings live under `[formatter]`.
 | --- | --- | --- | --- |
 | `print-width` | integer | `100` | Wrap target from `40` through `500` columns. |
 | `indent-width` | integer | `4` | Display width of one indentation tab, from `1` through `16`; affects fit calculations. Output indentation remains tabs. |
+| `max-empty-lines` | integer | `1` | Preserve at most this many consecutive empty lines. Use `0` to remove optional empty lines; any nonnegative value is accepted. |
 | `end-of-line` | string | `"lf"` | `"lf"` or `"crlf"`. |
 | `excludes` | string list | `[]` | Plain paths or globs skipped by filesystem formatting. |
 
@@ -168,6 +170,7 @@ Formatter settings live under `[formatter]`.
 [formatter]
 print-width = 120
 indent-width = 8
+max-empty-lines = 2
 end-of-line = "crlf"
 excludes = ["internal/generated/**"]
 ```

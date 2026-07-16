@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"fmt"
 	"go/token"
 	"strconv"
 	"strings"
@@ -47,12 +48,51 @@ func (a *cstAnalyzer) checkConcreteCall(call *cst.PrimaryExpr) {
 		a.report("use-fmt-print", call, "use fmt.Print or fmt.Println instead of the builtin")
 	case "sort.Slice", "sort.SliceStable":
 		a.report("use-slices-sort", call, "use slices.Sort or slices.SortFunc when possible")
+	case "time.Date":
+		a.checkConcreteTimeDate(arguments)
 	}
 	if isDeepExit(name) && !a.insideConcreteMainOrInit() {
 		a.report("deep-exit", call, "process-exit calls should be confined to main or init")
 	}
 	if isErrorConstructor(name) {
 		a.checkConcreteErrorMessage(arguments)
+	}
+}
+
+func (a *cstAnalyzer) checkConcreteTimeDate(arguments []cst.Node) {
+	limits := []struct {
+		index, minimum, maximum int
+		label                   string
+	}{
+		{1, 1, 12, "month"},
+		{2, 1, 31, "day"},
+		{3, 0, 23, "hour"},
+		{4, 0, 59, "minute"},
+		{5, 0, 59, "second"},
+		{6, 0, 999999999, "nanosecond"},
+	}
+	for _, limit := range limits {
+		if limit.index >= len(arguments) {
+			continue
+		}
+		literal, ok := arguments[limit.index].(*cst.BasicLit)
+		if !ok || literal.Ch() != token.INT {
+			continue
+		}
+		value, err := strconv.Atoi(literal.Src())
+		if err == nil && (value < limit.minimum || value > limit.maximum) {
+			a.report(
+				"time-date",
+				literal,
+				fmt.Sprintf(
+					"time.Date %s argument %d is outside %d..%d",
+					limit.label,
+					value,
+					limit.minimum,
+					limit.maximum,
+				),
+			)
+		}
 	}
 }
 

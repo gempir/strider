@@ -8,6 +8,7 @@ import (
 )
 
 var cstRuleCodes = map[string]bool{
+	"add-constant":                    true,
 	"bidirectional-control-character": true,
 	"banned-characters":               true,
 	"argument-limit":                  true,
@@ -16,6 +17,7 @@ var cstRuleCodes = map[string]bool{
 	"bool-literal-in-expr":            true,
 	"comment-spacings":                true,
 	"comments-density":                true,
+	"constant-logical-expr":           true,
 	"cognitive-complexity":            true,
 	"confusing-naming":                true,
 	"confusing-results":               true,
@@ -36,8 +38,10 @@ var cstRuleCodes = map[string]bool{
 	"early-return":                    true,
 	"error-strings":                   true,
 	"error-return":                    true,
+	"error-naming":                    true,
 	"errorf":                          true,
 	"file-header":                     true,
+	"exported":                        true,
 	"file-length-limit":               true,
 	"flag-parameter":                  true,
 	"filename-format":                 true,
@@ -56,6 +60,7 @@ var cstRuleCodes = map[string]bool{
 	"line-length-limit":               true,
 	"max-parameters":                  true,
 	"max-control-nesting":             true,
+	"max-public-structs":              true,
 	"marshal-receiver":                true,
 	"modulo-one":                      true,
 	"multiline-if-init":               true,
@@ -65,6 +70,7 @@ var cstRuleCodes = map[string]bool{
 	"no-init":                         true,
 	"no-naked-return":                 true,
 	"no-package-var":                  true,
+	"optimize-operands-order":         true,
 	"package-comments":                true,
 	"package-directory-mismatch":      true,
 	"package-naming":                  true,
@@ -77,6 +83,7 @@ var cstRuleCodes = map[string]bool{
 	"struct-tag":                      true,
 	"superfluous-else":                true,
 	"time-naming":                     true,
+	"time-date":                       true,
 	"unchecked-type-assertion":        true,
 	"unnecessary-format":              true,
 	"unnecessary-if":                  true,
@@ -91,6 +98,7 @@ var cstRuleCodes = map[string]bool{
 	"use-slices-sort":                 true,
 	"unused-parameter":                true,
 	"unused-receiver":                 true,
+	"var-declaration":                 true,
 	"var-naming":                      true,
 	"waitgroup-by-value":              true,
 	"zero-integer-division":           true,
@@ -111,6 +119,7 @@ type cstAnalyzer struct {
 	marshalKinds  map[string]string
 	importNames   map[string]bool
 	foldedNames   map[string]map[string]string
+	publicStructs int
 }
 
 // AnalyzeCST runs selected native CST rules over one lossless source tree.
@@ -204,16 +213,22 @@ func (a *cstAnalyzer) check(node cst.Node) {
 		a.checkConcreteIdentifierList(current.IdentifierList)
 	case *cst.VarSpec:
 		a.checkConcreteIdentifier(current.IDENT)
+		a.checkConcreteVarSpec(current.IDENT, current.TypeNode, current.ExpressionList)
 	case *cst.VarSpec2:
 		a.checkConcreteIdentifierList(current.IdentifierList)
+		a.checkConcreteVarSpecList(current.IdentifierList, current.TypeNode, current.ExpressionList)
 	case *cst.ConstSpec:
 		a.checkConcreteIdentifier(current.IDENT)
+		a.checkConcreteExportedDeclaration(current.IDENT, current)
 	case *cst.ConstSpec2:
 		a.checkConcreteIdentifierList(current.IdentifierList)
+		a.checkConcreteExportedList(current.IdentifierList, current)
 	case *cst.TypeDef:
 		a.checkConcreteIdentifier(current.IDENT)
+		a.checkConcreteTypeDefinition(current)
 	case *cst.AliasDecl:
 		a.checkConcreteIdentifier(current.IDENT)
+		a.checkConcreteExportedDeclaration(current.IDENT, current)
 	}
 }
 
@@ -247,6 +262,7 @@ func (a *cstAnalyzer) checkFile() {
 	a.checkFilenameAndPackage()
 	a.checkLinesAndComments()
 	a.checkConcreteImports()
+	a.checkConcreteRepeatedLiterals()
 }
 
 func (a *cstAnalyzer) packageNameToken() cst.Token {
@@ -264,6 +280,7 @@ func (a *cstAnalyzer) checkFunction(function *cst.FunctionDecl) {
 		return
 	}
 	name := function.FunctionName.IDENT
+	a.checkConcreteExportedFunction(name, function, false)
 	if name.Src() == "init" {
 		a.report("no-init", name, "replace init with explicit initialization")
 	}
@@ -273,6 +290,7 @@ func (a *cstAnalyzer) checkFunction(function *cst.FunctionDecl) {
 
 func (a *cstAnalyzer) checkMethod(method *cst.MethodDecl) {
 	if method.Signature != nil {
+		a.checkConcreteExportedFunction(method.MethodName, method, true)
 		a.checkSignature(method.MethodName, method.Signature.Parameters, method.FunctionBody)
 		a.checkConcreteFunctionRules(
 			method.MethodName,

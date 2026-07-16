@@ -3,6 +3,7 @@ package rules
 import (
 	"go/constant"
 	"go/token"
+	"strings"
 
 	"github.com/gempir/strider/internal/cst"
 )
@@ -27,6 +28,52 @@ func (a *cstAnalyzer) checkBinaryExpression(binary *cst.BinaryExpression) {
 			)
 		}
 	}
+	if binary.Op.Ch() == token.LAND || binary.Op.Ch() == token.LOR {
+		if value, ok := concreteStaticBool(binary.LHS); ok {
+			if (binary.Op.Ch() == token.LAND && !value) ||
+				(binary.Op.Ch() == token.LOR && value) {
+				a.report(
+					"constant-logical-expr",
+					binary,
+					"logical expression always has the same value",
+				)
+			}
+		}
+		if concreteExpressionCost(binary.LHS) > concreteExpressionCost(binary.RHS) {
+			a.report(
+				"optimize-operands-order",
+				binary,
+				"place the cheaper logical operand first to improve short-circuiting",
+			)
+		}
+	}
+}
+
+func concreteStaticBool(node cst.Node) (bool, bool) {
+	spelling := cst.Spelling(cstUnparen(node))
+	if spelling == "true" {
+		return true, true
+	}
+	if spelling == "false" {
+		return false, true
+	}
+	return false, false
+}
+
+func concreteExpressionCost(node cst.Node) int {
+	cost := 0
+	cst.Walk(node, func(child cst.Node) bool {
+		switch {
+		case strings.HasPrefix(cst.Kind(child), "Arguments"):
+			cost += 10
+		case cst.Kind(child) == "Index" || cst.Kind(child) == "Selector":
+			cost += 2
+		case cst.Kind(child) == "BinaryExpression":
+			cost++
+		}
+		return true
+	})
+	return cost
 }
 
 func cstModuloOne(binary *cst.BinaryExpression) bool {

@@ -27,6 +27,7 @@ var cstRuleCodes = map[string]bool{
 	"double-negation":                 true,
 	"call-to-gc":                      true,
 	"deep-exit":                       true,
+	"datarace":                        true,
 	"defer":                           true,
 	"dot-imports":                     true,
 	"duplicated-imports":              true,
@@ -54,6 +55,7 @@ var cstRuleCodes = map[string]bool{
 	"identical-ifelseif-conditions":   true,
 	"identical-switch-branches":       true,
 	"identical-switch-conditions":     true,
+	"if-return":                       true,
 	"import-alias-naming":             true,
 	"import-shadowing":                true,
 	"imports-blocklist":               true,
@@ -80,8 +82,13 @@ var cstRuleCodes = map[string]bool{
 	"redundant-build-tag":             true,
 	"redundant-import-alias":          true,
 	"receiver-naming":                 true,
+	"range":                           true,
+	"range-val-address":               true,
+	"range-val-in-closure":            true,
 	"redefines-builtin-id":            true,
+	"redundant-test-main-exit":        true,
 	"spaced-compiler-directive":       true,
+	"spinning-select-default":         true,
 	"string-format":                   true,
 	"struct-tag":                      true,
 	"superfluous-else":                true,
@@ -99,9 +106,11 @@ var cstRuleCodes = map[string]bool{
 	"use-errors-new":                  true,
 	"use-fmt-print":                   true,
 	"use-slices-sort":                 true,
+	"use-waitgroup-go":                true,
 	"unused-parameter":                true,
 	"unused-receiver":                 true,
 	"useless-fallthrough":             true,
+	"useless-break":                   true,
 	"var-declaration":                 true,
 	"var-naming":                      true,
 	"waitgroup-by-value":              true,
@@ -207,6 +216,7 @@ func (a *cstAnalyzer) check(node cst.Node) {
 		a.checkConcreteBlock(current)
 	case *cst.ForStmt:
 		a.checkConcreteControlNesting(current)
+		a.checkConcreteFor(current)
 	case *cst.SelectStmt:
 		a.checkConcreteControlNesting(current)
 	case *cst.TypeSwitchStmt:
@@ -237,6 +247,8 @@ func (a *cstAnalyzer) check(node cst.Node) {
 	case *cst.AliasDecl:
 		a.checkConcreteIdentifier(current.IDENT)
 		a.checkConcreteExportedDeclaration(current.IDENT, current)
+	case *cst.BreakStmt:
+		a.checkConcreteBreak(current)
 	}
 }
 
@@ -294,6 +306,7 @@ func (a *cstAnalyzer) checkFunction(function *cst.FunctionDecl) {
 	}
 	a.checkSignature(name, function.Signature.Parameters, function.FunctionBody)
 	a.checkConcreteFunctionRules(name, function.Signature, function.FunctionBody, nil)
+	a.checkConcreteTestMain(function)
 }
 
 func (a *cstAnalyzer) checkMethod(method *cst.MethodDecl) {

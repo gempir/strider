@@ -34,7 +34,10 @@ type (
 	BasicLit          = gc.BasicLitNode
 	BinaryExpression  = gc.BinaryExpressionNode
 	Block             = gc.BlockNode
+	BreakStmt         = gc.BreakStmtNode
 	CommCase          = gc.CommCaseNode
+	CommClause        = gc.CommClauseNode
+	CommClauseList    = gc.CommClauseListNode
 	ConstSpec         = gc.ConstSpecNode
 	ConstSpec2        = gc.ConstSpec2Node
 	DeferStmt         = gc.DeferStmtNode
@@ -43,8 +46,10 @@ type (
 	ExprCaseClause    = gc.ExprCaseClauseListNode
 	ExprSwitchStmt    = gc.ExprSwitchStmtNode
 	ExpressionList    = gc.ExpressionListNode
+	FallthroughStmt   = gc.FallthroughStmtNode
 	FieldDecl         = gc.FieldDeclNode
 	ForStmt           = gc.ForStmtNode
+	FunctionBody      = gc.FunctionBodyNode
 	FunctionDecl      = gc.FunctionDeclNode
 	FunctionLit       = gc.FunctionLitNode
 	IdentifierList    = gc.IdentifierListNode
@@ -59,6 +64,7 @@ type (
 	Parameters        = gc.ParametersNode
 	ParenthesizedExpr = gc.ParenthesizedExpressionNode
 	PrimaryExpr       = gc.PrimaryExprNode
+	RangeClause       = gc.RangeClauseNode
 	ReturnStmt        = gc.ReturnStmtNode
 	Result            = gc.ResultNode
 	SelectStmt        = gc.SelectStmtNode

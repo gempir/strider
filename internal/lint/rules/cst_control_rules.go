@@ -188,6 +188,10 @@ func (a *cstAnalyzer) checkConcreteBlock(block *cst.Block) {
 		a.report("empty-block", block, "empty block should be removed or documented")
 	}
 	for index, statement := range statements {
+		if index+1 < len(statements) {
+			a.checkConcreteIfReturn(statement, statements[index+1])
+			a.checkConcreteWaitGroupAdd(statement, statements[index+1])
+		}
 		if index > 0 && concreteStatementTerminates(statements[index-1]) {
 			a.report(
 				"unreachable-code",

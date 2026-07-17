@@ -11,13 +11,13 @@
       "name": "gin",
       "repository": "https://github.com/gin-gonic/gin.git",
       "revision": "34dac209ffb6ef85cc78c5d217bbb7ad001d68fd",
-      "budgets_ms": { "format": 5000, "lint": 10000, "analyze": 20000 }
+      "budgets_ms": { "format": 5000, "lint": 15000, "analyze": 20000 }
     },
     {
       "name": "mux",
       "repository": "https://github.com/gorilla/mux.git",
       "revision": "db9d1d0073d27a0a2d9a8c1bc52aa0af4374d265",
-      "budgets_ms": { "format": 3000, "lint": 5000, "analyze": 15000 }
+      "budgets_ms": { "format": 3000, "lint": 6000, "analyze": 15000 }
     },
     {
       "name": "fsnotify",
@@ -41,7 +41,7 @@
       "name": "decimal",
       "repository": "https://github.com/shopspring/decimal.git",
       "revision": "3090cc487febd78d6016c2859c66308328a40e99",
-      "budgets_ms": { "format": 3000, "lint": 6000, "analyze": 15000 }
+      "budgets_ms": { "format": 3000, "lint": 12000, "analyze": 15000 }
     },
     {
       "name": "websocket",

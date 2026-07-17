@@ -6,19 +6,20 @@ import (
 	"go/token"
 	"regexp"
 
-	"github.com/gempir/strider/internal/diagnostic"
 	"golang.org/x/tools/go/ssa"
+
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type invalidRegexpRule struct{}
+type invalidRegexpRule struct {}
 
 func (invalidRegexpRule) Meta() Meta {
 	return Meta{
-		Code:            "invalid-regexp",
-		Summary:         "detect invalid regular expressions",
-		Explanation:     "Regular expressions passed as compile-time constants to regexp compilation and matching functions must be valid Go regular expressions.",
-		GoodExample:     "regexp.MustCompile(`[a-z]+`)",
-		BadExample:      "regexp.MustCompile(`[a-z`)",
+		Code: "invalid-regexp",
+		Summary: "detect invalid regular expressions",
+		Explanation: "Regular expressions passed as compile-time constants to regexp compilation and matching functions must be valid Go regular expressions.",
+		GoodExample: "regexp.MustCompile(`[a-z]+`)",
+		BadExample: "regexp.MustCompile(`[a-z`)",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -88,7 +89,8 @@ func firstArgumentsByCallPosition(files []*ast.File) map[token.Pos]ast.Node {
 		ast.Inspect(
 			file,
 			func(node ast.Node) bool {
-				call, ok := node.(*ast.CallExpr)
+				call,
+				ok := node.(*ast.CallExpr)
 				if !ok || len(call.Args) == 0 {
 					return true
 				}
@@ -105,5 +107,10 @@ type positionNode struct {
 	position token.Pos
 }
 
-func (node positionNode) Pos() token.Pos { return node.position }
-func (node positionNode) End() token.Pos { return node.position }
+func (node positionNode) Pos() token.Pos {
+	return node.position
+}
+
+func (node positionNode) End() token.Pos {
+	return node.position
+}

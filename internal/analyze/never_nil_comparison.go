@@ -5,60 +5,69 @@ import (
 	"go/token"
 	"go/types"
 
-	"github.com/gempir/strider/internal/diagnostic"
 	"golang.org/x/tools/go/ssa"
+
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type neverNilComparisonRule struct{}
+type neverNilComparisonRule struct {}
 
 func (neverNilComparisonRule) Meta() Meta {
 	return Meta{
-		Code:            "never-nil-comparison",
-		Summary:         "detect nil checks on values proven to be non-nil",
-		Explanation:     "Fresh allocations, make results, functions, closures, and values flowing exclusively from those sources cannot be nil. Comparing them with nil has a fixed result and often means the wrong value was checked.",
-		GoodExample:     "var values []int; if values == nil { initialize() }",
-		BadExample:      "values := make([]int, 0); if values == nil { unreachable() }",
+		Code: "never-nil-comparison",
+		Summary: "detect nil checks on values proven to be non-nil",
+		Explanation: "Fresh allocations, make results, functions, closures, and values flowing exclusively from those sources cannot be nil. Comparing them with nil has a fixed result and often means the wrong value was checked.",
+		GoodExample: "var values []int; if values == nil { initialize() }",
+		BadExample: "values := make([]int, 0); if values == nil { unreachable() }",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
 
 func (neverNilComparisonRule) Run(pass *Pass) {
 	for _, function := range pass.Functions {
-		if function == nil || function.Synthetic != "" || function.Blocks == nil ||
-			function.Syntax() == nil {
+		if function == nil || function.Synthetic != "" || function.Blocks == nil || function.Syntax() == nil {
 			continue
 		}
-		inspectFunctionSyntax(function.Syntax(), func(node ast.Node) bool {
-			ifStatement, ok := node.(*ast.IfStmt)
-			if !ok {
+		inspectFunctionSyntax(
+			function.Syntax(),
+			func(node ast.Node) bool {
+				ifStatement,
+				ok := node.(*ast.IfStmt)
+				if !ok {
+					return true
+				}
+				binary,
+				ok := ast.Unparen(ifStatement.Cond).(*ast.BinaryExpr)
+				if !ok || binary.Op != token.EQL && binary.Op != token.NEQ {
+					return true
+				}
+				checked,
+				ok := nilCheckedExpression(pass, binary.X, binary.Y)
+				if !ok {
+					checked,
+					ok = nilCheckedExpression(pass, binary.Y, binary.X)
+				}
+				if !ok {
+					return true
+				}
+				value,
+				isAddress := function.ValueForExpr(checked)
+				if value == nil || isAddress || !ssaValueNeverNil(value, make(map[ssa.Value]bool)) {
+					return true
+				}
+				truth := "never"
+				if binary.Op == token.NEQ {
+					truth = "always"
+				}
+				message := "this nil comparison is " + truth + " true"
+				if _,
+				functionValue := flattenEquivalentPhi(value).(*ssa.Function); functionValue {
+					message = "function values are never nil; did you mean to call the function?"
+				}
+				pass.Report(binary, message)
 				return true
-			}
-			binary, ok := ast.Unparen(ifStatement.Cond).(*ast.BinaryExpr)
-			if !ok || binary.Op != token.EQL && binary.Op != token.NEQ {
-				return true
-			}
-			checked, ok := nilCheckedExpression(pass, binary.X, binary.Y)
-			if !ok {
-				checked, ok = nilCheckedExpression(pass, binary.Y, binary.X)
-			}
-			if !ok {
-				return true
-			}
-			value, isAddress := function.ValueForExpr(checked)
-			if value == nil || isAddress || !ssaValueNeverNil(value, make(map[ssa.Value]bool)) {
-				return true
-			}
-			truth := "never"
-			if binary.Op == token.NEQ {
-				truth = "always"
-			}
-			message := "this nil comparison is " + truth + " true"
-			if _, functionValue := flattenEquivalentPhi(value).(*ssa.Function); functionValue {
-				message = "function values are never nil; did you mean to call the function?"
-			}
-			pass.Report(binary, message)
-			return true
-		})
+			},
+		)
 	}
 }
 
@@ -85,8 +94,7 @@ func ssaValueNeverNil(value ssa.Value, seen map[ssa.Value]bool) bool {
 	}
 	seen[value] = true
 	switch value := value.(type) {
-	case *ssa.MakeClosure, *ssa.Function, *ssa.MakeChan, *ssa.MakeMap, *ssa.MakeSlice,
-		*ssa.Alloc:
+	case *ssa.MakeClosure, *ssa.Function, *ssa.MakeChan, *ssa.MakeMap, *ssa.MakeSlice, *ssa.Alloc:
 		return true
 	case *ssa.Slice:
 		return ssaValueNeverNil(value.X, seen)

@@ -5,19 +5,20 @@ import (
 	"go/ast"
 	"go/types"
 
-	"github.com/gempir/strider/internal/diagnostic"
 	"golang.org/x/tools/go/ssa"
+
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type argumentOverwrittenBeforeUseRule struct{}
+type argumentOverwrittenBeforeUseRule struct {}
 
 func (argumentOverwrittenBeforeUseRule) Meta() Meta {
 	return Meta{
-		Code:            "argument-overwritten-before-use",
-		Summary:         "detect function arguments replaced before their incoming value is used",
-		Explanation:     "Overwriting a function argument before reading its incoming value makes that input meaningless. The assignment may be accidental, or the argument may no longer belong in the function signature.",
-		GoodExample:     "func normalize(value string) string { use(value); value = fallback; return value }",
-		BadExample:      "func normalize(value string) string { value = fallback; return value }",
+		Code: "argument-overwritten-before-use",
+		Summary: "detect function arguments replaced before their incoming value is used",
+		Explanation: "Overwriting a function argument before reading its incoming value makes that input meaningless. The assignment may be accidental, or the argument may no longer belong in the function signature.",
+		GoodExample: "func normalize(value string) string { use(value); value = fallback; return value }",
+		BadExample: "func normalize(value string) string { value = fallback; return value }",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -47,7 +48,10 @@ func (argumentOverwrittenBeforeUseRule) Run(pass *Pass) {
 				}
 				pass.Report(
 					argument,
-					fmt.Sprintf("argument %s is overwritten before its incoming value is used", argument.Name),
+					fmt.Sprintf(
+						"argument %s is overwritten before its incoming value is used",
+						argument.Name,
+					),
 				)
 			}
 		}
@@ -92,22 +96,28 @@ func hasNonDebugReferrer(value ssa.Value) bool {
 
 func firstAssignmentToObject(pass *Pass, body *ast.BlockStmt, object types.Object) ast.Node {
 	var found ast.Node
-	inspectWithoutClosures(body, func(node ast.Node) bool {
-		if found != nil {
-			return false
-		}
-		assignment, ok := node.(*ast.AssignStmt)
-		if !ok {
-			return true
-		}
-		for _, left := range assignment.Lhs {
-			identifier, ok := left.(*ast.Ident)
-			if ok && pass.TypesInfo.ObjectOf(identifier) == object {
-				found = assignment
+	inspectWithoutClosures(
+		body,
+		func(node ast.Node) bool {
+			if found != nil {
 				return false
 			}
-		}
-		return true
-	})
+			assignment,
+			ok := node.(*ast.AssignStmt)
+			if !ok {
+				return true
+			}
+			for _,
+			left := range assignment.Lhs {
+				identifier,
+				ok := left.(*ast.Ident)
+				if ok && pass.TypesInfo.ObjectOf(identifier) == object {
+					found = assignment
+					return false
+				}
+			}
+			return true
+		},
+	)
 	return found
 }

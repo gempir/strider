@@ -25,8 +25,10 @@ func (a *cstAnalyzer) checkConcreteIdentifier(name cst.Token) {
 			"unexported identifier should not begin with an underscore",
 		)
 	}
-	if strings.Contains(value, "_") && !strings.HasPrefix(value, "Test") &&
-		!strings.HasPrefix(value, "Benchmark") && !strings.HasPrefix(value, "Example") {
+	if strings.Contains(value, "_") && !strings.HasPrefix(value, "Test") && !strings.HasPrefix(
+		value,
+		"Benchmark",
+	) && !strings.HasPrefix(value, "Example") {
 		a.report("var-naming", name, "identifier should use MixedCaps rather than underscores")
 	}
 	if builtinIdentifiers[value] {

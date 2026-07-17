@@ -51,7 +51,7 @@ func closeThing() {}
 	for _, item := range diagnostics {
 		codes = append(codes, item.Code)
 	}
-	for _, wanted := range []string{
+	for _, wanted := range[]string{
 		"cyclomatic-complexity",
 		"max-parameters",
 		"no-defer-in-loop",
@@ -102,10 +102,16 @@ func closeThing() {}
 		t.Errorf("grouped parameter count produced %d findings; want 1", counts["max-parameters"])
 	}
 	if counts["no-defer-in-loop"] != 1 {
-		t.Errorf("nested function boundary produced %d defer findings; want 1", counts["no-defer-in-loop"])
+		t.Errorf(
+			"nested function boundary produced %d defer findings; want 1",
+			counts["no-defer-in-loop"],
+		)
 	}
 	if counts["no-naked-return"] != 1 {
-		t.Errorf("named generic result produced %d naked-return findings; want 1", counts["no-naked-return"])
+		t.Errorf(
+			"named generic result produced %d naked-return findings; want 1",
+			counts["no-naked-return"],
+		)
 	}
 }
 
@@ -167,10 +173,7 @@ func TestIneffectivePointerCopyReportsPointerRoundTrips(t *testing.T) {
 }
 
 func TestDoubleNegationReportsRedundantBooleanNegation(t *testing.T) {
-	fixture := writeFixture(
-		t,
-		"package sample\nfunc ready(value bool) bool { return !!value }\n",
-	)
+	fixture := writeFixture(t, "package sample\nfunc ready(value bool) bool { return !!value }\n")
 	registry, err := NewRegistry([]string{"double-negation"})
 	if err != nil {
 		t.Fatal(err)
@@ -185,7 +188,9 @@ func TestDoubleNegationReportsRedundantBooleanNegation(t *testing.T) {
 }
 
 func TestIdenticalIfElseIfConditionsRequireSideEffectFreeChain(t *testing.T) {
-	fixture := writeFixture(t, `package sample
+	fixture := writeFixture(
+		t,
+		`package sample
 
 func pure(value int) int {
 	if value > 0 {
@@ -204,7 +209,8 @@ func changing(next func() bool) int {
 	}
 	return 0
 }
-`)
+`,
+	)
 	registry, err := NewRegistry([]string{"identical-ifelseif-conditions"})
 	if err != nil {
 		t.Fatal(err)
@@ -238,12 +244,15 @@ package sample
 }
 
 func TestZeroIntegerDivisionReportsLiteralTruncation(t *testing.T) {
-	fixture := writeFixture(t, `package sample
+	fixture := writeFixture(
+		t,
+		`package sample
 
 func ratio() int { return 2 / 3 }
 func useful() int { return 4 / 3 }
 func floating() float64 { return 2 / 3.0 }
-`)
+`,
+	)
 	registry, err := NewRegistry([]string{"zero-integer-division"})
 	if err != nil {
 		t.Fatal(err)
@@ -258,11 +267,14 @@ func floating() float64 { return 2 / 3.0 }
 }
 
 func TestModuloOneReportsConstantZeroRemainder(t *testing.T) {
-	fixture := writeFixture(t, `package sample
+	fixture := writeFixture(
+		t,
+		`package sample
 
 func remainder(value int) int { return value % 1 }
 func useful(value int) int { return value % 2 }
-`)
+`,
+	)
 	registry, err := NewRegistry([]string{"modulo-one"})
 	if err != nil {
 		t.Fatal(err)
@@ -277,7 +289,9 @@ func useful(value int) int { return value % 2 }
 }
 
 func TestSpinningSelectDefaultReportsEmptyDefault(t *testing.T) {
-	fixture := writeFixture(t, `package sample
+	fixture := writeFixture(
+		t,
+		`package sample
 
 func spin(messages <-chan string) {
 	for {
@@ -287,7 +301,8 @@ func spin(messages <-chan string) {
 		}
 	}
 }
-`)
+`,
+	)
 	registry, err := NewRegistry([]string{"spinning-select-default"})
 	if err != nil {
 		t.Fatal(err)
@@ -302,14 +317,17 @@ func spin(messages <-chan string) {
 }
 
 func TestStructTagReportsDuplicateKeysAndInvalidOptions(t *testing.T) {
-	fixture := writeFixture(t, `package sample
+	fixture := writeFixture(
+		t,
+		`package sample
 type tagged struct {
-	A string `+"`json:\"a\" json:\"b\"`"+`
-	B string `+"`xml:\"b,attr,attr\"`"+`
-	C string `+"`xml:\"c,mystery\"`"+`
-	D string `+"`json:\"d,omitEmpty\"`"+`
+	A string ` + "`json:\"a\" json:\"b\"`" + `
+	B string ` + "`xml:\"b,attr,attr\"`" + `
+	C string ` + "`xml:\"c,mystery\"`" + `
+	D string ` + "`json:\"d,omitEmpty\"`" + `
 }
-`)
+`,
+	)
 	registry, err := NewRegistry([]string{"struct-tag"})
 	if err != nil {
 		t.Fatal(err)
@@ -324,7 +342,9 @@ type tagged struct {
 }
 
 func TestRangeReportsUnnecessaryRuneSliceConversion(t *testing.T) {
-	fixture := writeFixture(t, `package sample
+	fixture := writeFixture(
+		t,
+		`package sample
 
 func runes(text string) {
 	for _, value := range []rune(text) {
@@ -334,7 +354,8 @@ func runes(text string) {
 		_, _ = index, value
 	}
 }
-`)
+`,
+	)
 	registry, err := NewRegistry([]string{"range"})
 	if err != nil {
 		t.Fatal(err)
@@ -349,7 +370,9 @@ func runes(text string) {
 }
 
 func TestEmptyBlockReportsConditionalBranchesOnly(t *testing.T) {
-	fixture := writeFixture(t, `package sample
+	fixture := writeFixture(
+		t,
+		`package sample
 
 type marker struct{}
 func (marker) mark() {}
@@ -362,7 +385,8 @@ func branches(value bool) {
 	} else {
 	}
 }
-`)
+`,
+	)
 	registry, err := NewRegistry([]string{"empty-block"})
 	if err != nil {
 		t.Fatal(err)
@@ -377,7 +401,9 @@ func branches(value bool) {
 }
 
 func TestSpacedCompilerDirectiveReportsIgnoredDirective(t *testing.T) {
-	fixture := writeFixture(t, `package sample
+	fixture := writeFixture(
+		t,
+		`package sample
 
 // go:noinline
 func ignored() {}
@@ -387,7 +413,8 @@ func active() {}
 
 func local() { // go:noinline
 }
-`)
+`,
+	)
 	registry, err := NewRegistry([]string{"spaced-compiler-directive"})
 	if err != nil {
 		t.Fatal(err)
@@ -402,11 +429,14 @@ func local() { // go:noinline
 }
 
 func TestDeferAllowsReturnedFunctionInvocation(t *testing.T) {
-	fixture := writeFixture(t, `package sample
+	fixture := writeFixture(
+		t,
+		`package sample
 
 func setup() func() { return func() {} }
 func run() { defer setup()() }
-`)
+`,
+	)
 	registry, err := NewRegistry([]string{"defer"})
 	if err != nil {
 		t.Fatal(err)
@@ -421,7 +451,10 @@ func run() { defer setup()() }
 }
 
 func TestBidirectionalControlCharacterReportsInvisibleSourceControl(t *testing.T) {
-	fixture := writeFixture(t, "package sample\n\n// visible text \u202e hidden ordering\nfunc safe() {}\n")
+	fixture := writeFixture(
+		t,
+		"package sample\n\n// visible text \u202e hidden ordering\nfunc safe() {}\n",
+	)
 	registry, err := NewRegistry([]string{"bidirectional-control-character"})
 	if err != nil {
 		t.Fatal(err)
@@ -436,14 +469,17 @@ func TestBidirectionalControlCharacterReportsInvisibleSourceControl(t *testing.T
 }
 
 func TestConcreteNamingRules(t *testing.T) {
-	fixture := writeFixture(t, `package sample
+	fixture := writeFixture(
+		t,
+		`package sample
 
 import "fmt"
 
 var _hidden = 1
 type record struct { Name int; name int }
 func use(fmt int, len int, bad_name int) { _, _, _ = fmt, len, bad_name }
-`)
+`,
+	)
 	codes := []string{
 		"confusing-naming",
 		"import-shadowing",
@@ -471,7 +507,9 @@ func use(fmt int, len int, bad_name int) { _, _, _ = fmt, len, bad_name }
 }
 
 func TestConcreteFunctionRules(t *testing.T) {
-	fixture := writeFixture(t, `package sample
+	fixture := writeFixture(
+		t,
+		`package sample
 
 type item struct{}
 
@@ -493,7 +531,8 @@ func GetNothing() {}
 func done() { return }
 func (i item) MarshalJSON() ([]byte, error) { _ = i; return nil, nil }
 func (other *item) UnmarshalJSON([]byte) error { _ = other; return nil }
-`)
+`,
+	)
 	codes := []string{
 		"argument-limit",
 		"confusing-results",
@@ -529,7 +568,9 @@ func (other *item) UnmarshalJSON([]byte) error { _ = other; return nil }
 }
 
 func TestConcreteCallRules(t *testing.T) {
-	fixture := writeFixture(t, `package sample
+	fixture := writeFixture(
+		t,
+		`package sample
 
 func helper() {
 	runtime.GC()
@@ -541,17 +582,20 @@ func helper() {
 	os.Exit(1)
 	_ = errors.New("Bad message.")
 }
-`)
-	registry, err := NewRegistry([]string{
-		"call-to-gc",
-		"deep-exit",
-		"error-strings",
-		"errorf",
-		"unnecessary-format",
-		"use-errors-new",
-		"use-fmt-print",
-		"use-slices-sort",
-	})
+`,
+	)
+	registry, err := NewRegistry(
+		[]string{
+			"call-to-gc",
+			"deep-exit",
+			"error-strings",
+			"errorf",
+			"unnecessary-format",
+			"use-errors-new",
+			"use-fmt-print",
+			"use-slices-sort",
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -564,14 +608,14 @@ func helper() {
 		counts[item.Code]++
 	}
 	wanted := map[string]int{
-		"call-to-gc":         1,
-		"deep-exit":          1,
-		"error-strings":      2,
-		"errorf":             1,
+		"call-to-gc": 1,
+		"deep-exit": 1,
+		"error-strings": 2,
+		"errorf": 1,
 		"unnecessary-format": 1,
-		"use-errors-new":     1,
-		"use-fmt-print":      1,
-		"use-slices-sort":    1,
+		"use-errors-new": 1,
+		"use-fmt-print": 1,
+		"use-slices-sort": 1,
 	}
 	for code, count := range wanted {
 		if counts[code] != count {
@@ -587,7 +631,9 @@ func helper() {
 }
 
 func TestConcreteImportRules(t *testing.T) {
-	fixture := writeFixture(t, `package sample
+	fixture := writeFixture(
+		t,
+		`package sample
 
 import (
 	. "fmt"
@@ -595,14 +641,17 @@ import (
 	Bad_Alias "strings"
 	strings "strings"
 )
-`)
-	registry, err := NewRegistry([]string{
-		"blank-imports",
-		"dot-imports",
-		"duplicated-imports",
-		"import-alias-naming",
-		"redundant-import-alias",
-	})
+`,
+	)
+	registry, err := NewRegistry(
+		[]string{
+			"blank-imports",
+			"dot-imports",
+			"duplicated-imports",
+			"import-alias-naming",
+			"redundant-import-alias",
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -614,7 +663,7 @@ import (
 	for _, item := range diagnostics {
 		counts[item.Code]++
 	}
-	for _, code := range []string{
+	for _, code := range[]string{
 		"blank-imports",
 		"dot-imports",
 		"duplicated-imports",
@@ -662,11 +711,13 @@ func TestCatalogIsCompleteDocumentedAndRunnable(t *testing.T) {
 		if strings.TrimSpace(meta.GoodExample) == "" || strings.TrimSpace(meta.BadExample) == "" {
 			t.Errorf("rule %s has incomplete examples", meta.Code)
 		}
-		if strings.HasPrefix(meta.GoodExample, "See the rule reference") ||
-			strings.HasPrefix(meta.BadExample, "See the rule reference") {
+		if strings.HasPrefix(meta.GoodExample, "See the rule reference") || strings.HasPrefix(
+			meta.BadExample,
+			"See the rule reference",
+		) {
 			t.Errorf("rule %s still has placeholder examples", meta.Code)
 		}
-		if _, err := os.Stat(filepath.Join(docsDirectory, meta.Code+".md")); err != nil {
+		if _, err := os.Stat(filepath.Join(docsDirectory, meta.Code + ".md")); err != nil {
 			t.Errorf("rule %s has no documentation: %v", meta.Code, err)
 		}
 		registry, err := NewRegistry([]string{meta.Code})
@@ -718,9 +769,7 @@ func TestLintRuleConfigurationCanExcludePaths(t *testing.T) {
 	registry, err := NewRegistryConfigured(
 		nil,
 		false,
-		map[string]config.RuleConfig{
-			"no-init": {Enabled: &enabled, Excludes: []string{"**/*.go"}},
-		},
+		map[string]config.RuleConfig{"no-init": {Enabled: &enabled, Excludes: []string{"**/*.go"}}},
 		filepath.Dir(fixture),
 	)
 	if err != nil {
@@ -768,7 +817,7 @@ func Assert(v interface{}) { _ = v.(string) }
 	for _, item := range diagnostics {
 		codes[item.Code] = true
 	}
-	for _, code := range []string{
+	for _, code := range[]string{
 		"argument-limit",
 		"bare-return",
 		"bool-literal-in-expr",
@@ -789,7 +838,9 @@ func Assert(v interface{}) { _ = v.(string) }
 }
 
 func TestCSTPolicyRulesReportRepresentativeFindings(t *testing.T) {
-	filename := writeFixture(t, `package sample
+	filename := writeFixture(
+		t,
+		`package sample
 import (
 	"sync"
 	"sync/atomic"
@@ -812,17 +863,20 @@ func (current item) mutate(value int, group sync.WaitGroup, closer interface{ Cl
 	_ = time.Now() == time.Now()
 	closer.Close()
 }
-`)
-	registry, err := NewRegistry([]string{
-		"atomic",
-		"epoch-naming",
-		"forbidden-call-in-wg-go",
-		"inefficient-map-lookup",
-		"modifies-parameter",
-		"modifies-value-receiver",
-		"time-equal",
-		"unhandled-error",
-	})
+`,
+	)
+	registry, err := NewRegistry(
+		[]string{
+			"atomic",
+			"epoch-naming",
+			"forbidden-call-in-wg-go",
+			"inefficient-map-lookup",
+			"modifies-parameter",
+			"modifies-value-receiver",
+			"time-equal",
+			"unhandled-error",
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -834,7 +888,7 @@ func (current item) mutate(value int, group sync.WaitGroup, closer interface{ Cl
 	for _, item := range diagnostics {
 		codes[item.Code] = true
 	}
-	for _, code := range []string{
+	for _, code := range[]string{
 		"atomic",
 		"epoch-naming",
 		"forbidden-call-in-wg-go",
@@ -910,8 +964,20 @@ func BenchmarkLint(b *testing.B) {
 
 func TestSortDiagnosticsUsesEndOffsetAsTieBreaker(t *testing.T) {
 	diagnostics := []diagnostic.Diagnostic{
-		{File: "main.go", Code: "example", Message: "same", Start: token.Position{Offset: 10}, End: token.Position{Offset: 30}},
-		{File: "main.go", Code: "example", Message: "same", Start: token.Position{Offset: 10}, End: token.Position{Offset: 20}},
+		{
+			File: "main.go",
+			Code: "example",
+			Message: "same",
+			Start: token.Position{Offset: 10},
+			End: token.Position{Offset: 30},
+		},
+		{
+			File: "main.go",
+			Code: "example",
+			Message: "same",
+			Start: token.Position{Offset: 10},
+			End: token.Position{Offset: 20},
+		},
 	}
 	sortDiagnostics(diagnostics)
 	if diagnostics[0].End.Offset != 20 || diagnostics[1].End.Offset != 30 {

@@ -9,15 +9,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type emptyCriticalSectionRule struct{}
+type emptyCriticalSectionRule struct {}
 
 func (emptyCriticalSectionRule) Meta() Meta {
 	return Meta{
-		Code:            "empty-critical-section",
-		Summary:         "detect adjacent lock and unlock calls",
-		Explanation:     "A lock immediately followed by its matching unlock protects no work and is commonly a missing defer. Intentional empty critical sections used for synchronization should be documented and suppressed explicitly.",
-		GoodExample:     "mutex.Lock()\ndefer mutex.Unlock()",
-		BadExample:      "mutex.Lock()\nmutex.Unlock()",
+		Code: "empty-critical-section",
+		Summary: "detect adjacent lock and unlock calls",
+		Explanation: "A lock immediately followed by its matching unlock protects no work and is commonly a missing defer. Intentional empty critical sections used for synchronization should be documented and suppressed explicitly.",
+		GoodExample: "mutex.Lock()\ndefer mutex.Unlock()",
+		BadExample: "mutex.Lock()\nmutex.Unlock()",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -30,21 +30,26 @@ func (emptyCriticalSectionRule) Run(pass *Pass) {
 		ast.Inspect(
 			file,
 			func(node ast.Node) bool {
-				block, ok := node.(*ast.BlockStmt)
+				block,
+				ok := node.(*ast.BlockStmt)
 				if !ok || len(block.List) < 2 {
 					return true
 				}
-				for index := 0; index+1 < len(block.List); index++ {
-					firstReceiver, firstMethod, firstOK := lockStatement(pass, block.List[index])
-					secondReceiver, secondMethod, secondOK := lockStatement(pass, block.List[index+1])
-					if !firstOK || !secondOK ||
-						!matchingLockMethods(firstMethod, secondMethod) ||
-						renderAnalysisExpression(pass, firstReceiver) !=
-							renderAnalysisExpression(pass, secondReceiver) {
+				for index := 0; index + 1 < len(block.List); index++ {
+					firstReceiver,
+					firstMethod,
+					firstOK := lockStatement(pass, block.List[index])
+					secondReceiver,
+					secondMethod,
+					secondOK := lockStatement(pass, block.List[index + 1])
+					if !firstOK || !secondOK || !matchingLockMethods(firstMethod, secondMethod) || renderAnalysisExpression(
+						pass,
+						firstReceiver,
+					) != renderAnalysisExpression(pass, secondReceiver) {
 						continue
 					}
 					pass.Report(
-						block.List[index+1],
+						block.List[index + 1],
 						"empty critical section; did you mean to defer the unlock?",
 					)
 				}
@@ -79,8 +84,7 @@ func lockStatement(pass *Pass, statement ast.Stmt) (ast.Expr, string, bool) {
 }
 
 func matchingLockMethods(lock, unlock string) bool {
-	return lock == "Lock" && unlock == "Unlock" ||
-		lock == "RLock" && unlock == "RUnlock"
+	return lock == "Lock" && unlock == "Unlock" || lock == "RLock" && unlock == "RUnlock"
 }
 
 func renderAnalysisExpression(pass *Pass, expression ast.Expr) string {

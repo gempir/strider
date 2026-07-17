@@ -8,60 +8,67 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type spinningEmptyLoopRule struct{}
+type spinningEmptyLoopRule struct {}
 
 func (spinningEmptyLoopRule) Meta() Meta {
 	return Meta{
-		Code:            "spinning-empty-loop",
-		Summary:         "detect empty loops that consume a core while waiting unsafely",
-		Explanation:     "An empty unconditional loop spins at full speed. An empty loop that only rereads variables can terminate only through unsynchronized mutation, which is a data race; use synchronization or a blocking operation instead.",
-		GoodExample:     "for !ready() {} // condition is dynamically evaluated",
-		BadExample:      "for {}",
+		Code: "spinning-empty-loop",
+		Summary: "detect empty loops that consume a core while waiting unsafely",
+		Explanation: "An empty unconditional loop spins at full speed. An empty loop that only rereads variables can terminate only through unsynchronized mutation, which is a data race; use synchronization or a blocking operation instead.",
+		GoodExample: "for !ready() {} // condition is dynamically evaluated",
+		BadExample: "for {}",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
 
 func (spinningEmptyLoopRule) Run(pass *Pass) {
 	for _, file := range pass.Files {
-		ast.Inspect(file, func(node ast.Node) bool {
-			loop, ok := node.(*ast.ForStmt)
-			if !ok || len(loop.Body.List) != 0 || loop.Init != nil || loop.Post != nil {
-				return true
-			}
-			if loop.Cond == nil {
-				pass.Report(loop, "empty unconditional loop spins and consumes a full CPU core")
-				return true
-			}
-			if analysisExpressionHasDynamicEffect(loop.Cond) || constantFalse(pass, loop.Cond) {
-				return true
-			}
-			pass.Report(
+		ast.Inspect(
+			file,
+			func(node ast.Node) bool {
 				loop,
-				"empty loop condition cannot change safely; synchronize instead of spinning",
-			)
-			return true
-		})
+				ok := node.(*ast.ForStmt)
+				if !ok || len(loop.Body.List) != 0 || loop.Init != nil || loop.Post != nil {
+					return true
+				}
+				if loop.Cond == nil {
+					pass.Report(loop, "empty unconditional loop spins and consumes a full CPU core")
+					return true
+				}
+				if analysisExpressionHasDynamicEffect(loop.Cond) || constantFalse(pass, loop.Cond) {
+					return true
+				}
+				pass.Report(
+					loop,
+					"empty loop condition cannot change safely; synchronize instead of spinning",
+				)
+				return true
+			},
+		)
 	}
 }
 
 func analysisExpressionHasDynamicEffect(expression ast.Expr) bool {
 	found := false
-	ast.Inspect(expression, func(node ast.Node) bool {
-		if found {
-			return false
-		}
-		switch node := node.(type) {
-		case *ast.CallExpr:
-			found = true
-			return false
-		case *ast.UnaryExpr:
-			if node.Op == token.ARROW {
-				found = true
+	ast.Inspect(
+		expression,
+		func(node ast.Node) bool {
+			if found {
 				return false
 			}
-		}
-		return true
-	})
+			switch node := node.(type) {
+			case *ast.CallExpr:
+				found = true
+				return false
+			case *ast.UnaryExpr:
+				if node.Op == token.ARROW {
+					found = true
+					return false
+				}
+			}
+			return true
+		},
+	)
 	return found
 }
 

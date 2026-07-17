@@ -9,40 +9,44 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type failedAssertionShadowReadRule struct{}
+type failedAssertionShadowReadRule struct {}
 
 func (failedAssertionShadowReadRule) Meta() Meta {
 	return Meta{
-		Code:            "failed-assertion-shadow-read",
-		Summary:         "detect reads of a shadowing failed type assertion result",
-		Explanation:     "In an if initializer such as `if value, ok := value.(T); ok`, the new value variable is also in scope in the else branch. When the assertion fails it contains T's zero value, so reading it there usually means the original interface value was intended.",
-		GoodExample:     "if typed, ok := value.(T); ok { use(typed) } else { logType(value) }",
-		BadExample:      "if value, ok := value.(T); ok { use(value) } else { logType(value) }",
+		Code: "failed-assertion-shadow-read",
+		Summary: "detect reads of a shadowing failed type assertion result",
+		Explanation: "In an if initializer such as `if value, ok := value.(T); ok`, the new value variable is also in scope in the else branch. When the assertion fails it contains T's zero value, so reading it there usually means the original interface value was intended.",
+		GoodExample: "if typed, ok := value.(T); ok { use(typed) } else { logType(value) }",
+		BadExample: "if value, ok := value.(T); ok { use(value) } else { logType(value) }",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
 
 func (failedAssertionShadowReadRule) Run(pass *Pass) {
 	for _, file := range pass.Files {
-		ast.Inspect(file, func(node ast.Node) bool {
-			statement, ok := node.(*ast.IfStmt)
-			if !ok || statement.Else == nil {
+		ast.Inspect(
+			file,
+			func(node ast.Node) bool {
+				statement,
+				ok := node.(*ast.IfStmt)
+				if !ok || statement.Else == nil {
+					return true
+				}
+				shadow,
+				ok := failedAssertionShadow(pass, statement)
+				if !ok {
+					return true
+				}
+				scanFailedAssertionStatement(pass, statement.Else, shadow, true)
 				return true
-			}
-			shadow, ok := failedAssertionShadow(pass, statement)
-			if !ok {
-				return true
-			}
-			scanFailedAssertionStatement(pass, statement.Else, shadow, true)
-			return true
-		})
+			},
+		)
 	}
 }
 
 func failedAssertionShadow(pass *Pass, statement *ast.IfStmt) (types.Object, bool) {
 	assignment, ok := statement.Init.(*ast.AssignStmt)
-	if !ok || assignment.Tok != token.DEFINE || len(assignment.Lhs) != 2 ||
-		len(assignment.Rhs) != 1 {
+	if !ok || assignment.Tok != token.DEFINE || len(assignment.Lhs) != 2 || len(assignment.Rhs) != 1 {
 		return nil, false
 	}
 	shadow, ok := assignment.Lhs[0].(*ast.Ident)
@@ -106,7 +110,12 @@ func scanFailedAssertionStatement(
 				reportFailedAssertionReads(pass, expression, shadow)
 			}
 			for _, expression := range statement.Lhs {
-				reportFailedAssertionLHSReads(pass, expression, shadow, statement.Tok != token.ASSIGN)
+				reportFailedAssertionLHSReads(
+					pass,
+					expression,
+					shadow,
+					statement.Tok != token.ASSIGN,
+				)
 			}
 		}
 		return active && !assignsObject(pass, statement.Lhs, shadow)
@@ -140,16 +149,21 @@ func scanFailedAssertionStatement(
 		}
 	case *ast.DeclStmt:
 		if active {
-			ast.Inspect(statement.Decl, func(node ast.Node) bool {
-				if literal, ok := node.(*ast.FuncLit); ok && literal != nil {
-					return false
-				}
-				identifier, ok := node.(*ast.Ident)
-				if ok && pass.TypesInfo.ObjectOf(identifier) == shadow {
-					pass.Report(identifier, failedAssertionMessage(identifier.Name))
-				}
-				return true
-			})
+			ast.Inspect(
+				statement.Decl,
+				func(node ast.Node) bool {
+					if literal,
+					ok := node.(*ast.FuncLit); ok && literal != nil {
+						return false
+					}
+					identifier,
+					ok := node.(*ast.Ident)
+					if ok && pass.TypesInfo.ObjectOf(identifier) == shadow {
+						pass.Report(identifier, failedAssertionMessage(identifier.Name))
+					}
+					return true
+				},
+			)
 		}
 	case *ast.IfStmt:
 		if statement.Init != nil {
@@ -208,20 +222,28 @@ func reportFailedAssertionLHSReads(
 }
 
 func reportFailedAssertionReads(pass *Pass, node ast.Node, shadow types.Object) {
-	ast.Inspect(node, func(node ast.Node) bool {
-		if _, ok := node.(*ast.FuncLit); ok {
-			return false
-		}
-		identifier, ok := node.(*ast.Ident)
-		if ok && pass.TypesInfo.ObjectOf(identifier) == shadow {
-			pass.Report(identifier, failedAssertionMessage(identifier.Name))
-		}
-		return true
-	})
+	ast.Inspect(
+		node,
+		func(node ast.Node) bool {
+			if _,
+			ok := node.(*ast.FuncLit); ok {
+				return false
+			}
+			identifier,
+			ok := node.(*ast.Ident)
+			if ok && pass.TypesInfo.ObjectOf(identifier) == shadow {
+				pass.Report(identifier, failedAssertionMessage(identifier.Name))
+			}
+			return true
+		},
+	)
 }
 
 func failedAssertionMessage(name string) string {
-	return fmt.Sprintf("%s is the zero value produced by the failed type assertion, not the original interface value", name)
+	return fmt.Sprintf(
+		"%s is the zero value produced by the failed type assertion, not the original interface value",
+		name,
+	)
 }
 
 func assignsObject(pass *Pass, expressions []ast.Expr, object types.Object) bool {

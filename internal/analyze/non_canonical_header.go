@@ -10,15 +10,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type nonCanonicalHeaderRule struct{}
+type nonCanonicalHeaderRule struct {}
 
 func (nonCanonicalHeaderRule) Meta() Meta {
 	return Meta{
-		Code:            "non-canonical-header",
-		Summary:         "detect non-canonical keys in http.Header reads",
-		Explanation:     "Direct reads from http.Header must use canonical constant keys. Header methods canonicalize their arguments, but direct map access does not.",
-		GoodExample:     `value := header["Content-Type"]`,
-		BadExample:      `value := header["content-type"]`,
+		Code: "non-canonical-header",
+		Summary: "detect non-canonical keys in http.Header reads",
+		Explanation: "Direct reads from http.Header must use canonical constant keys. Header methods canonicalize their arguments, but direct map access does not.",
+		GoodExample: `value := header["Content-Type"]`,
+		BadExample: `value := header["content-type"]`,
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -28,16 +28,20 @@ func (nonCanonicalHeaderRule) Run(pass *Pass) {
 		ast.Inspect(
 			file,
 			func(node ast.Node) bool {
-				if assignment, ok := node.(*ast.AssignStmt); ok {
-					for _, expression := range assignment.Lhs {
-						index, ok := expression.(*ast.IndexExpr)
+				if assignment,
+				ok := node.(*ast.AssignStmt); ok {
+					for _,
+					expression := range assignment.Lhs {
+						index,
+						ok := expression.(*ast.IndexExpr)
 						if ok && isHTTPHeader(pass.TypesInfo.TypeOf(index.X)) {
 							return false
 						}
 					}
 					return true
 				}
-				index, ok := node.(*ast.IndexExpr)
+				index,
+				ok := node.(*ast.IndexExpr)
 				if !ok || !isHTTPHeader(pass.TypesInfo.TypeOf(index.X)) {
 					return true
 				}
@@ -64,6 +68,5 @@ func (nonCanonicalHeaderRule) Run(pass *Pass) {
 
 func isHTTPHeader(valueType types.Type) bool {
 	named, ok := types.Unalias(valueType).(*types.Named)
-	return ok && named.Obj() != nil && named.Obj().Pkg() != nil &&
-		named.Obj().Pkg().Path() == "net/http" && named.Obj().Name() == "Header"
+	return ok && named.Obj() != nil && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "net/http" && named.Obj().Name() == "Header"
 }

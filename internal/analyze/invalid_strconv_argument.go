@@ -4,24 +4,25 @@ import (
 	"fmt"
 	"go/constant"
 
-	"github.com/gempir/strider/internal/diagnostic"
 	"golang.org/x/tools/go/ssa"
+
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type invalidStrconvArgumentRule struct{}
+type invalidStrconvArgumentRule struct {}
 
 type strconvConstraint struct {
-	index    int
+	index int
 	validate func(int64) string
 }
 
 func (invalidStrconvArgumentRule) Meta() Meta {
 	return Meta{
-		Code:            "invalid-strconv-argument",
-		Summary:         "detect invalid constant arguments to strconv functions",
-		Explanation:     "strconv parsing and formatting functions accept only documented number bases, bit sizes, and floating-point format characters. Invalid constants always return errors or produce unusable results.",
-		GoodExample:     `strconv.ParseInt(value, 10, 64)`,
-		BadExample:      `strconv.ParseInt(value, 1, 128)`,
+		Code: "invalid-strconv-argument",
+		Summary: "detect invalid constant arguments to strconv functions",
+		Explanation: "strconv parsing and formatting functions accept only documented number bases, bit sizes, and floating-point format characters. Invalid constants always return errors or produce unusable results.",
+		GoodExample: `strconv.ParseInt(value, 10, 64)`,
+		BadExample: `strconv.ParseInt(value, 1, 128)`,
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -58,27 +59,26 @@ func (invalidStrconvArgumentRule) Run(pass *Pass) {
 
 func strconvConstraints(call ssa.CallInstruction) []strconvConstraint {
 	callee := call.Common().StaticCallee()
-	if callee == nil || callee.Object() == nil || callee.Object().Pkg() == nil ||
-		callee.Object().Pkg().Path() != "strconv" {
+	if callee == nil || callee.Object() == nil || callee.Object().Pkg() == nil || callee.Object().Pkg().Path() != "strconv" {
 		return nil
 	}
 	switch callee.Object().Name() {
 	case "ParseComplex":
-		return []strconvConstraint{{1, validateComplexBitSize}}
+		return[]strconvConstraint{{1, validateComplexBitSize}}
 	case "ParseFloat":
-		return []strconvConstraint{{1, validateFloatBitSize}}
+		return[]strconvConstraint{{1, validateFloatBitSize}}
 	case "ParseInt", "ParseUint":
-		return []strconvConstraint{{1, validateParsingBase}, {2, validateIntegerBitSize}}
+		return[]strconvConstraint{{1, validateParsingBase}, {2, validateIntegerBitSize}}
 	case "FormatComplex":
-		return []strconvConstraint{{1, validateFloatFormat}, {3, validateComplexBitSize}}
+		return[]strconvConstraint{{1, validateFloatFormat}, {3, validateComplexBitSize}}
 	case "FormatFloat":
-		return []strconvConstraint{{1, validateFloatFormat}, {3, validateFloatBitSize}}
+		return[]strconvConstraint{{1, validateFloatFormat}, {3, validateFloatBitSize}}
 	case "FormatInt", "FormatUint":
-		return []strconvConstraint{{1, validateFormattingBase}}
+		return[]strconvConstraint{{1, validateFormattingBase}}
 	case "AppendFloat":
-		return []strconvConstraint{{2, validateFloatFormat}, {4, validateFloatBitSize}}
+		return[]strconvConstraint{{2, validateFloatFormat}, {4, validateFloatBitSize}}
 	case "AppendInt", "AppendUint":
-		return []strconvConstraint{{2, validateFormattingBase}}
+		return[]strconvConstraint{{2, validateFormattingBase}}
 	default:
 		return nil
 	}
@@ -86,8 +86,7 @@ func strconvConstraints(call ssa.CallInstruction) []strconvConstraint {
 
 func ssaInt64(value ssa.Value) (int64, bool) {
 	constantValue := ssaConstant(value)
-	if constantValue == nil || constantValue.Value == nil ||
-		constantValue.Value.Kind() != constant.Int {
+	if constantValue == nil || constantValue.Value == nil || constantValue.Value.Kind() != constant.Int {
 		return 0, false
 	}
 	return constant.Int64Val(constantValue.Value)

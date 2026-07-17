@@ -4,19 +4,20 @@ import (
 	"fmt"
 	"go/types"
 
-	"github.com/gempir/strider/internal/diagnostic"
 	"golang.org/x/tools/go/ssa"
+
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type sortNonSliceRule struct{}
+type sortNonSliceRule struct {}
 
 func (sortNonSliceRule) Meta() Meta {
 	return Meta{
-		Code:            "sort-non-slice",
-		Summary:         "detect sort.Slice calls with non-slice values",
-		Explanation:     "sort.Slice, sort.SliceStable, and sort.SliceIsSorted accept any only for historical API reasons. Their first argument must hold a slice; passing another concrete type panics at runtime.",
-		GoodExample:     "sort.Slice(values, less)",
-		BadExample:      "sort.Slice(array, less)",
+		Code: "sort-non-slice",
+		Summary: "detect sort.Slice calls with non-slice values",
+		Explanation: "sort.Slice, sort.SliceStable, and sort.SliceIsSorted accept any only for historical API reasons. Their first argument must hold a slice; passing another concrete type panics at runtime.",
+		GoodExample: "sort.Slice(values, less)",
+		BadExample: "sort.Slice(array, less)",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -34,8 +35,9 @@ func (sortNonSliceRule) Run(pass *Pass) {
 				if _, ok := types.Unalias(argument.Type()).Underlying().(*types.Slice); ok {
 					continue
 				}
-				if _, unknown := types.Unalias(argument.Type()).Underlying().(*types.Interface); unknown &&
-					!isNilSSAConstant(argument) {
+				if _, unknown := types.Unalias(argument.Type()).Underlying().(*types.Interface); unknown && !isNilSSAConstant(
+					argument,
+				) {
 					continue
 				}
 				node := explicitCallArgument(calls[call.Pos()], 0, call.Pos())
@@ -58,8 +60,7 @@ func isSortSliceCall(call ssa.CallInstruction) bool {
 
 func sortSliceCallName(call ssa.CallInstruction) string {
 	callee := call.Common().StaticCallee()
-	if callee == nil || callee.Object() == nil || callee.Object().Pkg() == nil ||
-		callee.Object().Pkg().Path() != "sort" {
+	if callee == nil || callee.Object() == nil || callee.Object().Pkg() == nil || callee.Object().Pkg().Path() != "sort" {
 		return ""
 	}
 	switch callee.Object().Name() {

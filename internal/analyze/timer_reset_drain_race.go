@@ -4,19 +4,20 @@ import (
 	"go/token"
 	"go/types"
 
-	"github.com/gempir/strider/internal/diagnostic"
 	"golang.org/x/tools/go/ssa"
+
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type timerResetDrainRaceRule struct{}
+type timerResetDrainRaceRule struct {}
 
 func (timerResetDrainRaceRule) Meta() Meta {
 	return Meta{
-		Code:            "timer-reset-drain-race",
-		Summary:         "detect attempts to drain a timer based on Reset's result",
-		Explanation:     "Using time.Timer.Reset's boolean result to decide whether to receive from a timer channel is racy on older timer implementations and can block with current synchronous timer channels. Stop and drain before resetting when compatibility requires it, or reset without conditionally draining afterward.",
-		GoodExample:     "if !timer.Stop() { select { case <-timer.C: default: } }\ntimer.Reset(delay)",
-		BadExample:      "if !timer.Reset(delay) { <-timer.C }",
+		Code: "timer-reset-drain-race",
+		Summary: "detect attempts to drain a timer based on Reset's result",
+		Explanation: "Using time.Timer.Reset's boolean result to decide whether to receive from a timer channel is racy on older timer implementations and can block with current synchronous timer channels. Stop and drain before resetting when compatibility requires it, or reset without conditionally draining afterward.",
+		GoodExample: "if !timer.Stop() { select { case <-timer.C: default: } }\ntimer.Reset(delay)",
+		BadExample: "if !timer.Reset(delay) { <-timer.C }",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -45,8 +46,7 @@ func (timerResetDrainRaceRule) Run(pass *Pass) {
 
 func isTimerResetCall(call *ssa.Call) bool {
 	callee := call.Common().StaticCallee()
-	if callee == nil || callee.Object() == nil || callee.Object().Pkg() == nil ||
-		callee.Object().Pkg().Path() != "time" || callee.Object().Name() != "Reset" {
+	if callee == nil || callee.Object() == nil || callee.Object().Pkg() == nil || callee.Object().Pkg().Path() != "time" || callee.Object().Name() != "Reset" {
 		return false
 	}
 	function, ok := callee.Object().(*types.Func)
@@ -62,8 +62,7 @@ func isTimerResetCall(call *ssa.Call) bool {
 		return false
 	}
 	named, ok := types.Unalias(pointer.Elem()).(*types.Named)
-	return ok && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "time" &&
-		named.Obj().Name() == "Timer"
+	return ok && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "time" && named.Obj().Name() == "Timer"
 }
 
 func conditionalUses(value ssa.Value) []*ssa.If {
@@ -102,8 +101,8 @@ func conditionBranchesReceiveTime(conditional *ssa.If) bool {
 		seen := make(map[*ssa.BasicBlock]bool)
 		work := []*ssa.BasicBlock{successor}
 		for len(work) != 0 {
-			block := work[len(work)-1]
-			work = work[:len(work)-1]
+			block := work[len(work) - 1]
+			work = work[:len(work) - 1]
 			if seen[block] || !successor.Dominates(block) {
 				continue
 			}
@@ -126,6 +125,5 @@ func isTimeChannel(valueType types.Type) bool {
 		return false
 	}
 	named, ok := types.Unalias(channel.Elem()).(*types.Named)
-	return ok && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "time" &&
-		named.Obj().Name() == "Time"
+	return ok && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "time" && named.Obj().Name() == "Time"
 }

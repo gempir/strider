@@ -7,15 +7,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type separateByteStringMapKeyRule struct{}
+type separateByteStringMapKeyRule struct {}
 
 func (separateByteStringMapKeyRule) Meta() Meta {
 	return Meta{
-		Code:            "separate-byte-string-map-key",
-		Summary:         "detect allocated byte-to-string temporaries used only for map lookups",
-		Explanation:     "The compiler can perform m[string(bytes)] without copying the byte slice because the temporary string cannot escape the lookup. Assigning string(bytes) to a variable first prevents that optimization and allocates when the variable is used only as a map key.",
-		GoodExample:     "value := items[string(keyBytes)]",
-		BadExample:      "key := string(keyBytes); value := items[key]",
+		Code: "separate-byte-string-map-key",
+		Summary: "detect allocated byte-to-string temporaries used only for map lookups",
+		Explanation: "The compiler can perform m[string(bytes)] without copying the byte slice because the temporary string cannot escape the lookup. Assigning string(bytes) to a variable first prevents that optimization and allocates when the variable is used only as a map key.",
+		GoodExample: "value := items[string(keyBytes)]",
+		BadExample: "key := string(keyBytes); value := items[key]",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -23,29 +23,37 @@ func (separateByteStringMapKeyRule) Meta() Meta {
 func (separateByteStringMapKeyRule) Run(pass *Pass) {
 	parents := analysisParents(pass.Files)
 	for _, file := range pass.Files {
-		ast.Inspect(file, func(node ast.Node) bool {
-			switch declaration := node.(type) {
-			case *ast.AssignStmt:
-				if declaration.Tok.String() != ":=" || len(declaration.Lhs) != len(declaration.Rhs) {
-					return true
-				}
-				for index, left := range declaration.Lhs {
-					identifier, ok := left.(*ast.Ident)
-					if !ok {
-						continue
+		ast.Inspect(
+			file,
+			func(node ast.Node) bool {
+				switch declaration := node.(type) {
+				case *ast.AssignStmt:
+					if declaration.Tok.String() != ":=" || len(declaration.Lhs) != len(
+						declaration.Rhs,
+					) {
+						return true
 					}
-					reportSeparateMapKey(pass, parents, identifier, declaration.Rhs[index])
+					for index,
+					left := range declaration.Lhs {
+						identifier,
+						ok := left.(*ast.Ident)
+						if !ok {
+							continue
+						}
+						reportSeparateMapKey(pass, parents, identifier, declaration.Rhs[index])
+					}
+				case *ast.ValueSpec:
+					if len(declaration.Names) != len(declaration.Values) {
+						return true
+					}
+					for index,
+					identifier := range declaration.Names {
+						reportSeparateMapKey(pass, parents, identifier, declaration.Values[index])
+					}
 				}
-			case *ast.ValueSpec:
-				if len(declaration.Names) != len(declaration.Values) {
-					return true
-				}
-				for index, identifier := range declaration.Names {
-					reportSeparateMapKey(pass, parents, identifier, declaration.Values[index])
-				}
-			}
-			return true
-		})
+				return true
+			},
+		)
 	}
 }
 
@@ -85,11 +93,7 @@ func byteSliceStringConversion(pass *Pass, expression ast.Expr) (*ast.CallExpr, 
 	return call, true
 }
 
-func usedOnlyAsStringMapKey(
-	pass *Pass,
-	parents map[ast.Node]ast.Node,
-	object types.Object,
-) bool {
+func usedOnlyAsStringMapKey(pass *Pass, parents map[ast.Node]ast.Node, object types.Object) bool {
 	uses := 0
 	for identifier, usedObject := range pass.TypesInfo.Uses {
 		if usedObject != object {

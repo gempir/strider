@@ -40,21 +40,25 @@ func concreteFingerprint(tree *cst.Tree) string {
 			return
 		}
 		if declaration, ok := node.(*cst.ImportDecl); ok {
-			cst.Walk(declaration, func(child cst.Node) bool {
-				spec, isSpec := child.(*cst.ImportSpec)
-				if !isSpec {
-					return true
-				}
-				name := ""
-				switch {
-				case spec.PERIOD.IsValid():
-					name = spec.PERIOD.Src()
-				case spec.PackageName.IsValid():
-					name = spec.PackageName.Src()
-				}
-				imports = append(imports, name+"\x00"+spec.ImportPath.Src())
-				return false
-			})
+			cst.Walk(
+				declaration,
+				func(child cst.Node) bool {
+					spec,
+					isSpec := child.(*cst.ImportSpec)
+					if !isSpec {
+						return true
+					}
+					name := ""
+					switch {
+					case spec.PERIOD.IsValid():
+						name = spec.PERIOD.Src()
+					case spec.PackageName.IsValid():
+						name = spec.PackageName.Src()
+					}
+					imports = append(imports, name + "\x00" + spec.ImportPath.Src())
+					return false
+				},
+			)
 			return
 		}
 		if current, ok := node.(cst.Token); ok {

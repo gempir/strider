@@ -20,9 +20,9 @@ import (
 )
 
 type Registry struct {
-	rules    []builtinrules.Rule
+	rules []builtinrules.Rule
 	settings map[string]configuredRule
-	root     string
+	root string
 }
 
 type configuredRule struct {
@@ -75,10 +75,7 @@ func NewRegistryConfigured(
 	for _, code := range only {
 		wanted[code] = true
 	}
-	registry := &Registry{
-		settings: make(map[string]configuredRule, len(all)),
-		root:     root,
-	}
+	registry := &Registry{settings: make(map[string]configuredRule, len(all)), root: root}
 	for _, rule := range all {
 		meta := rule.Meta()
 		ruleConfig := settings[meta.Code]
@@ -99,7 +96,10 @@ func NewRegistryConfigured(
 			severity = diagnostic.Severity(ruleConfig.Severity)
 		}
 		registry.rules = append(registry.rules, rule)
-		registry.settings[meta.Code] = configuredRule{severity: severity, excludes: ruleConfig.Excludes}
+		registry.settings[meta.Code] = configuredRule{
+			severity: severity,
+			excludes: ruleConfig.Excludes,
+		}
 	}
 	return registry, nil
 }
@@ -142,22 +142,22 @@ func (r *Registry) activeRules(filename string) []builtinrules.Rule {
 }
 
 type Context struct {
-	filename        string
-	diagnostics     []diagnostic.Diagnostic
+	filename string
+	diagnostics []diagnostic.Diagnostic
 	concreteIgnores map[string]bool
-	concreteNodes   []concreteSuppression
+	concreteNodes []concreteSuppression
 }
 
 type concreteSuppression struct {
 	start int
-	end   int
+	end int
 	codes map[string]bool
 }
 
 type fileResult struct {
-	filename    string
+	filename string
 	diagnostics []diagnostic.Diagnostic
-	err         error
+	err error
 }
 
 func Run(files []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
@@ -210,25 +210,30 @@ func Run(files []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
 }
 
 func sortDiagnostics(diagnostics []diagnostic.Diagnostic) {
-	sort.SliceStable(diagnostics, func(i, j int) bool {
-		left, right := diagnostics[i], diagnostics[j]
-		if left.File != right.File {
-			return left.File < right.File
-		}
-		if left.Start.Offset != right.Start.Offset {
-			return left.Start.Offset < right.Start.Offset
-		}
-		if left.Code != right.Code {
-			return left.Code < right.Code
-		}
-		if left.Message != right.Message {
-			return left.Message < right.Message
-		}
-		if left.End.Offset != right.End.Offset {
-			return left.End.Offset < right.End.Offset
-		}
-		return left.Severity < right.Severity
-	})
+	sort.SliceStable(
+		diagnostics,
+		func(i, j int) bool {
+			left,
+			right := diagnostics[i],
+			diagnostics[j]
+			if left.File != right.File {
+				return left.File < right.File
+			}
+			if left.Start.Offset != right.Start.Offset {
+				return left.Start.Offset < right.Start.Offset
+			}
+			if left.Code != right.Code {
+				return left.Code < right.Code
+			}
+			if left.Message != right.Message {
+				return left.Message < right.Message
+			}
+			if left.End.Offset != right.End.Offset {
+				return left.End.Offset < right.End.Offset
+			}
+			return left.Severity < right.Severity
+		},
+	)
 }
 
 func lintFile(filename string, registry *Registry) ([]diagnostic.Diagnostic, error) {
@@ -242,16 +247,16 @@ func lintFile(filename string, registry *Registry) ([]diagnostic.Diagnostic, err
 	}
 	concreteIgnores, concreteNodes := concreteSuppressions(filename, concreteTree)
 	context := &Context{
-		filename:        filename,
+		filename: filename,
 		concreteIgnores: concreteIgnores,
-		concreteNodes:   concreteNodes,
+		concreteNodes: concreteNodes,
 	}
 	activeRules := registry.activeRules(filename)
 	builtinrules.AnalyzeCST(
 		builtinrules.CSTInput{
 			Filename: filename,
-			Tree:     concreteTree,
-			Rules:    activeRules,
+			Tree: concreteTree,
+			Rules: activeRules,
 			Report: func(finding builtinrules.Finding) {
 				context.reportConcrete(concreteTree, finding, registry.Severity(finding.Code))
 			},
@@ -277,14 +282,17 @@ func (c *Context) reportConcrete(
 	display := source.DisplayPath(c.filename)
 	start.Filename = display
 	end.Filename = display
-	c.diagnostics = append(c.diagnostics, diagnostic.Diagnostic{
-		Code:     finding.Code,
-		Message:  finding.Message,
-		Severity: severity,
-		File:     display,
-		Start:    start,
-		End:      end,
-	})
+	c.diagnostics = append(
+		c.diagnostics,
+		diagnostic.Diagnostic{
+			Code: finding.Code,
+			Message: finding.Message,
+			Severity: severity,
+			File: display,
+			Start: start,
+			End: end,
+		},
+	)
 }
 
 func (c *Context) suppressedRange(code string, start, end int) bool {
@@ -292,8 +300,9 @@ func (c *Context) suppressedRange(code string, start, end int) bool {
 		return true
 	}
 	for _, ignored := range c.concreteNodes {
-		if ignored.start <= start && ignored.end >= end &&
-			(ignored.codes["all"] || ignored.codes[code]) {
+		if ignored.start <= start && ignored.end >= end && (ignored.codes["all"] || ignored.codes[
+			code,
+		]) {
 			return true
 		}
 	}
@@ -329,15 +338,18 @@ func concreteSuppressions(filename string, tree *cst.Tree) (map[string]bool, []c
 		if !ok {
 			continue
 		}
-		index := sort.Search(len(candidates), func(index int) bool {
-			return candidates[index].start > end
-		})
+		index := sort.Search(
+			len(candidates),
+			func(index int) bool {
+				return candidates[index].start > end
+			},
+		)
 		if index == len(candidates) {
 			continue
 		}
 		ignored := concreteSuppression{
 			start: candidates[index].start,
-			end:   candidates[index].end,
+			end: candidates[index].end,
 			codes: make(map[string]bool, len(codes)),
 		}
 		for _, code := range codes {
@@ -350,23 +362,30 @@ func concreteSuppressions(filename string, tree *cst.Tree) (map[string]bool, []c
 
 func concreteSuppressionCandidates(tree *cst.Tree) []concreteSuppression {
 	result := []concreteSuppression{}
-	cst.Walk(tree.Root(), func(node cst.Node) bool {
-		kind := cst.Kind(node)
-		if !strings.HasSuffix(kind, "Decl") && !strings.HasSuffix(kind, "Stmt") {
+	cst.Walk(
+		tree.Root(),
+		func(node cst.Node) bool {
+			kind := cst.Kind(node)
+			if !strings.HasSuffix(kind, "Decl") && !strings.HasSuffix(kind, "Stmt") {
+				return true
+			}
+			start,
+			end := cst.Range(node)
+			if end > start {
+				result = append(result, concreteSuppression{start: start, end: end})
+			}
 			return true
-		}
-		start, end := cst.Range(node)
-		if end > start {
-			result = append(result, concreteSuppression{start: start, end: end})
-		}
-		return true
-	})
-	sort.SliceStable(result, func(i, j int) bool {
-		if result[i].start != result[j].start {
-			return result[i].start < result[j].start
-		}
-		return result[i].end > result[j].end
-	})
+		},
+	)
+	sort.SliceStable(
+		result,
+		func(i, j int) bool {
+			if result[i].start != result[j].start {
+				return result[i].start < result[j].start
+			}
+			return result[i].end > result[j].end
+		},
+	)
 	return result
 }
 
@@ -375,9 +394,8 @@ func directiveCodes(comment, directive string) ([]string, bool) {
 	if index < 0 {
 		return nil, false
 	}
-	remainder := comment[index+len(directive):]
-	if remainder != "" && remainder[0] != ' ' && remainder[0] != '\t' && remainder[0] != '*' &&
-		remainder[0] != '/' {
+	remainder := comment[index + len(directive):]
+	if remainder != "" && remainder[0] != ' ' && remainder[0] != '\t' && remainder[0] != '*' && remainder[0] != '/' {
 		return nil, false
 	}
 	remainder = strings.Trim(remainder, " \t*/")

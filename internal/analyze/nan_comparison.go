@@ -3,19 +3,20 @@ package analyze
 import (
 	"go/token"
 
-	"github.com/gempir/strider/internal/diagnostic"
 	"golang.org/x/tools/go/ssa"
+
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type nanComparisonRule struct{}
+type nanComparisonRule struct {}
 
 func (nanComparisonRule) Meta() Meta {
 	return Meta{
-		Code:            "nan-comparison",
-		Summary:         "detect direct comparisons with NaN",
-		Explanation:     "IEEE floating-point NaN is unequal to every value, including itself, and all ordered comparisons with it are false. Use math.IsNaN when testing whether a value is NaN.",
-		GoodExample:     "if math.IsNaN(value) { handle() }",
-		BadExample:      "if value == math.NaN() { handle() }",
+		Code: "nan-comparison",
+		Summary: "detect direct comparisons with NaN",
+		Explanation: "IEEE floating-point NaN is unequal to every value, including itself, and all ordered comparisons with it are false. Use math.IsNaN when testing whether a value is NaN.",
+		GoodExample: "if math.IsNaN(value) { handle() }",
+		BadExample: "if value == math.NaN() { handle() }",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -25,8 +26,9 @@ func (nanComparisonRule) Run(pass *Pass) {
 		for _, block := range function.Blocks {
 			for _, instruction := range block.Instrs {
 				binary, ok := instruction.(*ssa.BinOp)
-				if !ok || !comparisonOperator(binary.Op) ||
-					(!isNaNValue(flattenEquivalentPhi(binary.X)) && !isNaNValue(flattenEquivalentPhi(binary.Y))) {
+				if !ok || !comparisonOperator(binary.Op) || (!isNaNValue(
+					flattenEquivalentPhi(binary.X),
+				) && !isNaNValue(flattenEquivalentPhi(binary.Y))) {
 					continue
 				}
 				pass.Report(

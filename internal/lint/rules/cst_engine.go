@@ -8,139 +8,141 @@ import (
 )
 
 var cstRuleCodes = map[string]bool{
-	"add-constant":                    true,
-	"atomic":                          true,
+	"add-constant": true,
+	"atomic": true,
 	"bidirectional-control-character": true,
-	"banned-characters":               true,
-	"argument-limit":                  true,
-	"bare-return":                     true,
-	"blank-imports":                   true,
-	"bool-literal-in-expr":            true,
-	"comment-spacings":                true,
-	"comments-density":                true,
-	"constant-logical-expr":           true,
-	"cognitive-complexity":            true,
-	"confusing-naming":                true,
-	"confusing-results":               true,
-	"context-as-argument":             true,
-	"cyclomatic-complexity":           true,
-	"cyclomatic":                      true,
-	"double-negation":                 true,
-	"call-to-gc":                      true,
-	"deep-exit":                       true,
-	"datarace":                        true,
-	"defer":                           true,
-	"dot-imports":                     true,
-	"duplicated-imports":              true,
-	"enforce-map-style":               true,
+	"banned-characters": true,
+	"argument-limit": true,
+	"bare-return": true,
+	"blank-imports": true,
+	"bool-literal-in-expr": true,
+	"comment-spacings": true,
+	"comments-density": true,
+	"constant-logical-expr": true,
+	"cognitive-complexity": true,
+	"confusing-naming": true,
+	"confusing-results": true,
+	"context-as-argument": true,
+	"cyclomatic-complexity": true,
+	"cyclomatic": true,
+	"double-negation": true,
+	"call-to-gc": true,
+	"deep-exit": true,
+	"datarace": true,
+	"defer": true,
+	"dot-imports": true,
+	"duplicated-imports": true,
+	"enforce-map-style": true,
 	"enforce-repeated-arg-type-style": true,
-	"enforce-slice-style":             true,
-	"enforce-switch-style":            true,
-	"empty-block":                     true,
-	"empty-lines":                     true,
-	"early-return":                    true,
-	"error-strings":                   true,
-	"error-return":                    true,
-	"error-naming":                    true,
-	"errorf":                          true,
-	"epoch-naming":                    true,
-	"file-header":                     true,
-	"exported":                        true,
-	"file-length-limit":               true,
-	"flag-parameter":                  true,
-	"forbidden-call-in-wg-go":         true,
-	"filename-format":                 true,
-	"function-length":                 true,
-	"function-result-limit":           true,
-	"get-return":                      true,
-	"identical-branches":              true,
-	"identical-ifelseif-branches":     true,
-	"identical-ifelseif-conditions":   true,
-	"identical-switch-branches":       true,
-	"identical-switch-conditions":     true,
-	"if-return":                       true,
-	"import-alias-naming":             true,
-	"import-shadowing":                true,
-	"inefficient-map-lookup":          true,
-	"imports-blocklist":               true,
-	"ineffective-pointer-copy":        true,
-	"increment-decrement":             true,
-	"indent-error-flow":               true,
-	"line-length-limit":               true,
-	"max-parameters":                  true,
-	"max-control-nesting":             true,
-	"max-public-structs":              true,
-	"marshal-receiver":                true,
-	"modulo-one":                      true,
-	"modifies-parameter":              true,
-	"modifies-value-receiver":         true,
-	"multiline-if-init":               true,
-	"nested-structs":                  true,
-	"no-defer-in-loop":                true,
-	"no-else-after-return":            true,
-	"no-init":                         true,
-	"no-naked-return":                 true,
-	"no-package-var":                  true,
-	"optimize-operands-order":         true,
-	"package-comments":                true,
-	"package-directory-mismatch":      true,
-	"package-naming":                  true,
-	"redundant-build-tag":             true,
-	"redundant-import-alias":          true,
-	"receiver-naming":                 true,
-	"range":                           true,
-	"range-val-address":               true,
-	"range-val-in-closure":            true,
-	"redefines-builtin-id":            true,
-	"redundant-test-main-exit":        true,
-	"spaced-compiler-directive":       true,
-	"spinning-select-default":         true,
-	"string-of-int":                   true,
-	"string-format":                   true,
-	"struct-tag":                      true,
-	"superfluous-else":                true,
-	"time-naming":                     true,
-	"time-equal":                      true,
-	"time-date":                       true,
-	"unchecked-type-assertion":        true,
-	"unnecessary-format":              true,
-	"unnecessary-if":                  true,
-	"unnecessary-stmt":                true,
-	"unhandled-error":                 true,
-	"unreachable-code":                true,
-	"unexported-return":               true,
-	"unsecure-url-scheme":             true,
-	"unexported-naming":               true,
-	"use-any":                         true,
-	"use-errors-new":                  true,
-	"use-fmt-print":                   true,
-	"use-slices-sort":                 true,
-	"use-waitgroup-go":                true,
-	"unused-parameter":                true,
-	"unused-receiver":                 true,
-	"useless-fallthrough":             true,
-	"useless-break":                   true,
-	"var-declaration":                 true,
-	"var-naming":                      true,
-	"waitgroup-by-value":              true,
-	"zero-integer-division":           true,
+	"enforce-slice-style": true,
+	"enforce-switch-style": true,
+	"empty-block": true,
+	"empty-lines": true,
+	"early-return": true,
+	"error-strings": true,
+	"error-return": true,
+	"error-naming": true,
+	"errorf": true,
+	"epoch-naming": true,
+	"file-header": true,
+	"exported": true,
+	"file-length-limit": true,
+	"flag-parameter": true,
+	"forbidden-call-in-wg-go": true,
+	"filename-format": true,
+	"function-length": true,
+	"function-result-limit": true,
+	"get-return": true,
+	"identical-branches": true,
+	"identical-ifelseif-branches": true,
+	"identical-ifelseif-conditions": true,
+	"identical-switch-branches": true,
+	"identical-switch-conditions": true,
+	"if-return": true,
+	"import-alias-naming": true,
+	"import-shadowing": true,
+	"inefficient-map-lookup": true,
+	"imports-blocklist": true,
+	"ineffective-pointer-copy": true,
+	"increment-decrement": true,
+	"indent-error-flow": true,
+	"line-length-limit": true,
+	"max-parameters": true,
+	"max-control-nesting": true,
+	"max-public-structs": true,
+	"marshal-receiver": true,
+	"modulo-one": true,
+	"modifies-parameter": true,
+	"modifies-value-receiver": true,
+	"multiline-if-init": true,
+	"nested-structs": true,
+	"no-defer-in-loop": true,
+	"no-else-after-return": true,
+	"no-init": true,
+	"no-naked-return": true,
+	"no-package-var": true,
+	"optimize-operands-order": true,
+	"package-comments": true,
+	"package-directory-mismatch": true,
+	"package-naming": true,
+	"redundant-build-tag": true,
+	"redundant-import-alias": true,
+	"receiver-naming": true,
+	"range": true,
+	"range-val-address": true,
+	"range-val-in-closure": true,
+	"redefines-builtin-id": true,
+	"redundant-test-main-exit": true,
+	"spaced-compiler-directive": true,
+	"spinning-select-default": true,
+	"string-of-int": true,
+	"string-format": true,
+	"struct-tag": true,
+	"superfluous-else": true,
+	"time-naming": true,
+	"time-equal": true,
+	"time-date": true,
+	"unchecked-type-assertion": true,
+	"unnecessary-format": true,
+	"unnecessary-if": true,
+	"unnecessary-stmt": true,
+	"unhandled-error": true,
+	"unreachable-code": true,
+	"unexported-return": true,
+	"unsecure-url-scheme": true,
+	"unexported-naming": true,
+	"use-any": true,
+	"use-errors-new": true,
+	"use-fmt-print": true,
+	"use-slices-sort": true,
+	"use-waitgroup-go": true,
+	"unused-parameter": true,
+	"unused-receiver": true,
+	"useless-fallthrough": true,
+	"useless-break": true,
+	"var-declaration": true,
+	"var-naming": true,
+	"waitgroup-by-value": true,
+	"zero-integer-division": true,
 }
 
 // UsesCST reports whether a rule has moved to the concrete-syntax pass.
-func UsesCST(code string) bool { return cstRuleCodes[code] }
+func UsesCST(code string) bool {
+	return cstRuleCodes[code]
+}
 
 type cstAnalyzer struct {
-	filename      string
-	tree          *cst.Tree
-	content       []byte
-	enabled       map[string]bool
-	reporter      func(Finding)
-	ancestors     []cst.Node
-	current       cst.Node
+	filename string
+	tree *cst.Tree
+	content []byte
+	enabled map[string]bool
+	reporter func(Finding)
+	ancestors []cst.Node
+	current cst.Node
 	receiverNames map[string]string
-	marshalKinds  map[string]string
-	importNames   map[string]bool
-	foldedNames   map[string]map[string]string
+	marshalKinds map[string]string
+	importNames map[string]bool
+	foldedNames map[string]map[string]string
 	publicStructs int
 }
 
@@ -154,15 +156,15 @@ func AnalyzeCST(input CSTInput) {
 		return
 	}
 	analyzer := &cstAnalyzer{
-		filename:      input.Filename,
-		tree:          input.Tree,
-		content:       input.Tree.Source(),
-		enabled:       enabled,
-		reporter:      input.Report,
+		filename: input.Filename,
+		tree: input.Tree,
+		content: input.Tree.Source(),
+		enabled: enabled,
+		reporter: input.Report,
 		receiverNames: make(map[string]string),
-		marshalKinds:  make(map[string]string),
-		importNames:   make(map[string]bool),
-		foldedNames:   make(map[string]map[string]string),
+		marshalKinds: make(map[string]string),
+		importNames: make(map[string]bool),
+		foldedNames: make(map[string]map[string]string),
 	}
 	analyzer.checkFile()
 	stack := []cst.Node{}
@@ -175,7 +177,7 @@ func AnalyzeCST(input CSTInput) {
 		for _, child := range cst.Children(node) {
 			visit(child)
 		}
-		stack = stack[:len(stack)-1]
+		stack = stack[:len(stack) - 1]
 	}
 	visit(input.Tree.Root())
 }
@@ -265,24 +267,22 @@ func (a *cstAnalyzer) report(code string, node cst.Node, message string) {
 	if !a.enabled[code] || node == nil || a.reporter == nil {
 		return
 	}
-	a.reporter(Finding{
-		ConcreteNode: node,
-		Code:         code,
-		Message:      message,
-	})
+	a.reporter(Finding{ConcreteNode: node, Code: code, Message: message})
 }
 
 func (a *cstAnalyzer) reportRange(code string, start, end int, message string) {
 	if !a.enabled[code] || a.reporter == nil {
 		return
 	}
-	a.reporter(Finding{
-		ConcreteStart:    start,
-		ConcreteEnd:      end,
-		HasConcreteRange: true,
-		Code:             code,
-		Message:          message,
-	})
+	a.reporter(
+		Finding{
+			ConcreteStart: start,
+			ConcreteEnd: end,
+			HasConcreteRange: true,
+			Code: code,
+			Message: message,
+		},
+	)
 }
 
 func (a *cstAnalyzer) checkFile() {
@@ -295,8 +295,8 @@ func (a *cstAnalyzer) checkFile() {
 func (a *cstAnalyzer) packageNameToken() cst.Token {
 	tokens := a.tree.Tokens()
 	for index, current := range tokens {
-		if current.Ch() == token.PACKAGE && index+1 < len(tokens) {
-			return tokens[index+1]
+		if current.Ch() == token.PACKAGE && index + 1 < len(tokens) {
+			return tokens[index + 1]
 		}
 	}
 	return cst.Token{}
@@ -375,18 +375,25 @@ func cyclomaticComplexity(body cst.Node) int {
 		return 0
 	}
 	complexity := 1
-	cst.Walk(body, func(node cst.Node) bool {
-		switch current := node.(type) {
-		case cst.Token:
-			switch current.Ch() {
-			case token.IF, token.FOR, token.CASE, token.LAND, token.LOR:
+	cst.Walk(
+		body,
+		func(node cst.Node) bool {
+			switch current := node.(type) {
+			case cst.Token:
+				switch current.Ch() {
+				case token.IF,
+					token.FOR,
+					token.CASE,
+					token.LAND,
+					token.LOR:
+					complexity++
+				}
+			case *cst.TypeSwitchStmt:
 				complexity++
 			}
-		case *cst.TypeSwitchStmt:
-			complexity++
-		}
-		return true
-	})
+			return true
+		},
+	)
 	return complexity
 }
 
@@ -455,21 +462,26 @@ func (a *cstAnalyzer) checkDefer(statement *cst.DeferStmt) {
 	if concreteCallName(call) == "recover" {
 		a.report("defer", statement, "defer recover() evaluates recover immediately")
 	}
-	cst.Walk(call.PrimaryExpr, func(node cst.Node) bool {
-		literal, ok := node.(*cst.FunctionLit)
-		if !ok || literal.Signature == nil || literal.Signature.Result == nil {
-			return true
-		}
-		if concreteDeclCount(concreteResultDecls(literal.Signature.Result)) > 0 {
-			a.report("defer", statement, "return values from a deferred function are ignored")
-		}
-		return false
-	})
+	cst.Walk(
+		call.PrimaryExpr,
+		func(node cst.Node) bool {
+			literal,
+			ok := node.(*cst.FunctionLit)
+			if !ok || literal.Signature == nil || literal.Signature.Result == nil {
+				return true
+			}
+			if concreteDeclCount(concreteResultDecls(literal.Signature.Result)) > 0 {
+				a.report("defer", statement, "return values from a deferred function are ignored")
+			}
+			return false
+		},
+	)
 }
 
 func (a *cstAnalyzer) checkElseAfterReturn(statement *cst.IfElseStmt) {
-	if !statement.ELSE.IsValid() || statement.Block == nil ||
-		!statementListEndsInReturn(statement.Block.StatementList) {
+	if !statement.ELSE.IsValid() || statement.Block == nil || !statementListEndsInReturn(
+		statement.Block.StatementList,
+	) {
 		return
 	}
 	a.report(
@@ -481,7 +493,7 @@ func (a *cstAnalyzer) checkElseAfterReturn(statement *cst.IfElseStmt) {
 
 func statementListEndsInReturn(list *cst.StatementList) bool {
 	var last cst.Node
-	for ; list != nil; list = list.List {
+	for; list != nil; list = list.List {
 		if list.Statement != nil {
 			last = list.Statement
 		}
@@ -497,29 +509,32 @@ func (a *cstAnalyzer) checkPackageVar(declaration *cst.VarDecl) {
 			return
 		}
 	}
-	cst.Walk(declaration.VarSpec, func(node cst.Node) bool {
-		switch spec := node.(type) {
-		case *cst.VarSpec:
-			if spec.IDENT.Src() != "_" {
-				a.report(
-					"no-package-var",
-					spec.IDENT,
-					"package variables introduce mutable global state",
-				)
-			}
-			return false
-		case *cst.VarSpec2:
-			for names := spec.IdentifierList; names != nil; names = names.List {
-				if names.IDENT.Src() != "_" {
+	cst.Walk(
+		declaration.VarSpec,
+		func(node cst.Node) bool {
+			switch spec := node.(type) {
+			case *cst.VarSpec:
+				if spec.IDENT.Src() != "_" {
 					a.report(
 						"no-package-var",
-						names.IDENT,
+						spec.IDENT,
 						"package variables introduce mutable global state",
 					)
 				}
+				return false
+			case *cst.VarSpec2:
+				for names := spec.IdentifierList; names != nil; names = names.List {
+					if names.IDENT.Src() != "_" {
+						a.report(
+							"no-package-var",
+							names.IDENT,
+							"package variables introduce mutable global state",
+						)
+					}
+				}
+				return false
 			}
-			return false
-		}
-		return true
-	})
+			return true
+		},
+	)
 }

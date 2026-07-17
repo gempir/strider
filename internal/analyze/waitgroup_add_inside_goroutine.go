@@ -7,15 +7,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type waitGroupAddInsideGoroutineRule struct{}
+type waitGroupAddInsideGoroutineRule struct {}
 
 func (waitGroupAddInsideGoroutineRule) Meta() Meta {
 	return Meta{
-		Code:            "waitgroup-add-inside-goroutine",
-		Summary:         "detect WaitGroup.Add calls inside newly started goroutines",
-		Explanation:     "WaitGroup.Add must happen before starting the goroutine it accounts for. Calling Add inside the goroutine races with Wait, which may observe a zero counter and return too early.",
-		GoodExample:     "group.Add(1)\ngo func() { defer group.Done() }()",
-		BadExample:      "go func() { group.Add(1); defer group.Done() }()",
+		Code: "waitgroup-add-inside-goroutine",
+		Summary: "detect WaitGroup.Add calls inside newly started goroutines",
+		Explanation: "WaitGroup.Add must happen before starting the goroutine it accounts for. Calling Add inside the goroutine races with Wait, which may observe a zero counter and return too early.",
+		GoodExample: "group.Add(1)\ngo func() { defer group.Done() }()",
+		BadExample: "go func() { group.Add(1); defer group.Done() }()",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -25,11 +25,13 @@ func (waitGroupAddInsideGoroutineRule) Run(pass *Pass) {
 		ast.Inspect(
 			file,
 			func(node ast.Node) bool {
-				statement, ok := node.(*ast.GoStmt)
+				statement,
+				ok := node.(*ast.GoStmt)
 				if !ok {
 					return true
 				}
-				literal, ok := statement.Call.Fun.(*ast.FuncLit)
+				literal,
+				ok := statement.Call.Fun.(*ast.FuncLit)
 				if !ok {
 					return true
 				}
@@ -37,11 +39,13 @@ func (waitGroupAddInsideGoroutineRule) Run(pass *Pass) {
 					literal.Body,
 					func(nested ast.Node) bool {
 						if nested != literal.Body {
-							if _, nestedFunction := nested.(*ast.FuncLit); nestedFunction {
+							if _,
+							nestedFunction := nested.(*ast.FuncLit); nestedFunction {
 								return false
 							}
 						}
-						call, ok := nested.(*ast.CallExpr)
+						call,
+						ok := nested.(*ast.CallExpr)
 						if ok && isWaitGroupMethod(pass.TypesInfo, call.Fun, "Add") {
 							pass.Report(
 								call,
@@ -75,6 +79,5 @@ func isWaitGroupMethod(info *types.Info, expression ast.Expr, name string) bool 
 		receiver = types.Unalias(pointer.Elem())
 	}
 	named, ok := receiver.(*types.Named)
-	return ok && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "sync" &&
-		named.Obj().Name() == "WaitGroup"
+	return ok && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "sync" && named.Obj().Name() == "WaitGroup"
 }

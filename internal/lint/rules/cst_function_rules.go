@@ -83,8 +83,7 @@ func (a *cstAnalyzer) checkConcreteFunctionBody(name cst.Token, body cst.Node, r
 	if resultTotal != 0 {
 		return
 	}
-	if returned, ok := concreteFinalStatement(body).(*cst.ReturnStmt); ok &&
-		returned.ExpressionList == nil {
+	if returned, ok := concreteFinalStatement(body).(*cst.ReturnStmt); ok && returned.ExpressionList == nil {
 		a.report(
 			"unnecessary-stmt",
 			returned,
@@ -114,7 +113,7 @@ func concreteResultDecls(result *cst.Result) []*cst.ParameterDecl {
 		return concreteParameterDecls(result.Parameters)
 	}
 	if result.TypeNode != nil {
-		return []*cst.ParameterDecl{{TypeNode: result.TypeNode}}
+		return[]*cst.ParameterDecl{{TypeNode: result.TypeNode}}
 	}
 	return nil
 }
@@ -156,24 +155,32 @@ func concreteCognitiveComplexity(body cst.Node) int {
 
 func concreteStatementCount(body cst.Node) int {
 	count := 0
-	cst.Walk(body, func(node cst.Node) bool {
-		if list, ok := node.(*cst.StatementList); ok && list.Statement != nil {
-			count++
-		}
-		return true
-	})
+	cst.Walk(
+		body,
+		func(node cst.Node) bool {
+			if list,
+			ok := node.(*cst.StatementList); ok && list.Statement != nil {
+				count++
+			}
+			return true
+		},
+	)
 	return count
 }
 
 func concreteFinalStatement(body cst.Node) cst.Node {
 	var block *cst.Block
-	cst.Walk(body, func(node cst.Node) bool {
-		if current, ok := node.(*cst.Block); ok && block == nil {
-			block = current
-			return false
-		}
-		return block == nil
-	})
+	cst.Walk(
+		body,
+		func(node cst.Node) bool {
+			if current,
+			ok := node.(*cst.Block); ok && block == nil {
+				block = current
+				return false
+			}
+			return block == nil
+		},
+	)
 	if block == nil {
 		return nil
 	}
@@ -190,13 +197,14 @@ func (a *cstAnalyzer) checkConcreteResults(name cst.Token, results []*cst.Parame
 	previous := ""
 	for index, result := range results {
 		typeName := cst.Spelling(result.TypeNode)
-		if typeName == "error" && index != len(results)-1 {
+		if typeName == "error" && index != len(results) - 1 {
 			a.report("error-return", result.TypeNode, "error should be the last returned value")
 		}
 		if token.IsExported(name.Src()) {
 			base := strings.TrimLeft(typeName, "*[]")
-			if identifierName(base) && base != "error" && !token.IsExported(base) &&
-				!builtinType(base) {
+			if identifierName(base) && base != "error" && !token.IsExported(base) && !builtinType(
+				base,
+			) {
 				a.report(
 					"unexported-return",
 					result.TypeNode,
@@ -270,8 +278,7 @@ func (a *cstAnalyzer) checkConcreteUnused(
 					fmt.Sprintf("parameter %s is unused", name.Src()),
 				)
 			}
-			if cst.Spelling(parameter.TypeNode) == "bool" &&
-				concreteConditionUses(body, name.Src()) {
+			if cst.Spelling(parameter.TypeNode) == "bool" && concreteConditionUses(body, name.Src()) {
 				a.report(
 					"flag-parameter",
 					name,
@@ -302,25 +309,29 @@ func (a *cstAnalyzer) checkConcreteUnused(
 
 func concreteConditionUses(body cst.Node, name string) bool {
 	found := false
-	cst.Walk(body, func(node cst.Node) bool {
-		kind := cst.Kind(node)
-		if kind != "IfStmt" && kind != "IfElseStmt" {
-			return true
-		}
-		for _, current := range cst.NodeTokens(node) {
-			if current.Ch() == token.IDENT && current.Src() == name {
-				found = true
-				return false
+	cst.Walk(
+		body,
+		func(node cst.Node) bool {
+			kind := cst.Kind(node)
+			if kind != "IfStmt" && kind != "IfElseStmt" {
+				return true
 			}
-		}
-		return !found
-	})
+			for _,
+			current := range cst.NodeTokens(node) {
+				if current.Ch() == token.IDENT && current.Src() == name {
+					found = true
+					return false
+				}
+			}
+			return !found
+		},
+	)
 	return found
 }
 
 func concreteIdentifierTokens(list *cst.IdentifierList) []cst.Token {
 	result := []cst.Token{}
-	for ; list != nil; list = list.List {
+	for; list != nil; list = list.List {
 		if list.IDENT.IsValid() {
 			result = append(result, list.IDENT)
 		}

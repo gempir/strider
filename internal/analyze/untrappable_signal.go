@@ -8,15 +8,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type untrappableSignalRule struct{}
+type untrappableSignalRule struct {}
 
 func (untrappableSignalRule) Meta() Meta {
 	return Meta{
-		Code:            "untrappable-signal",
-		Summary:         "detect attempts to handle signals that cannot be trapped",
-		Explanation:     "SIGKILL and SIGSTOP are handled directly by Unix-like kernels and are never delivered to a process. Passing either signal to os/signal notification APIs cannot work.",
-		GoodExample:     "signal.Notify(ch, syscall.SIGTERM)",
-		BadExample:      "signal.Notify(ch, os.Kill)",
+		Code: "untrappable-signal",
+		Summary: "detect attempts to handle signals that cannot be trapped",
+		Explanation: "SIGKILL and SIGSTOP are handled directly by Unix-like kernels and are never delivered to a process. Passing either signal to os/signal notification APIs cannot work.",
+		GoodExample: "signal.Notify(ch, syscall.SIGTERM)",
+		BadExample: "signal.Notify(ch, os.Kill)",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -26,20 +26,19 @@ func (untrappableSignalRule) Run(pass *Pass) {
 		ast.Inspect(
 			file,
 			func(node ast.Node) bool {
-				call, ok := node.(*ast.CallExpr)
+				call,
+				ok := node.(*ast.CallExpr)
 				if !ok || !isSignalRegistration(pass.TypesInfo, call.Fun) {
 					return true
 				}
-				for _, argument := range call.Args {
+				for _,
+				argument := range call.Args {
 					signal := unwrapSignalConversion(pass.TypesInfo, argument)
 					name := untrappableSignalName(pass.TypesInfo, signal)
 					if name == "" {
 						continue
 					}
-					pass.Report(
-						argument,
-						fmt.Sprintf("%s cannot be trapped by a process", name),
-					)
+					pass.Report(argument, fmt.Sprintf("%s cannot be trapped by a process", name))
 				}
 				return true
 			},

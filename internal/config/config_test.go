@@ -33,8 +33,7 @@ severity = "note"
 	if err != nil {
 		t.Fatal(err)
 	}
-	if configuration.Formatter.PrintWidth != 120 || configuration.Formatter.IndentWidth != 4 ||
-		configuration.Formatter.MaxEmptyLines != 3 {
+	if configuration.Formatter.PrintWidth != 120 || configuration.Formatter.IndentWidth != 4 || configuration.Formatter.MaxEmptyLines != 3 {
 		t.Fatalf("unexpected formatter config: %#v", configuration.Formatter)
 	}
 	if configuration.Color != "auto" {
@@ -47,7 +46,10 @@ severity = "note"
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := configuration.Resolve("lint-baseline.toml"); got != filepath.Join(canonicalRoot, "lint-baseline.toml") {
+	if got := configuration.Resolve("lint-baseline.toml"); got != filepath.Join(
+		canonicalRoot,
+		"lint-baseline.toml",
+	) {
 		t.Fatalf("resolved path %q", got)
 	}
 }
@@ -55,25 +57,29 @@ severity = "note"
 func TestLoadRejectsUnknownAndInvalidSettings(t *testing.T) {
 	for name, test := range map[string]struct {
 		contents string
-		wanted   string
+		wanted string
 	}{
-		"unknown":  {"version = 1\nunknown = true\n", "unknown configuration key"},
-		"version":  {"version = 2\n", "unsupported configuration version"},
-		"width":    {"version = 1\n[formatter]\nprint-width = 20\n", "print-width"},
-		"empty":    {"version = 1\n[formatter]\nmax-empty-lines = -1\n", "max-empty-lines"},
+		"unknown": {"version = 1\nunknown = true\n", "unknown configuration key"},
+		"version": {"version = 2\n", "unsupported configuration version"},
+		"width": {"version = 1\n[formatter]\nprint-width = 20\n", "print-width"},
+		"empty": {"version = 1\n[formatter]\nmax-empty-lines = -1\n", "max-empty-lines"},
 		"severity": {"version = 1\n[linter.rules.no-init]\nseverity = \"fatal\"\n", "severity"},
-		"color":    {"version = 1\ncolor = \"sometimes\"\n", "color"},
+		"color": {"version = 1\ncolor = \"sometimes\"\n", "color"},
 	} {
-		t.Run(name, func(t *testing.T) {
-			path := filepath.Join(t.TempDir(), Filename)
-			if err := os.WriteFile(path, []byte(test.contents), 0o600); err != nil {
-				t.Fatal(err)
-			}
-			_, err := Load(path, false)
-			if err == nil || !strings.Contains(err.Error(), test.wanted) {
-				t.Fatalf("got %v, want error containing %q", err, test.wanted)
-			}
-		})
+		t.Run(
+			name,
+			func(t *testing.T) {
+				path := filepath.Join(t.TempDir(), Filename)
+				if err := os.WriteFile(path, []byte(test.contents), 0o600); err != nil {
+					t.Fatal(err)
+				}
+				_,
+				err := Load(path, false)
+				if err == nil || !strings.Contains(err.Error(), test.wanted) {
+					t.Fatalf("got %v, want error containing %q", err, test.wanted)
+				}
+			},
+		)
 	}
 }
 
@@ -86,5 +92,7 @@ func chdir(t *testing.T, directory string) {
 	if err := os.Chdir(directory); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = os.Chdir(previous) })
+	t.Cleanup(func() {
+		_ = os.Chdir(previous)
+	})
 }

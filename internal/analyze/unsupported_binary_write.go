@@ -6,19 +6,20 @@ import (
 	"go/token"
 	"go/types"
 
-	"github.com/gempir/strider/internal/diagnostic"
 	"golang.org/x/tools/go/ssa"
+
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type unsupportedBinaryWriteRule struct{}
+type unsupportedBinaryWriteRule struct {}
 
 func (unsupportedBinaryWriteRule) Meta() Meta {
 	return Meta{
-		Code:            "unsupported-binary-write",
-		Summary:         "detect unsupported encoding/binary.Write values",
-		Explanation:     "encoding/binary can only serialize fixed-size values; architecture-sized integers, strings, maps, channels, functions, pointers in aggregates, and other variable-size values are unsupported.",
-		GoodExample:     "binary.Write(writer, binary.LittleEndian, uint32(value))",
-		BadExample:      "binary.Write(writer, binary.LittleEndian, value) // value is int",
+		Code: "unsupported-binary-write",
+		Summary: "detect unsupported encoding/binary.Write values",
+		Explanation: "encoding/binary can only serialize fixed-size values; architecture-sized integers, strings, maps, channels, functions, pointers in aggregates, and other variable-size values are unsupported.",
+		GoodExample: "binary.Write(writer, binary.LittleEndian, uint32(value))",
+		BadExample: "binary.Write(writer, binary.LittleEndian, value) // value is int",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -29,8 +30,9 @@ func (unsupportedBinaryWriteRule) Run(pass *Pass) {
 		for _, block := range function.Blocks {
 			for _, instruction := range block.Instrs {
 				call, ok := instruction.(ssa.CallInstruction)
-				if !ok || !isStaticFunction(call, "encoding/binary", "Write") ||
-					len(call.Common().Args) < 3 {
+				if !ok || !isStaticFunction(call, "encoding/binary", "Write") || len(
+					call.Common().Args,
+				) < 3 {
 					continue
 				}
 				value := unwrapSSAValue(call.Common().Args[2])
@@ -63,7 +65,9 @@ func canBinaryMarshal(valueType types.Type) bool {
 	if pointer, ok := typeToCheck.(*types.Pointer); ok {
 		typeToCheck = pointer.Elem().Underlying()
 	}
-	if withElement, ok := types.Unalias(typeToCheck).(interface{ Elem() types.Type }); ok {
+	if withElement, ok := types.Unalias(typeToCheck).(interface {
+		Elem() types.Type
+	}); ok {
 		if _, pointer := withElement.(*types.Pointer); !pointer {
 			typeToCheck = withElement.Elem()
 		}
@@ -75,12 +79,7 @@ func validEncodingBinaryType(valueType types.Type) bool {
 	switch valueType := valueType.Underlying().(type) {
 	case *types.Basic:
 		switch valueType.Kind() {
-		case types.Bool,
-			types.Uint8, types.Uint16, types.Uint32, types.Uint64,
-			types.Int8, types.Int16, types.Int32, types.Int64,
-			types.Float32, types.Float64,
-			types.Complex64, types.Complex128,
-			types.Invalid:
+		case types.Bool, types.Uint8, types.Uint16, types.Uint32, types.Uint64, types.Int8, types.Int16, types.Int32, types.Int64, types.Float32, types.Float64, types.Complex64, types.Complex128, types.Invalid:
 			return true
 		default:
 			return false
@@ -107,12 +106,14 @@ func argumentsByCallPosition(files []*ast.File) map[token.Pos][]ast.Node {
 		ast.Inspect(
 			file,
 			func(node ast.Node) bool {
-				call, ok := node.(*ast.CallExpr)
+				call,
+				ok := node.(*ast.CallExpr)
 				if !ok {
 					return true
 				}
 				arguments := make([]ast.Node, len(call.Args))
-				for index, argument := range call.Args {
+				for index,
+				argument := range call.Args {
 					arguments[index] = argument
 				}
 				calls[call.Pos()] = arguments

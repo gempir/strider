@@ -3,19 +3,20 @@ package analyze
 import (
 	"fmt"
 
-	"github.com/gempir/strider/internal/diagnostic"
 	"golang.org/x/tools/go/ssa"
+
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type dangerousDirectoryRemovalRule struct{}
+type dangerousDirectoryRemovalRule struct {}
 
 func (dangerousDirectoryRemovalRule) Meta() Meta {
 	return Meta{
-		Code:            "dangerous-directory-removal",
-		Summary:         "detect removal of whole system or user directories",
-		Explanation:     "Passing the direct result of os.TempDir or a user directory helper to os.RemoveAll deletes the entire shared directory rather than an application-owned child. This is commonly caused by confusing TempDir with a directory-creation helper or forgetting to append a suffix.",
-		GoodExample:     "directory, err := os.MkdirTemp(os.TempDir(), `app-*`); defer os.RemoveAll(directory)",
-		BadExample:      "directory := os.TempDir(); defer os.RemoveAll(directory)",
+		Code: "dangerous-directory-removal",
+		Summary: "detect removal of whole system or user directories",
+		Explanation: "Passing the direct result of os.TempDir or a user directory helper to os.RemoveAll deletes the entire shared directory rather than an application-owned child. This is commonly caused by confusing TempDir with a directory-creation helper or forgetting to append a suffix.",
+		GoodExample: "directory, err := os.MkdirTemp(os.TempDir(), `app-*`); defer os.RemoveAll(directory)",
+		BadExample: "directory := os.TempDir(); defer os.RemoveAll(directory)",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -25,8 +26,7 @@ func (dangerousDirectoryRemovalRule) Run(pass *Pass) {
 		for _, block := range function.Blocks {
 			for _, instruction := range block.Instrs {
 				call, ok := instruction.(ssa.CallInstruction)
-				if !ok || !isStaticFunction(call, "os", "RemoveAll") ||
-					len(call.Common().Args) == 0 {
+				if !ok || !isStaticFunction(call, "os", "RemoveAll") || len(call.Common().Args) == 0 {
 					continue
 				}
 				helper, kind := dangerousDirectorySource(call.Common().Args[0])
@@ -35,7 +35,11 @@ func (dangerousDirectoryRemovalRule) Run(pass *Pass) {
 				}
 				pass.Report(
 					positionNode{position: call.Pos()},
-					fmt.Sprintf("os.RemoveAll receives the entire %s directory from os.%s; remove only an application-owned subdirectory", kind, helper),
+					fmt.Sprintf(
+						"os.RemoveAll receives the entire %s directory from os.%s; remove only an application-owned subdirectory",
+						kind,
+						helper,
+					),
 				)
 			}
 		}
@@ -55,8 +59,7 @@ func dangerousDirectorySource(value ssa.Value) (string, string) {
 		return "", ""
 	}
 	callee := call.Common().StaticCallee()
-	if callee == nil || callee.Object() == nil || callee.Object().Pkg() == nil ||
-		callee.Object().Pkg().Path() != "os" {
+	if callee == nil || callee.Object() == nil || callee.Object().Pkg() == nil || callee.Object().Pkg().Path() != "os" {
 		return "", ""
 	}
 	switch callee.Object().Name() {

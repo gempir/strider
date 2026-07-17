@@ -10,42 +10,46 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type negativeLengthCapacityComparisonRule struct{}
+type negativeLengthCapacityComparisonRule struct {}
 
 func (negativeLengthCapacityComparisonRule) Meta() Meta {
 	return Meta{
-		Code:            "negative-length-capacity-comparison",
-		Summary:         "detect checks for negative len or cap results",
-		Explanation:     "The predeclared len and cap functions always return non-negative values, so testing whether either result is below zero can never succeed.",
-		GoodExample:     "if len(values) == 0 { handleEmpty() }",
-		BadExample:      "if len(values) < 0 { unreachable() }",
+		Code: "negative-length-capacity-comparison",
+		Summary: "detect checks for negative len or cap results",
+		Explanation: "The predeclared len and cap functions always return non-negative values, so testing whether either result is below zero can never succeed.",
+		GoodExample: "if len(values) == 0 { handleEmpty() }",
+		BadExample: "if len(values) < 0 { unreachable() }",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
 
 func (negativeLengthCapacityComparisonRule) Run(pass *Pass) {
 	for _, file := range pass.Files {
-		ast.Inspect(file, func(node ast.Node) bool {
-			binary, ok := node.(*ast.BinaryExpr)
-			if !ok {
+		ast.Inspect(
+			file,
+			func(node ast.Node) bool {
+				binary,
+				ok := node.(*ast.BinaryExpr)
+				if !ok {
+					return true
+				}
+				name := ""
+				switch binary.Op {
+				case token.LSS:
+					if integerZero(pass, binary.Y) {
+						name = lengthCapacityBuiltin(pass, binary.X)
+					}
+				case token.GTR:
+					if integerZero(pass, binary.X) {
+						name = lengthCapacityBuiltin(pass, binary.Y)
+					}
+				}
+				if name != "" {
+					pass.Report(binary, fmt.Sprintf("%s never returns a negative value", name))
+				}
 				return true
-			}
-			name := ""
-			switch binary.Op {
-			case token.LSS:
-				if integerZero(pass, binary.Y) {
-					name = lengthCapacityBuiltin(pass, binary.X)
-				}
-			case token.GTR:
-				if integerZero(pass, binary.X) {
-					name = lengthCapacityBuiltin(pass, binary.Y)
-				}
-			}
-			if name != "" {
-				pass.Report(binary, fmt.Sprintf("%s never returns a negative value", name))
-			}
-			return true
-		})
+			},
+		)
 	}
 }
 

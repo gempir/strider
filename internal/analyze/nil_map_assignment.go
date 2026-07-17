@@ -1,19 +1,20 @@
 package analyze
 
 import (
-	"github.com/gempir/strider/internal/diagnostic"
 	"golang.org/x/tools/go/ssa"
+
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type nilMapAssignmentRule struct{}
+type nilMapAssignmentRule struct {}
 
 func (nilMapAssignmentRule) Meta() Meta {
 	return Meta{
-		Code:            "nil-map-assignment",
-		Summary:         "detect assignments into maps proven to be nil",
-		Explanation:     "Reading from a nil map is allowed, but assigning an entry to a nil map panics. Initialize the map with make or a map literal before writing.",
-		GoodExample:     "values := make(map[string]int); values[key] = value",
-		BadExample:      "var values map[string]int; values[key] = value",
+		Code: "nil-map-assignment",
+		Summary: "detect assignments into maps proven to be nil",
+		Explanation: "Reading from a nil map is allowed, but assigning an entry to a nil map panics. Initialize the map with make or a map literal before writing.",
+		GoodExample: "values := make(map[string]int); values[key] = value",
+		BadExample: "var values map[string]int; values[key] = value",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }

@@ -11,9 +11,9 @@ import (
 type ColorMode string
 
 const (
-	ColorAuto   ColorMode = "auto"
+	ColorAuto ColorMode = "auto"
 	ColorAlways ColorMode = "always"
-	ColorNever  ColorMode = "never"
+	ColorNever ColorMode = "never"
 )
 
 // ValidColorMode reports whether value is an accepted color mode.
@@ -55,7 +55,7 @@ func colorsEnabled(writer io.Writer, mode ColorMode) bool {
 			return false
 		}
 		info, err := file.Stat()
-		return err == nil && info.Mode()&os.ModeCharDevice != 0
+		return err == nil && info.Mode() & os.ModeCharDevice != 0
 	}
 }
 
@@ -66,15 +66,50 @@ func (palette Palette) paint(code, text string) string {
 	return "\x1b[" + code + "m" + text + "\x1b[0m"
 }
 
-func (palette Palette) Bold(text string) string    { return palette.paint("1", text) }
-func (palette Palette) Muted(text string) string   { return palette.paint("2", text) }
-func (palette Palette) Error(text string) string   { return palette.paint("1;31", text) }
-func (palette Palette) Warning(text string) string { return palette.paint("1;33", text) }
-func (palette Palette) Note(text string) string    { return palette.paint("1;34", text) }
-func (palette Palette) Success(text string) string { return palette.paint("1;32", text) }
-func (palette Palette) Path(text string) string    { return palette.paint("1;36", text) }
-func (palette Palette) Code(text string) string    { return palette.paint("1;35", text) }
-func (palette Palette) Accent(text string) string  { return palette.paint("1;36", text) }
-func (palette Palette) Added(text string) string   { return palette.paint("32", text) }
-func (palette Palette) Removed(text string) string { return palette.paint("31", text) }
-func (palette Palette) Hunk(text string) string    { return palette.paint("36", text) }
+func (palette Palette) Bold(text string) string {
+	return palette.paint("1", text)
+}
+
+func (palette Palette) Muted(text string) string {
+	return palette.paint("2", text)
+}
+
+func (palette Palette) Error(text string) string {
+	return palette.paint("1;31", text)
+}
+
+func (palette Palette) Warning(text string) string {
+	return palette.paint("1;33", text)
+}
+
+func (palette Palette) Note(text string) string {
+	return palette.paint("1;34", text)
+}
+
+func (palette Palette) Success(text string) string {
+	return palette.paint("1;32", text)
+}
+
+func (palette Palette) Path(text string) string {
+	return palette.paint("1;36", text)
+}
+
+func (palette Palette) Code(text string) string {
+	return palette.paint("1;35", text)
+}
+
+func (palette Palette) Accent(text string) string {
+	return palette.paint("1;36", text)
+}
+
+func (palette Palette) Added(text string) string {
+	return palette.paint("32", text)
+}
+
+func (palette Palette) Removed(text string) string {
+	return palette.paint("31", text)
+}
+
+func (palette Palette) Hunk(text string) string {
+	return palette.paint("36", text)
+}

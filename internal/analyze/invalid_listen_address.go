@@ -7,19 +7,20 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gempir/strider/internal/diagnostic"
 	"golang.org/x/tools/go/ssa"
+
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type invalidListenAddressRule struct{}
+type invalidListenAddressRule struct {}
 
 func (invalidListenAddressRule) Meta() Meta {
 	return Meta{
-		Code:            "invalid-listen-address",
-		Summary:         "detect invalid constant HTTP listen addresses",
-		Explanation:     "HTTP server listen functions expect a host:port pair. The host or port may be omitted, but the separator, numeric port range, and service-name syntax must still be valid.",
-		GoodExample:     `http.ListenAndServe(":8080", handler)`,
-		BadExample:      `http.ListenAndServe("localhost", handler)`,
+		Code: "invalid-listen-address",
+		Summary: "detect invalid constant HTTP listen addresses",
+		Explanation: "HTTP server listen functions expect a host:port pair. The host or port may be omitted, but the separator, numeric port range, and service-name syntax must still be valid.",
+		GoodExample: `http.ListenAndServe(":8080", handler)`,
+		BadExample: `http.ListenAndServe("localhost", handler)`,
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -49,8 +50,11 @@ func (invalidListenAddressRule) Run(pass *Pass) {
 }
 
 func isHTTPListenCall(call ssa.CallInstruction) bool {
-	return isStaticFunction(call, "net/http", "ListenAndServe") ||
-		isStaticFunction(call, "net/http", "ListenAndServeTLS")
+	return isStaticFunction(call, "net/http", "ListenAndServe") || isStaticFunction(
+		call,
+		"net/http",
+		"ListenAndServeTLS",
+	)
 }
 
 func validListenAddress(address string) bool {
@@ -69,8 +73,10 @@ func validListenPort(port string) bool {
 	if err == nil {
 		return number <= 65535
 	}
-	if len(port) < 1 || len(port) > 15 || port[0] == '-' ||
-		port[len(port)-1] == '-' || strings.Contains(port, "--") {
+	if len(port) < 1 || len(port) > 15 || port[0] == '-' || port[len(port) - 1] == '-' || strings.Contains(
+		port,
+		"--",
+	) {
 		return false
 	}
 	hasLetter := false

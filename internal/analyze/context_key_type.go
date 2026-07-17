@@ -4,19 +4,20 @@ import (
 	"fmt"
 	"go/types"
 
-	"github.com/gempir/strider/internal/diagnostic"
 	"golang.org/x/tools/go/ssa"
+
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type contextKeyTypeRule struct{}
+type contextKeyTypeRule struct {}
 
 func (contextKeyTypeRule) Meta() Meta {
 	return Meta{
-		Code:            "context-key-type",
-		Summary:         "detect unsafe context.WithValue key types",
-		Explanation:     "Context keys must be comparable and should use a dedicated named type to avoid collisions between packages. Built-in types and anonymous empty structs risk collisions; non-comparable and nil keys panic at runtime.",
-		GoodExample:     "type contextKey struct{}\nctx = context.WithValue(ctx, contextKey{}, value)",
-		BadExample:      `ctx = context.WithValue(ctx, "request-id", value)`,
+		Code: "context-key-type",
+		Summary: "detect unsafe context.WithValue key types",
+		Explanation: "Context keys must be comparable and should use a dedicated named type to avoid collisions between packages. Built-in types and anonymous empty structs risk collisions; non-comparable and nil keys panic at runtime.",
+		GoodExample: "type contextKey struct{}\nctx = context.WithValue(ctx, contextKey{}, value)",
+		BadExample: `ctx = context.WithValue(ctx, "request-id", value)`,
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -27,8 +28,7 @@ func (contextKeyTypeRule) Run(pass *Pass) {
 		for _, block := range function.Blocks {
 			for _, instruction := range block.Instrs {
 				call, ok := instruction.(ssa.CallInstruction)
-				if !ok || !isStaticFunction(call, "context", "WithValue") ||
-					len(call.Common().Args) <= 1 {
+				if !ok || !isStaticFunction(call, "context", "WithValue") || len(call.Common().Args) <= 1 {
 					continue
 				}
 				key := unwrapSSAValue(call.Common().Args[1])

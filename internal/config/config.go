@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
+
 	"github.com/gempir/strider/internal/ui"
 )
 
@@ -17,55 +18,44 @@ const Filename = "strider.toml"
 
 // Config is the complete version 1 configuration document.
 type Config struct {
-	Version   int             `toml:"version"`
-	Color     string          `toml:"color"`
+	Version int `toml:"version"`
+	Color string `toml:"color"`
 	Formatter FormatterConfig `toml:"formatter"`
-	Linter    ToolConfig      `toml:"linter"`
-	Analyzer  ToolConfig      `toml:"analyzer"`
+	Linter ToolConfig `toml:"linter"`
+	Analyzer ToolConfig `toml:"analyzer"`
 
 	Path string `toml:"-"`
 	Root string `toml:"-"`
 }
 
 type FormatterConfig struct {
-	PrintWidth    int      `toml:"print-width"`
-	IndentWidth   int      `toml:"indent-width"`
-	MaxEmptyLines int      `toml:"max-empty-lines"`
-	EndOfLine     string   `toml:"end-of-line"`
-	Excludes      []string `toml:"excludes"`
+	PrintWidth int `toml:"print-width"`
+	IndentWidth int `toml:"indent-width"`
+	MaxEmptyLines int `toml:"max-empty-lines"`
+	EndOfLine string `toml:"end-of-line"`
+	Excludes []string `toml:"excludes"`
 }
 
 type ToolConfig struct {
-	Excludes        []string              `toml:"excludes"`
-	Baseline        string                `toml:"baseline"`
-	BaselineVariant string                `toml:"baseline-variant"`
-	Rules           map[string]RuleConfig `toml:"rules"`
+	Excludes []string `toml:"excludes"`
+	Baseline string `toml:"baseline"`
+	BaselineVariant string `toml:"baseline-variant"`
+	Rules map[string]RuleConfig `toml:"rules"`
 }
 
 type RuleConfig struct {
-	Enabled  *bool    `toml:"enabled"`
-	Severity string   `toml:"severity"`
+	Enabled *bool `toml:"enabled"`
+	Severity string `toml:"severity"`
 	Excludes []string `toml:"excludes"`
 }
 
 func Defaults() Config {
 	return Config{
 		Version: 1,
-		Color:   string(ui.ColorAuto),
-		Formatter: FormatterConfig{
-			PrintWidth:    100,
-			IndentWidth:   4,
-			MaxEmptyLines: 1,
-			EndOfLine:     "lf",
-		},
-		Linter: ToolConfig{
-			BaselineVariant: "loose",
-			Rules:           make(map[string]RuleConfig),
-		},
-		Analyzer: ToolConfig{
-			BaselineVariant: "loose",
-			Rules:           make(map[string]RuleConfig),
-		},
+		Color: string(ui.ColorAuto),
+		Formatter: FormatterConfig{PrintWidth: 100, IndentWidth: 4, MaxEmptyLines: 1, EndOfLine: "lf"},
+		Linter: ToolConfig{BaselineVariant: "loose", Rules: make(map[string]RuleConfig)},
+		Analyzer: ToolConfig{BaselineVariant: "loose", Rules: make(map[string]RuleConfig)},
 	}
 }
 
@@ -104,7 +94,11 @@ func Load(explicitPath string, disabled bool) (Config, error) {
 			keys = append(keys, key.String())
 		}
 		sort.Strings(keys)
-		return Config{}, fmt.Errorf("%s: unknown configuration key(s): %s", absolute, strings.Join(keys, ", "))
+		return Config{}, fmt.Errorf(
+			"%s: unknown configuration key(s): %s",
+			absolute,
+			strings.Join(keys, ", "),
+		)
 	}
 	configuration.Path = absolute
 	configuration.Root = filepath.Dir(absolute)
@@ -166,8 +160,7 @@ func validateTool(name string, tool ToolConfig) error {
 		return fmt.Errorf("%s.baseline-variant must be \"loose\" or \"strict\"", name)
 	}
 	for code, rule := range tool.Rules {
-		if rule.Severity != "" && rule.Severity != "note" && rule.Severity != "warning" &&
-			rule.Severity != "error" {
+		if rule.Severity != "" && rule.Severity != "note" && rule.Severity != "warning" && rule.Severity != "error" {
 			return fmt.Errorf("%s.rules.%s.severity must be note, warning, or error", name, code)
 		}
 	}

@@ -22,7 +22,11 @@ func (a *cstAnalyzer) checkFilenameAndPackage() {
 	base := filepath.Base(a.filename)
 	validFile := regexp.MustCompile(`^[_A-Za-z0-9][_A-Za-z0-9-]*\.go$`)
 	if a.enabled["filename-format"] && !validFile.MatchString(base) {
-		a.report("filename-format", nameToken, "filename does not match the supported Go filename format")
+		a.report(
+			"filename-format",
+			nameToken,
+			"filename does not match the supported Go filename format",
+		)
 	}
 	validPackage := regexp.MustCompile(`^[a-z][a-z0-9]*$`)
 	if a.enabled["package-naming"] && name != "main" && !validPackage.MatchString(name) {
@@ -32,8 +36,10 @@ func (a *cstAnalyzer) checkFilenameAndPackage() {
 			"package name should be short, lower-case, and contain no separators",
 		)
 	}
-	if a.enabled["package-directory-mismatch"] && name != "main" &&
-		!pathContains(a.filename, "testdata") {
+	if a.enabled["package-directory-mismatch"] && name != "main" && !pathContains(
+		a.filename,
+		"testdata",
+	) {
 		directory := filepath.Base(filepath.Dir(a.filename))
 		normalized := strings.ReplaceAll(strings.ReplaceAll(directory, "-", ""), "_", "")
 		if normalized != "" && normalized != name && !strings.HasPrefix(directory, ".") {
@@ -49,63 +55,74 @@ func (a *cstAnalyzer) checkFilenameAndPackage() {
 func (a *cstAnalyzer) checkConcreteImports() {
 	seen := map[string]bool{}
 	packageName := a.packageNameToken().Src()
-	cst.Walk(a.tree.Root(), func(node cst.Node) bool {
-		spec, ok := node.(*cst.ImportSpec)
-		if !ok {
-			return true
-		}
-		path, _ := strconv.Unquote(spec.ImportPath.Src())
-		if seen[path] {
-			a.report(
-				"duplicated-imports",
-				spec,
-				fmt.Sprintf("package %s is imported more than once", path),
-			)
-		} else {
-			seen[path] = true
-		}
-		alias := ""
-		var aliasNode cst.Node
-		switch {
-		case spec.PERIOD.IsValid():
-			alias, aliasNode = ".", spec.PERIOD
-		case spec.PackageName.IsValid():
-			alias, aliasNode = spec.PackageName.Src(), spec.PackageName
-		}
-		switch alias {
-		case "":
-		case ".":
-			a.report("dot-imports", spec, "dot imports obscure where identifiers come from")
-		case "_":
-			if packageName != "main" && !strings.HasSuffix(a.filename, "_test.go") &&
-				!concreteImportHasComment(a.tree, spec) {
-				a.report("blank-imports", spec, "blank import should be justified by a comment")
+	cst.Walk(
+		a.tree.Root(),
+		func(node cst.Node) bool {
+			spec,
+			ok := node.(*cst.ImportSpec)
+			if !ok {
+				return true
 			}
-		default:
-			if !regexp.MustCompile(`^[a-z][a-z0-9]*$`).MatchString(alias) {
+			path,
+			_ := strconv.Unquote(spec.ImportPath.Src())
+			if seen[path] {
 				a.report(
-					"import-alias-naming",
-					aliasNode,
-					"import alias should contain lower-case letters and digits",
+					"duplicated-imports",
+					spec,
+					fmt.Sprintf("package %s is imported more than once", path),
 				)
+			} else {
+				seen[path] = true
 			}
-			if alias == filepath.Base(path) {
-				a.report(
-					"redundant-import-alias",
-					aliasNode,
-					"import alias is identical to the package name",
-				)
+			alias := ""
+			var aliasNode cst.Node
+			switch {
+			case spec.PERIOD.IsValid():
+				alias,
+				aliasNode = ".",
+				spec.PERIOD
+			case spec.PackageName.IsValid():
+				alias,
+				aliasNode = spec.PackageName.Src(),
+				spec.PackageName
 			}
-		}
-		importName := filepath.Base(path)
-		if alias != "" && alias != "." && alias != "_" {
-			importName = alias
-		}
-		if importName != "." && importName != "_" {
-			a.importNames[importName] = true
-		}
-		return false
-	})
+			switch alias {
+			case "":
+			case ".":
+				a.report("dot-imports", spec, "dot imports obscure where identifiers come from")
+			case "_":
+				if packageName != "main" && !strings.HasSuffix(a.filename, "_test.go") && !concreteImportHasComment(
+					a.tree,
+					spec,
+				) {
+					a.report("blank-imports", spec, "blank import should be justified by a comment")
+				}
+			default:
+				if !regexp.MustCompile(`^[a-z][a-z0-9]*$`).MatchString(alias) {
+					a.report(
+						"import-alias-naming",
+						aliasNode,
+						"import alias should contain lower-case letters and digits",
+					)
+				}
+				if alias == filepath.Base(path) {
+					a.report(
+						"redundant-import-alias",
+						aliasNode,
+						"import alias is identical to the package name",
+					)
+				}
+			}
+			importName := filepath.Base(path)
+			if alias != "" && alias != "." && alias != "_" {
+				importName = alias
+			}
+			if importName != "." && importName != "_" {
+				a.importNames[importName] = true
+			}
+			return false
+		},
+	)
 }
 
 func concreteImportHasComment(tree *cst.Tree, spec *cst.ImportSpec) bool {
@@ -114,9 +131,10 @@ func concreteImportHasComment(tree *cst.Tree, spec *cst.ImportSpec) bool {
 	endPosition := tree.Position(end)
 	source := tree.Source()
 	for _, comment := range tree.Comments() {
-		if comment.Line == endPosition.Line ||
-			(comment.End <= start && strings.Count(string(source[comment.End:start]), "\n") <= 1 &&
-				comment.Line+1 >= startPosition.Line) {
+		if comment.Line == endPosition.Line || (comment.End <= start && strings.Count(
+			string(source[comment.End:start]),
+			"\n",
+		) <= 1 && comment.Line + 1 >= startPosition.Line) {
 			return true
 		}
 	}
@@ -135,7 +153,7 @@ func (a *cstAnalyzer) checkLinesAndComments() {
 				a.reportRange(
 					"bidirectional-control-character",
 					offset,
-					offset+width,
+					offset + width,
 					fmt.Sprintf(
 						"source contains invisible bidirectional control character U+%04X",
 						character,
@@ -153,7 +171,7 @@ func (a *cstAnalyzer) checkLinesAndComments() {
 				a.reportRange(
 					"line-length-limit",
 					offset,
-					offset+len(line),
+					offset + len(line),
 					fmt.Sprintf("line has %d runes; maximum is 80", count),
 				)
 			}
@@ -168,9 +186,11 @@ func (a *cstAnalyzer) checkLinesAndComments() {
 
 func (a *cstAnalyzer) checkCommentSpacing(comments []cst.Comment) {
 	for _, comment := range comments {
-		if a.enabled["comment-spacings"] && strings.HasPrefix(comment.Text, "//") &&
-			len(comment.Text) > 2 && comment.Text[2] != ' ' && comment.Text[2] != '\t' &&
-			!commentDirective(comment.Text[2:]) {
+		if a.enabled["comment-spacings"] && strings.HasPrefix(comment.Text, "//") && len(
+			comment.Text,
+		) > 2 && comment.Text[2] != ' ' && comment.Text[2] != '\t' && !commentDirective(
+			comment.Text[2:],
+		) {
 			a.reportRange(
 				"comment-spacings",
 				comment.Start,
@@ -178,15 +198,16 @@ func (a *cstAnalyzer) checkCommentSpacing(comments []cst.Comment) {
 				"line comment should have a space after //",
 			)
 		}
-		if !a.enabled["spaced-compiler-directive"] || comment.Column != 1 ||
-			!strings.HasPrefix(comment.Text, "//") {
+		if !a.enabled["spaced-compiler-directive"] || comment.Column != 1 || !strings.HasPrefix(
+			comment.Text,
+			"//",
+		) {
 			continue
 		}
 		body := comment.Text[2:]
 		trimmed := strings.TrimLeft(body, " \t")
 		name := strings.TrimPrefix(trimmed, "go:")
-		if len(trimmed) != len(body) && strings.HasPrefix(trimmed, "go:") && name != "" &&
-			name[0] >= 'a' && name[0] <= 'z' {
+		if len(trimmed) != len(body) && strings.HasPrefix(trimmed, "go:") && name != "" && name[0] >= 'a' && name[0] <= 'z' {
 			a.reportRange(
 				"spaced-compiler-directive",
 				comment.Start,
@@ -209,8 +230,10 @@ func (a *cstAnalyzer) checkPackageComment(comments []cst.Comment) {
 		}
 		text := strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(comment.Text, "//"), "/*"))
 		text = strings.TrimSpace(strings.TrimSuffix(text, "*/"))
-		if strings.HasPrefix(text, "Package "+nameToken.Src()) ||
-			strings.HasPrefix(strings.TrimPrefix(text, "Package "), nameToken.Src()) {
+		if strings.HasPrefix(text, "Package " + nameToken.Src()) || strings.HasPrefix(
+			strings.TrimPrefix(text, "Package "),
+			nameToken.Src(),
+		) {
 			return
 		}
 	}

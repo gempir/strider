@@ -4,26 +4,27 @@ import (
 	"fmt"
 	"go/types"
 
-	"github.com/gempir/strider/internal/diagnostic"
 	"golang.org/x/tools/go/ssa"
+
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type unexportedSerializationFieldsRule struct{}
+type unexportedSerializationFieldsRule struct {}
 
 type serializationCall struct {
-	format         string
-	direction      string
-	ssaArgument    int
+	format string
+	direction string
+	ssaArgument int
 	sourceArgument int
 }
 
 func (unexportedSerializationFieldsRule) Meta() Meta {
 	return Meta{
-		Code:            "unexported-serialization-fields",
-		Summary:         "detect serialization of structs with no exported fields",
-		Explanation:     "The standard JSON and XML packages ignore unexported struct fields. Marshaling a non-empty struct with no exported fields produces empty data, and unmarshaling into it cannot populate anything, unless the type defines custom serialization behavior.",
-		GoodExample:     "json.Marshal(struct{ Name string }{Name: name})",
-		BadExample:      "json.Marshal(struct{ name string }{name: name})",
+		Code: "unexported-serialization-fields",
+		Summary: "detect serialization of structs with no exported fields",
+		Explanation: "The standard JSON and XML packages ignore unexported struct fields. Marshaling a non-empty struct with no exported fields produces empty data, and unmarshaling into it cannot populate anything, unless the type defines custom serialization behavior.",
+		GoodExample: "json.Marshal(struct{ Name string }{Name: name})",
+		BadExample: "json.Marshal(struct{ name string }{name: name})",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -52,7 +53,12 @@ func (unexportedSerializationFieldsRule) Run(pass *Pass) {
 				)
 				pass.Report(
 					node,
-					fmt.Sprintf("%s %s sees no exported fields in %s and no custom serialization method", descriptor.format, descriptor.direction, types.TypeString(value.Type(), types.RelativeTo(pass.Types))),
+					fmt.Sprintf(
+						"%s %s sees no exported fields in %s and no custom serialization method",
+						descriptor.format,
+						descriptor.direction,
+						types.TypeString(value.Type(), types.RelativeTo(pass.Types)),
+					),
 				)
 			}
 		}
@@ -62,23 +68,22 @@ func (unexportedSerializationFieldsRule) Run(pass *Pass) {
 func serializationDescriptor(call ssa.CallInstruction) (serializationCall, bool) {
 	if descriptor, ok := marshalDescriptor(call); ok {
 		return serializationCall{
-			format:         descriptor.format,
-			direction:      "marshaling",
-			ssaArgument:    descriptor.ssaArgument,
+			format: descriptor.format,
+			direction: "marshaling",
+			ssaArgument: descriptor.ssaArgument,
 			sourceArgument: descriptor.sourceArgument,
 		}, true
 	}
 	if descriptor, ok := unmarshalDescriptor(call); ok {
 		format := "JSON"
 		callee := call.Common().StaticCallee()
-		if callee != nil && callee.Object() != nil && callee.Object().Pkg() != nil &&
-			callee.Object().Pkg().Path() == "encoding/xml" {
+		if callee != nil && callee.Object() != nil && callee.Object().Pkg() != nil && callee.Object().Pkg().Path() == "encoding/xml" {
 			format = "XML"
 		}
 		return serializationCall{
-			format:         format,
-			direction:      "unmarshaling",
-			ssaArgument:    descriptor.ssaArgument,
+			format: format,
+			direction: "unmarshaling",
+			ssaArgument: descriptor.ssaArgument,
 			sourceArgument: descriptor.sourceArgument,
 		}, true
 	}
@@ -96,7 +101,10 @@ func serializationFieldsInvisible(valueType types.Type, descriptor serialization
 		structureType = types.Unalias(pointer.Elem())
 	}
 	structure, ok := structureType.Underlying().(*types.Struct)
-	if !ok || structure.NumFields() == 0 || hasVisibleSerializationField(structure, make(map[*types.Struct]bool)) {
+	if !ok || structure.NumFields() == 0 || hasVisibleSerializationField(
+		structure,
+		make(map[*types.Struct]bool),
+	) {
 		return false
 	}
 	return !hasCustomSerializationMethod(original, descriptor)
@@ -119,8 +127,10 @@ func hasVisibleSerializationField(structure *types.Struct, seen map[*types.Struc
 		if pointer, ok := fieldType.Underlying().(*types.Pointer); ok {
 			fieldType = pointer.Elem()
 		}
-		if embedded, ok := fieldType.Underlying().(*types.Struct); ok &&
-			hasVisibleSerializationField(embedded, seen) {
+		if embedded, ok := fieldType.Underlying().(*types.Struct); ok && hasVisibleSerializationField(
+			embedded,
+			seen,
+		) {
 			return true
 		}
 	}

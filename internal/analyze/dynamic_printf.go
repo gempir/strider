@@ -7,15 +7,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type dynamicPrintfRule struct{}
+type dynamicPrintfRule struct {}
 
 func (dynamicPrintfRule) Meta() Meta {
 	return Meta{
-		Code:            "dynamic-printf",
-		Summary:         "detect Printf calls with a lone dynamic format",
-		Explanation:     "Passing a dynamic string as the only format argument to a printf-style function can interpret percent signs unexpectedly. Use the print-style counterpart or an explicit %s format.",
-		GoodExample:     "fmt.Printf(\"%s\", message)",
-		BadExample:      "fmt.Printf(message)",
+		Code: "dynamic-printf",
+		Summary: "detect Printf calls with a lone dynamic format",
+		Explanation: "Passing a dynamic string as the only format argument to a printf-style function can interpret percent signs unexpectedly. Use the print-style counterpart or an explicit %s format.",
+		GoodExample: "fmt.Printf(\"%s\", message)",
+		BadExample: "fmt.Printf(message)",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -25,21 +25,25 @@ func (dynamicPrintfRule) Run(pass *Pass) {
 		ast.Inspect(
 			file,
 			func(node ast.Node) bool {
-				call, ok := node.(*ast.CallExpr)
+				call,
+				ok := node.(*ast.CallExpr)
 				if !ok {
 					return true
 				}
-				formatIndex, ok := dynamicPrintfFormatIndex(pass, call)
-				if !ok || len(call.Args) != formatIndex+1 {
+				formatIndex,
+				ok := dynamicPrintfFormatIndex(pass, call)
+				if !ok || len(call.Args) != formatIndex + 1 {
 					return true
 				}
 				format := call.Args[formatIndex]
 				switch format.(type) {
-				case *ast.CallExpr, *ast.Ident:
+				case *ast.CallExpr,
+					*ast.Ident:
 				default:
 					return true
 				}
-				if _, tuple := pass.TypesInfo.TypeOf(format).(*types.Tuple); tuple {
+				if _,
+				tuple := pass.TypesInfo.TypeOf(format).(*types.Tuple); tuple {
 					return true
 				}
 				pass.Report(
@@ -67,8 +71,7 @@ func dynamicPrintfFormatIndex(pass *Pass, call *ast.CallExpr) (int, bool) {
 	if path == "log" && (name == "Fatalf" || name == "Panicf" || name == "Printf") {
 		return 0, true
 	}
-	if path == "testing" &&
-		(name == "Logf" || name == "Errorf" || name == "Fatalf" || name == "Skipf") {
+	if path == "testing" && (name == "Logf" || name == "Errorf" || name == "Fatalf" || name == "Skipf") {
 		return 0, true
 	}
 	return 0, false

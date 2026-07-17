@@ -8,7 +8,7 @@ import (
 func TestMatchesPrefixesAndDoublestarGlobs(t *testing.T) {
 	root := t.TempDir()
 	filename := filepath.Join(root, "internal", "generated", "file.go")
-	for _, patterns := range [][]string{
+	for _, patterns := range[][]string{
 		{"internal/generated"},
 		{"internal/**/*.go"},
 		{"**/generated/*.go"},

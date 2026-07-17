@@ -1,19 +1,20 @@
 package analyze
 
 import (
-	"github.com/gempir/strider/internal/diagnostic"
 	"golang.org/x/tools/go/ssa"
+
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type unusedAppendResultRule struct{}
+type unusedAppendResultRule struct {}
 
 func (unusedAppendResultRule) Meta() Meta {
 	return Meta{
-		Code:            "unused-append-result",
-		Summary:         "detect append results that can never be observed",
-		Explanation:     "append returns the updated slice header. Discarding that result loses any new length or reallocated backing array. The analyzer reports only function-local slices whose backing storage has not escaped or been observably aliased.",
-		GoodExample:     "values = append(values, item)",
-		BadExample:      "values := make([]int, 0); values = append(values, item) // values is never read again",
+		Code: "unused-append-result",
+		Summary: "detect append results that can never be observed",
+		Explanation: "append returns the updated slice header. Discarding that result loses any new length or reallocated backing array. The analyzer reports only function-local slices whose backing storage has not escaped or been observably aliased.",
+		GoodExample: "values = append(values, item)",
+		BadExample: "values := make([]int, 0); values = append(values, item) // values is never read again",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -23,13 +24,16 @@ func (unusedAppendResultRule) Run(pass *Pass) {
 		for _, block := range function.Blocks {
 			for _, instruction := range block.Instrs {
 				call, ok := appendCall(instruction)
-				if !ok || call.Referrers() == nil || appendResultUsed(call) ||
-					len(call.Common().Args) == 0 {
+				if !ok || call.Referrers() == nil || appendResultUsed(call) || len(
+					call.Common().Args,
+				) == 0 {
 					continue
 				}
 				origins := make(map[ssa.Value]bool)
-				if !validAppendOrigin(call.Common().Args[0], origins) ||
-					appendOriginEscapes(call, origins) {
+				if !validAppendOrigin(call.Common().Args[0], origins) || appendOriginEscapes(
+					call,
+					origins,
+				) {
 					continue
 				}
 				pass.Report(
@@ -103,8 +107,7 @@ func validAppendOrigin(value ssa.Value, seen map[ssa.Value]bool) bool {
 		return true
 	case *ssa.Call:
 		call, ok := appendCall(value)
-		return ok && len(call.Common().Args) != 0 &&
-			validAppendOrigin(call.Common().Args[0], seen)
+		return ok && len(call.Common().Args) != 0 && validAppendOrigin(call.Common().Args[0], seen)
 	default:
 		return false
 	}

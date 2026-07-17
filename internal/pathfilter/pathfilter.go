@@ -33,7 +33,7 @@ func Matches(root, filename string, patterns []string) bool {
 			continue
 		}
 		pattern = strings.TrimSuffix(pattern, "/")
-		if relative == pattern || strings.HasPrefix(relative, pattern+"/") {
+		if relative == pattern || strings.HasPrefix(relative, pattern + "/") {
 			return true
 		}
 	}

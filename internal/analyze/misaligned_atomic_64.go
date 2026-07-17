@@ -4,19 +4,20 @@ import (
 	"fmt"
 	"go/types"
 
-	"github.com/gempir/strider/internal/diagnostic"
 	"golang.org/x/tools/go/ssa"
+
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type misalignedAtomic64Rule struct{}
+type misalignedAtomic64Rule struct {}
 
 func (misalignedAtomic64Rule) Meta() Meta {
 	return Meta{
-		Code:            "misaligned-atomic-64",
-		Summary:         "detect misaligned 64-bit atomic field access on 32-bit targets",
-		Explanation:     "On 32-bit ARM, x86, and MIPS targets, callers must ensure 64-bit words passed to legacy sync/atomic functions are aligned to 8 bytes. A uint64 field after a narrow field may not satisfy that requirement.",
-		GoodExample:     "type counters struct { total uint64; ready uint32 }",
-		BadExample:      "type counters struct { ready uint32; total uint64 }",
+		Code: "misaligned-atomic-64",
+		Summary: "detect misaligned 64-bit atomic field access on 32-bit targets",
+		Explanation: "On 32-bit ARM, x86, and MIPS targets, callers must ensure 64-bit words passed to legacy sync/atomic functions are aligned to 8 bytes. A uint64 field after a narrow field may not satisfy that requirement.",
+		GoodExample: "type counters struct { total uint64; ready uint32 }",
+		BadExample: "type counters struct { ready uint32; total uint64 }",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -37,12 +38,12 @@ func (misalignedAtomic64Rule) Run(pass *Pass) {
 				if !ok || field >= structure.NumFields() {
 					continue
 				}
-				fields := make([]*types.Var, field+1)
+				fields := make([]*types.Var, field + 1)
 				for index := range fields {
 					fields[index] = structure.Field(index)
 				}
 				offset := pass.TypesSizes.Offsetsof(fields)[field]
-				if offset%8 == 0 {
+				if offset % 8 == 0 {
 					continue
 				}
 				node := explicitCallArgument(calls[call.Pos()], 0, call.Pos())
@@ -60,13 +61,11 @@ func (misalignedAtomic64Rule) Run(pass *Pass) {
 
 func isAtomic64Call(call ssa.CallInstruction) bool {
 	callee := call.Common().StaticCallee()
-	if callee == nil || callee.Object() == nil || callee.Object().Pkg() == nil ||
-		callee.Object().Pkg().Path() != "sync/atomic" {
+	if callee == nil || callee.Object() == nil || callee.Object().Pkg() == nil || callee.Object().Pkg().Path() != "sync/atomic" {
 		return false
 	}
 	switch callee.Object().Name() {
-	case "AddInt64", "AddUint64", "CompareAndSwapInt64", "CompareAndSwapUint64",
-		"LoadInt64", "LoadUint64", "StoreInt64", "StoreUint64", "SwapInt64", "SwapUint64":
+	case "AddInt64", "AddUint64", "CompareAndSwapInt64", "CompareAndSwapUint64", "LoadInt64", "LoadUint64", "StoreInt64", "StoreUint64", "SwapInt64", "SwapUint64":
 		return true
 	default:
 		return false

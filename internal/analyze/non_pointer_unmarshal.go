@@ -4,25 +4,26 @@ import (
 	"fmt"
 	"go/types"
 
-	"github.com/gempir/strider/internal/diagnostic"
 	"golang.org/x/tools/go/ssa"
+
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type nonPointerUnmarshalRule struct{}
+type nonPointerUnmarshalRule struct {}
 
 type unmarshalCall struct {
-	name           string
-	ssaArgument    int
+	name string
+	ssaArgument int
 	sourceArgument int
 }
 
 func (nonPointerUnmarshalRule) Meta() Meta {
 	return Meta{
-		Code:            "non-pointer-unmarshal",
-		Summary:         "detect non-pointer unmarshal destinations",
-		Explanation:     "JSON and XML unmarshalling and decoding APIs require a pointer destination so they can populate the provided value.",
-		GoodExample:     "json.Unmarshal(data, &value)",
-		BadExample:      "json.Unmarshal(data, value)",
+		Code: "non-pointer-unmarshal",
+		Summary: "detect non-pointer unmarshal destinations",
+		Explanation: "JSON and XML unmarshalling and decoding APIs require a pointer destination so they can populate the provided value.",
+		GoodExample: "json.Unmarshal(data, &value)",
+		BadExample: "json.Unmarshal(data, value)",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -72,9 +73,15 @@ func unmarshalDescriptor(call ssa.CallInstruction) (unmarshalCall, bool) {
 	if !isMethod && name == "Unmarshal" {
 		switch path {
 		case "encoding/json":
-			return unmarshalCall{name: "json.Unmarshal", ssaArgument: 1, sourceArgument: 1}, true
+			return unmarshalCall{name:
+			"json.Unmarshal", ssaArgument:
+			1, sourceArgument:
+			1}, true
 		case "encoding/xml":
-			return unmarshalCall{name: "xml.Unmarshal", ssaArgument: 1, sourceArgument: 1}, true
+			return unmarshalCall{name:
+			"xml.Unmarshal", ssaArgument:
+			1, sourceArgument:
+			1}, true
 		}
 	}
 	if isMethod && path == "encoding/json" && name == "Decode" {

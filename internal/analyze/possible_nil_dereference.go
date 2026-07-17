@@ -4,24 +4,25 @@ import (
 	"go/token"
 	"go/types"
 
-	"github.com/gempir/strider/internal/diagnostic"
 	"golang.org/x/tools/go/ssa"
+
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type possibleNilDereferenceRule struct{}
+type possibleNilDereferenceRule struct {}
 
 type nilCheck struct {
-	value      ssa.Value
+	value ssa.Value
 	nonNilPath *ssa.BasicBlock
 }
 
 func (possibleNilDereferenceRule) Meta() Meta {
 	return Meta{
-		Code:            "possible-nil-dereference",
-		Summary:         "detect pointer dereferences not protected by their nil checks",
-		Explanation:     "Checking a pointer against nil is evidence that nil is a possible value. A dereference that is not dominated by the check's non-nil path may panic, commonly because it occurs before the check or because the nil branch reports an error but continues.",
-		GoodExample:     "if value == nil { return }; use(*value)",
-		BadExample:      "if value == nil { logError() }; use(*value)",
+		Code: "possible-nil-dereference",
+		Summary: "detect pointer dereferences not protected by their nil checks",
+		Explanation: "Checking a pointer against nil is evidence that nil is a possible value. A dereference that is not dominated by the check's non-nil path may panic, commonly because it occurs before the check or because the nil branch reports an error but continues.",
+		GoodExample: "if value == nil { return }; use(*value)",
+		BadExample: "if value == nil { logError() }; use(*value)",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -73,7 +74,7 @@ func collectNilChecks(function *ssa.Function) []nilCheck {
 		if len(block.Instrs) == 0 || len(block.Succs) < 2 {
 			continue
 		}
-		branch, ok := block.Instrs[len(block.Instrs)-1].(*ssa.If)
+		branch, ok := block.Instrs[len(block.Instrs) - 1].(*ssa.If)
 		if !ok {
 			continue
 		}
@@ -100,10 +101,7 @@ func collectNilChecks(function *ssa.Function) []nilCheck {
 			// it does not prove that the comparison selected the non-nil edge.
 			nonNilPath = nil
 		}
-		checks = append(checks, nilCheck{
-			value:      value,
-			nonNilPath: nonNilPath,
-		})
+		checks = append(checks, nilCheck{value: value, nonNilPath: nonNilPath})
 	}
 	return checks
 }

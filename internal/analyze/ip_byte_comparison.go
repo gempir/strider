@@ -3,19 +3,20 @@ package analyze
 import (
 	"go/types"
 
-	"github.com/gempir/strider/internal/diagnostic"
 	"golang.org/x/tools/go/ssa"
+
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type ipByteComparisonRule struct{}
+type ipByteComparisonRule struct {}
 
 func (ipByteComparisonRule) Meta() Meta {
 	return Meta{
-		Code:            "ip-byte-comparison",
-		Summary:         "detect bytes.Equal comparisons between IP addresses",
-		Explanation:     "An IPv4 address stored in net.IP may use either a 4-byte or 16-byte representation. bytes.Equal treats those representations as different; net.IP.Equal compares their address values correctly.",
-		GoodExample:     "left.Equal(right)",
-		BadExample:      "bytes.Equal(left, right)",
+		Code: "ip-byte-comparison",
+		Summary: "detect bytes.Equal comparisons between IP addresses",
+		Explanation: "An IPv4 address stored in net.IP may use either a 4-byte or 16-byte representation. bytes.Equal treats those representations as different; net.IP.Equal compares their address values correctly.",
+		GoodExample: "left.Equal(right)",
+		BadExample: "bytes.Equal(left, right)",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -26,10 +27,11 @@ func (ipByteComparisonRule) Run(pass *Pass) {
 		for _, block := range function.Blocks {
 			for _, instruction := range block.Instrs {
 				call, ok := instruction.(ssa.CallInstruction)
-				if !ok || !isStaticFunction(call, "bytes", "Equal") ||
-					len(call.Common().Args) != 2 ||
-					!convertedFromNamedType(call.Common().Args[0], "net", "IP") ||
-					!convertedFromNamedType(call.Common().Args[1], "net", "IP") {
+				if !ok || !isStaticFunction(call, "bytes", "Equal") || len(call.Common().Args) != 2 || !convertedFromNamedType(
+					call.Common().Args[0],
+					"net",
+					"IP",
+				) || !convertedFromNamedType(call.Common().Args[1], "net", "IP") {
 					continue
 				}
 				node := explicitCallArgument(calls[call.Pos()], 0, call.Pos())
@@ -45,6 +47,5 @@ func convertedFromNamedType(value ssa.Value, packagePath, name string) bool {
 		return false
 	}
 	named, ok := types.Unalias(change.X.Type()).(*types.Named)
-	return ok && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == packagePath &&
-		named.Obj().Name() == name
+	return ok && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == packagePath && named.Obj().Name() == name
 }

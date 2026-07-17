@@ -22,7 +22,7 @@ func Discover(paths []string, opts Options) ([]string, error) {
 	if len(paths) == 0 {
 		paths = []string{"."}
 	}
-	seen := make(map[string]struct{})
+	seen := make(map[string]struct {})
 	for _, input := range paths {
 		if err := discoverPath(seen, input, opts); err != nil {
 			return nil, err
@@ -36,7 +36,7 @@ func Discover(paths []string, opts Options) ([]string, error) {
 	return files, nil
 }
 
-func discoverPath(seen map[string]struct{}, input string, opts Options) error {
+func discoverPath(seen map[string]struct {}, input string, opts Options) error {
 	path := cleanPattern(input)
 	info, err := os.Stat(path)
 	if err != nil {
@@ -66,7 +66,7 @@ func cleanPattern(input string) string {
 	return path
 }
 
-func walkSourceFiles(seen map[string]struct{}, root string, opts Options) fs.WalkDirFunc {
+func walkSourceFiles(seen map[string]struct {}, root string, opts Options) fs.WalkDirFunc {
 	return func(filename string, entry fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
@@ -93,7 +93,7 @@ func isSkippedDirectory(name string) bool {
 	}
 }
 
-func addFile(seen map[string]struct{}, filename string, opts Options) error {
+func addFile(seen map[string]struct {}, filename string, opts Options) error {
 	abs, err := filepath.Abs(filename)
 	if err != nil {
 		return err
@@ -107,7 +107,7 @@ func addFile(seen map[string]struct{}, filename string, opts Options) error {
 			return nil
 		}
 	}
-	seen[abs] = struct{}{}
+	seen[abs] = struct {}{}
 	return nil
 }
 
@@ -121,8 +121,10 @@ func IsGenerated(filename string) (bool, error) {
 	scanner := bufio.NewScanner(limited)
 	for scanner.Scan() {
 		line := bytes.TrimSpace(scanner.Bytes())
-		if bytes.HasPrefix(line, []byte("// Code generated ")) &&
-		bytes.HasSuffix(line, []byte(" DO NOT EDIT.")) {
+		if bytes.HasPrefix(line, []byte("// Code generated ")) && bytes.HasSuffix(
+			line,
+			[]byte(" DO NOT EDIT."),
+		) {
 			return true, nil
 		}
 	}

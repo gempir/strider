@@ -6,26 +6,26 @@ import (
 	"go/version"
 	"path/filepath"
 
-	"github.com/gempir/strider/internal/diagnostic"
 	"golang.org/x/tools/go/ssa"
+
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type leakyTimeTickRule struct{}
+type leakyTimeTickRule struct {}
 
 func (leakyTimeTickRule) Meta() Meta {
 	return Meta{
-		Code:            "leaky-time-tick",
-		Summary:         "detect time.Tick calls that leak on older Go versions",
-		Explanation:     "Before Go 1.23, an unreferenced ticker could not be reclaimed unless it was stopped. time.Tick does not expose the ticker, so use time.NewTicker in functions that return. Go 1.23 and newer can reclaim unreferenced tickers.",
-		GoodExample:     "ticker := time.NewTicker(time.Second)\ndefer ticker.Stop()",
-		BadExample:      "ticks := time.Tick(time.Second)",
+		Code: "leaky-time-tick",
+		Summary: "detect time.Tick calls that leak on older Go versions",
+		Explanation: "Before Go 1.23, an unreferenced ticker could not be reclaimed unless it was stopped. time.Tick does not expose the ticker, so use time.NewTicker in functions that return. Go 1.23 and newer can reclaim unreferenced tickers.",
+		GoodExample: "ticker := time.NewTicker(time.Second)\ndefer ticker.Stop()",
+		BadExample: "ticks := time.Tick(time.Second)",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
 
 func (leakyTimeTickRule) Run(pass *Pass) {
-	if pass.GoVersion == "" || version.Compare(normalizeGoVersion(pass.GoVersion), "go1.23") >= 0 ||
-		pass.Types.Name() == "main" {
+	if pass.GoVersion == "" || version.Compare(normalizeGoVersion(pass.GoVersion), "go1.23") >= 0 || pass.Types.Name() == "main" {
 		return
 	}
 	for _, function := range pass.Functions {
@@ -41,19 +41,25 @@ func (leakyTimeTickRule) Run(pass *Pass) {
 				}
 				if node != root {
 					switch node.(type) {
-					case *ast.FuncDecl, *ast.FuncLit:
+					case *ast.FuncDecl,
+						*ast.FuncLit:
 						return false
 					}
 				}
-				call, ok := node.(*ast.CallExpr)
-				if !ok || len(call.Args) != 1 ||
-					!isPackageFunction(pass.TypesInfo, call.Fun, "time", "Tick") {
+				call,
+				ok := node.(*ast.CallExpr)
+				if !ok || len(call.Args) != 1 || !isPackageFunction(
+					pass.TypesInfo,
+					call.Fun,
+					"time",
+					"Tick",
+				) {
 					return true
 				}
 				position := pass.FileSet.Position(call.Pos())
-				if filepath.Ext(position.Filename) == ".go" &&
-					len(position.Filename) >= len("_test.go") &&
-					position.Filename[len(position.Filename)-len("_test.go"):] == "_test.go" {
+				if filepath.Ext(position.Filename) == ".go" && len(position.Filename) >= len(
+					"_test.go",
+				) && position.Filename[len(position.Filename) - len("_test.go"):] == "_test.go" {
 					return true
 				}
 				pass.Report(
@@ -78,7 +84,7 @@ func functionCanReturn(function *ssa.Function) bool {
 		if len(block.Instrs) == 0 {
 			continue
 		}
-		if _, ok := block.Instrs[len(block.Instrs)-1].(*ssa.Return); !ok {
+		if _, ok := block.Instrs[len(block.Instrs) - 1].(*ssa.Return); !ok {
 			continue
 		}
 		if len(block.Preds) == 0 {
@@ -88,7 +94,7 @@ func functionCanReturn(function *ssa.Function) bool {
 			if len(predecessor.Instrs) == 0 {
 				return true
 			}
-			switch control := predecessor.Instrs[len(predecessor.Instrs)-1].(type) {
+			switch control := predecessor.Instrs[len(predecessor.Instrs) - 1].(type) {
 			case *ssa.Panic:
 				continue
 			case *ssa.If:

@@ -3,19 +3,20 @@ package analyze
 import (
 	"go/token"
 
-	"github.com/gempir/strider/internal/diagnostic"
 	"golang.org/x/tools/go/ssa"
+
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type swappedErrorsIsArgumentsRule struct{}
+type swappedErrorsIsArgumentsRule struct {}
 
 func (swappedErrorsIsArgumentsRule) Meta() Meta {
 	return Meta{
-		Code:            "swapped-errors-is-arguments",
-		Summary:         "detect likely reversed errors.Is arguments",
-		Explanation:     "errors.Is expects the error being inspected first and the target sentinel second. A package-level sentinel from another package in the first position, followed by a local error value, usually means the arguments were reversed.",
-		GoodExample:     "errors.Is(err, io.EOF)",
-		BadExample:      "errors.Is(io.EOF, err)",
+		Code: "swapped-errors-is-arguments",
+		Summary: "detect likely reversed errors.Is arguments",
+		Explanation: "errors.Is expects the error being inspected first and the target sentinel second. A package-level sentinel from another package in the first position, followed by a local error value, usually means the arguments were reversed.",
+		GoodExample: "errors.Is(err, io.EOF)",
+		BadExample: "errors.Is(io.EOF, err)",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -26,22 +27,22 @@ func (swappedErrorsIsArgumentsRule) Run(pass *Pass) {
 		for _, block := range function.Blocks {
 			for _, instruction := range block.Instrs {
 				call, ok := instruction.(ssa.CallInstruction)
-				if !ok || !isStaticFunction(call, "errors", "Is") ||
-					len(call.Common().Args) != 2 {
+				if !ok || !isStaticFunction(call, "errors", "Is") || len(call.Common().Args) != 2 {
 					continue
 				}
 				first := loadedGlobal(call.Common().Args[0])
-				if first == nil || first.Pkg == nil || first.Pkg.Pkg == nil ||
-					first.Pkg.Pkg.Path() == pass.PackagePath {
+				if first == nil || first.Pkg == nil || first.Pkg.Pkg == nil || first.Pkg.Pkg.Path() == pass.PackagePath {
 					continue
 				}
 				second := loadedGlobal(call.Common().Args[1])
-				if second != nil && second.Pkg != nil && second.Pkg.Pkg != nil &&
-					second.Pkg.Pkg.Path() != pass.PackagePath {
+				if second != nil && second.Pkg != nil && second.Pkg.Pkg != nil && second.Pkg.Pkg.Path() != pass.PackagePath {
 					continue
 				}
 				node := explicitCallArgument(calls[call.Pos()], 0, call.Pos())
-				pass.Report(node, "errors.Is arguments appear reversed; inspect the local error first")
+				pass.Report(
+					node,
+					"errors.Is arguments appear reversed; inspect the local error first",
+				)
 			}
 		}
 	}

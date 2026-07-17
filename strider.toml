@@ -1,0 +1,13 @@
+version = 1
+
+[linter.rules.cyclomatic-complexity]
+enabled = false
+
+[linter.rules.max-parameters]
+enabled = false
+
+[linter.rules.no-else-after-return]
+enabled = false
+
+[linter.rules.no-package-var]
+enabled = false

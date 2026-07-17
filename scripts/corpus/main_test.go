@@ -27,7 +27,10 @@ func TestManifestRequiresTenPinnedProjectsAndBudgets(t *testing.T) {
 	path := t.TempDir() + "/projects.json"
 	projects := make([]string, 10)
 	for index := range projects {
-		projects[index] = `{"name":"project-` + string(rune('a'+index)) + `","repository":"https://example.com/project.git","revision":"` + strings.Repeat("a", 40) + `","budgets_ms":{"format":1,"lint":1,"analyze":1}}`
+		projects[index] = `{"name":"project-` + string(rune('a' + index)) + `","repository":"https://example.com/project.git","revision":"` + strings.Repeat(
+			"a",
+			40,
+		) + `","budgets_ms":{"format":1,"lint":1,"analyze":1}}`
 	}
 	contents := `{"version":1,"projects":[` + strings.Join(projects, ",") + `]}`
 	if err := os.WriteFile(path, []byte(contents), 0o600); err != nil {

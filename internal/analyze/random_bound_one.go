@@ -6,19 +6,20 @@ import (
 	"go/token"
 	"go/types"
 
-	"github.com/gempir/strider/internal/diagnostic"
 	"golang.org/x/tools/go/ssa"
+
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type randomBoundOneRule struct{}
+type randomBoundOneRule struct {}
 
 func (randomBoundOneRule) Meta() Meta {
 	return Meta{
-		Code:            "random-bound-one",
-		Summary:         "detect random integer calls whose upper bound permits only zero",
-		Explanation:     "Bounded random integer functions generate values in the half-open range from zero up to, but excluding, the bound. A bound of one therefore always returns zero.",
-		GoodExample:     "choice := rand.Intn(2)",
-		BadExample:      "choice := rand.Intn(1)",
+		Code: "random-bound-one",
+		Summary: "detect random integer calls whose upper bound permits only zero",
+		Explanation: "Bounded random integer functions generate values in the half-open range from zero up to, but excluding, the bound. A bound of one therefore always returns zero.",
+		GoodExample: "choice := rand.Intn(2)",
+		BadExample: "choice := rand.Intn(1)",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -35,9 +36,12 @@ func (randomBoundOneRule) Run(pass *Pass) {
 				if !ok {
 					continue
 				}
-				bound := ssaConstant(call.Common().Args[len(call.Common().Args)-1])
-				if bound == nil || bound.Value == nil || bound.Value.Kind() != constant.Int ||
-					!constant.Compare(bound.Value, token.EQL, constant.MakeInt64(1)) {
+				bound := ssaConstant(call.Common().Args[len(call.Common().Args) - 1])
+				if bound == nil || bound.Value == nil || bound.Value.Kind() != constant.Int || !constant.Compare(
+					bound.Value,
+					token.EQL,
+					constant.MakeInt64(1),
+				) {
 					continue
 				}
 				pass.Report(

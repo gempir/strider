@@ -12,12 +12,11 @@ func (a *cstAnalyzer) checkConcreteIfReturn(current, next cst.Node) {
 		return
 	}
 	assignment, ok := statement.SimpleStmt.(*cst.ShortVarDecl)
-	if !ok || assignment.IdentifierList == nil || assignment.IdentifierList.Len() != 1 ||
-		assignment.ExpressionList == nil || assignment.ExpressionList.Len() != 1 {
+	if !ok || assignment.IdentifierList == nil || assignment.IdentifierList.Len() != 1 || assignment.ExpressionList == nil || assignment.ExpressionList.Len() != 1 {
 		return
 	}
 	name := assignment.IdentifierList.IDENT.Src()
-	if cst.Spelling(statement.Expression) != name+"!=nil" {
+	if cst.Spelling(statement.Expression) != name + "!=nil" {
 		return
 	}
 	body := concreteBlockStatements(statement.Block)
@@ -26,8 +25,9 @@ func (a *cstAnalyzer) checkConcreteIfReturn(current, next cst.Node) {
 		return
 	}
 	final, ok := next.(*cst.ReturnStmt)
-	if ok && final.ExpressionList != nil && final.ExpressionList.Len() == 1 &&
-		cst.Spelling(final.ExpressionList.Expression) == "nil" {
+	if ok && final.ExpressionList != nil && final.ExpressionList.Len() == 1 && cst.Spelling(
+		final.ExpressionList.Expression,
+	) == "nil" {
 		a.report(
 			"if-return",
 			statement,
@@ -71,7 +71,7 @@ func (a *cstAnalyzer) checkConcreteBreak(statement *cst.BreakStmt) {
 			continue
 		}
 		statements := concreteStatementsFromList(list)
-		if len(statements) != 0 && statements[len(statements)-1] == statement {
+		if len(statements) != 0 && statements[len(statements) - 1] == statement {
 			a.report("useless-break", statement, "break at the end of a switch case is redundant")
 			a.report(
 				"unnecessary-stmt",
@@ -84,20 +84,25 @@ func (a *cstAnalyzer) checkConcreteBreak(statement *cst.BreakStmt) {
 }
 
 func (a *cstAnalyzer) checkConcreteTestMain(function *cst.FunctionDecl) {
-	if function == nil || function.FunctionName == nil ||
-		function.FunctionName.IDENT.Src() != "TestMain" ||
-		!strings.HasSuffix(a.filename, "_test.go") || function.FunctionBody == nil {
+	if function == nil || function.FunctionName == nil || function.FunctionName.IDENT.Src() != "TestMain" || !strings.HasSuffix(
+		a.filename,
+		"_test.go",
+	) || function.FunctionBody == nil {
 		return
 	}
-	cst.Walk(function.FunctionBody, func(node cst.Node) bool {
-		call, ok := node.(*cst.PrimaryExpr)
-		if ok && concreteCallName(call) == "os.Exit" {
-			a.report(
-				"redundant-test-main-exit",
-				call,
-				"TestMain can return instead of calling os.Exit",
-			)
-		}
-		return true
-	})
+	cst.Walk(
+		function.FunctionBody,
+		func(node cst.Node) bool {
+			call,
+			ok := node.(*cst.PrimaryExpr)
+			if ok && concreteCallName(call) == "os.Exit" {
+				a.report(
+					"redundant-test-main-exit",
+					call,
+					"TestMain can return instead of calling os.Exit",
+				)
+			}
+			return true
+		},
+	)
 }

@@ -9,26 +9,18 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/gempir/strider/internal/diagnostic"
-	"github.com/gempir/strider/internal/source"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/go/ssa"
 	"golang.org/x/tools/go/ssa/ssautil"
+
+	"github.com/gempir/strider/internal/diagnostic"
+	"github.com/gempir/strider/internal/source"
 )
 
-const loadMode = packages.NeedName |
-	packages.NeedFiles |
-	packages.NeedCompiledGoFiles |
-	packages.NeedImports |
-	packages.NeedDeps |
-	packages.NeedTypes |
-	packages.NeedTypesSizes |
-	packages.NeedSyntax |
-	packages.NeedTypesInfo |
-	packages.NeedModule
+const loadMode = packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles | packages.NeedImports | packages.NeedDeps | packages.NeedTypes | packages.NeedTypesSizes | packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedModule
 
 type target struct {
-	path      string
+	path string
 	recursive bool
 }
 
@@ -40,10 +32,7 @@ func Run(paths []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
 	if err != nil {
 		return nil, err
 	}
-	loaded, err := packages.Load(
-		&packages.Config{Mode: loadMode, Tests: true},
-		patterns...,
-	)
+	loaded, err := packages.Load(&packages.Config{Mode: loadMode, Tests: true}, patterns...)
 	if err != nil {
 		return nil, err
 	}
@@ -56,8 +45,9 @@ func Run(paths []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
 		deprecatedObjects, deprecatedPackages = collectDeprecations(loaded)
 	}
 	builderMode := ssa.InstantiateGenerics
-	if registry.hasRule("overwritten-before-use") || registry.hasRule("unchanged-loop-condition") ||
-		registry.hasRule("never-nil-comparison") {
+	if registry.hasRule("overwritten-before-use") || registry.hasRule("unchanged-loop-condition") || registry.hasRule(
+		"never-nil-comparison",
+	) {
 		builderMode |= ssa.GlobalDebug
 	}
 	ssaProgram, ssaPackages := ssautil.Packages(loaded, builderMode)
@@ -72,10 +62,7 @@ func Run(paths []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
 	for function := range ssautil.AllFunctions(ssaProgram) {
 		if function.Pkg != nil && !seenFunctions[function] {
 			seenFunctions[function] = true
-			functionsByPackage[function.Pkg] = append(
-				functionsByPackage[function.Pkg],
-				function,
-			)
+			functionsByPackage[function.Pkg] = append(functionsByPackage[function.Pkg], function)
 		}
 	}
 
@@ -102,17 +89,17 @@ func Run(paths []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
 			}
 			pass := &Pass{
 				PackagePath: pkg.PkgPath,
-				GoVersion:   goVersion,
-				Files:       pkg.Syntax,
-				FileSet:     pkg.Fset,
-				Types:       pkg.Types,
-				TypesSizes:  pkg.TypesSizes,
-				TypesInfo:   pkg.TypesInfo,
-				SSAProgram:  ssaProgram,
-				SSAPackage:  ssaPackage,
-				Functions:   functionsByPackage[ssaPackage],
+				GoVersion: goVersion,
+				Files: pkg.Syntax,
+				FileSet: pkg.Fset,
+				Types: pkg.Types,
+				TypesSizes: pkg.TypesSizes,
+				TypesInfo: pkg.TypesInfo,
+				SSAProgram: ssaProgram,
+				SSAPackage: ssaPackage,
+				Functions: functionsByPackage[ssaPackage],
 
-				deprecatedObjects:  deprecatedObjects,
+				deprecatedObjects: deprecatedObjects,
 				deprecatedPackages: deprecatedPackages,
 			}
 			pass.report = func(node ast.Node, message string) {
@@ -150,12 +137,12 @@ func Run(paths []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
 				diagnostics = append(
 					diagnostics,
 					diagnostic.Diagnostic{
-						Code:     meta.Code,
-						Message:  message,
+						Code: meta.Code,
+						Message: message,
 						Severity: severity,
-						File:     display,
-						Start:    position,
-						End:      end,
+						File: display,
+						Start: position,
+						End: end,
 					},
 				)
 			}
@@ -166,10 +153,7 @@ func Run(paths []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
 	return diagnostics, nil
 }
 
-func collectPackageFunctions(
-	program *ssa.Program,
-	ssaPackages []*ssa.Package,
-) map[*ssa.Package][]*ssa.Function {
+func collectPackageFunctions(program *ssa.Program, ssaPackages []*ssa.Package) map[*ssa.Package][]*ssa.Function {
 	functions := make(map[*ssa.Package][]*ssa.Function)
 	seen := make(map[*ssa.Function]bool)
 	var add func(*ssa.Function)
@@ -201,7 +185,7 @@ func collectPackageFunctions(
 			if !ok {
 				continue
 			}
-			for _, receiver := range []types.Type{named, types.NewPointer(named)} {
+			for _, receiver := range[]types.Type{named, types.NewPointer(named)} {
 				methodSet := types.NewMethodSet(receiver)
 				for index := range methodSet.Len() {
 					add(program.MethodValue(methodSet.At(index)))
@@ -251,7 +235,7 @@ func loadInputs(paths []string) ([]string, []target, error) {
 		if filepath.Ext(absolute) != ".go" {
 			return nil, nil, fmt.Errorf("%q is not a Go source file", input)
 		}
-		patterns = append(patterns, "file="+filepath.ToSlash(absolute))
+		patterns = append(patterns, "file=" + filepath.ToSlash(absolute))
 		targets = append(targets, target{path: absolute})
 	}
 	return patterns, targets, nil
@@ -271,7 +255,10 @@ func canonicalPath(path string) (string, error) {
 
 func recursivePackagePattern(cwd, directory string) string {
 	relative, err := filepath.Rel(cwd, directory)
-	if err == nil && relative != ".." && !strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+	if err == nil && relative != ".." && !strings.HasPrefix(
+		relative,
+		".." + string(filepath.Separator),
+	) {
 		if relative == "." {
 			return "./..."
 		}
@@ -285,7 +272,7 @@ func matchesTarget(filename string, targets []target) bool {
 		if filename == item.path {
 			return true
 		}
-		if item.recursive && strings.HasPrefix(filename, item.path+string(filepath.Separator)) {
+		if item.recursive && strings.HasPrefix(filename, item.path + string(filepath.Separator)) {
 			return true
 		}
 	}
@@ -310,7 +297,9 @@ func sortDiagnostics(diagnostics []diagnostic.Diagnostic) {
 	sort.SliceStable(
 		diagnostics,
 		func(i, j int) bool {
-			left, right := diagnostics[i], diagnostics[j]
+			left,
+			right := diagnostics[i],
+			diagnostics[j]
 			if left.File != right.File {
 				return left.File < right.File
 			}

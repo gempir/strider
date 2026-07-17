@@ -8,15 +8,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type identicalBinaryOperandsRule struct{}
+type identicalBinaryOperandsRule struct {}
 
 func (identicalBinaryOperandsRule) Meta() Meta {
 	return Meta{
-		Code:            "identical-binary-operands",
-		Summary:         "detect suspicious binary operations with identical operands",
-		Explanation:     "Comparisons and non-idempotent operations with identical expressions on both sides are usually copy-and-paste mistakes. Floating-point expressions are excluded because NaN makes self-comparisons meaningful.",
-		GoodExample:     "if left == right { use() }",
-		BadExample:      "if left == left { use() }",
+		Code: "identical-binary-operands",
+		Summary: "detect suspicious binary operations with identical operands",
+		Explanation: "Comparisons and non-idempotent operations with identical expressions on both sides are usually copy-and-paste mistakes. Floating-point expressions are excluded because NaN makes self-comparisons meaningful.",
+		GoodExample: "if left == right { use() }",
+		BadExample: "if left == left { use() }",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -27,16 +27,19 @@ func (identicalBinaryOperandsRule) Run(pass *Pass) {
 		ast.Inspect(
 			file,
 			func(node ast.Node) bool {
-				binary, ok := node.(*ast.BinaryExpr)
-				if !ok || !suspiciousSelfOperator(binary.Op) ||
-					typeMayContainFloat(pass.TypesInfo.TypeOf(binary.X)) ||
-					renderAnalysisExpression(pass, binary.X) != renderAnalysisExpression(pass, binary.Y) ||
-					isRandomSelfCall(pass, binary.X) || isComparableAssertion(binary, parents) {
+				binary,
+				ok := node.(*ast.BinaryExpr)
+				if !ok || !suspiciousSelfOperator(binary.Op) || typeMayContainFloat(
+					pass.TypesInfo.TypeOf(binary.X),
+				) || renderAnalysisExpression(pass, binary.X) != renderAnalysisExpression(
+					pass,
+					binary.Y,
+				) || isRandomSelfCall(pass, binary.X) || isComparableAssertion(binary, parents) {
 					return true
 				}
 				pass.Report(
 					binary,
-					"identical expressions appear on both sides of "+binary.Op.String(),
+					"identical expressions appear on both sides of " + binary.Op.String(),
 				)
 				return true
 			},
@@ -46,9 +49,7 @@ func (identicalBinaryOperandsRule) Run(pass *Pass) {
 
 func suspiciousSelfOperator(operator token.Token) bool {
 	switch operator {
-	case token.EQL, token.NEQ, token.SUB, token.QUO, token.AND, token.REM,
-		token.OR, token.XOR, token.AND_NOT, token.LAND, token.LOR,
-		token.LSS, token.GTR, token.LEQ, token.GEQ:
+	case token.EQL, token.NEQ, token.SUB, token.QUO, token.AND, token.REM, token.OR, token.XOR, token.AND_NOT, token.LAND, token.LOR, token.LSS, token.GTR, token.LEQ, token.GEQ:
 		return true
 	default:
 		return false
@@ -81,8 +82,7 @@ func isRandomSelfCall(pass *Pass, expression ast.Expr) bool {
 		return false
 	}
 	function := calledFunction(pass.TypesInfo, call.Fun)
-	return function != nil && function.Pkg() != nil &&
-		(function.Pkg().Path() == "math/rand" || function.Pkg().Path() == "math/rand/v2")
+	return function != nil && function.Pkg() != nil && (function.Pkg().Path() == "math/rand" || function.Pkg().Path() == "math/rand/v2")
 }
 
 func isComparableAssertion(binary *ast.BinaryExpr, parents map[ast.Node]ast.Node) bool {
@@ -112,12 +112,12 @@ func analysisParents(files []*ast.File) map[ast.Node]ast.Node {
 			func(node ast.Node) bool {
 				if node == nil {
 					if len(stack) != 0 {
-						stack = stack[:len(stack)-1]
+						stack = stack[:len(stack) - 1]
 					}
 					return true
 				}
 				if len(stack) != 0 {
-					parents[node] = stack[len(stack)-1]
+					parents[node] = stack[len(stack) - 1]
 				}
 				stack = append(stack, node)
 				return true

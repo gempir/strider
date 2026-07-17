@@ -27,7 +27,10 @@ func TestParseIsLossless(t *testing.T) {
 }
 
 func TestWalkIncludesProductionsAndTokens(t *testing.T) {
-	tree, err := Parse("fixture.go", []byte("package p\nfunc F(ok bool) { if ok { return } else { panic(ok) } }\n"))
+	tree, err := Parse(
+		"fixture.go",
+		[]byte("package p\nfunc F(ok bool) { if ok { return } else { panic(ok) } }\n"),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,7 +39,7 @@ func TestWalkIncludesProductionsAndTokens(t *testing.T) {
 		kinds = append(kinds, Kind(node))
 		return true
 	})
-	for _, wanted := range []string{"SourceFile", "FunctionDecl", "IfElseStmt", "func", "IDENT"} {
+	for _, wanted := range[]string{"SourceFile", "FunctionDecl", "IfElseStmt", "func", "IDENT"} {
 		if !slices.Contains(kinds, wanted) {
 			t.Errorf("walk did not include %q in %v", wanted, kinds)
 		}
@@ -65,7 +68,7 @@ func TestTokensIncludeImplicitSemicolonAndEOF(t *testing.T) {
 		t.Fatal(err)
 	}
 	tokens := tree.Tokens()
-	if len(tokens) < 4 || tokens[len(tokens)-1].Ch() != token.EOF {
+	if len(tokens) < 4 || tokens[len(tokens) - 1].Ch() != token.EOF {
 		t.Fatalf("unexpected tokens: %#v", tokens)
 	}
 }

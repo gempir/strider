@@ -7,15 +7,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type nilContextRule struct{}
+type nilContextRule struct {}
 
 func (nilContextRule) Meta() Meta {
 	return Meta{
-		Code:            "nil-context",
-		Summary:         "detect nil context.Context arguments",
-		Explanation:     "A context.Context must not be nil. Pass context.TODO when the appropriate parent is not yet known, or context.Background for an explicit root context.",
-		GoodExample:     "load(context.TODO())",
-		BadExample:      "load(nil)",
+		Code: "nil-context",
+		Summary: "detect nil context.Context arguments",
+		Explanation: "A context.Context must not be nil. Pass context.TODO when the appropriate parent is not yet known, or context.Background for an explicit root context.",
+		GoodExample: "load(context.TODO())",
+		BadExample: "load(nil)",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -25,7 +25,8 @@ func (nilContextRule) Run(pass *Pass) {
 		ast.Inspect(
 			file,
 			func(node ast.Node) bool {
-				call, ok := node.(*ast.CallExpr)
+				call,
+				ok := node.(*ast.CallExpr)
 				if !ok || len(call.Args) == 0 || !isNilIdentifier(call.Args[0]) {
 					return true
 				}
@@ -33,9 +34,11 @@ func (nilContextRule) Run(pass *Pass) {
 				if function == nil {
 					return true
 				}
-				signature, ok := function.Type().(*types.Signature)
-				if !ok || signature.Params().Len() == 0 ||
-					!isContextType(signature.Params().At(0).Type()) {
+				signature,
+				ok := function.Type().(*types.Signature)
+				if !ok || signature.Params().Len() == 0 || !isContextType(
+					signature.Params().At(0).Type(),
+				) {
 					return true
 				}
 				pass.Report(
@@ -55,6 +58,5 @@ func isNilIdentifier(expression ast.Expr) bool {
 
 func isContextType(valueType types.Type) bool {
 	named, ok := types.Unalias(valueType).(*types.Named)
-	return ok && named.Obj() != nil && named.Obj().Pkg() != nil &&
-		named.Obj().Pkg().Path() == "context" && named.Obj().Name() == "Context"
+	return ok && named.Obj() != nil && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "context" && named.Obj().Name() == "Context"
 }

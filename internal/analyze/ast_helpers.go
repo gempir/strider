@@ -26,6 +26,5 @@ func calledFunction(info *types.Info, expression ast.Expr) *types.Func {
 
 func isPackageFunction(info *types.Info, expression ast.Expr, packagePath, name string) bool {
 	function := calledFunction(info, expression)
-	return function != nil && function.Pkg() != nil &&
-		function.Pkg().Path() == packagePath && function.Name() == name
+	return function != nil && function.Pkg() != nil && function.Pkg().Path() == packagePath && function.Name() == name
 }

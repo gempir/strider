@@ -10,15 +10,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type oddPairedArgumentsRule struct{}
+type oddPairedArgumentsRule struct {}
 
 func (oddPairedArgumentsRule) Meta() Meta {
 	return Meta{
-		Code:            "odd-paired-arguments",
-		Summary:         "detect odd element counts passed to pair-oriented APIs",
-		Explanation:     "Some functions consume slice or variadic elements in pairs and reject odd lengths. The analyzer recognizes standard pair-oriented APIs and local functions that enforce an even length by panicking, then checks calls whose argument length is statically known.",
-		GoodExample:     `strings.NewReplacer("old", "new")`,
-		BadExample:      `strings.NewReplacer("old", "new", "orphan")`,
+		Code: "odd-paired-arguments",
+		Summary: "detect odd element counts passed to pair-oriented APIs",
+		Explanation: "Some functions consume slice or variadic elements in pairs and reject odd lengths. The analyzer recognizes standard pair-oriented APIs and local functions that enforce an even length by panicking, then checks calls whose argument length is statically known.",
+		GoodExample: `strings.NewReplacer("old", "new")`,
+		BadExample: `strings.NewReplacer("old", "new", "orphan")`,
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -26,33 +26,43 @@ func (oddPairedArgumentsRule) Meta() Meta {
 func (oddPairedArgumentsRule) Run(pass *Pass) {
 	contracts := pairedArgumentContracts(pass)
 	for _, file := range pass.Files {
-		ast.Inspect(file, func(node ast.Node) bool {
-			call, ok := node.(*ast.CallExpr)
-			if !ok {
+		ast.Inspect(
+			file,
+			func(node ast.Node) bool {
+				call,
+				ok := node.(*ast.CallExpr)
+				if !ok {
+					return true
+				}
+				function := calledFunction(pass.TypesInfo, call.Fun)
+				if function == nil {
+					return true
+				}
+				parameterIndex,
+				known := contracts[function]
+				if function.Pkg() != nil && function.Pkg().Path() == "strings" && function.Name() == "NewReplacer" {
+					parameterIndex,
+					known = 0,
+					true
+				}
+				if !known {
+					return true
+				}
+				length,
+				argument := pairedCallLength(pass, call, function, parameterIndex)
+				if length < 0 || length % 2 == 0 {
+					return true
+				}
+				pass.Report(
+					argument,
+					fmt.Sprintf(
+						"paired argument requires an even number of elements, but this call provides %d",
+						length,
+					),
+				)
 				return true
-			}
-			function := calledFunction(pass.TypesInfo, call.Fun)
-			if function == nil {
-				return true
-			}
-			parameterIndex, known := contracts[function]
-			if function.Pkg() != nil && function.Pkg().Path() == "strings" &&
-				function.Name() == "NewReplacer" {
-				parameterIndex, known = 0, true
-			}
-			if !known {
-				return true
-			}
-			length, argument := pairedCallLength(pass, call, function, parameterIndex)
-			if length < 0 || length%2 == 0 {
-				return true
-			}
-			pass.Report(
-				argument,
-				fmt.Sprintf("paired argument requires an even number of elements, but this call provides %d", length),
-			)
-			return true
-		})
+			},
+		)
 	}
 }
 
@@ -68,27 +78,32 @@ func pairedArgumentContracts(pass *Pass) map[*types.Func]int {
 			if function == nil {
 				continue
 			}
-			ast.Inspect(functionDeclaration.Body, func(node ast.Node) bool {
-				conditional, ok := node.(*ast.IfStmt)
-				if !ok || !blockImmediatelyPanics(pass, conditional.Body) {
-					return true
-				}
-				parameter := oddLengthParameter(pass, conditional.Cond)
-				if parameter == nil {
-					return true
-				}
-				signature, _ := function.Type().(*types.Signature)
-				if signature == nil {
-					return true
-				}
-				for index := range signature.Params().Len() {
-					if signature.Params().At(index) == parameter {
-						contracts[function] = index
-						return false
+			ast.Inspect(
+				functionDeclaration.Body,
+				func(node ast.Node) bool {
+					conditional,
+					ok := node.(*ast.IfStmt)
+					if !ok || !blockImmediatelyPanics(pass, conditional.Body) {
+						return true
 					}
-				}
-				return true
-			})
+					parameter := oddLengthParameter(pass, conditional.Cond)
+					if parameter == nil {
+						return true
+					}
+					signature,
+					_ := function.Type().(*types.Signature)
+					if signature == nil {
+						return true
+					}
+					for index := range signature.Params().Len() {
+						if signature.Params().At(index) == parameter {
+							contracts[function] = index
+							return false
+						}
+					}
+					return true
+				},
+			)
 		}
 	}
 	return contracts
@@ -167,22 +182,22 @@ func constantInt(pass *Pass, expression ast.Expr) int64 {
 	return integer
 }
 
-func pairedCallLength(
-	pass *Pass,
-	call *ast.CallExpr,
-	function *types.Func,
-	parameterIndex int,
-) (int, ast.Node) {
+func pairedCallLength(pass *Pass, call *ast.CallExpr, function *types.Func, parameterIndex int) (
+	int,
+	ast.Node,
+) {
 	signature, _ := function.Type().(*types.Signature)
 	if signature == nil || parameterIndex >= signature.Params().Len() {
 		return -1, call
 	}
-	if signature.Variadic() && parameterIndex == signature.Params().Len()-1 {
+	if signature.Variadic() && parameterIndex == signature.Params().Len() - 1 {
 		if call.Ellipsis.IsValid() {
 			if len(call.Args) == 0 {
 				return -1, call
 			}
-			return knownCompositeLength(pass, call.Args[len(call.Args)-1]), call.Args[len(call.Args)-1]
+			return knownCompositeLength(pass, call.Args[len(call.Args) - 1]), call.Args[len(
+				call.Args,
+			) - 1]
 		}
 		if parameterIndex > len(call.Args) {
 			return -1, call

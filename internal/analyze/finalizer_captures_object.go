@@ -3,19 +3,20 @@ package analyze
 import (
 	"go/token"
 
-	"github.com/gempir/strider/internal/diagnostic"
 	"golang.org/x/tools/go/ssa"
+
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type finalizerCapturesObjectRule struct{}
+type finalizerCapturesObjectRule struct {}
 
 func (finalizerCapturesObjectRule) Meta() Meta {
 	return Meta{
-		Code:            "finalizer-captures-object",
-		Summary:         "detect finalizers that retain the object they should release",
-		Explanation:     "A finalizer closure that captures the finalized object keeps that object reachable. The garbage collector can never make the object eligible for finalization, so the finalizer never runs and the object leaks. Use the finalizer function's parameter instead.",
-		GoodExample:     "runtime.SetFinalizer(object, func(object *resource) { object.Close() })",
-		BadExample:      "runtime.SetFinalizer(object, func(*resource) { object.Close() })",
+		Code: "finalizer-captures-object",
+		Summary: "detect finalizers that retain the object they should release",
+		Explanation: "A finalizer closure that captures the finalized object keeps that object reachable. The garbage collector can never make the object eligible for finalization, so the finalizer never runs and the object leaks. Use the finalizer function's parameter instead.",
+		GoodExample: "runtime.SetFinalizer(object, func(object *resource) { object.Close() })",
+		BadExample: "runtime.SetFinalizer(object, func(*resource) { object.Close() })",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -25,8 +26,9 @@ func (finalizerCapturesObjectRule) Run(pass *Pass) {
 		for _, block := range function.Blocks {
 			for _, instruction := range block.Instrs {
 				call, ok := instruction.(ssa.CallInstruction)
-				if !ok || !isStaticFunction(call, "runtime", "SetFinalizer") ||
-					len(call.Common().Args) < 2 {
+				if !ok || !isStaticFunction(call, "runtime", "SetFinalizer") || len(
+					call.Common().Args,
+				) < 2 {
 					continue
 				}
 				object := finalizerObject(call.Common().Args[0])

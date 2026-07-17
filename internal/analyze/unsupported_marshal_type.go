@@ -6,25 +6,26 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/gempir/strider/internal/diagnostic"
 	"golang.org/x/tools/go/ssa"
+
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type unsupportedMarshalTypeRule struct{}
+type unsupportedMarshalTypeRule struct {}
 
 type marshalCall struct {
-	format         string
-	ssaArgument    int
+	format string
+	ssaArgument int
 	sourceArgument int
 }
 
 func (unsupportedMarshalTypeRule) Meta() Meta {
 	return Meta{
-		Code:            "unsupported-marshal-type",
-		Summary:         "detect channels and functions passed to JSON or XML marshaling",
-		Explanation:     "The standard JSON and XML encoders cannot marshal channel or function values. The restriction also applies when an unsupported value is reachable through an exported, non-ignored field.",
-		GoodExample:     "json.Marshal(struct{ Name string }{Name: name})",
-		BadExample:      "json.Marshal(make(chan int))",
+		Code: "unsupported-marshal-type",
+		Summary: "detect channels and functions passed to JSON or XML marshaling",
+		Explanation: "The standard JSON and XML encoders cannot marshal channel or function values. The restriction also applies when an unsupported value is reachable through an exported, non-ignored field.",
+		GoodExample: "json.Marshal(struct{ Name string }{Name: name})",
+		BadExample: "json.Marshal(make(chan int))",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -73,16 +74,27 @@ func (unsupportedMarshalTypeRule) Run(pass *Pass) {
 
 func marshalDescriptor(call ssa.CallInstruction) (marshalCall, bool) {
 	switch {
-	case isStaticFunction(call, "encoding/json", "Marshal"),
-		isStaticFunction(call, "encoding/json", "MarshalIndent"):
-		return marshalCall{format: "JSON", ssaArgument: 0, sourceArgument: 0}, true
-	case isStaticFunction(call, "encoding/xml", "Marshal"),
-		isStaticFunction(call, "encoding/xml", "MarshalIndent"):
-		return marshalCall{format: "XML", ssaArgument: 0, sourceArgument: 0}, true
+	case isStaticFunction(call, "encoding/json", "Marshal"), isStaticFunction(
+			call,
+			"encoding/json",
+			"MarshalIndent",
+		):
+		return marshalCall{format:
+		"JSON", ssaArgument:
+		0, sourceArgument:
+		0}, true
+	case isStaticFunction(call, "encoding/xml", "Marshal"), isStaticFunction(
+			call,
+			"encoding/xml",
+			"MarshalIndent",
+		):
+		return marshalCall{format:
+		"XML", ssaArgument:
+		0, sourceArgument:
+		0}, true
 	}
 	callee := call.Common().StaticCallee()
-	if callee == nil || callee.Object() == nil || callee.Object().Pkg() == nil ||
-		callee.Object().Name() != "Encode" {
+	if callee == nil || callee.Object() == nil || callee.Object().Pkg() == nil || callee.Object().Name() != "Encode" {
 		return marshalCall{}, false
 	}
 	signature, _ := callee.Object().Type().(*types.Signature)
@@ -92,9 +104,15 @@ func marshalDescriptor(call ssa.CallInstruction) (marshalCall, bool) {
 	path := callee.Object().Pkg().Path()
 	switch path {
 	case "encoding/json":
-		return marshalCall{format: "JSON", ssaArgument: 1, sourceArgument: 0}, true
+		return marshalCall{format:
+		"JSON", ssaArgument:
+		1, sourceArgument:
+		0}, true
 	case "encoding/xml":
-		return marshalCall{format: "XML", ssaArgument: 1, sourceArgument: 0}, true
+		return marshalCall{format:
+		"XML", ssaArgument:
+		1, sourceArgument:
+		0}, true
 	default:
 		return marshalCall{}, false
 	}
@@ -122,8 +140,7 @@ func unsupportedMarshalType(
 	case *types.Chan, *types.Signature:
 		return valueType, path
 	case *types.Basic:
-		if format == "JSON" &&
-			(underlying.Kind() == types.Complex64 || underlying.Kind() == types.Complex128) {
+		if format == "JSON" && (underlying.Kind() == types.Complex64 || underlying.Kind() == types.Complex128) {
 			return valueType, path
 		}
 		return nil, ""
@@ -136,9 +153,9 @@ func unsupportedMarshalType(
 		} else {
 			element = underlying.(*types.Slice).Elem()
 		}
-		return unsupportedMarshalType(element, format, seen, path+"[]")
+		return unsupportedMarshalType(element, format, seen, path + "[]")
 	case *types.Map:
-		return unsupportedMarshalType(underlying.Elem(), format, seen, path+"[value]")
+		return unsupportedMarshalType(underlying.Elem(), format, seen, path + "[value]")
 	case *types.Struct:
 		for index := range underlying.NumFields() {
 			field := underlying.Field(index)
@@ -169,7 +186,7 @@ func hasCustomMarshaler(named *types.Named, format string) bool {
 	} else {
 		names = append(names, "MarshalXML")
 	}
-	for _, valueType := range []types.Type{named, types.NewPointer(named)} {
+	for _, valueType := range[]types.Type{named, types.NewPointer(named)} {
 		methodSet := types.NewMethodSet(valueType)
 		for index := range methodSet.Len() {
 			name := methodSet.At(index).Obj().Name()

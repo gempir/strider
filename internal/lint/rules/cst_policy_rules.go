@@ -8,8 +8,7 @@ import (
 )
 
 func (a *cstAnalyzer) checkConcreteAssignmentPolicy(statement *cst.Assignment) {
-	if statement == nil || statement.ExpressionList == nil || statement.ExpressionList2 == nil ||
-		statement.ExpressionList.Len() != 1 || statement.ExpressionList2.Len() != 1 {
+	if statement == nil || statement.ExpressionList == nil || statement.ExpressionList2 == nil || statement.ExpressionList.Len() != 1 || statement.ExpressionList2.Len() != 1 {
 		return
 	}
 	a.checkConcreteAssignedCall(
@@ -20,8 +19,7 @@ func (a *cstAnalyzer) checkConcreteAssignmentPolicy(statement *cst.Assignment) {
 }
 
 func (a *cstAnalyzer) checkConcreteShortDeclarationPolicy(statement *cst.ShortVarDecl) {
-	if statement == nil || statement.IdentifierList == nil || statement.ExpressionList == nil ||
-		statement.IdentifierList.Len() != 1 || statement.ExpressionList.Len() != 1 {
+	if statement == nil || statement.IdentifierList == nil || statement.ExpressionList == nil || statement.IdentifierList.Len() != 1 || statement.ExpressionList.Len() != 1 {
 		return
 	}
 	a.checkConcreteAssignedCall(
@@ -40,8 +38,9 @@ func (a *cstAnalyzer) checkConcreteAssignedCall(statement, left, right cst.Node)
 	root := concreteRootIdentifier(left)
 	if strings.HasPrefix(name, "atomic.") {
 		arguments := concreteCallArguments(call.Postfix)
-		if len(arguments) > 0 && strings.TrimPrefix(cst.Spelling(arguments[0]), "&") ==
-			cst.Spelling(left) {
+		if len(arguments) > 0 && strings.TrimPrefix(cst.Spelling(arguments[0]), "&") == cst.Spelling(
+			left,
+		) {
 			a.report(
 				"atomic",
 				statement,
@@ -49,13 +48,11 @@ func (a *cstAnalyzer) checkConcreteAssignedCall(statement, left, right cst.Node)
 			)
 		}
 	}
-	if unit := concreteEpochUnit(name); unit != "" && root.IsValid() &&
-		!validEpochName(root.Src(), unit) {
-		a.report(
-			"epoch-naming",
-			root,
-			fmt.Sprintf("name should end with a %s unit suffix", unit),
-		)
+	if unit := concreteEpochUnit(name); unit != "" && root.IsValid() && !validEpochName(
+		root.Src(),
+		unit,
+	) {
+		a.report("epoch-naming", root, fmt.Sprintf("name should end with a %s unit suffix", unit))
 	}
 }
 
@@ -85,17 +82,30 @@ func (a *cstAnalyzer) checkConcreteFunctionMutation(
 	parameterNames := concreteParameterNames(parameters)
 	receiverNames := concreteParameterNames(receiver)
 	valueReceiver := receiver != nil && concreteValueReceiver(receiver)
-	cst.Walk(body, func(node cst.Node) bool {
-		switch current := node.(type) {
-		case *cst.Assignment:
-			for list := current.ExpressionList; list != nil; list = list.List {
-				a.reportConcreteMutation(list.Expression, parameterNames, receiverNames, valueReceiver)
+	cst.Walk(
+		body,
+		func(node cst.Node) bool {
+			switch current := node.(type) {
+			case *cst.Assignment:
+				for list := current.ExpressionList; list != nil; list = list.List {
+					a.reportConcreteMutation(
+						list.Expression,
+						parameterNames,
+						receiverNames,
+						valueReceiver,
+					)
+				}
+			case *cst.IncDecStmt:
+				a.reportConcreteMutation(
+					current.Expression,
+					parameterNames,
+					receiverNames,
+					valueReceiver,
+				)
 			}
-		case *cst.IncDecStmt:
-			a.reportConcreteMutation(current.Expression, parameterNames, receiverNames, valueReceiver)
-		}
-		return true
-	})
+			return true
+		},
+	)
 }
 
 func concreteParameterNames(parameters *cst.Parameters) map[string]bool {
@@ -115,7 +125,8 @@ func concreteValueReceiver(receiver *cst.Parameters) bool {
 
 func (a *cstAnalyzer) reportConcreteMutation(
 	target cst.Node,
-	parameters, receivers map[string]bool,
+	parameters,
+	receivers map[string]bool,
 	valueReceiver bool,
 ) {
 	root := concreteRootIdentifier(target)

@@ -21,15 +21,13 @@ func TestTextRendersSourceAnnotationAndSummary(t *testing.T) {
 	}
 	diagnostics := []diagnostic.Diagnostic{
 		{
-			Code:     "no-init",
-			Message:  "avoid package initialization",
+			Code: "no-init",
+			Message: "avoid package initialization",
 			Severity: diagnostic.SeverityWarning,
-			File:     filename,
-			Start:    token.Position{Filename: filename, Line: 2, Column: 1},
-			End:      token.Position{Filename: filename, Line: 2, Column: 15},
-			Notes: []diagnostic.Note{
-				{Message: "move initialization into an explicit function"},
-			},
+			File: filename,
+			Start: token.Position{Filename: filename, Line: 2, Column: 1},
+			End: token.Position{Filename: filename, Line: 2, Column: 15},
+			Notes: []diagnostic.Note{{Message: "move initialization into an explicit function"}},
 		},
 	}
 
@@ -37,7 +35,7 @@ func TestTextRendersSourceAnnotationAndSummary(t *testing.T) {
 	if err := Text(&output, diagnostics, ui.ColorAlways); err != nil {
 		t.Fatal(err)
 	}
-	for _, wanted := range []string{
+	for _, wanted := range[]string{
 		"\x1b[",
 		"warning",
 		"[no-init]",
@@ -60,10 +58,15 @@ func TestTextNeverDoesNotEmitANSI(t *testing.T) {
 	var output bytes.Buffer
 	if err := Text(
 		&output,
-		[]diagnostic.Diagnostic{{
-			Code: "example", Message: "plain", Severity: diagnostic.SeverityNote,
-			File: "missing.go", Start: token.Position{Line: 3, Column: 2},
-		}},
+		[]diagnostic.Diagnostic{
+			{
+				Code: "example",
+				Message: "plain",
+				Severity: diagnostic.SeverityNote,
+				File: "missing.go",
+				Start: token.Position{Line: 3, Column: 2},
+			},
+		},
 		ui.ColorNever,
 	); err != nil {
 		t.Fatal(err)
@@ -76,7 +79,7 @@ func TestTextNeverDoesNotEmitANSI(t *testing.T) {
 func TestMarkerWidthUsesRuneColumnsFromBytePositions(t *testing.T) {
 	item := diagnostic.Diagnostic{
 		Start: token.Position{Line: 1, Column: 4},
-		End:   token.Position{Line: 1, Column: 7},
+		End: token.Position{Line: 1, Column: 7},
 	}
 	if got := markerWidth(item, "é abc", item.Start.Column); got != 3 {
 		t.Fatalf("marker width %d; want 3", got)

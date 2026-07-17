@@ -12,9 +12,9 @@ import (
 
 // Registry is an immutable selection of analysis rules.
 type Registry struct {
-	rules    []Rule
+	rules []Rule
 	settings map[string]configuredRule
-	root     string
+	root string
 }
 
 type configuredRule struct {
@@ -30,11 +30,10 @@ func NewRegistry(only []string) (*Registry, error) {
 
 // NewRegistryConfigured applies analyzer rule settings. Explicit --only
 // selection enables the named analyzers even when configuration disables them.
-func NewRegistryConfigured(
-	only []string,
-	settings map[string]config.RuleConfig,
-	root string,
-) (*Registry, error) {
+func NewRegistryConfigured(only []string, settings map[string]config.RuleConfig, root string) (
+	*Registry,
+	error,
+) {
 	all := allRules()
 	byCode := make(map[string]Rule, len(all))
 	for _, rule := range all {
@@ -113,7 +112,7 @@ func (registry *Registry) hasRule(code string) bool {
 }
 
 func allRules() []Rule {
-	return []Rule{
+	return[]Rule{
 		invalidRegexpRule{},
 		invalidTemplateRule{},
 		invalidTimeParseRule{},

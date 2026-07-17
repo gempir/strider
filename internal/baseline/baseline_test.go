@@ -41,15 +41,23 @@ func TestLooseBaselineSurvivesLineMovementAndUsesCounts(t *testing.T) {
 func TestStrictBaselineTracksExactLineRangesAndStaleEntries(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "analysis-baseline.toml")
-	baseline, err := Generate(path, Strict, []diagnostic.Diagnostic{
-		item(filepath.Join(root, "main.go"), "invalid-regexp", "bad", 4, 5),
-	})
+	baseline, err := Generate(
+		path,
+		Strict,
+		[]diagnostic.Diagnostic{
+			item(filepath.Join(root, "main.go"), "invalid-regexp", "bad", 4, 5),
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	result, err := Apply(path, baseline, []diagnostic.Diagnostic{
-		item(filepath.Join(root, "main.go"), "invalid-regexp", "changed", 5, 6),
-	})
+	result, err := Apply(
+		path,
+		baseline,
+		[]diagnostic.Diagnostic{
+			item(filepath.Join(root, "main.go"), "invalid-regexp", "changed", 5, 6),
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,9 +68,11 @@ func TestStrictBaselineTracksExactLineRangesAndStaleEntries(t *testing.T) {
 
 func TestWriteLoadAndBackup(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "baseline.toml")
-	first := File{Version: Version, Variant: Loose, Issues: []Issue{
-		{File: "main.go", Code: "no-init", Message: "avoid init", Count: 1},
-	}}
+	first := File{
+		Version: Version,
+		Variant: Loose,
+		Issues: []Issue{{File: "main.go", Code: "no-init", Message: "avoid init", Count: 1}},
+	}
 	if err := Write(path, first, false); err != nil {
 		t.Fatal(err)
 	}
@@ -73,9 +83,11 @@ func TestWriteLoadAndBackup(t *testing.T) {
 	if strings.Contains(string(looseContent), "start-line") {
 		t.Fatalf("loose baseline contains strict fields:\n%s", looseContent)
 	}
-	second := File{Version: Version, Variant: Strict, Issues: []Issue{
-		{File: "main.go", Code: "no-init", StartLine: 2, EndLine: 2},
-	}}
+	second := File{
+		Version: Version,
+		Variant: Strict,
+		Issues: []Issue{{File: "main.go", Code: "no-init", StartLine: 2, EndLine: 2}},
+	}
 	if err := Write(path, second, true); err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +95,10 @@ func TestWriteLoadAndBackup(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(string(strictContent), "message =") || strings.Contains(string(strictContent), "count =") {
+	if strings.Contains(string(strictContent), "message =") || strings.Contains(
+		string(strictContent),
+		"count =",
+	) {
 		t.Fatalf("strict baseline contains loose fields:\n%s", strictContent)
 	}
 	loaded, err := Load(path)
@@ -100,7 +115,10 @@ func TestWriteLoadAndBackup(t *testing.T) {
 
 func item(file, code, message string, start, end int) diagnostic.Diagnostic {
 	return diagnostic.Diagnostic{
-		File: file, Code: code, Message: message,
-		Start: token.Position{Line: start}, End: token.Position{Line: end},
+		File: file,
+		Code: code,
+		Message: message,
+		Start: token.Position{Line: start},
+		End: token.Position{Line: end},
 	}
 }

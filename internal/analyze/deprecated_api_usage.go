@@ -9,19 +9,20 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gempir/strider/internal/diagnostic"
 	"golang.org/x/tools/go/packages"
+
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type deprecatedAPIUsageRule struct{}
+type deprecatedAPIUsageRule struct {}
 
 func (deprecatedAPIUsageRule) Meta() Meta {
 	return Meta{
-		Code:            "deprecated-api-usage",
-		Summary:         "detect uses of deprecated packages and APIs",
-		Explanation:     "Go documentation marks packages, functions, methods, fields, variables, constants, and types with Deprecated paragraphs. Uses from other packages should migrate to the documented replacement.",
-		GoodExample:     "value, err := io.ReadAll(reader)",
-		BadExample:      "value, err := ioutil.ReadAll(reader)",
+		Code: "deprecated-api-usage",
+		Summary: "detect uses of deprecated packages and APIs",
+		Explanation: "Go documentation marks packages, functions, methods, fields, variables, constants, and types with Deprecated paragraphs. Uses from other packages should migrate to the documented replacement.",
+		GoodExample: "value, err := io.ReadAll(reader)",
+		BadExample: "value, err := ioutil.ReadAll(reader)",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -32,7 +33,8 @@ func (deprecatedAPIUsageRule) Run(pass *Pass) {
 		ast.Inspect(
 			file,
 			func(node ast.Node) bool {
-				selector, ok := node.(*ast.SelectorExpr)
+				selector,
+				ok := node.(*ast.SelectorExpr)
 				if !ok {
 					return true
 				}
@@ -123,8 +125,7 @@ func suppressStandardLibraryDeprecation(pass *Pass, packagePath string) bool {
 	if index := strings.IndexAny(running, " -"); index >= 0 {
 		running = running[:index]
 	}
-	return version.IsValid(target) && version.IsValid(running) &&
-		version.Compare(target, running) < 0
+	return version.IsValid(target) && version.IsValid(running) && version.Compare(target, running) < 0
 }
 
 func languageGoVersion(value string) string {
@@ -136,7 +137,10 @@ func languageGoVersion(value string) string {
 	return "go" + parts[0] + "." + parts[1]
 }
 
-func collectDeprecations(roots []*packages.Package) (map[types.Object]string, map[*types.Package]string) {
+func collectDeprecations(roots []*packages.Package) (
+	map[types.Object]string,
+	map[*types.Package]string,
+) {
 	objects := make(map[types.Object]string)
 	packagesByType := make(map[*types.Package]string)
 	seen := make(map[string]bool)
@@ -169,7 +173,11 @@ func collectFileDeprecations(info *types.Info, file *ast.File, objects map[types
 	for _, declaration := range file.Decls {
 		switch declaration := declaration.(type) {
 		case *ast.FuncDecl:
-			addDeprecatedObject(objects, info.Defs[declaration.Name], deprecationMessage(declaration.Doc))
+			addDeprecatedObject(
+				objects,
+				info.Defs[declaration.Name],
+				deprecationMessage(declaration.Doc),
+			)
 		case *ast.GenDecl:
 			for _, rawSpec := range declaration.Specs {
 				switch spec := rawSpec.(type) {
@@ -188,7 +196,11 @@ func collectFileDeprecations(info *types.Info, file *ast.File, objects map[types
 	}
 }
 
-func collectFieldDeprecations(info *types.Info, expression ast.Expr, objects map[types.Object]string) {
+func collectFieldDeprecations(
+	info *types.Info,
+	expression ast.Expr,
+	objects map[types.Object]string,
+) {
 	var fields *ast.FieldList
 	switch expression := expression.(type) {
 	case *ast.StructType:
@@ -213,7 +225,7 @@ func addDeprecatedObject(objects map[types.Object]string, object types.Object, m
 	}
 }
 
-func firstDeprecation(groups ...*ast.CommentGroup) string {
+func firstDeprecation(groups... *ast.CommentGroup) string {
 	for _, group := range groups {
 		if message := deprecationMessage(group); message != "" {
 			return message

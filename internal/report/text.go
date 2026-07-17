@@ -14,11 +14,7 @@ import (
 )
 
 // Text writes rich, source-annotated diagnostics and a severity summary.
-func Text(
-	writer io.Writer,
-	diagnostics []diagnostic.Diagnostic,
-	colorMode ui.ColorMode,
-) error {
+func Text(writer io.Writer, diagnostics []diagnostic.Diagnostic, colorMode ui.ColorMode) error {
 	palette := ui.NewPalette(writer, colorMode)
 	sources := make(map[string][]string)
 	missing := make(map[string]bool)
@@ -61,7 +57,7 @@ func writeDiagnostic(
 
 	lines := sourceLines(item.File, sources, missing)
 	if item.Start.Line > 0 && item.Start.Line <= len(lines) {
-		line := lines[item.Start.Line-1]
+		line := lines[item.Start.Line - 1]
 		width := len(strconv.Itoa(item.Start.Line))
 		gutter := palette.Accent("│")
 		if _, err := fmt.Fprintf(writer, "%*s %s\n", width, "", gutter); err != nil {
@@ -87,7 +83,13 @@ func writeDiagnostic(
 	}
 
 	for _, note := range item.Notes {
-		if _, err := fmt.Fprintf(writer, "  %s %s: %s\n", palette.Accent("="), palette.Note("note"), note.Message); err != nil {
+		if _, err := fmt.Fprintf(
+			writer,
+			"  %s %s: %s\n",
+			palette.Accent("="),
+			palette.Note("note"),
+			note.Message,
+		); err != nil {
 			return err
 		}
 	}
@@ -98,7 +100,13 @@ func writeDiagnostic(
 			label = string(fix.Safety) + " fix"
 			style = palette.Warning
 		}
-		if _, err := fmt.Fprintf(writer, "  %s %s: %s\n", palette.Accent("="), style(label), fix.Message); err != nil {
+		if _, err := fmt.Fprintf(
+			writer,
+			"  %s %s: %s\n",
+			palette.Accent("="),
+			style(label),
+			fix.Message,
+		); err != nil {
 			return err
 		}
 	}
@@ -106,7 +114,7 @@ func writeDiagnostic(
 }
 
 func markerIndent(line string, column int) string {
-	prefixLength := min(max(column-1, 0), len(line))
+	prefixLength := min(max(column - 1, 0), len(line))
 	var indent strings.Builder
 	for _, character := range line[:prefixLength] {
 		if character == '\t' {
@@ -136,10 +144,10 @@ func sourceLines(filename string, cache map[string][]string, missing map[string]
 }
 
 func markerWidth(item diagnostic.Diagnostic, line string, column int) int {
-	start := min(max(column-1, 0), len(line))
+	start := min(max(column - 1, 0), len(line))
 	remaining := max(utf8.RuneCountInString(line[start:]), 1)
 	if item.End.Line == item.Start.Line && item.End.Column > item.Start.Column {
-		end := min(max(item.End.Column-1, start), len(line))
+		end := min(max(item.End.Column - 1, start), len(line))
 		return min(max(utf8.RuneCountInString(line[start:end]), 1), remaining)
 	}
 	return remaining
@@ -162,7 +170,7 @@ func summary(
 	palette ui.Palette,
 ) string {
 	parts := make([]string, 0, 3)
-	for _, severity := range []diagnostic.Severity{
+	for _, severity := range[]diagnostic.Severity{
 		diagnostic.SeverityError,
 		diagnostic.SeverityWarning,
 		diagnostic.SeverityNote,

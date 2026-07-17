@@ -15,7 +15,7 @@ func (a *cstAnalyzer) checkConcreteStruct(structure *cst.StructType) {
 	if len(a.ancestors) == 0 {
 		return
 	}
-	if _, named := a.ancestors[len(a.ancestors)-1].(*cst.TypeDef); !named {
+	if _, named := a.ancestors[len(a.ancestors) - 1].(*cst.TypeDef); !named {
 		a.report(
 			"nested-structs",
 			structure,
@@ -39,7 +39,7 @@ func (a *cstAnalyzer) checkConcreteStringLiteral(literal *cst.BasicLit) {
 		return
 	}
 	lower := strings.ToLower(value)
-	for _, scheme := range []string{"http://", "ws://", "ftp://"} {
+	for _, scheme := range[]string{"http://", "ws://", "ftp://"} {
 		if strings.HasPrefix(lower, scheme) {
 			a.report(
 				"unsecure-url-scheme",
@@ -74,7 +74,7 @@ func (a *cstAnalyzer) checkConcreteStructTag(literal cst.Token) {
 		}
 	}
 	tag := reflect.StructTag(value)
-	for _, key := range []string{"json", "xml", "yaml", "toml", "form", "validate"} {
+	for _, key := range[]string{"json", "xml", "yaml", "toml", "form", "validate"} {
 		raw, ok := tag.Lookup(key)
 		if !ok {
 			continue
@@ -98,15 +98,20 @@ func (a *cstAnalyzer) checkConcreteStructTag(literal cst.Token) {
 
 func (a *cstAnalyzer) concreteImportsPath(wanted string) bool {
 	found := false
-	cst.Walk(a.tree.Root(), func(node cst.Node) bool {
-		spec, ok := node.(*cst.ImportSpec)
-		if !ok {
-			return true
-		}
-		path, _ := strconv.Unquote(spec.ImportPath.Src())
-		found = found || path == wanted
-		return !found
-	})
+	cst.Walk(
+		a.tree.Root(),
+		func(node cst.Node) bool {
+			spec,
+			ok := node.(*cst.ImportSpec)
+			if !ok {
+				return true
+			}
+			path,
+			_ := strconv.Unquote(spec.ImportPath.Src())
+			found = found || path == wanted
+			return !found
+		},
+	)
 	return found
 }
 
@@ -115,7 +120,7 @@ func (a *cstAnalyzer) checkConcreteJSONTagOptions(literal cst.Token, tag string)
 	seen := make(map[string]bool)
 	for index, option := range parts[1:] {
 		if option == "" {
-			if index == len(parts[1:])-1 {
+			if index == len(parts[1:]) - 1 {
 				a.report("struct-tag", literal, "json tag has an empty trailing option")
 			}
 			continue

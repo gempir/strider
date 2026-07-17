@@ -9,86 +9,86 @@ import (
 )
 
 type spec struct {
-	Code     string
-	Summary  string
+	Code string
+	Summary string
 	Defaults string
 }
 
 var defaultCatalog = []definition{
 	{
 		meta: Meta{
-			Code:            "cyclomatic-complexity",
-			Summary:         "limit branching complexity",
+			Code: "cyclomatic-complexity",
+			Summary: "limit branching complexity",
 			DefaultSeverity: diagnostic.SeverityWarning,
-			Explanation:     "Functions with too many independent control-flow paths are difficult to understand and test. The spike limit is 10.",
-			GoodExample:     "func sign(n int) int { if n < 0 { return -1 }; return 1 }",
-			BadExample:      "func tangled() { /* more than ten branches */ }",
+			Explanation: "Functions with too many independent control-flow paths are difficult to understand and test. The spike limit is 10.",
+			GoodExample: "func sign(n int) int { if n < 0 { return -1 }; return 1 }",
+			BadExample: "func tangled() { /* more than ten branches */ }",
 		},
 		defaultRule: true,
 	},
 	{
 		meta: Meta{
-			Code:            "max-parameters",
-			Summary:         "limit function parameter count",
+			Code: "max-parameters",
+			Summary: "limit function parameter count",
 			DefaultSeverity: diagnostic.SeverityWarning,
-			Explanation:     "Functions with more than five parameters tend to hide missing domain objects and are difficult to call correctly.",
-			GoodExample:     "func Open(path string, flags Flags) error",
-			BadExample:      "func Open(path string, read, write, create, truncate, appendMode bool) error",
+			Explanation: "Functions with more than five parameters tend to hide missing domain objects and are difficult to call correctly.",
+			GoodExample: "func Open(path string, flags Flags) error",
+			BadExample: "func Open(path string, read, write, create, truncate, appendMode bool) error",
 		},
 		defaultRule: true,
 	},
 	{
 		meta: Meta{
-			Code:            "no-naked-return",
-			Summary:         "require explicit return values",
+			Code: "no-naked-return",
+			Summary: "require explicit return values",
 			DefaultSeverity: diagnostic.SeverityWarning,
-			Explanation:     "A bare return in a function with named results makes data flow implicit, especially in longer functions.",
-			GoodExample:     "func value() (n int) { n = 1; return n }",
-			BadExample:      "func value() (n int) { n = 1; return }",
+			Explanation: "A bare return in a function with named results makes data flow implicit, especially in longer functions.",
+			GoodExample: "func value() (n int) { n = 1; return n }",
+			BadExample: "func value() (n int) { n = 1; return }",
 		},
 		defaultRule: true,
 	},
 	{
 		meta: Meta{
-			Code:            "no-init",
-			Summary:         "avoid implicit package initialization",
+			Code: "no-init",
+			Summary: "avoid implicit package initialization",
 			DefaultSeverity: diagnostic.SeverityWarning,
-			Explanation:     "init functions hide ordering and side effects. Prefer explicit construction called from main or tests.",
-			GoodExample:     "func Configure() error { return register() }",
-			BadExample:      "func init() { register() }",
+			Explanation: "init functions hide ordering and side effects. Prefer explicit construction called from main or tests.",
+			GoodExample: "func Configure() error { return register() }",
+			BadExample: "func init() { register() }",
 		},
 		defaultRule: true,
 	},
 	{
 		meta: Meta{
-			Code:            "no-package-var",
-			Summary:         "avoid mutable package state",
+			Code: "no-package-var",
+			Summary: "avoid mutable package state",
 			DefaultSeverity: diagnostic.SeverityWarning,
-			Explanation:     "Package variables create shared mutable state and make dependencies, tests, and concurrency harder to reason about. Blank-identifier compile-time assertions are exempt.",
-			GoodExample:     "const defaultLimit = 10",
-			BadExample:      "var defaultClient = newClient()",
+			Explanation: "Package variables create shared mutable state and make dependencies, tests, and concurrency harder to reason about. Blank-identifier compile-time assertions are exempt.",
+			GoodExample: "const defaultLimit = 10",
+			BadExample: "var defaultClient = newClient()",
 		},
 		defaultRule: true,
 	},
 	{
 		meta: Meta{
-			Code:            "no-defer-in-loop",
-			Summary:         "avoid accumulating defers in loops",
+			Code: "no-defer-in-loop",
+			Summary: "avoid accumulating defers in loops",
 			DefaultSeverity: diagnostic.SeverityWarning,
-			Explanation:     "A defer runs when the surrounding function returns, not when an iteration ends, so resources can accumulate unexpectedly.",
-			GoodExample:     "for rows.Next() { if err := handleRow(rows); err != nil { return err } }",
-			BadExample:      "for rows.Next() { defer rows.Close() }",
+			Explanation: "A defer runs when the surrounding function returns, not when an iteration ends, so resources can accumulate unexpectedly.",
+			GoodExample: "for rows.Next() { if err := handleRow(rows); err != nil { return err } }",
+			BadExample: "for rows.Next() { defer rows.Close() }",
 		},
 		defaultRule: true,
 	},
 	{
 		meta: Meta{
-			Code:            "no-else-after-return",
-			Summary:         "remove else after terminal return",
+			Code: "no-else-after-return",
+			Summary: "remove else after terminal return",
 			DefaultSeverity: diagnostic.SeverityWarning,
-			Explanation:     "When the if branch returns, the else branch can be unindented. This reduces nesting without changing control flow.",
-			GoodExample:     "if err != nil { return err }\nuse(value)",
-			BadExample:      "if err != nil { return err } else { use(value) }",
+			Explanation: "When the if branch returns, the else branch can be unindented. This reduces nesting without changing control flow.",
+			GoodExample: "if err != nil { return err }\nuse(value)",
+			BadExample: "if err != nil { return err } else { use(value) }",
 		},
 		defaultRule: true,
 	},
@@ -178,7 +178,11 @@ var extendedCatalog = []spec{
 	{"redundant-test-main-exit", "remove redundant os.Exit in TestMain", "enabled"},
 	{"string-format", "enforce configured string constraints", "no constraints"},
 	{"string-of-int", "make integer-to-string intent explicit", "enabled"},
-	{"spaced-compiler-directive", "detect compiler directives disabled by leading whitespace", "enabled"},
+	{
+		"spaced-compiler-directive",
+		"detect compiler directives disabled by leading whitespace",
+		"enabled",
+	},
 	{"spinning-select-default", "detect select loops that spin on an empty default", "enabled"},
 	{"struct-tag", "validate struct tag syntax and options", "standard tags"},
 	{"superfluous-else", "remove else after terminating branches", "enabled"},
@@ -244,7 +248,7 @@ func Select(only []string, enableAll bool) ([]Rule, error) {
 }
 
 func allRules() []Rule {
-	rules := make([]Rule, 0, len(defaultCatalog)+len(extendedCatalog))
+	rules := make([]Rule, 0, len(defaultCatalog) + len(extendedCatalog))
 	for _, rule := range defaultCatalog {
 		rules = append(rules, rule)
 	}
@@ -261,11 +265,11 @@ func allRules() []Rule {
 			rules,
 			definition{
 				meta: Meta{
-					Code:            item.Code,
-					Summary:         item.Summary,
-					Explanation:     explanation,
-					GoodExample:     example.Good,
-					BadExample:      example.Bad,
+					Code: item.Code,
+					Summary: item.Summary,
+					Explanation: explanation,
+					GoodExample: example.Good,
+					BadExample: example.Bad,
 					DefaultSeverity: diagnostic.SeverityWarning,
 				},
 			},

@@ -44,14 +44,11 @@ func TestFormatWithoutPathsScansCurrentDirectory(t *testing.T) {
 	if err := os.Chdir(root); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(
-		func() {
-			_ = os.Chdir(previous)
-		},
-	)
+	t.Cleanup(func() {
+		_ = os.Chdir(previous)
+	})
 	var stdout, stderr bytes.Buffer
-	if code := Run([]string{"fmt", "--check"}, strings.NewReader("ignored stdin"), &stdout, &stderr); code !=
-		exitFindings {
+	if code := Run([]string{"fmt", "--check"}, strings.NewReader("ignored stdin"), &stdout, &stderr); code != exitFindings {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 	if !strings.Contains(stdout.String(), "main.go") {
@@ -67,13 +64,11 @@ func TestFormatBatchDoesNotWriteWhenAnyFileIsUnsupported(t *testing.T) {
 	if err := os.WriteFile(good, original, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(bad, []byte("package p\nfunc F() { goto done; done: return }\n"), 0o600); err !=
-		nil {
+	if err := os.WriteFile(bad, []byte("package p\nfunc F() { goto done; done: return }\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	if code := Run([]string{"fmt", "--write", root}, strings.NewReader(""), &stdout, &stderr); code !=
-		exitError {
+	if code := Run([]string{"fmt", "--write", root}, strings.NewReader(""), &stdout, &stderr); code != exitError {
 		t.Fatalf("exit %d, stderr %s", code, stderr.String())
 	}
 	after, err := os.ReadFile(good)
@@ -96,18 +91,14 @@ func TestFormatCheckDiffAndWrite(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, test := range []struct {
+	for _, test := range[]struct {
 		flag string
 		text string
-	}{
-		{flag: "--check", text: "main.go"},
-		{flag: "--diff", text: "--- "},
-	} {
+	}{{flag: "--check", text: "main.go"}, {flag: "--diff", text: "--- "}} {
 		assertFormatReadOnly(t, filename, original, test.flag, test.text)
 	}
 	var stdout, stderr bytes.Buffer
-	if code := Run([]string{"fmt", "--write", filename}, strings.NewReader(""), &stdout, &stderr); code !=
-		exitSuccess {
+	if code := Run([]string{"fmt", "--write", filename}, strings.NewReader(""), &stdout, &stderr); code != exitSuccess {
 		t.Fatalf("write: exit %d, stderr %q", code, stderr.String())
 	}
 	after, err := os.ReadFile(filename)
@@ -179,7 +170,12 @@ func TestLintHTMLAndExitCode(t *testing.T) {
 	if code != exitFindings {
 		t.Fatalf("exit %d, stderr %s", code, stderr.String())
 	}
-	for _, wanted := range []string{"<!doctype html>", "Strider lint report", "no-init", "func <mark>init</mark>() {}"} {
+	for _, wanted := range[]string{
+		"<!doctype html>",
+		"Strider lint report",
+		"no-init",
+		"func <mark>init</mark>() {}",
+	} {
 		if !strings.Contains(stdout.String(), wanted) {
 			t.Fatalf("HTML output missing %q: %s", wanted, stdout.String())
 		}
@@ -205,7 +201,7 @@ func TestColorFlagRendersRichDiagnosticsAndLeavesJSONPlain(t *testing.T) {
 	if code != exitFindings || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
-	for _, wanted := range []string{"\x1b[", "func init() {}", "┌─", "found 1 issue"} {
+	for _, wanted := range[]string{"\x1b[", "func init() {}", "┌─", "found 1 issue"} {
 		if !strings.Contains(stdout.String(), wanted) {
 			t.Fatalf("rich output missing %q: %q", wanted, stdout.String())
 		}
@@ -238,25 +234,51 @@ func TestConfiguredColorAndCLIOverride(t *testing.T) {
 
 	var stdout, stderr bytes.Buffer
 	code := Run(
-		[]string{"--config", filepath.Join(root, "strider.toml"), "lint", "--only", "no-init", filename},
+		[]string{
+			"--config",
+			filepath.Join(root, "strider.toml"),
+			"lint",
+			"--only",
+			"no-init",
+			filename,
+		},
 		strings.NewReader(""),
 		&stdout,
 		&stderr,
 	)
 	if code != exitFindings || !strings.Contains(stdout.String(), "\x1b[") {
-		t.Fatalf("configured color not applied: exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+		t.Fatalf(
+			"configured color not applied: exit %d, stdout %q, stderr %q",
+			code,
+			stdout.String(),
+			stderr.String(),
+		)
 	}
 
 	stdout.Reset()
 	stderr.Reset()
 	code = Run(
-		[]string{"--config", filepath.Join(root, "strider.toml"), "--color", "never", "lint", "--only", "no-init", filename},
+		[]string{
+			"--config",
+			filepath.Join(root, "strider.toml"),
+			"--color",
+			"never",
+			"lint",
+			"--only",
+			"no-init",
+			filename,
+		},
 		strings.NewReader(""),
 		&stdout,
 		&stderr,
 	)
 	if code != exitFindings || strings.Contains(stdout.String(), "\x1b[") {
-		t.Fatalf("CLI color override not applied: exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+		t.Fatalf(
+			"CLI color override not applied: exit %d, stdout %q, stderr %q",
+			code,
+			stdout.String(),
+			stderr.String(),
+		)
 	}
 }
 
@@ -276,11 +298,9 @@ func TestLintWithoutPathsScansCurrentDirectory(t *testing.T) {
 	if err := os.Chdir(root); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(
-		func() {
-			_ = os.Chdir(previous)
-		},
-	)
+	t.Cleanup(func() {
+		_ = os.Chdir(previous)
+	})
 	var stdout, stderr bytes.Buffer
 	code := Run([]string{"lint", "--only", "no-init"}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitFindings || !strings.Contains(stdout.String(), "no-init") {
@@ -302,8 +322,10 @@ func TestLintAllRulesListsCompleteRegistry(t *testing.T) {
 	if got := strings.Count(strings.TrimSpace(stdout.String()), "\n") + 1; got != 116 {
 		t.Fatalf("listed %d rules; want 116", got)
 	}
-	if !strings.Contains(stdout.String(), "marshal-receiver\t") ||
-		!strings.Contains(stdout.String(), "multiline-if-init\t") {
+	if !strings.Contains(stdout.String(), "marshal-receiver\t") || !strings.Contains(
+		stdout.String(),
+		"multiline-if-init\t",
+	) {
 		t.Fatalf("complete registry is missing extended rules: %s", stdout.String())
 	}
 }
@@ -344,11 +366,9 @@ func TestAnalyzeInvalidRegexpJSONAndExitCode(t *testing.T) {
 	if err := os.Chdir(root); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(
-		func() {
-			_ = os.Chdir(previous)
-		},
-	)
+	t.Cleanup(func() {
+		_ = os.Chdir(previous)
+	})
 
 	var stdout, stderr bytes.Buffer
 	code := Run(
@@ -367,12 +387,7 @@ func TestAnalyzeInvalidRegexpJSONAndExitCode(t *testing.T) {
 
 func TestAnalyzeListsRules(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := Run(
-		[]string{"analyze", "--list-rules"},
-		strings.NewReader(""),
-		&stdout,
-		&stderr,
-	)
+	code := Run([]string{"analyze", "--list-rules"}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitSuccess || !strings.Contains(stdout.String(), "invalid-regexp\terror\t") {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
@@ -392,7 +407,11 @@ enabled = false
 	if err := os.WriteFile(filepath.Join(root, "strider.toml"), []byte(configuration), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/configured\n\ngo 1.26\n"), 0o600); err != nil {
+	if err := os.WriteFile(
+		filepath.Join(root, "go.mod"),
+		[]byte("module example.com/configured\n\ngo 1.26\n"),
+		0o600,
+	); err != nil {
 		t.Fatal(err)
 	}
 	filename := filepath.Join(root, "main.go")
@@ -410,10 +429,17 @@ enabled = false
 	if err := os.Chdir(root); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = os.Chdir(previous) })
+	t.Cleanup(func() {
+		_ = os.Chdir(previous)
+	})
 
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{"lint", "--only", "no-init", filename}, strings.NewReader(""), &stdout, &stderr)
+	code := Run(
+		[]string{"lint", "--only", "no-init", filename},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
 	if code != exitFindings || !strings.Contains(stdout.String(), "error[no-init]") {
 		t.Fatalf("lint exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
@@ -431,8 +457,10 @@ enabled = false
 		&stdout,
 		&stderr,
 	)
-	if code != exitSuccess || !strings.Contains(stdout.String(), "\r\n") ||
-		strings.Contains(stdout.String(), "\r\n\r\n") {
+	if code != exitSuccess || !strings.Contains(stdout.String(), "\r\n") || strings.Contains(
+		stdout.String(),
+		"\r\n\r\n",
+	) {
 		t.Fatalf("format exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 }
@@ -455,9 +483,11 @@ func TestLintBaselineGenerateApplyIgnoreAndPrune(t *testing.T) {
 	if err := os.Chdir(root); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = os.Chdir(previous) })
+	t.Cleanup(func() {
+		_ = os.Chdir(previous)
+	})
 
-	run := func(extra ...string) (int, string, string) {
+	run := func(extra... string) (int, string, string) {
 		t.Helper()
 		args := []string{"lint", "--only", "no-init", "--baseline", baselinePath}
 		args = append(args, extra...)
@@ -473,21 +503,26 @@ func TestLintBaselineGenerateApplyIgnoreAndPrune(t *testing.T) {
 		t.Fatalf("apply exit %d, stdout %q, stderr %q", code, stdout, stderr)
 	}
 	write("package p\nfunc init() {}\nfunc init() {}\n")
-	if code, stdout, stderr := run(); code != exitFindings ||
-		strings.Count(stdout, "warning[no-init]") != 1 || stderr != "" {
+	if code, stdout, stderr := run(); code != exitFindings || strings.Count(
+		stdout,
+		"warning[no-init]",
+	) != 1 || stderr != "" {
 		t.Fatalf("new issue exit %d, stdout %q, stderr %q", code, stdout, stderr)
 	}
-	if code, stdout, stderr := run("--ignore-baseline"); code != exitFindings ||
-		strings.Count(stdout, "warning[no-init]") != 2 || stderr != "" {
+	if code, stdout, stderr := run("--ignore-baseline"); code != exitFindings || strings.Count(
+		stdout,
+		"warning[no-init]",
+	) != 2 || stderr != "" {
 		t.Fatalf("ignore exit %d, stdout %q, stderr %q", code, stdout, stderr)
 	}
 	write("package p\n")
-	if code, stdout, stderr := run(); code != exitSuccess || stdout != "" ||
-		!strings.Contains(stderr, "1 outdated issue") {
+	if code, stdout, stderr := run(); code != exitSuccess || stdout != "" || !strings.Contains(
+		stderr,
+		"1 outdated issue",
+	) {
 		t.Fatalf("stale exit %d, stdout %q, stderr %q", code, stdout, stderr)
 	}
-	if code, stdout, stderr := run("--remove-outdated-baseline-entries"); code != exitSuccess ||
-		stdout != "" || stderr != "" {
+	if code, stdout, stderr := run("--remove-outdated-baseline-entries"); code != exitSuccess || stdout != "" || stderr != "" {
 		t.Fatalf("prune exit %d, stdout %q, stderr %q", code, stdout, stderr)
 	}
 	loaded, err := baseline.Load(baselinePath)
@@ -530,7 +565,9 @@ func TestConfiguredAnalyzerBaseline(t *testing.T) {
 	if err := os.Chdir(root); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = os.Chdir(previous) })
+	t.Cleanup(func() {
+		_ = os.Chdir(previous)
+	})
 	var stdout, stderr bytes.Buffer
 	code := Run(
 		[]string{"analyze", "--only", "invalid-regexp", "--generate-baseline", filename},

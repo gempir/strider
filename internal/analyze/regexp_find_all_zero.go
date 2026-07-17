@@ -6,19 +6,20 @@ import (
 	"go/token"
 	"go/types"
 
-	"github.com/gempir/strider/internal/diagnostic"
 	"golang.org/x/tools/go/ssa"
+
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type regexpFindAllZeroRule struct{}
+type regexpFindAllZeroRule struct {}
 
 func (regexpFindAllZeroRule) Meta() Meta {
 	return Meta{
-		Code:            "regexp-find-all-zero",
-		Summary:         "detect regexp FindAll calls with n equal to zero",
-		Explanation:     "Regexp FindAll methods return at most n matches when n is non-negative. Passing zero always returns no results; use a negative value to request all matches.",
-		GoodExample:     `matches := expression.FindAllString(input, -1)`,
-		BadExample:      `matches := expression.FindAllString(input, 0)`,
+		Code: "regexp-find-all-zero",
+		Summary: "detect regexp FindAll calls with n equal to zero",
+		Explanation: "Regexp FindAll methods return at most n matches when n is non-negative. Passing zero always returns no results; use a negative value to request all matches.",
+		GoodExample: `matches := expression.FindAllString(input, -1)`,
+		BadExample: `matches := expression.FindAllString(input, 0)`,
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -56,14 +57,11 @@ func isRegexpFindAllCall(call ssa.CallInstruction) bool {
 		return false
 	}
 	function, ok := callee.Object().(*types.Func)
-	if !ok || function.Pkg() == nil || function.Pkg().Path() != "regexp" ||
-		function.Type().(*types.Signature).Recv() == nil {
+	if !ok || function.Pkg() == nil || function.Pkg().Path() != "regexp" || function.Type().(*types.Signature).Recv() == nil {
 		return false
 	}
 	switch function.Name() {
-	case "FindAll", "FindAllIndex", "FindAllString", "FindAllStringIndex",
-		"FindAllStringSubmatch", "FindAllStringSubmatchIndex",
-		"FindAllSubmatch", "FindAllSubmatchIndex":
+	case "FindAll", "FindAllIndex", "FindAllString", "FindAllStringIndex", "FindAllStringSubmatch", "FindAllStringSubmatchIndex", "FindAllSubmatch", "FindAllSubmatchIndex":
 		return true
 	default:
 		return false

@@ -22,8 +22,7 @@ func (a *cstAnalyzer) checkConcreteCall(call *cst.PrimaryExpr) {
 	case "errors.New":
 		a.checkConcreteErrorMessage(arguments)
 		if len(arguments) == 1 {
-			if inner, ok := arguments[0].(*cst.PrimaryExpr); ok &&
-				concreteCallName(inner) == "fmt.Sprintf" {
+			if inner, ok := arguments[0].(*cst.PrimaryExpr); ok && concreteCallName(inner) == "fmt.Sprintf" {
 				a.report(
 					"errorf",
 					call,
@@ -67,8 +66,10 @@ func (a *cstAnalyzer) checkConcreteCall(call *cst.PrimaryExpr) {
 	if a.concreteExpressionStatement(call) && likelyReturnsError(name) {
 		a.report("unhandled-error", call, fmt.Sprintf("error returned by %s is ignored", name))
 	}
-	if a.insideConcreteWaitGroupGo() &&
-		(name == "panic" || name == "recover" || strings.HasSuffix(name, ".Done")) {
+	if a.insideConcreteWaitGroupGo() && (name == "panic" || name == "recover" || strings.HasSuffix(
+		name,
+		".Done",
+	)) {
 		a.report(
 			"forbidden-call-in-wg-go",
 			call,
@@ -93,7 +94,7 @@ func (a *cstAnalyzer) concreteExpressionStatement(call *cst.PrimaryExpr) bool {
 	if len(a.ancestors) == 0 {
 		return false
 	}
-	list, ok := a.ancestors[len(a.ancestors)-1].(*cst.StatementList)
+	list, ok := a.ancestors[len(a.ancestors) - 1].(*cst.StatementList)
 	return ok && list.Statement == call
 }
 
@@ -116,7 +117,7 @@ func (a *cstAnalyzer) insideConcreteWaitGroupGo() bool {
 func (a *cstAnalyzer) checkConcreteTimeDate(arguments []cst.Node) {
 	limits := []struct {
 		index, minimum, maximum int
-		label                   string
+		label string
 	}{
 		{1, 1, 12, "month"},
 		{2, 1, 31, "day"},
@@ -182,7 +183,7 @@ func concreteCallArguments(arguments cst.Node) []cst.Node {
 }
 
 func appendConcreteExpressionList(result []cst.Node, current *cst.ExpressionList) []cst.Node {
-	for ; current != nil; current = current.List {
+	for; current != nil; current = current.List {
 		if current.Expression != nil {
 			result = append(result, current.Expression)
 		}
@@ -203,8 +204,10 @@ func (a *cstAnalyzer) checkConcreteErrorMessage(arguments []cst.Node) {
 		return
 	}
 	first, _ := utf8Decode(value)
-	badEnd := strings.HasSuffix(value, ".") || strings.HasSuffix(value, ":") ||
-		strings.HasSuffix(value, "!") || strings.HasSuffix(value, "\n")
+	badEnd := strings.HasSuffix(value, ".") || strings.HasSuffix(value, ":") || strings.HasSuffix(
+		value,
+		"!",
+	) || strings.HasSuffix(value, "\n")
 	if unicode.IsUpper(first) || badEnd {
 		a.report(
 			"error-strings",

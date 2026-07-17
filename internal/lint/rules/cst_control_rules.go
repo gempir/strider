@@ -7,11 +7,11 @@ import (
 )
 
 type concreteIf struct {
-	node       cst.Node
-	init       cst.Node
-	condition  cst.Node
-	body       *cst.Block
-	elseToken  cst.Token
+	node cst.Node
+	init cst.Node
+	condition cst.Node
+	body *cst.Block
+	elseToken cst.Token
 	elseClause cst.Node
 }
 
@@ -19,26 +19,30 @@ func (a *cstAnalyzer) checkConcreteIf(statement *cst.IfStmt) {
 	if statement == nil {
 		return
 	}
-	a.checkConcreteConditional(concreteIf{
-		node:      statement,
-		init:      statement.SimpleStmt,
-		condition: statement.Expression,
-		body:      statement.Block,
-	})
+	a.checkConcreteConditional(
+		concreteIf{
+			node: statement,
+			init: statement.SimpleStmt,
+			condition: statement.Expression,
+			body: statement.Block,
+		},
+	)
 }
 
 func (a *cstAnalyzer) checkConcreteIfElse(statement *cst.IfElseStmt) {
 	if statement == nil {
 		return
 	}
-	a.checkConcreteConditional(concreteIf{
-		node:       statement,
-		init:       statement.SimpleStmt,
-		condition:  statement.Expression,
-		body:       statement.Block,
-		elseToken:  statement.ELSE,
-		elseClause: statement.ElseClause,
-	})
+	a.checkConcreteConditional(
+		concreteIf{
+			node: statement,
+			init: statement.SimpleStmt,
+			condition: statement.Expression,
+			body: statement.Block,
+			elseToken: statement.ELSE,
+			elseClause: statement.ElseClause,
+		},
+	)
 }
 
 func (a *cstAnalyzer) checkConcreteConditional(statement concreteIf) {
@@ -94,9 +98,7 @@ func (a *cstAnalyzer) checkConcreteConditional(statement concreteIf) {
 
 func (a *cstAnalyzer) checkConcreteMapLookup(statement concreteIf) {
 	declaration, ok := statement.init.(*cst.ShortVarDecl)
-	if !ok || declaration.IdentifierList == nil || declaration.IdentifierList.Len() != 2 ||
-		declaration.ExpressionList == nil || declaration.ExpressionList.Len() != 1 ||
-		statement.body == nil {
+	if !ok || declaration.IdentifierList == nil || declaration.IdentifierList.Len() != 2 || declaration.ExpressionList == nil || declaration.ExpressionList.Len() != 1 || statement.body == nil {
 		return
 	}
 	value := declaration.ExpressionList.Expression
@@ -108,23 +110,25 @@ func (a *cstAnalyzer) checkConcreteMapLookup(statement concreteIf) {
 	if len(names) != 2 || !concreteContainsIdentifier(statement.condition, names[1].Src()) {
 		return
 	}
-	cst.Walk(statement.body, func(node cst.Node) bool {
-		if cst.Spelling(node) == lookup {
-			a.report(
-				"inefficient-map-lookup",
-				node,
-				"reuse the map value obtained by the comma-ok lookup",
-			)
-			return false
-		}
-		return true
-	})
+	cst.Walk(
+		statement.body,
+		func(node cst.Node) bool {
+			if cst.Spelling(node) == lookup {
+				a.report(
+					"inefficient-map-lookup",
+					node,
+					"reuse the map value obtained by the comma-ok lookup",
+				)
+				return false
+			}
+			return true
+		},
+	)
 }
 
 func (a *cstAnalyzer) checkConcreteIfChain(first concreteIf) {
 	if len(a.ancestors) != 0 {
-		if parent, ok := a.ancestors[len(a.ancestors)-1].(*cst.IfElseStmt); ok &&
-			parent.ElseClause == first.node {
+		if parent, ok := a.ancestors[len(a.ancestors) - 1].(*cst.IfElseStmt); ok && parent.ElseClause == first.node {
 			return
 		}
 	}
@@ -167,12 +171,29 @@ func concreteIfFromNode(node cst.Node) (concreteIf, bool) {
 	switch current := node.(type) {
 	case *cst.IfStmt:
 		return concreteIf{
-			node: current, init: current.SimpleStmt, condition: current.Expression, body: current.Block,
+			node:
+			current,
+			init:
+			current.SimpleStmt,
+			condition:
+			current.Expression,
+			body:
+			current.Block,
 		}, true
 	case *cst.IfElseStmt:
 		return concreteIf{
-			node: current, init: current.SimpleStmt, condition: current.Expression,
-			body: current.Block, elseToken: current.ELSE, elseClause: current.ElseClause,
+			node:
+			current,
+			init:
+			current.SimpleStmt,
+			condition:
+			current.Expression,
+			body:
+			current.Block,
+			elseToken:
+			current.ELSE,
+			elseClause:
+			current.ElseClause,
 		}, true
 	default:
 		return concreteIf{}, false
@@ -181,24 +202,30 @@ func concreteIfFromNode(node cst.Node) (concreteIf, bool) {
 
 func concreteHasSideEffects(node cst.Node) bool {
 	found := false
-	cst.Walk(node, func(child cst.Node) bool {
-		if _, ok := child.(*cst.PrimaryExpr); ok && stringsHasArguments(child) {
-			found = true
-			return false
-		}
-		if unary, ok := child.(*cst.UnaryExpr); ok && unary.Op.Src() == "<-" {
-			found = true
-			return false
-		}
-		return !found
-	})
+	cst.Walk(
+		node,
+		func(child cst.Node) bool {
+			if _,
+			ok := child.(*cst.PrimaryExpr); ok && stringsHasArguments(child) {
+				found = true
+				return false
+			}
+			if unary,
+			ok := child.(*cst.UnaryExpr); ok && unary.Op.Src() == "<-" {
+				found = true
+				return false
+			}
+			return !found
+		},
+	)
 	return found
 }
 
 func stringsHasArguments(node cst.Node) bool {
 	primary, ok := node.(*cst.PrimaryExpr)
-	return ok && len(cst.Kind(primary.Postfix)) >= len("Arguments") &&
-		cst.Kind(primary.Postfix)[:len("Arguments")] == "Arguments"
+	return ok && len(cst.Kind(primary.Postfix)) >= len("Arguments") && cst.Kind(primary.Postfix)[:len(
+		"Arguments",
+	)] == "Arguments"
 }
 
 func concreteBooleanBlock(block *cst.Block) (bool, bool) {
@@ -220,11 +247,11 @@ func (a *cstAnalyzer) checkConcreteBlock(block *cst.Block) {
 		a.report("empty-block", block, "empty block should be removed or documented")
 	}
 	for index, statement := range statements {
-		if index+1 < len(statements) {
-			a.checkConcreteIfReturn(statement, statements[index+1])
-			a.checkConcreteWaitGroupAdd(statement, statements[index+1])
+		if index + 1 < len(statements) {
+			a.checkConcreteIfReturn(statement, statements[index + 1])
+			a.checkConcreteWaitGroupAdd(statement, statements[index + 1])
 		}
-		if index > 0 && concreteStatementTerminates(statements[index-1]) {
+		if index > 0 && concreteStatementTerminates(statements[index - 1]) {
 			a.report(
 				"unreachable-code",
 				statement,
@@ -237,12 +264,12 @@ func (a *cstAnalyzer) checkConcreteBlock(block *cst.Block) {
 	}
 	openLine := block.LBRACE.Position().Line
 	firstStart, _ := cst.Range(statements[0])
-	_, lastEnd := cst.Range(statements[len(statements)-1])
+	_, lastEnd := cst.Range(statements[len(statements) - 1])
 	closeLine := block.RBRACE.Position().Line
-	if a.tree.Position(firstStart).Line > openLine+1 {
+	if a.tree.Position(firstStart).Line > openLine + 1 {
 		a.report("empty-lines", statements[0], "block begins with an unnecessary empty line")
 	}
-	if closeLine > a.tree.Position(lastEnd).Line+1 {
+	if closeLine > a.tree.Position(lastEnd).Line + 1 {
 		start, end := cst.Range(block.RBRACE)
 		a.reportRange("empty-lines", start, end, "block ends with an unnecessary empty line")
 	}
@@ -252,7 +279,7 @@ func (a *cstAnalyzer) concreteParentIsConditional() bool {
 	if len(a.ancestors) == 0 {
 		return false
 	}
-	switch a.ancestors[len(a.ancestors)-1].(type) {
+	switch a.ancestors[len(a.ancestors) - 1].(type) {
 	case *cst.IfStmt, *cst.IfElseStmt:
 		return true
 	default:
@@ -275,7 +302,7 @@ func concreteBlockStatements(block *cst.Block) []cst.Node {
 
 func concreteBlockTerminates(block *cst.Block) bool {
 	statements := concreteBlockStatements(block)
-	return len(statements) != 0 && concreteStatementTerminates(statements[len(statements)-1])
+	return len(statements) != 0 && concreteStatementTerminates(statements[len(statements) - 1])
 }
 
 func concreteBlockReturns(block *cst.Block) bool {
@@ -283,7 +310,7 @@ func concreteBlockReturns(block *cst.Block) bool {
 	if len(statements) == 0 {
 		return false
 	}
-	_, ok := statements[len(statements)-1].(*cst.ReturnStmt)
+	_, ok := statements[len(statements) - 1].(*cst.ReturnStmt)
 	return ok
 }
 
@@ -316,7 +343,7 @@ func (a *cstAnalyzer) checkConcreteTypeAssertion(assertion *cst.TypeAssertion) {
 	if assertion.TypeNode == nil {
 		return
 	}
-search:
+	search:
 	for index := len(a.ancestors) - 1; index >= 0; index-- {
 		if cst.Kind(a.ancestors[index]) == "TypeSwitchGuard" {
 			return

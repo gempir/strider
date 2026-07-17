@@ -163,6 +163,29 @@ func TestLintJSONAndExitCode(t *testing.T) {
 	}
 }
 
+func TestLintHTMLAndExitCode(t *testing.T) {
+	root := t.TempDir()
+	filename := filepath.Join(root, "main.go")
+	if err := os.WriteFile(filename, []byte("package p\nfunc init() {}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	code := Run(
+		[]string{"lint", "--format", "html", "--only", "no-init", root},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitFindings {
+		t.Fatalf("exit %d, stderr %s", code, stderr.String())
+	}
+	for _, wanted := range []string{"<!doctype html>", "Strider lint report", "no-init", "func init() {}"} {
+		if !strings.Contains(stdout.String(), wanted) {
+			t.Fatalf("HTML output missing %q: %s", wanted, stdout.String())
+		}
+	}
+}
+
 func TestColorFlagRendersRichDiagnosticsAndLeavesJSONPlain(t *testing.T) {
 	t.Setenv("FORCE_COLOR", "")
 	t.Setenv("NO_COLOR", "")

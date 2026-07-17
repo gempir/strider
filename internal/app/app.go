@@ -488,7 +488,7 @@ func runLint(
 ) int {
 	flags := flag.NewFlagSet("lint", flag.ContinueOnError)
 	flags.SetOutput(stderr)
-	format := flags.String("format", "text", "report format: text or json")
+	format := flags.String("format", "text", "report format: text, json, or html")
 	listRules := flags.Bool("list-rules", false, "list enabled lint rules")
 	allRules := flags.Bool("all-rules", false, "run every built-in rule")
 	explain := flags.String("explain", "", "explain a lint rule")
@@ -551,7 +551,7 @@ func runLint(
 	if *explain != "" {
 		return explainLintRule(registry, *explain, colorMode, stdout, stderr)
 	}
-	if *format != "text" && *format != "json" {
+	if *format != "text" && *format != "json" && *format != "html" {
 		printCommandError(stderr, colorMode, "strider lint", "unsupported report format %q", *format)
 		return exitError
 	}
@@ -645,6 +645,8 @@ func lintPaths(
 	}
 	if format == "json" {
 		err = lint.ReportJSON(stdout, diagnostics)
+	} else if format == "html" {
+		err = lint.ReportHTML(stdout, diagnostics)
 	} else {
 		err = lint.ReportText(stdout, diagnostics, colorMode)
 	}
@@ -666,7 +668,7 @@ func runAnalyze(
 ) int {
 	flags := flag.NewFlagSet("analyze", flag.ContinueOnError)
 	flags.SetOutput(stderr)
-	format := flags.String("format", "text", "report format: text or json")
+	format := flags.String("format", "text", "report format: text, json, or html")
 	listRules := flags.Bool("list-rules", false, "list enabled analysis rules")
 	explain := flags.String("explain", "", "explain an analysis rule")
 	baselinePath := flags.String("baseline", "", "path to the analysis baseline")
@@ -717,7 +719,7 @@ func runAnalyze(
 	if *explain != "" {
 		return explainAnalyzeRule(registry, *explain, colorMode, stdout, stderr)
 	}
-	if *format != "text" && *format != "json" {
+	if *format != "text" && *format != "json" && *format != "html" {
 		printCommandError(stderr, colorMode, "strider analyze", "unsupported report format %q", *format)
 		return exitError
 	}
@@ -806,6 +808,8 @@ func analyzePaths(
 	}
 	if format == "json" {
 		err = analyze.ReportJSON(stdout, diagnostics)
+	} else if format == "html" {
+		err = analyze.ReportHTML(stdout, diagnostics)
 	} else {
 		err = analyze.ReportText(stdout, diagnostics, colorMode)
 	}

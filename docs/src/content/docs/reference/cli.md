@@ -71,7 +71,7 @@ strider lint [OPTIONS] [FILE|DIR]...
 
 | Flag | Description |
 | --- | --- |
-| `--format text\|json` | Select text or JSON diagnostics. Default: `text`. |
+| `--format text\|json\|html` | Select text, JSON, or a self-contained HTML report. Default: `text`. |
 | `--only CODE` | Select rule codes. Repeatable and comma-separated. |
 | `--all-rules` | Enable all 116 built-in rules. Mutually exclusive with `--only`. |
 | `--list-rules` | List the effective selected registry and severity, then exit. |
@@ -106,7 +106,7 @@ strider analyze [OPTIONS] [FILE|DIR]...
 
 | Flag | Description |
 | --- | --- |
-| `--format text\|json` | Select text or JSON diagnostics. Default: `text`. |
+| `--format text\|json\|html` | Select text, JSON, or a self-contained HTML report. Default: `text`. |
 | `--only CODE` | Select analyzer codes. Repeatable, comma-separated, and case-insensitive. |
 | `--list-rules` | List the effective selected registry and severity, then exit. |
 | `--explain CODE` | Explain one selected analyzer and show its effective severity, then exit. |

@@ -114,6 +114,17 @@ Each JSON diagnostic includes `code`, `message`, `severity`, `file`, `start`,
 and `end`. The shared model can also carry `notes` and `fixes`, although the
 initial rules do not currently apply fixes.
 
+Use HTML for a self-contained report that can be opened locally, uploaded as a
+CI artifact, or published with project documentation:
+
+```sh
+strider lint --format html ./... > lint-report.html
+```
+
+The report includes severity totals, search and severity filters, and details
+for every finding. It has no external assets and contains no timestamps, so the
+same diagnostics produce the same page on every run.
+
 ## Suppressions
 
 Suppress selected codes on the next syntactic declaration or statement:

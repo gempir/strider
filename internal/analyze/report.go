@@ -21,3 +21,8 @@ func ReportJSON(writer io.Writer, diagnostics []diagnostic.Diagnostic) error {
 	encoder.SetIndent("", "  ")
 	return encoder.Encode(diagnostics)
 }
+
+// ReportHTML writes diagnostics as a self-contained HTML page.
+func ReportHTML(writer io.Writer, diagnostics []diagnostic.Diagnostic) error {
+	return report.HTML(writer, "Strider analysis report", diagnostics)
+}

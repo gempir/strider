@@ -1,2 +1,4 @@
 /strider
 dist/
+.benchmark-cache/
+target/

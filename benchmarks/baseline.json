@@ -1,0 +1,600 @@
+{
+  "version": 1,
+  "projects": [
+    {
+      "name": "chi",
+      "revision": "8b258c7bb28f97a5f2a856ff7ef962578fec9215",
+      "operations": {
+        "analyze": {
+          "exit_code": 1,
+          "digest": "a04580d488f845bbfc82f8aa06eb0857b6d34d5569be30503b9d905ad9b4b4b2",
+          "findings": 2,
+          "by_code": {
+            "context-stored-in-struct": 2
+          }
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "e15d068c334f508e2292d0c510523ca29f4444399241fba3b8f1e989415cd5b3",
+          "findings": 71
+        },
+        "lint": {
+          "exit_code": 1,
+          "digest": "1ca4eaaf67c271e4892f8307c7b801852d864f935aa92bf863eb811fad97fc79",
+          "findings": 1590,
+          "by_code": {
+            "add-constant": 185,
+            "bare-return": 1,
+            "bool-literal-in-expr": 10,
+            "cognitive-complexity": 39,
+            "comment-spacings": 6,
+            "confusing-naming": 6,
+            "confusing-results": 3,
+            "cyclomatic": 14,
+            "cyclomatic-complexity": 14,
+            "datarace": 21,
+            "early-return": 2,
+            "empty-lines": 71,
+            "error-strings": 35,
+            "exported": 140,
+            "flag-parameter": 4,
+            "function-length": 19,
+            "function-result-limit": 1,
+            "get-return": 5,
+            "import-shadowing": 5,
+            "line-length-limit": 434,
+            "max-control-nesting": 3,
+            "max-public-structs": 1,
+            "modifies-parameter": 46,
+            "modifies-value-receiver": 8,
+            "multiline-if-init": 1,
+            "nested-structs": 41,
+            "no-defer-in-loop": 1,
+            "no-init": 6,
+            "no-naked-return": 1,
+            "no-package-var": 47,
+            "optimize-operands-order": 11,
+            "package-comments": 53,
+            "package-directory-mismatch": 1,
+            "package-naming": 1,
+            "range-val-in-closure": 21,
+            "redefines-builtin-id": 2,
+            "redundant-import-alias": 3,
+            "struct-tag": 1,
+            "unchecked-type-assertion": 31,
+            "unexported-return": 4,
+            "unhandled-error": 206,
+            "unnecessary-format": 1,
+            "unnecessary-stmt": 10,
+            "unsecure-url-scheme": 3,
+            "unused-parameter": 29,
+            "unused-receiver": 17,
+            "use-any": 18,
+            "use-waitgroup-go": 8
+          }
+        }
+      }
+    },
+    {
+      "name": "gin",
+      "revision": "34dac209ffb6ef85cc78c5d217bbb7ad001d68fd",
+      "operations": {
+        "analyze": {
+          "exit_code": 1,
+          "digest": "4611df41debc6d8f68814d19ff0504f6d11a6bc21f576c947fce8255774e6dad",
+          "findings": 5,
+          "by_code": {
+            "deprecated-api-usage": 3,
+            "nil-context": 1,
+            "unsafe-formatted-url-host-port": 1
+          }
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "bcf38aadebee1aa01af4477fc8756abdda4a5302d470335c76004fde9cfca247",
+          "findings": 79
+        },
+        "lint": {
+          "exit_code": 1,
+          "digest": "0df8e047784d4760f02c90eb680a95281cd356a8629602c10dfd5f481ba309db",
+          "findings": 2864,
+          "by_code": {
+            "add-constant": 503,
+            "bare-return": 31,
+            "bool-literal-in-expr": 1,
+            "cognitive-complexity": 33,
+            "comment-spacings": 36,
+            "confusing-naming": 6,
+            "cyclomatic": 16,
+            "cyclomatic-complexity": 16,
+            "datarace": 28,
+            "empty-lines": 89,
+            "epoch-naming": 4,
+            "error-naming": 1,
+            "error-strings": 20,
+            "exported": 352,
+            "flag-parameter": 7,
+            "function-length": 20,
+            "import-alias-naming": 1,
+            "import-shadowing": 7,
+            "indent-error-flow": 4,
+            "inefficient-map-lookup": 1,
+            "line-length-limit": 913,
+            "max-control-nesting": 21,
+            "max-parameters": 26,
+            "max-public-structs": 25,
+            "modifies-parameter": 66,
+            "modifies-value-receiver": 3,
+            "multiline-if-init": 4,
+            "nested-structs": 158,
+            "no-else-after-return": 4,
+            "no-init": 14,
+            "no-naked-return": 31,
+            "no-package-var": 88,
+            "optimize-operands-order": 35,
+            "package-comments": 57,
+            "package-naming": 2,
+            "range-val-address": 3,
+            "range-val-in-closure": 28,
+            "superfluous-else": 4,
+            "unchecked-type-assertion": 27,
+            "unexported-return": 1,
+            "unhandled-error": 25,
+            "unnecessary-stmt": 34,
+            "unsecure-url-scheme": 26,
+            "unused-parameter": 22,
+            "unused-receiver": 66,
+            "use-waitgroup-go": 1,
+            "var-naming": 4
+          }
+        }
+      }
+    },
+    {
+      "name": "mux",
+      "revision": "db9d1d0073d27a0a2d9a8c1bc52aa0af4374d265",
+      "operations": {
+        "analyze": {
+          "exit_code": 0,
+          "digest": "7c98e54fe62d0828cc096acf2baff9b0cdd5a4059053acf1d0e50112ff8612ce",
+          "findings": 0
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "fe792257068a8ff2b7d7cbacabfd496aaeb187b087f736a535f30d06f21c7dcd",
+          "findings": 14
+        },
+        "lint": {
+          "exit_code": 1,
+          "digest": "9f943e9c623086770579cefce0da0a054ad00cafb96e6bd1b8bffbce01a766a5",
+          "findings": 1064,
+          "by_code": {
+            "add-constant": 174,
+            "bool-literal-in-expr": 2,
+            "cognitive-complexity": 29,
+            "confusing-naming": 2,
+            "cyclomatic": 8,
+            "cyclomatic-complexity": 8,
+            "datarace": 34,
+            "empty-lines": 40,
+            "error-naming": 1,
+            "error-strings": 68,
+            "exported": 66,
+            "flag-parameter": 2,
+            "function-length": 13,
+            "import-shadowing": 10,
+            "indent-error-flow": 2,
+            "line-length-limit": 290,
+            "max-control-nesting": 1,
+            "modifies-parameter": 32,
+            "nested-structs": 10,
+            "no-else-after-return": 2,
+            "no-package-var": 13,
+            "optimize-operands-order": 7,
+            "package-comments": 5,
+            "package-directory-mismatch": 4,
+            "package-naming": 4,
+            "range-val-in-closure": 34,
+            "redundant-build-tag": 1,
+            "superfluous-else": 2,
+            "unchecked-type-assertion": 4,
+            "unhandled-error": 1,
+            "unnecessary-stmt": 3,
+            "unsecure-url-scheme": 179,
+            "unused-parameter": 10,
+            "unused-receiver": 1,
+            "use-any": 1,
+            "use-fmt-print": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "fsnotify",
+      "revision": "20b1e15ef3c70caeb37ea2bd184f48ef8382669e",
+      "operations": {
+        "analyze": {
+          "exit_code": 0,
+          "digest": "7c98e54fe62d0828cc096acf2baff9b0cdd5a4059053acf1d0e50112ff8612ce",
+          "findings": 0
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "2e2040a7fcd925cd770b453d4c1db479d95fc41cef6db67784aca06aefaa7e7c",
+          "findings": 28
+        },
+        "lint": {
+          "exit_code": 1,
+          "digest": "a036f46dad49e16546662c5e55c3c34baf3ad831a89ba8d90d6691b52d35e324",
+          "findings": 680,
+          "by_code": {
+            "add-constant": 34,
+            "bare-return": 1,
+            "cognitive-complexity": 43,
+            "comment-spacings": 16,
+            "confusing-naming": 2,
+            "confusing-results": 1,
+            "cyclomatic": 23,
+            "cyclomatic-complexity": 23,
+            "datarace": 23,
+            "deep-exit": 2,
+            "empty-lines": 51,
+            "error-naming": 1,
+            "error-strings": 8,
+            "exported": 70,
+            "flag-parameter": 6,
+            "function-length": 15,
+            "line-length-limit": 98,
+            "max-control-nesting": 3,
+            "modifies-parameter": 25,
+            "modifies-value-receiver": 5,
+            "nested-structs": 39,
+            "no-defer-in-loop": 1,
+            "no-init": 1,
+            "no-naked-return": 1,
+            "no-package-var": 30,
+            "optimize-operands-order": 18,
+            "package-comments": 27,
+            "range-val-address": 3,
+            "range-val-in-closure": 23,
+            "redefines-builtin-id": 1,
+            "unchecked-type-assertion": 15,
+            "unexported-return": 3,
+            "unhandled-error": 16,
+            "unnecessary-stmt": 15,
+            "unused-parameter": 16,
+            "unused-receiver": 17,
+            "use-errors-new": 1,
+            "use-waitgroup-go": 3
+          }
+        }
+      }
+    },
+    {
+      "name": "uuid",
+      "revision": "2d3c2a9cc518326daf99a383f07c4d3c44317e4d",
+      "operations": {
+        "analyze": {
+          "exit_code": 0,
+          "digest": "7c98e54fe62d0828cc096acf2baff9b0cdd5a4059053acf1d0e50112ff8612ce",
+          "findings": 0
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "3f152774713b54a6827d188e1f4bf34006dcd83285de78247d8f0f92dae2640a",
+          "findings": 19
+        },
+        "lint": {
+          "exit_code": 1,
+          "digest": "5c7f81cb481e7d48aef49c6bd4ffef02016448dd17211582b097404d079565ca",
+          "findings": 348,
+          "by_code": {
+            "add-constant": 15,
+            "cognitive-complexity": 14,
+            "confusing-naming": 5,
+            "cyclomatic": 7,
+            "cyclomatic-complexity": 7,
+            "datarace": 4,
+            "empty-lines": 6,
+            "epoch-naming": 2,
+            "error-strings": 41,
+            "exported": 69,
+            "function-length": 1,
+            "import-shadowing": 3,
+            "line-length-limit": 45,
+            "marshal-receiver": 5,
+            "max-parameters": 1,
+            "modifies-parameter": 21,
+            "nested-structs": 11,
+            "no-package-var": 33,
+            "optimize-operands-order": 9,
+            "package-comments": 15,
+            "range": 1,
+            "range-val-address": 1,
+            "range-val-in-closure": 4,
+            "receiver-naming": 1,
+            "redefines-builtin-id": 1,
+            "unhandled-error": 7,
+            "unnecessary-stmt": 9,
+            "unused-parameter": 1,
+            "unused-receiver": 4,
+            "use-any": 3,
+            "use-errors-new": 2
+          }
+        }
+      }
+    },
+    {
+      "name": "semver",
+      "revision": "8b89c86cb53c57cfd5d07c13de12bc4d78954e99",
+      "operations": {
+        "analyze": {
+          "exit_code": 0,
+          "digest": "7c98e54fe62d0828cc096acf2baff9b0cdd5a4059053acf1d0e50112ff8612ce",
+          "findings": 0
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "a0ce5193c06eeae36310c58683b0e3d9e80b7c77d7ae414ffa49aa82620dce67",
+          "findings": 6
+        },
+        "lint": {
+          "exit_code": 1,
+          "digest": "ac7c05bda9f011c882492035c43a5957b0bf996683759ec600307f224cea2ac7",
+          "findings": 651,
+          "by_code": {
+            "add-constant": 204,
+            "cognitive-complexity": 28,
+            "confusing-naming": 4,
+            "cyclomatic": 13,
+            "cyclomatic-complexity": 13,
+            "empty-lines": 32,
+            "error-strings": 88,
+            "exported": 30,
+            "flag-parameter": 8,
+            "function-length": 7,
+            "indent-error-flow": 11,
+            "line-length-limit": 97,
+            "marshal-receiver": 3,
+            "max-control-nesting": 2,
+            "modifies-parameter": 1,
+            "modifies-value-receiver": 2,
+            "nested-structs": 32,
+            "no-else-after-return": 11,
+            "no-init": 2,
+            "no-package-var": 18,
+            "optimize-operands-order": 27,
+            "package-comments": 3,
+            "superfluous-else": 12,
+            "unnecessary-stmt": 1,
+            "use-any": 1,
+            "use-errors-new": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "decimal",
+      "revision": "3090cc487febd78d6016c2859c66308328a40e99",
+      "operations": {
+        "analyze": {
+          "exit_code": 0,
+          "digest": "7c98e54fe62d0828cc096acf2baff9b0cdd5a4059053acf1d0e50112ff8612ce",
+          "findings": 0
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "2ace2148024c5742b6dc6abd1327b29981353e29c1b59a289547e88011ff88a0",
+          "findings": 8
+        },
+        "lint": {
+          "exit_code": 1,
+          "digest": "fd2ce19cd9be140dfde5281a50cd5097675f967c95c44acdd888878d46ffeb48",
+          "findings": 867,
+          "by_code": {
+            "add-constant": 146,
+            "bool-literal-in-expr": 2,
+            "cognitive-complexity": 45,
+            "comment-spacings": 11,
+            "confusing-naming": 3,
+            "confusing-results": 2,
+            "cyclomatic": 17,
+            "cyclomatic-complexity": 17,
+            "datarace": 3,
+            "empty-lines": 75,
+            "error-strings": 33,
+            "exported": 84,
+            "flag-parameter": 2,
+            "function-length": 13,
+            "indent-error-flow": 2,
+            "line-length-limit": 228,
+            "marshal-receiver": 7,
+            "max-control-nesting": 2,
+            "max-public-structs": 10,
+            "modifies-parameter": 32,
+            "modifies-value-receiver": 5,
+            "nested-structs": 31,
+            "no-else-after-return": 2,
+            "no-init": 1,
+            "no-package-var": 26,
+            "optimize-operands-order": 11,
+            "package-comments": 3,
+            "range-val-address": 1,
+            "range-val-in-closure": 3,
+            "redefines-builtin-id": 1,
+            "redundant-build-tag": 1,
+            "superfluous-else": 2,
+            "unchecked-type-assertion": 4,
+            "unexported-naming": 4,
+            "unnecessary-stmt": 6,
+            "use-any": 19,
+            "use-errors-new": 9,
+            "var-naming": 4
+          }
+        }
+      }
+    },
+    {
+      "name": "websocket",
+      "revision": "e064f32e3674d9d79a8fd417b5bc06fa5c6cad8f",
+      "operations": {
+        "analyze": {
+          "exit_code": 1,
+          "digest": "3c5247fe3324beb9b6d93509ddf73d29bc85fb6a5420388071dc74c88d46d644",
+          "findings": 32,
+          "by_code": {
+            "byte-string-write": 1,
+            "defer-close-before-error-check": 25,
+            "overwritten-before-use": 1,
+            "possible-nil-dereference": 5
+          }
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "96e2be4da33ed0cf2ae5680194ccf3730774e2153904f9955785b5a6222a5a05",
+          "findings": 30
+        },
+        "lint": {
+          "exit_code": 1,
+          "digest": "4da7546df08314735a5de5eb10d952b8935cb6e5dfb5abc0df3f1da5c863f2ec",
+          "findings": 842,
+          "by_code": {
+            "add-constant": 42,
+            "cognitive-complexity": 40,
+            "cyclomatic": 17,
+            "cyclomatic-complexity": 17,
+            "datarace": 8,
+            "empty-lines": 55,
+            "epoch-naming": 2,
+            "error-strings": 35,
+            "exported": 90,
+            "flag-parameter": 8,
+            "function-length": 10,
+            "import-shadowing": 7,
+            "increment-decrement": 1,
+            "line-length-limit": 194,
+            "max-control-nesting": 8,
+            "max-parameters": 1,
+            "modifies-parameter": 40,
+            "nested-structs": 46,
+            "no-package-var": 61,
+            "optimize-operands-order": 17,
+            "package-comments": 19,
+            "package-directory-mismatch": 1,
+            "package-naming": 1,
+            "range-val-address": 2,
+            "range-val-in-closure": 8,
+            "redefines-builtin-id": 1,
+            "redundant-build-tag": 4,
+            "unchecked-type-assertion": 3,
+            "unhandled-error": 53,
+            "unnecessary-stmt": 13,
+            "unsecure-url-scheme": 5,
+            "unused-parameter": 9,
+            "unused-receiver": 12,
+            "use-any": 10,
+            "use-waitgroup-go": 1,
+            "var-declaration": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "color",
+      "revision": "53d4ce9d5df3891799a447e772308c76e70bad50",
+      "operations": {
+        "analyze": {
+          "exit_code": 0,
+          "digest": "7c98e54fe62d0828cc096acf2baff9b0cdd5a4059053acf1d0e50112ff8612ce",
+          "findings": 0
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "d2a481b19f2e5ce1b3614ab2d7e2aaa4408073604e49e9f9615d29d6481dd462",
+          "findings": 2
+        },
+        "lint": {
+          "exit_code": 1,
+          "digest": "959fa185df603723e2e4229f7dd483fa519ed2dcac2f2e559960f8657738f925",
+          "findings": 330,
+          "by_code": {
+            "add-constant": 28,
+            "bare-return": 2,
+            "comment-spacings": 2,
+            "confusing-naming": 2,
+            "datarace": 2,
+            "empty-lines": 6,
+            "error-strings": 22,
+            "exported": 108,
+            "function-length": 1,
+            "line-length-limit": 66,
+            "modifies-parameter": 1,
+            "nested-structs": 6,
+            "no-init": 1,
+            "no-naked-return": 2,
+            "no-package-var": 6,
+            "optimize-operands-order": 1,
+            "package-comments": 2,
+            "range-val-in-closure": 2,
+            "unhandled-error": 3,
+            "unused-parameter": 2,
+            "use-any": 65
+          }
+        }
+      }
+    },
+    {
+      "name": "retryablehttp",
+      "revision": "fd004584a46724fae09e2f21d7c382e15c893f42",
+      "operations": {
+        "analyze": {
+          "exit_code": 1,
+          "digest": "c44c3ad02eb6246c4eaa0786c0473e947b2c8190586e706b599bbdff960d59c1",
+          "findings": 1,
+          "by_code": {
+            "possible-nil-dereference": 1
+          }
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "52020b34648057666d302cec22ec4b4e3934d3cc0f41fad664c86e6c15b8539d",
+          "findings": 3
+        },
+        "lint": {
+          "exit_code": 1,
+          "digest": "37a1bff3d7f0c1c163111671f52c3c61ff57549f523392ac6063ca391e71c1eb",
+          "findings": 328,
+          "by_code": {
+            "add-constant": 22,
+            "cognitive-complexity": 9,
+            "cyclomatic": 8,
+            "cyclomatic-complexity": 8,
+            "datarace": 6,
+            "empty-lines": 24,
+            "exported": 28,
+            "function-length": 6,
+            "identical-switch-branches": 1,
+            "import-shadowing": 13,
+            "line-length-limit": 107,
+            "modifies-parameter": 5,
+            "nested-structs": 7,
+            "no-package-var": 11,
+            "optimize-operands-order": 8,
+            "package-comments": 3,
+            "range-val-in-closure": 6,
+            "redefines-builtin-id": 14,
+            "redundant-build-tag": 2,
+            "time-naming": 3,
+            "unchecked-type-assertion": 1,
+            "unhandled-error": 10,
+            "unnecessary-stmt": 1,
+            "unsecure-url-scheme": 5,
+            "unused-parameter": 2,
+            "use-any": 17,
+            "var-declaration": 1
+          }
+        }
+      }
+    }
+  ]
+}

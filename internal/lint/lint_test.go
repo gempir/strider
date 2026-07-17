@@ -3,6 +3,7 @@ package lint
 import (
 	"crypto/sha256"
 	"fmt"
+	"go/token"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -904,5 +905,16 @@ func BenchmarkLint(b *testing.B) {
 		if _, err := Run([]string{filename}, registry); err != nil {
 			b.Fatal(err)
 		}
+	}
+}
+
+func TestSortDiagnosticsUsesEndOffsetAsTieBreaker(t *testing.T) {
+	diagnostics := []diagnostic.Diagnostic{
+		{File: "main.go", Code: "example", Message: "same", Start: token.Position{Offset: 10}, End: token.Position{Offset: 30}},
+		{File: "main.go", Code: "example", Message: "same", Start: token.Position{Offset: 10}, End: token.Position{Offset: 20}},
+	}
+	sortDiagnostics(diagnostics)
+	if diagnostics[0].End.Offset != 20 || diagnostics[1].End.Offset != 30 {
+		t.Fatalf("diagnostics not totally ordered by range: %#v", diagnostics)
 	}
 }

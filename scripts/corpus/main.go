@@ -1,0 +1,486 @@
+// Command corpus runs Strider against the pinned open-source benchmark corpus.
+package main
+
+import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"flag"
+	"fmt"
+	"html/template"
+	"io"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"reflect"
+	"sort"
+	"strings"
+	"time"
+)
+
+const schemaVersion = 1
+
+type manifest struct {
+	Version  int       `json:"version"`
+	Projects []project `json:"projects"`
+}
+
+type project struct {
+	Name       string         `json:"name"`
+	Repository string         `json:"repository"`
+	Revision   string         `json:"revision"`
+	BudgetsMS  map[string]int `json:"budgets_ms"`
+}
+
+type baseline struct {
+	Version  int               `json:"version"`
+	Projects []baselineProject `json:"projects"`
+}
+
+type baselineProject struct {
+	Name       string               `json:"name"`
+	Revision   string               `json:"revision"`
+	Operations map[string]signature `json:"operations"`
+}
+
+type signature struct {
+	ExitCode int            `json:"exit_code"`
+	Digest   string         `json:"digest"`
+	Findings int            `json:"findings"`
+	ByCode   map[string]int `json:"by_code,omitempty"`
+}
+
+type report struct {
+	Projects []projectResult `json:"projects"`
+	Passed   bool            `json:"passed"`
+	TotalMS  int64           `json:"total_ms"`
+}
+
+type projectResult struct {
+	Name       string            `json:"name"`
+	Repository string            `json:"repository"`
+	Revision   string            `json:"revision"`
+	Operations []operationResult `json:"operations"`
+}
+
+type operationResult struct {
+	Name          string         `json:"name"`
+	ExitCode      int            `json:"exit_code"`
+	Digest        string         `json:"digest"`
+	Findings      int            `json:"findings"`
+	ByCode        map[string]int `json:"by_code,omitempty"`
+	DurationMS    int64          `json:"duration_ms"`
+	BudgetMS      int            `json:"budget_ms"`
+	BaselineMatch bool           `json:"baseline_match"`
+	WithinBudget  bool           `json:"within_budget"`
+	Error         string         `json:"error,omitempty"`
+}
+
+type diagnostic struct {
+	Code string `json:"code"`
+}
+
+type options struct {
+	mode         string
+	strider      string
+	manifestPath string
+	baselinePath string
+	cachePath    string
+	jsonPath     string
+	htmlPath     string
+}
+
+func main() {
+	options := parseFlags()
+	if err := run(options); err != nil {
+		fmt.Fprintln(os.Stderr, "corpus:", err)
+		os.Exit(1)
+	}
+}
+
+func parseFlags() options {
+	var result options
+	flag.StringVar(&result.mode, "mode", "check", "check or update the reviewed baseline")
+	flag.StringVar(&result.strider, "strider", "./strider", "path to the Strider binary")
+	flag.StringVar(&result.manifestPath, "manifest", "benchmarks/projects.json", "corpus manifest")
+	flag.StringVar(&result.baselinePath, "baseline", "benchmarks/baseline.json", "reviewed baseline")
+	flag.StringVar(&result.cachePath, "cache", ".benchmark-cache", "checkout cache")
+	flag.StringVar(&result.jsonPath, "json", "target/corpus/report.json", "JSON report output")
+	flag.StringVar(&result.htmlPath, "html", "target/corpus/index.html", "HTML report output")
+	flag.Parse()
+	return result
+}
+
+func run(options options) error {
+	if options.mode != "check" && options.mode != "update" {
+		return fmt.Errorf("unsupported mode %q", options.mode)
+	}
+	strider, err := filepath.Abs(options.strider)
+	if err != nil {
+		return err
+	}
+	if info, statErr := os.Stat(strider); statErr != nil || info.IsDir() {
+		return fmt.Errorf("Strider binary is not executable at %s", strider)
+	}
+	configuration, err := readManifest(options.manifestPath)
+	if err != nil {
+		return err
+	}
+	expected := baseline{Version: schemaVersion}
+	if options.mode == "check" {
+		expected, err = readBaseline(options.baselinePath)
+		if err != nil {
+			return err
+		}
+	}
+
+	started := time.Now()
+	results := report{Passed: true}
+	actual := baseline{Version: schemaVersion}
+	for _, item := range configuration.Projects {
+		checkout, checkoutErr := prepareProject(options.cachePath, item)
+		projectReport := projectResult{Name: item.Name, Repository: item.Repository, Revision: item.Revision}
+		projectBaseline := baselineProject{Name: item.Name, Revision: item.Revision, Operations: map[string]signature{}}
+		if checkoutErr != nil {
+			results.Passed = false
+			projectReport.Operations = append(projectReport.Operations, operationResult{Name: "prepare", Error: checkoutErr.Error()})
+		} else {
+			for _, operation := range []string{"format", "lint", "analyze"} {
+				observed := runOperation(strider, checkout, operation, item.BudgetsMS[operation])
+				expectedSignature, found := findExpected(expected, item.Name, item.Revision, operation)
+				observed.BaselineMatch = options.mode == "update" || (found && reflect.DeepEqual(expectedSignature, observed.signature()))
+				if observed.Error != "" || !observed.WithinBudget || !observed.BaselineMatch {
+					results.Passed = false
+				}
+				projectReport.Operations = append(projectReport.Operations, observed)
+				projectBaseline.Operations[operation] = observed.signature()
+			}
+		}
+		results.Projects = append(results.Projects, projectReport)
+		actual.Projects = append(actual.Projects, projectBaseline)
+	}
+	results.TotalMS = time.Since(started).Milliseconds()
+
+	if options.mode == "update" {
+		if hasProcessingErrors(results) {
+			return errors.New("refusing to update a baseline containing processing errors")
+		}
+		if err := writeJSON(options.baselinePath, actual); err != nil {
+			return err
+		}
+	}
+	if err := writeJSON(options.jsonPath, results); err != nil {
+		return err
+	}
+	if err := writeHTML(options.htmlPath, results); err != nil {
+		return err
+	}
+	writeConsole(os.Stdout, results)
+	if summary := os.Getenv("GITHUB_STEP_SUMMARY"); summary != "" {
+		if err := writeGitHubSummary(summary, results); err != nil {
+			return err
+		}
+	}
+	if !results.Passed {
+		return errors.New("behavior or performance regression detected; inspect the report above")
+	}
+	return nil
+}
+
+func readManifest(path string) (manifest, error) {
+	var result manifest
+	if err := readJSON(path, &result); err != nil {
+		return result, err
+	}
+	if result.Version != schemaVersion {
+		return result, fmt.Errorf("manifest version %d is unsupported", result.Version)
+	}
+	if len(result.Projects) != 10 {
+		return result, fmt.Errorf("manifest must contain exactly 10 projects, got %d", len(result.Projects))
+	}
+	seen := map[string]bool{}
+	for _, item := range result.Projects {
+		if item.Name == "" || item.Repository == "" || len(item.Revision) != 40 || seen[item.Name] {
+			return result, fmt.Errorf("invalid project entry %q", item.Name)
+		}
+		seen[item.Name] = true
+		for _, operation := range []string{"format", "lint", "analyze"} {
+			if item.BudgetsMS[operation] <= 0 {
+				return result, fmt.Errorf("%s has no positive %s budget", item.Name, operation)
+			}
+		}
+	}
+	return result, nil
+}
+
+func readBaseline(path string) (baseline, error) {
+	var result baseline
+	if err := readJSON(path, &result); err != nil {
+		return result, err
+	}
+	if result.Version != schemaVersion {
+		return result, fmt.Errorf("baseline version %d is unsupported", result.Version)
+	}
+	return result, nil
+}
+
+func readJSON(path string, target any) error {
+	contents, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("read %s: %w", path, err)
+	}
+	decoder := json.NewDecoder(bytes.NewReader(contents))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(target); err != nil {
+		return fmt.Errorf("decode %s: %w", path, err)
+	}
+	return nil
+}
+
+func prepareProject(cacheRoot string, item project) (string, error) {
+	checkout, err := filepath.Abs(filepath.Join(cacheRoot, item.Name))
+	if err != nil {
+		return "", err
+	}
+	if _, statErr := os.Stat(filepath.Join(checkout, ".git")); os.IsNotExist(statErr) {
+		if err := command("", "git", "clone", "--quiet", "--filter=blob:none", "--no-checkout", item.Repository, checkout); err != nil {
+			return "", err
+		}
+	}
+	if err := command(checkout, "git", "cat-file", "-e", item.Revision+"^{commit}"); err != nil {
+		if err := command(checkout, "git", "fetch", "--quiet", "--depth", "1", "origin", item.Revision); err != nil {
+			return "", err
+		}
+	}
+	if err := command(checkout, "git", "checkout", "--quiet", "--detach", item.Revision); err != nil {
+		return "", err
+	}
+	if dirty, err := commandOutput(checkout, "git", "status", "--porcelain"); err != nil {
+		return "", err
+	} else if len(bytes.TrimSpace(dirty)) != 0 {
+		return "", fmt.Errorf("%s checkout is dirty", item.Name)
+	}
+	if _, err := os.Stat(filepath.Join(checkout, "go.mod")); err == nil {
+		if err := command(checkout, "go", "mod", "download"); err != nil {
+			return "", err
+		}
+	}
+	return checkout, nil
+}
+
+func command(directory, name string, arguments ...string) error {
+	output, err := commandOutput(directory, name, arguments...)
+	if err != nil {
+		return fmt.Errorf("%s %s: %w\n%s", name, strings.Join(arguments, " "), err, bytes.TrimSpace(output))
+	}
+	return nil
+}
+
+func commandOutput(directory, name string, arguments ...string) ([]byte, error) {
+	cmd := exec.Command(name, arguments...)
+	cmd.Dir = directory
+	cmd.Env = append(os.Environ(), "GOWORK=off")
+	return cmd.CombinedOutput()
+}
+
+func runOperation(strider, checkout, operation string, budget int) operationResult {
+	arguments := map[string][]string{
+		"format":  {"--no-config", "fmt", "--check", "."},
+		"lint":    {"--no-config", "lint", "--all-rules", "--format", "json", "."},
+		"analyze": {"--no-config", "analyze", "--format", "json", "."},
+	}[operation]
+	cmd := exec.Command(strider, arguments...)
+	cmd.Dir = checkout
+	cmd.Env = append(os.Environ(), "GOMAXPROCS=2", "GOWORK=off")
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	started := time.Now()
+	err := cmd.Run()
+	duration := time.Since(started).Milliseconds()
+	exitCode := 0
+	if err != nil {
+		var exitError *exec.ExitError
+		if errors.As(err, &exitError) {
+			exitCode = exitError.ExitCode()
+		} else {
+			return operationResult{Name: operation, DurationMS: duration, BudgetMS: budget, Error: err.Error()}
+		}
+	}
+	result := operationResult{
+		Name: operation, ExitCode: exitCode, DurationMS: duration, BudgetMS: budget,
+		WithinBudget: duration <= int64(budget),
+	}
+	if exitCode > 1 {
+		result.Error = strings.TrimSpace(stderr.String())
+		if result.Error == "" {
+			result.Error = fmt.Sprintf("Strider exited %d", exitCode)
+		}
+	}
+	result.Digest = digest(exitCode, stdout.Bytes(), stderr.Bytes())
+	if operation == "format" {
+		result.Findings = nonEmptyLines(stdout.String())
+	} else if exitCode <= 1 {
+		var diagnostics []diagnostic
+		if decodeErr := json.Unmarshal(stdout.Bytes(), &diagnostics); decodeErr != nil {
+			result.Error = "decode diagnostic JSON: " + decodeErr.Error()
+		} else {
+			result.Findings = len(diagnostics)
+			if len(diagnostics) != 0 {
+				result.ByCode = map[string]int{}
+				for _, item := range diagnostics {
+					result.ByCode[item.Code]++
+				}
+			}
+		}
+	}
+	return result
+}
+
+func digest(exitCode int, stdout, stderr []byte) string {
+	hash := sha256.New()
+	fmt.Fprintf(hash, "exit=%d\nstdout\n", exitCode)
+	_, _ = hash.Write(bytes.ReplaceAll(stdout, []byte("\r\n"), []byte("\n")))
+	_, _ = io.WriteString(hash, "\nstderr\n")
+	_, _ = hash.Write(bytes.ReplaceAll(stderr, []byte("\r\n"), []byte("\n")))
+	return hex.EncodeToString(hash.Sum(nil))
+}
+
+func nonEmptyLines(value string) int {
+	count := 0
+	for _, line := range strings.Split(value, "\n") {
+		if strings.TrimSpace(line) != "" {
+			count++
+		}
+	}
+	return count
+}
+
+func (result operationResult) signature() signature {
+	return signature{ExitCode: result.ExitCode, Digest: result.Digest, Findings: result.Findings, ByCode: result.ByCode}
+}
+
+func findExpected(data baseline, name, revision, operation string) (signature, bool) {
+	for _, item := range data.Projects {
+		if item.Name == name && item.Revision == revision {
+			result, ok := item.Operations[operation]
+			return result, ok
+		}
+	}
+	return signature{}, false
+}
+
+func hasProcessingErrors(results report) bool {
+	for _, project := range results.Projects {
+		for _, operation := range project.Operations {
+			if operation.Error != "" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func writeJSON(path string, value any) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	contents, err := json.MarshalIndent(value, "", "  ")
+	if err != nil {
+		return err
+	}
+	contents = append(contents, '\n')
+	return os.WriteFile(path, contents, 0o644)
+}
+
+func writeConsole(writer io.Writer, results report) {
+	fmt.Fprintln(writer, "Project         Operation  Findings   Time / Budget  Baseline  Performance")
+	fmt.Fprintln(writer, "--------------- ---------- -------- ---------------- --------- -----------")
+	for _, project := range results.Projects {
+		for _, operation := range project.Operations {
+			baselineState, performanceState := "PASS", "PASS"
+			if !operation.BaselineMatch {
+				baselineState = "CHANGED"
+			}
+			if !operation.WithinBudget {
+				performanceState = "SLOW"
+			}
+			if operation.Error != "" {
+				performanceState = "ERROR"
+			}
+			fmt.Fprintf(writer, "%-15s %-10s %8d %7d / %-6d %-9s %s\n", project.Name, operation.Name, operation.Findings, operation.DurationMS, operation.BudgetMS, baselineState, performanceState)
+		}
+	}
+	fmt.Fprintf(writer, "\nTotal wall time: %.2fs\n", float64(results.TotalMS)/1000)
+}
+
+func writeGitHubSummary(path string, results report) error {
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	fmt.Fprintln(file, "## Strider open-source corpus")
+	fmt.Fprintln(file)
+	fmt.Fprintln(file, "| Project | Operation | Findings | Time | Budget | Baseline | Performance |")
+	fmt.Fprintln(file, "| --- | --- | ---: | ---: | ---: | --- | --- |")
+	for _, project := range results.Projects {
+		for _, operation := range project.Operations {
+			baselineState, performanceState := "✅", "✅"
+			if !operation.BaselineMatch {
+				baselineState = "❌ changed"
+			}
+			if !operation.WithinBudget {
+				performanceState = "❌ slower"
+			}
+			if operation.Error != "" {
+				performanceState = "❌ error"
+			}
+			fmt.Fprintf(file, "| %s | %s | %d | %.2fs | %.2fs | %s | %s |\n", project.Name, operation.Name, operation.Findings, float64(operation.DurationMS)/1000, float64(operation.BudgetMS)/1000, baselineState, performanceState)
+		}
+	}
+	fmt.Fprintf(file, "\nTotal wall time: **%.2fs**\n", float64(results.TotalMS)/1000)
+	return nil
+}
+
+func writeHTML(path string, results report) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	return reportTemplate.Execute(file, results)
+}
+
+func statusClass(operation operationResult) string {
+	if operation.Error != "" || !operation.BaselineMatch || !operation.WithinBudget {
+		return "fail"
+	}
+	return "pass"
+}
+
+func sortedCodes(codes map[string]int) []string {
+	keys := make([]string, 0, len(codes))
+	for code := range codes {
+		keys = append(keys, code)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+var reportTemplate = template.Must(template.New("corpus").Funcs(template.FuncMap{
+	"seconds": func(milliseconds int64) string { return fmt.Sprintf("%.2fs", float64(milliseconds)/1000) },
+	"budget":  func(milliseconds int) string { return fmt.Sprintf("%.2fs", float64(milliseconds)/1000) },
+	"status":  statusClass,
+	"codes":   sortedCodes,
+}).Parse(`<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Strider open-source corpus</title><style>
+:root{color-scheme:light dark;--bg:#f6f7fb;--panel:#fff;--text:#172033;--muted:#64748b;--line:#dbe1ea;--pass:#15803d;--fail:#dc2626}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,sans-serif}main{width:min(1180px,calc(100% - 32px));margin:48px auto 80px}h1{font-size:clamp(2rem,5vw,3.2rem);letter-spacing:-.04em;margin:0}.lede{color:var(--muted);margin:.4rem 0 2rem}.project{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin:14px 0;overflow:hidden}.project h2{margin:0;padding:16px 18px;border-bottom:1px solid var(--line);font-size:1.15rem}.revision{color:var(--muted);font:12px ui-monospace,monospace;margin-left:8px}table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:11px 18px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em}.pass{color:var(--pass);font-weight:700}.fail{color:var(--fail);font-weight:700}details{padding:0 18px 12px}summary{cursor:pointer;color:var(--muted)}code{font:12px ui-monospace,monospace}@media(max-width:700px){main{margin-top:28px}.scroll{overflow-x:auto}th,td{padding:10px}}@media(prefers-color-scheme:dark){:root{--bg:#0d1117;--panel:#161b22;--text:#e6edf3;--muted:#8b949e;--line:#30363d;--pass:#3fb950;--fail:#f85149}}
+</style></head><body><main><h1>Strider open-source corpus</h1><p class="lede">Pinned, repeatable format, lint, and analysis results across 10 Go projects. Total wall time: {{seconds .TotalMS}}.</p>
+{{range .Projects}}<section class="project"><h2><a href="{{.Repository}}">{{.Name}}</a><span class="revision">{{.Revision}}</span></h2><div class="scroll"><table><thead><tr><th>Operation</th><th>Findings</th><th>Time</th><th>Budget</th><th>Baseline</th><th>Performance</th></tr></thead><tbody>{{range .Operations}}<tr><td>{{.Name}}</td><td>{{.Findings}}</td><td>{{seconds .DurationMS}}</td><td>{{budget .BudgetMS}}</td><td class="{{status .}}">{{if .BaselineMatch}}match{{else}}changed{{end}}</td><td class="{{status .}}">{{if .Error}}error{{else if .WithinBudget}}within budget{{else}}slower{{end}}</td></tr>{{end}}</tbody></table></div>{{range .Operations}}{{if .ByCode}}{{$operation := .}}<details><summary>{{.Name}} findings by rule</summary><p>{{range $code := codes .ByCode}}<code>{{$code}}={{index $operation.ByCode $code}}</code> {{end}}</p></details>{{end}}{{end}}</section>{{end}}
+</main></body></html>`))

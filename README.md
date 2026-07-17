@@ -152,3 +152,11 @@ issues without absorbing new findings.
 
 Vet integration and staged-file workflows remain deferred while those command
 contracts are evolving.
+
+## Open-source corpus
+
+`make corpus-check` runs formatting, all lint rules, and package-aware analysis
+against 10 popular Go projects pinned to exact revisions. It rejects processing
+errors, compares deterministic output with a reviewed baseline, and enforces
+per-project timing budgets. CI publishes the timing table in its job summary and
+uploads standalone JSON and HTML reports.

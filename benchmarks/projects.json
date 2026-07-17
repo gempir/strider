@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "projects": [
+    {
+      "name": "chi",
+      "repository": "https://github.com/go-chi/chi.git",
+      "revision": "8b258c7bb28f97a5f2a856ff7ef962578fec9215",
+      "budgets_ms": { "format": 3000, "lint": 5000, "analyze": 15000 }
+    },
+    {
+      "name": "gin",
+      "repository": "https://github.com/gin-gonic/gin.git",
+      "revision": "34dac209ffb6ef85cc78c5d217bbb7ad001d68fd",
+      "budgets_ms": { "format": 5000, "lint": 10000, "analyze": 20000 }
+    },
+    {
+      "name": "mux",
+      "repository": "https://github.com/gorilla/mux.git",
+      "revision": "db9d1d0073d27a0a2d9a8c1bc52aa0af4374d265",
+      "budgets_ms": { "format": 3000, "lint": 5000, "analyze": 15000 }
+    },
+    {
+      "name": "fsnotify",
+      "repository": "https://github.com/fsnotify/fsnotify.git",
+      "revision": "20b1e15ef3c70caeb37ea2bd184f48ef8382669e",
+      "budgets_ms": { "format": 3000, "lint": 5000, "analyze": 15000 }
+    },
+    {
+      "name": "uuid",
+      "repository": "https://github.com/google/uuid.git",
+      "revision": "2d3c2a9cc518326daf99a383f07c4d3c44317e4d",
+      "budgets_ms": { "format": 3000, "lint": 5000, "analyze": 15000 }
+    },
+    {
+      "name": "semver",
+      "repository": "https://github.com/Masterminds/semver.git",
+      "revision": "8b89c86cb53c57cfd5d07c13de12bc4d78954e99",
+      "budgets_ms": { "format": 3000, "lint": 5000, "analyze": 15000 }
+    },
+    {
+      "name": "decimal",
+      "repository": "https://github.com/shopspring/decimal.git",
+      "revision": "3090cc487febd78d6016c2859c66308328a40e99",
+      "budgets_ms": { "format": 3000, "lint": 6000, "analyze": 15000 }
+    },
+    {
+      "name": "websocket",
+      "repository": "https://github.com/gorilla/websocket.git",
+      "revision": "e064f32e3674d9d79a8fd417b5bc06fa5c6cad8f",
+      "budgets_ms": { "format": 3000, "lint": 5000, "analyze": 15000 }
+    },
+    {
+      "name": "color",
+      "repository": "https://github.com/fatih/color.git",
+      "revision": "53d4ce9d5df3891799a447e772308c76e70bad50",
+      "budgets_ms": { "format": 3000, "lint": 5000, "analyze": 15000 }
+    },
+    {
+      "name": "retryablehttp",
+      "repository": "https://github.com/hashicorp/go-retryablehttp.git",
+      "revision": "fd004584a46724fae09e2f21d7c382e15c893f42",
+      "budgets_ms": { "format": 3000, "lint": 5000, "analyze": 15000 }
+    }
+  ]
+}

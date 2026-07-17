@@ -307,7 +307,7 @@ func packageError(loaded []*packages.Package) error {
 }
 
 func sortDiagnostics(diagnostics []diagnostic.Diagnostic) {
-	sort.Slice(
+	sort.SliceStable(
 		diagnostics,
 		func(i, j int) bool {
 			left, right := diagnostics[i], diagnostics[j]
@@ -320,7 +320,13 @@ func sortDiagnostics(diagnostics []diagnostic.Diagnostic) {
 			if left.Code != right.Code {
 				return left.Code < right.Code
 			}
-			return left.Message < right.Message
+			if left.Message != right.Message {
+				return left.Message < right.Message
+			}
+			if left.End.Offset != right.End.Offset {
+				return left.End.Offset < right.End.Offset
+			}
+			return left.Severity < right.Severity
 		},
 	)
 }

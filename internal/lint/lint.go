@@ -205,23 +205,30 @@ func Run(files []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
 			errorsByFile[0].err,
 		)
 	}
-	sort.Slice(
-		allDiagnostics,
-		func(i, j int) bool {
-			left, right := allDiagnostics[i], allDiagnostics[j]
-			if left.File != right.File {
-				return left.File < right.File
-			}
-			if left.Start.Offset != right.Start.Offset {
-				return left.Start.Offset < right.Start.Offset
-			}
-			if left.Code != right.Code {
-				return left.Code < right.Code
-			}
-			return left.Message < right.Message
-		},
-	)
+	sortDiagnostics(allDiagnostics)
 	return allDiagnostics, nil
+}
+
+func sortDiagnostics(diagnostics []diagnostic.Diagnostic) {
+	sort.SliceStable(diagnostics, func(i, j int) bool {
+		left, right := diagnostics[i], diagnostics[j]
+		if left.File != right.File {
+			return left.File < right.File
+		}
+		if left.Start.Offset != right.Start.Offset {
+			return left.Start.Offset < right.Start.Offset
+		}
+		if left.Code != right.Code {
+			return left.Code < right.Code
+		}
+		if left.Message != right.Message {
+			return left.Message < right.Message
+		}
+		if left.End.Offset != right.End.Offset {
+			return left.End.Offset < right.End.Offset
+		}
+		return left.Severity < right.Severity
+	})
 }
 
 func lintFile(filename string, registry *Registry) ([]diagnostic.Diagnostic, error) {

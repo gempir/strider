@@ -9,3 +9,11 @@
   --sl-color-accent: #087a5c;
   --sl-color-accent-high: #063f31;
 }
+
+.benchmark-report {
+  width: 100%;
+  min-height: 80rem;
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 0.75rem;
+  background: var(--sl-color-bg);
+}

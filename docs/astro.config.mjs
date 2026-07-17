@@ -14,7 +14,7 @@ export default defineConfig({
         },
         {
           label: 'Guides',
-          items: ['formatter', 'linter', 'analyzers'],
+          items: ['formatter', 'linter', 'analyzers', 'benchmarks'],
         },
         {
           label: 'Reference',

@@ -31,7 +31,7 @@ func TestHTMLRendersSelfContainedSearchableReport(t *testing.T) {
 	page := output.String()
 	for _, wanted := range []string{
 		"<!doctype html>", "Lint &lt;report&gt;", "example-rule", "data-severity=\"error\"",
-		"var value = 1 &lt; 2", "a useful note", "Fix (safe):", "id=\"search\"",
+		"<mark>value</mark>", "a useful note", "Fix (safe):", "id=\"search\"",
 	} {
 		if !strings.Contains(page, wanted) {
 			t.Fatalf("HTML output missing %q:\n%s", wanted, page)
@@ -49,5 +49,34 @@ func TestHTMLRendersEmptyReport(t *testing.T) {
 	}
 	if !strings.Contains(output.String(), "No diagnostics found.") {
 		t.Fatalf("empty report missing clean state: %s", output.String())
+	}
+}
+
+func TestHTMLResolvesRelativeSourcesAgainstRoot(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(
+		filepath.Join(root, "main.go"),
+		[]byte("package p\nvar answer = 42\nfunc use() {}\n"),
+		0o600,
+	); err != nil {
+		t.Fatal(err)
+	}
+	diagnostics := []diagnostic.Diagnostic{{
+		Code: "example", Message: "highlight the answer", Severity: diagnostic.SeverityWarning,
+		File: "main.go", Start: token.Position{Line: 2, Column: 5},
+		End: token.Position{Line: 2, Column: 11},
+	}}
+	var output bytes.Buffer
+	if err := HTMLWithOptions(
+		&output,
+		HTMLOptions{Title: "Corpus", SourceRoot: root},
+		diagnostics,
+	); err != nil {
+		t.Fatal(err)
+	}
+	for _, wanted := range []string{"package p", "<mark>answer</mark>", "func use() {}"} {
+		if !strings.Contains(output.String(), wanted) {
+			t.Fatalf("HTML output missing source context %q: %s", wanted, output.String())
+		}
 	}
 }

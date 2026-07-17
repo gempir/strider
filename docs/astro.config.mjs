@@ -14,7 +14,11 @@ export default defineConfig({
         },
         {
           label: 'Guides',
-          items: ['formatter', 'linter', 'analyzers', 'benchmarks'],
+          items: ['formatter', 'linter', 'analyzers'],
+        },
+        {
+          label: 'Benchmarks',
+          items: [{ autogenerate: { directory: 'benchmarks' } }],
         },
         {
           label: 'Reference',

@@ -18,6 +18,9 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	diagnosticmodel "github.com/gempir/strider/internal/diagnostic"
+	reporter "github.com/gempir/strider/internal/report"
 )
 
 const schemaVersion = 1
@@ -66,20 +69,17 @@ type projectResult struct {
 }
 
 type operationResult struct {
-	Name          string         `json:"name"`
-	ExitCode      int            `json:"exit_code"`
-	Digest        string         `json:"digest"`
-	Findings      int            `json:"findings"`
-	ByCode        map[string]int `json:"by_code,omitempty"`
-	DurationMS    int64          `json:"duration_ms"`
-	BudgetMS      int            `json:"budget_ms"`
-	BaselineMatch bool           `json:"baseline_match"`
-	WithinBudget  bool           `json:"within_budget"`
-	Error         string         `json:"error,omitempty"`
-}
-
-type diagnostic struct {
-	Code string `json:"code"`
+	Name          string                       `json:"name"`
+	ExitCode      int                          `json:"exit_code"`
+	Digest        string                       `json:"digest"`
+	Findings      int                          `json:"findings"`
+	ByCode        map[string]int               `json:"by_code,omitempty"`
+	DurationMS    int64                        `json:"duration_ms"`
+	BudgetMS      int                          `json:"budget_ms"`
+	BaselineMatch bool                         `json:"baseline_match"`
+	WithinBudget  bool                         `json:"within_budget"`
+	Error         string                       `json:"error,omitempty"`
+	Diagnostics   []diagnosticmodel.Diagnostic `json:"-"`
 }
 
 type options struct {
@@ -156,6 +156,9 @@ func run(options options) error {
 				}
 				projectReport.Operations = append(projectReport.Operations, observed)
 				projectBaseline.Operations[operation] = observed.signature()
+			}
+			if err := writeProjectReport(options.htmlPath, projectReport, checkout); err != nil {
+				return err
 			}
 		}
 		results.Projects = append(results.Projects, projectReport)
@@ -323,10 +326,11 @@ func runOperation(strider, checkout, operation string, budget int) operationResu
 	if operation == "format" {
 		result.Findings = nonEmptyLines(stdout.String())
 	} else if exitCode <= 1 {
-		var diagnostics []diagnostic
+		var diagnostics []diagnosticmodel.Diagnostic
 		if decodeErr := json.Unmarshal(stdout.Bytes(), &diagnostics); decodeErr != nil {
 			result.Error = "decode diagnostic JSON: " + decodeErr.Error()
 		} else {
+			result.Diagnostics = diagnostics
 			result.Findings = len(diagnostics)
 			if len(diagnostics) != 0 {
 				result.ByCode = map[string]int{}
@@ -337,6 +341,32 @@ func runOperation(strider, checkout, operation string, budget int) operationResu
 		}
 	}
 	return result
+}
+
+func writeProjectReport(htmlPath string, project projectResult, sourceRoot string) error {
+	diagnostics := make([]diagnosticmodel.Diagnostic, 0)
+	for _, operation := range project.Operations {
+		if operation.Name != "lint" && operation.Name != "analyze" {
+			continue
+		}
+		for _, item := range operation.Diagnostics {
+			item.Code = operation.Name + "/" + item.Code
+			diagnostics = append(diagnostics, item)
+		}
+	}
+	path := filepath.Join(filepath.Dir(htmlPath), "projects", project.Name, "index.html")
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	return reporter.HTMLWithOptions(file, reporter.HTMLOptions{
+		Title:      "Strider corpus: " + project.Name,
+		SourceRoot: sourceRoot,
+	}, diagnostics)
 }
 
 func digest(exitCode int, stdout, stderr []byte) string {
@@ -482,5 +512,5 @@ var reportTemplate = template.Must(template.New("corpus").Funcs(template.FuncMap
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Strider open-source corpus</title><style>
 :root{color-scheme:light dark;--bg:#f6f7fb;--panel:#fff;--text:#172033;--muted:#64748b;--line:#dbe1ea;--pass:#15803d;--fail:#dc2626}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,sans-serif}main{width:min(1180px,calc(100% - 32px));margin:48px auto 80px}h1{font-size:clamp(2rem,5vw,3.2rem);letter-spacing:-.04em;margin:0}.lede{color:var(--muted);margin:.4rem 0 2rem}.project{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin:14px 0;overflow:hidden}.project h2{margin:0;padding:16px 18px;border-bottom:1px solid var(--line);font-size:1.15rem}.revision{color:var(--muted);font:12px ui-monospace,monospace;margin-left:8px}table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:11px 18px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em}.pass{color:var(--pass);font-weight:700}.fail{color:var(--fail);font-weight:700}details{padding:0 18px 12px}summary{cursor:pointer;color:var(--muted)}code{font:12px ui-monospace,monospace}@media(max-width:700px){main{margin-top:28px}.scroll{overflow-x:auto}th,td{padding:10px}}@media(prefers-color-scheme:dark){:root{--bg:#0d1117;--panel:#161b22;--text:#e6edf3;--muted:#8b949e;--line:#30363d;--pass:#3fb950;--fail:#f85149}}
 </style></head><body><main><h1>Strider open-source corpus</h1><p class="lede">Pinned, repeatable format, lint, and analysis results across 10 Go projects. Total wall time: {{seconds .TotalMS}}.</p>
-{{range .Projects}}<section class="project"><h2><a href="{{.Repository}}">{{.Name}}</a><span class="revision">{{.Revision}}</span></h2><div class="scroll"><table><thead><tr><th>Operation</th><th>Findings</th><th>Time</th><th>Budget</th><th>Baseline</th><th>Performance</th></tr></thead><tbody>{{range .Operations}}<tr><td>{{.Name}}</td><td>{{.Findings}}</td><td>{{seconds .DurationMS}}</td><td>{{budget .BudgetMS}}</td><td class="{{status .}}">{{if .BaselineMatch}}match{{else}}changed{{end}}</td><td class="{{status .}}">{{if .Error}}error{{else if .WithinBudget}}within budget{{else}}slower{{end}}</td></tr>{{end}}</tbody></table></div>{{range .Operations}}{{if .ByCode}}{{$operation := .}}<details><summary>{{.Name}} findings by rule</summary><p>{{range $code := codes .ByCode}}<code>{{$code}}={{index $operation.ByCode $code}}</code> {{end}}</p></details>{{end}}{{end}}</section>{{end}}
+{{range .Projects}}<section class="project"><h2><a href="projects/{{.Name}}/">{{.Name}}</a><span class="revision">{{.Revision}}</span> <a href="{{.Repository}}"><small>repository</small></a></h2><div class="scroll"><table><thead><tr><th>Operation</th><th>Findings</th><th>Time</th><th>Budget</th><th>Baseline</th><th>Performance</th></tr></thead><tbody>{{range .Operations}}<tr><td>{{.Name}}</td><td>{{.Findings}}</td><td>{{seconds .DurationMS}}</td><td>{{budget .BudgetMS}}</td><td class="{{status .}}">{{if .BaselineMatch}}match{{else}}changed{{end}}</td><td class="{{status .}}">{{if .Error}}error{{else if .WithinBudget}}within budget{{else}}slower{{end}}</td></tr>{{end}}</tbody></table></div>{{range .Operations}}{{if .ByCode}}{{$operation := .}}<details><summary>{{.Name}} findings by rule</summary><p>{{range $code := codes .ByCode}}<code>{{$code}}={{index $operation.ByCode $code}}</code> {{end}}</p></details>{{end}}{{end}}</section>{{end}}
 </main></body></html>`))

@@ -31,12 +31,18 @@ failures are suite errors. The baseline compares each exit code and a SHA-256
 digest of normalized stdout and stderr, plus finding totals and per-rule counts.
 
 When an intentional Strider change alters results, review `target/corpus/`, then
-accept the new behavior and refresh the docs report with:
+accept the new behavior and refresh the docs reports with:
 
 ```sh
 make corpus-update
-git diff -- benchmarks/baseline.json docs/public/benchmark-report/index.html
+git diff -- benchmarks/baseline.json docs/public/benchmark-report/
 ```
+
+This also regenerates one detailed report per project under
+`docs/public/benchmark-report/projects/`. Each report combines lint and analysis
+diagnostics with source context resolved from the pinned checkout. Keep the
+matching Starlight project page under `docs/src/content/docs/benchmarks/` when
+changing the corpus manifest.
 
 Do not accept a baseline just to make CI green. Unexpected changes often reveal
 ordering bugs, rule regressions, or formatter compatibility issues.

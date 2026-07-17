@@ -179,7 +179,7 @@ func TestLintHTMLAndExitCode(t *testing.T) {
 	if code != exitFindings {
 		t.Fatalf("exit %d, stderr %s", code, stderr.String())
 	}
-	for _, wanted := range []string{"<!doctype html>", "Strider lint report", "no-init", "func init() {}"} {
+	for _, wanted := range []string{"<!doctype html>", "Strider lint report", "no-init", "func <mark>init</mark>() {}"} {
 		if !strings.Contains(stdout.String(), wanted) {
 			t.Fatalf("HTML output missing %q: %s", wanted, stdout.String())
 		}

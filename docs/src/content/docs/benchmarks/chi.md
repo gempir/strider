@@ -1,6 +1,7 @@
 ---
 title: chi
 description: Detailed Strider findings for go-chi/chi.
+tableOfContents: false
 sidebar:
   order: 1
 ---
@@ -8,6 +9,6 @@ sidebar:
 Pinned [`go-chi/chi`](https://github.com/go-chi/chi) results. Expand any finding
 to see its file location, surrounding source lines, and highlighted offending range.
 
-<iframe class="benchmark-report" src="/benchmark-report/projects/chi/" title="chi diagnostic results" loading="lazy"></iframe>
+<iframe class="benchmark-report" src="/benchmark-report/projects/chi/index.html" title="chi diagnostic results" loading="lazy"></iframe>
 
-[Open the chi report as a full page](/benchmark-report/projects/chi/).
+[Open the chi report as a full page](/benchmark-report/projects/chi/index.html).

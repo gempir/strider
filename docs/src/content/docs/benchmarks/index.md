@@ -1,6 +1,7 @@
 ---
 title: Open-source benchmark corpus
 description: Deterministic compatibility and performance checks across popular Go projects.
+tableOfContents: false
 sidebar:
   order: 0
   label: Overview
@@ -21,12 +22,12 @@ sidebar group to browse every finding with highlighted source context.
 
 <iframe
   class="benchmark-report"
-  src="/benchmark-report/"
+  src="/benchmark-report/index.html"
   title="Latest reviewed Strider open-source corpus results"
   loading="lazy"
 ></iframe>
 
-[Open the overview report as a full page](/benchmark-report/).
+[Open the overview report as a full page](/benchmark-report/index.html).
 
 ## Reproduce locally
 

@@ -3,6 +3,3 @@ version = 1
 [formatter]
 print-width = 180
 max-empty-lines = 1
-
-[checks.rules.format]
-severity = "note"

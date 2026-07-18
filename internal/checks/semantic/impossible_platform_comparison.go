@@ -12,15 +12,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type impossiblePlatformComparisonRule struct{}
+type impossiblePlatformComparisonRule struct {}
 
 func (impossiblePlatformComparisonRule) Meta() Meta {
 	return Meta{
-		Code:            "impossible-platform-comparison",
-		Summary:         "detect GOOS and GOARCH comparisons excluded by build constraints",
-		Explanation:     "A file's build constraints limit the operating systems and architectures on which its code can run. Comparing runtime.GOOS or runtime.GOARCH with an excluded target has a fixed result.",
-		GoodExample:     `//go:build linux\nif runtime.GOOS == "linux" { use() }`,
-		BadExample:      `//go:build linux\nif runtime.GOOS == "windows" { unreachable() }`,
+		Code: "impossible-platform-comparison",
+		Summary: "detect GOOS and GOARCH comparisons excluded by build constraints",
+		Explanation: "A file's build constraints limit the operating systems and architectures on which its code can run. Comparing runtime.GOOS or runtime.GOARCH with an excluded target has a fixed result.",
+		GoodExample: `//go:build linux\nif runtime.GOOS == "linux" { use() }`,
+		BadExample: `//go:build linux\nif runtime.GOOS == "windows" { unreachable() }`,
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -35,32 +35,25 @@ func (impossiblePlatformComparisonRule) Run(pass *Pass) {
 			file,
 			func(node ast.Node) bool {
 				binary,
-					ok := node.(*ast.BinaryExpr)
+				ok := node.(*ast.BinaryExpr)
 				if !ok || binary.Op != token.EQL && binary.Op != token.NEQ {
 					return true
 				}
 				kind,
-					target,
-					ok := platformComparison(pass, binary.X, binary.Y)
+				target,
+				ok := platformComparison(pass, binary.X, binary.Y)
 				if !ok {
 					kind,
-						target,
-						ok = platformComparison(pass, binary.Y, binary.X)
+					target,
+					ok = platformComparison(pass, binary.Y, binary.X)
 				}
 				if !ok || !knownPlatformTarget(kind, target) {
 					return true
 				}
 				possible,
-					checked := platformConstraintPossible(buildConstraint, kind, target)
+				checked := platformConstraintPossible(buildConstraint, kind, target)
 				if checked && !possible {
-					pass.Report(
-						binary,
-						fmt.Sprintf(
-							"runtime.%s can never equal %q under this file's build constraints",
-							kind,
-							target,
-						),
-					)
+					pass.Report(binary, fmt.Sprintf("runtime.%s can never equal %q under this file's build constraints", kind, target))
 				}
 				return true
 			},
@@ -125,10 +118,10 @@ func platformConstraintPossible(expression constraint.Expr, kind, target string)
 	possible := expression.Eval(
 		func(tag string) bool {
 			matched,
-				special := evaluateSpecial(tag)
+			special := evaluateSpecial(tag)
 			if !special {
 				if _,
-					exists := unknown[tag]; !exists {
+				exists := unknown[tag]; !exists {
 					unknown[tag] = len(unknown)
 				}
 			}
@@ -141,17 +134,14 @@ func platformConstraintPossible(expression constraint.Expr, kind, target string)
 	if len(unknown) > 10 {
 		return false, false
 	}
-	for bits := 0; bits < 1<<len(unknown); bits++ {
-		if expression.Eval(
-			func(tag string) bool {
-				matched,
-					special := evaluateSpecial(tag)
-				if special {
-					return matched
-				}
-				return bits&(1<<unknown[tag]) != 0
-			},
-		) {
+	for bits := 0; bits < 1 << len(unknown); bits++ {
+		if expression.Eval(func(tag string) bool {
+			matched, special := evaluateSpecial(tag)
+			if special {
+				return matched
+			}
+			return bits & (1 << unknown[tag]) != 0
+		}) {
 			return true, true
 		}
 	}
@@ -190,50 +180,50 @@ func knownPlatformTarget(kind, target string) bool {
 }
 
 var knownOperatingSystems = map[string]bool{
-	"aix":       true,
-	"android":   true,
-	"darwin":    true,
+	"aix": true,
+	"android": true,
+	"darwin": true,
 	"dragonfly": true,
-	"freebsd":   true,
-	"illumos":   true,
-	"ios":       true,
-	"js":        true,
-	"linux":     true,
-	"netbsd":    true,
-	"openbsd":   true,
-	"plan9":     true,
-	"solaris":   true,
-	"wasip1":    true,
-	"windows":   true,
+	"freebsd": true,
+	"illumos": true,
+	"ios": true,
+	"js": true,
+	"linux": true,
+	"netbsd": true,
+	"openbsd": true,
+	"plan9": true,
+	"solaris": true,
+	"wasip1": true,
+	"windows": true,
 }
 
 var unixOperatingSystems = map[string]bool{
-	"aix":       true,
-	"android":   true,
-	"darwin":    true,
+	"aix": true,
+	"android": true,
+	"darwin": true,
 	"dragonfly": true,
-	"freebsd":   true,
-	"illumos":   true,
-	"ios":       true,
-	"linux":     true,
-	"netbsd":    true,
-	"openbsd":   true,
-	"solaris":   true,
+	"freebsd": true,
+	"illumos": true,
+	"ios": true,
+	"linux": true,
+	"netbsd": true,
+	"openbsd": true,
+	"solaris": true,
 }
 
 var knownArchitectures = map[string]bool{
-	"386":      true,
-	"amd64":    true,
-	"arm":      true,
-	"arm64":    true,
-	"loong64":  true,
-	"mips":     true,
-	"mipsle":   true,
-	"mips64":   true,
+	"386": true,
+	"amd64": true,
+	"arm": true,
+	"arm64": true,
+	"loong64": true,
+	"mips": true,
+	"mipsle": true,
+	"mips64": true,
 	"mips64le": true,
-	"ppc64":    true,
-	"ppc64le":  true,
-	"riscv64":  true,
-	"s390x":    true,
-	"wasm":     true,
+	"ppc64": true,
+	"ppc64le": true,
+	"riscv64": true,
+	"s390x": true,
+	"wasm": true,
 }

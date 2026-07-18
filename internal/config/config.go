@@ -51,20 +51,11 @@ type RuleConfig struct {
 }
 
 func Defaults() Config {
-	return Config{
-		Version: 1,
-		Color: string(ui.ColorAuto),
-		Formatter: FormatterConfig{PrintWidth: 180, IndentWidth: 4, MaxEmptyLines: 1, EndOfLine: "lf"},
-		Checks: defaultToolConfig(),
-	}
+	return Config{Version: 1, Color: string(ui.ColorAuto), Formatter: FormatterConfig{PrintWidth: 180, IndentWidth: 4, MaxEmptyLines: 1, EndOfLine: "lf"}, Checks: defaultToolConfig()}
 }
 
 func defaultToolConfig() ToolConfig {
-	return ToolConfig{
-		BaselineVariant: "loose",
-		MinimumSeverity: string(diagnostic.SeverityWarning),
-		Rules: make(map[string]RuleConfig),
-	}
+	return ToolConfig{BaselineVariant: "loose", MinimumSeverity: string(diagnostic.SeverityWarning), Rules: make(map[string]RuleConfig)}
 }
 
 // Load reads an explicit path or discovers strider.toml from the working
@@ -102,11 +93,7 @@ func Load(explicitPath string, disabled bool) (Config, error) {
 			keys = append(keys, key.String())
 		}
 		sort.Strings(keys)
-		return Config{}, fmt.Errorf(
-			"%s: unknown configuration key(s): %s",
-			absolute,
-			strings.Join(keys, ", "),
-		)
+		return Config{}, fmt.Errorf("%s: unknown configuration key(s): %s", absolute, strings.Join(keys, ", "))
 	}
 	configuration.Path = absolute
 	configuration.Root = filepath.Dir(absolute)
@@ -186,10 +173,7 @@ func (configuration Config) Resolve(path string) string {
 // appended.
 func (configuration Config) EffectiveCheckRule(code string) RuleConfig {
 	rule := cloneRuleConfig(configuration.Checks.Rules[code])
-	rule.Excludes = append(
-		append([]string(nil), configuration.Checks.Excludes...),
-		rule.Excludes...,
-	)
+	rule.Excludes = append(append([]string(nil), configuration.Checks.Excludes...), rule.Excludes...)
 	return rule
 }
 

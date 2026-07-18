@@ -11,15 +11,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type interfaceReturnRule struct{}
+type interfaceReturnRule struct {}
 
 func (interfaceReturnRule) Meta() Meta {
 	return Meta{
-		Code:            "interface-return",
-		Summary:         "detect constructors that hide a single concrete result",
-		Explanation:     "Callers can define the small interface they need when constructors return concrete types. This conservative check only reports exported New-style constructors whose non-nil returns consistently reveal one local concrete implementation of a non-empty local interface; error, any, standard-library interfaces, and polymorphic results are ignored.",
-		GoodExample:     "func NewStore() *memoryStore { return &memoryStore{} }",
-		BadExample:      "func NewStore() Store { return &memoryStore{} }",
+		Code: "interface-return",
+		Summary: "detect constructors that hide a single concrete result",
+		Explanation: "Callers can define the small interface they need when constructors return concrete types. This conservative check only reports exported New-style constructors whose non-nil returns consistently reveal one local concrete implementation of a non-empty local interface; error, any, standard-library interfaces, and polymorphic results are ignored.",
+		GoodExample: "func NewStore() *memoryStore { return &memoryStore{} }",
+		BadExample: "func NewStore() Store { return &memoryStore{} }",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -28,9 +28,7 @@ func (interfaceReturnRule) Run(pass *Pass) {
 	for _, file := range pass.Files {
 		for _, declaration := range file.Decls {
 			function, ok := declaration.(*ast.FuncDecl)
-			if !ok || function.Body == nil || function.Recv != nil || !constructorLikeName(
-				function.Name.Name,
-			) {
+			if !ok || function.Body == nil || function.Recv != nil || !constructorLikeName(function.Name.Name) {
 				continue
 			}
 			object, ok := pass.TypesInfo.Defs[function.Name].(*types.Func)
@@ -46,13 +44,7 @@ func (interfaceReturnRule) Run(pass *Pass) {
 				if !localNontrivialInterface(pass, resultType) {
 					continue
 				}
-				concrete, ok := consistentConcreteReturns(
-					pass,
-					function.Body,
-					signature,
-					resultIndex,
-					resultType,
-				)
+				concrete, ok := consistentConcreteReturns(pass, function.Body, signature, resultIndex, resultType)
 				if !ok {
 					continue
 				}
@@ -95,13 +87,7 @@ func localNontrivialInterface(pass *Pass, valueType types.Type) bool {
 	return interfaceType.NumMethods() != 0
 }
 
-func consistentConcreteReturns(
-	pass *Pass,
-	body *ast.BlockStmt,
-	signature *types.Signature,
-	resultIndex int,
-	interfaceType types.Type,
-) (types.Type, bool) {
+func consistentConcreteReturns(pass *Pass, body *ast.BlockStmt, signature *types.Signature, resultIndex int, interfaceType types.Type) (types.Type, bool) {
 	var concrete types.Type
 	valid := true
 	found := false
@@ -112,11 +98,11 @@ func consistentConcreteReturns(
 				return false
 			}
 			if _,
-				nested := node.(*ast.FuncLit); nested {
+			nested := node.(*ast.FuncLit); nested {
 				return false
 			}
 			statement,
-				ok := node.(*ast.ReturnStmt)
+			ok := node.(*ast.ReturnStmt)
 			if !ok {
 				return true
 			}
@@ -124,19 +110,12 @@ func consistentConcreteReturns(
 				valid = false
 				return false
 			}
-			expression := unwrapInterfaceResultConversion(
-				pass,
-				statement.Results[resultIndex],
-				interfaceType,
-			)
+			expression := unwrapInterfaceResultConversion(pass, statement.Results[resultIndex], interfaceType)
 			if isNilExpression(pass, expression) {
 				return true
 			}
 			returnedType := pass.TypesInfo.TypeOf(expression)
-			if !localConcreteType(pass, returnedType) || !types.AssignableTo(
-				returnedType,
-				interfaceType,
-			) {
+			if !localConcreteType(pass, returnedType) || !types.AssignableTo(returnedType, interfaceType) {
 				valid = false
 				return false
 			}
@@ -161,10 +140,7 @@ func unwrapInterfaceResultConversion(pass *Pass, expression ast.Expr, resultType
 		case *ast.ParenExpr:
 			expression = current.X
 		case *ast.CallExpr:
-			if len(current.Args) != 1 || !pass.TypesInfo.Types[current.Fun].IsType() || !types.Identical(
-				pass.TypesInfo.TypeOf(current),
-				resultType,
-			) {
+			if len(current.Args) != 1 || !pass.TypesInfo.Types[current.Fun].IsType() || !types.Identical(pass.TypesInfo.TypeOf(current), resultType) {
 				return expression
 			}
 			expression = current.Args[0]

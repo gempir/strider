@@ -97,10 +97,7 @@ func reportDeprecatedObject(pass *Pass, node ast.Node, identifier *ast.Ident) {
 	if message == "" || suppressStandardLibraryDeprecation(pass, object.Pkg().Path()) {
 		return
 	}
-	pass.Report(
-		node,
-		fmt.Sprintf("%s.%s is deprecated: %s", object.Pkg().Path(), object.Name(), message),
-	)
+	pass.Report(node, fmt.Sprintf("%s.%s is deprecated: %s", object.Pkg().Path(), object.Name(), message))
 }
 
 func deprecatedObjectMessage(messages map[types.Object]string, object types.Object) string {
@@ -166,10 +163,7 @@ type deprecationIndex struct {
 	physicalFiles map[*types.Package][]string
 }
 
-func collectDeprecations(roots []*packages.Package) (
-	map[types.Object]string,
-	map[*types.Package]string,
-) {
+func collectDeprecations(roots []*packages.Package) (map[types.Object]string, map[*types.Package]string) {
 	index := deprecationIndex{
 		objects: make(map[types.Object]string),
 		packages: make(map[*types.Package]string),
@@ -194,10 +188,7 @@ func collectDeprecations(roots []*packages.Package) (
 			}
 			for _,
 			filename := range files {
-				index.physicalFiles[pkg.Types] = append(
-					index.physicalFiles[pkg.Types],
-					expandGoRoot(filename),
-				)
+				index.physicalFiles[pkg.Types] = append(index.physicalFiles[pkg.Types], expandGoRoot(filename))
 			}
 		},
 	)
@@ -265,10 +256,7 @@ func (index *deprecationIndex) isPhysicalFile(pkg *types.Package, filename strin
 	return false
 }
 
-func (index *deprecationIndex) physicalDeclarationMessage(
-	pkg *types.Package,
-	key deprecationSourceKey,
-) string {
+func (index *deprecationIndex) physicalDeclarationMessage(pkg *types.Package, key deprecationSourceKey) string {
 	if pkg == nil {
 		return ""
 	}
@@ -370,12 +358,7 @@ func (index *deprecationIndex) declarationFile(filename string) parsedDeprecatio
 	}
 	parsed := parsedDeprecationFile{declarations: make(map[deprecationSourceKey]string)}
 	fileSet := token.NewFileSet()
-	file, err := parser.ParseFile(
-		fileSet,
-		filename,
-		nil,
-		parser.ParseComments | parser.SkipObjectResolution,
-	)
+	file, err := parser.ParseFile(fileSet, filename, nil, parser.ParseComments | parser.SkipObjectResolution)
 	if err != nil {
 		index.declarationFiles[filename] = parsed
 		return parsed
@@ -388,21 +371,11 @@ func (index *deprecationIndex) declarationFile(filename string) parsedDeprecatio
 	return parsed
 }
 
-func collectFileDeprecations(
-	fileSet *token.FileSet,
-	file *ast.File,
-	declarations map[deprecationSourceKey]string,
-) {
+func collectFileDeprecations(fileSet *token.FileSet, file *ast.File, declarations map[deprecationSourceKey]string) {
 	for _, declaration := range file.Decls {
 		switch declaration := declaration.(type) {
 		case *ast.FuncDecl:
-			addDeprecatedDeclaration(
-				fileSet,
-				declarations,
-				declaration.Name,
-				astReceiverTypeName(declaration.Recv),
-				deprecationMessage(declaration.Doc),
-			)
+			addDeprecatedDeclaration(fileSet, declarations, declaration.Name, astReceiverTypeName(declaration.Recv), deprecationMessage(declaration.Doc))
 		case *ast.GenDecl:
 			for _, rawSpec := range declaration.Specs {
 				switch spec := rawSpec.(type) {
@@ -421,12 +394,7 @@ func collectFileDeprecations(
 	}
 }
 
-func collectFieldDeprecations(
-	fileSet *token.FileSet,
-	expression ast.Expr,
-	owner string,
-	declarations map[deprecationSourceKey]string,
-) {
+func collectFieldDeprecations(fileSet *token.FileSet, expression ast.Expr, owner string, declarations map[deprecationSourceKey]string) {
 	var fields *ast.FieldList
 	switch expression := expression.(type) {
 	case *ast.StructType:
@@ -445,19 +413,9 @@ func collectFieldDeprecations(
 	}
 }
 
-func addDeprecatedDeclaration(
-	fileSet *token.FileSet,
-	declarations map[deprecationSourceKey]string,
-	name *ast.Ident,
-	owner string,
-	message string,
-) {
+func addDeprecatedDeclaration(fileSet *token.FileSet, declarations map[deprecationSourceKey]string, name *ast.Ident, owner string, message string) {
 	if name != nil && message != "" {
-		declarations[deprecationSourceKey{
-			line: fileSet.Position(name.Pos()).Line,
-			name: name.Name,
-			owner: owner,
-		}] = message
+		declarations[deprecationSourceKey{line: fileSet.Position(name.Pos()).Line, name: name.Name, owner: owner}] = message
 	}
 }
 
@@ -523,12 +481,7 @@ func (index *deprecationIndex) packageClauseMessage(filename string) string {
 		return index.packageClauseFiles[filename]
 	}
 	fileSet := token.NewFileSet()
-	file, err := parser.ParseFile(
-		fileSet,
-		filename,
-		nil,
-		parser.PackageClauseOnly | parser.ParseComments | parser.SkipObjectResolution,
-	)
+	file, err := parser.ParseFile(fileSet, filename, nil, parser.PackageClauseOnly | parser.ParseComments | parser.SkipObjectResolution)
 	message := ""
 	if err == nil && file != nil {
 		message = deprecationMessage(file.Doc)
@@ -544,10 +497,7 @@ func expandGoRoot(filename string) string {
 		return runtime.GOROOT()
 	}
 	if strings.HasPrefix(filename, marker + "/") || strings.HasPrefix(filename, marker + "\\") {
-		return filepath.Join(
-			runtime.GOROOT(),
-			filepath.FromSlash(strings.TrimLeft(filename[len(marker):], "/\\")),
-		)
+		return filepath.Join(runtime.GOROOT(), filepath.FromSlash(strings.TrimLeft(filename[len(marker):], "/\\")))
 	}
 	return filename
 }

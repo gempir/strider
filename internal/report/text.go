@@ -25,12 +25,7 @@ type TextOptions struct {
 }
 
 // TextWithOptions writes diagnostics according to options.
-func TextWithOptions(
-	writer io.Writer,
-	diagnostics []diagnostic.Diagnostic,
-	colorMode ui.ColorMode,
-	options TextOptions,
-) error {
+func TextWithOptions(writer io.Writer, diagnostics []diagnostic.Diagnostic, colorMode ui.ColorMode, options TextOptions) error {
 	palette := ui.NewPalette(writer, colorMode)
 	sources := make(map[string][]string)
 	missing := make(map[string]bool)
@@ -70,17 +65,12 @@ func TextWithOptions(
 }
 
 type checkCount struct {
-	code     string
-	count    int
+	code string
+	count int
 	severity diagnostic.Severity
 }
 
-func writeCheckCounts(
-	writer io.Writer,
-	diagnostics []diagnostic.Diagnostic,
-	palette ui.Palette,
-	leadingBlank bool,
-) error {
+func writeCheckCounts(writer io.Writer, diagnostics []diagnostic.Diagnostic, palette ui.Palette, leadingBlank bool) error {
 	byCode := make(map[string]checkCount)
 	codeWidth := 0
 	for _, item := range diagnostics {
@@ -114,27 +104,16 @@ func writeCheckCounts(
 	for _, entry := range entries {
 		code := fmt.Sprintf("%-*s", codeWidth, entry.code)
 		count := styledSeverity(entry.severity, strconv.Itoa(entry.count), palette)
-		if _, err := fmt.Fprintf(
-			writer,
-			"%s  %s\n",
-			styledSeverity(entry.severity, code, palette),
-			count,
-		); err != nil {
+		if _, err := fmt.Fprintf(writer, "%s  %s\n", styledSeverity(entry.severity, code, palette), count); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func writeDiagnostic(
-	writer io.Writer,
-	item diagnostic.Diagnostic,
-	palette ui.Palette,
-	sources map[string][]string,
-	missing map[string]bool,
-) error {
+func writeDiagnostic(writer io.Writer, item diagnostic.Diagnostic, palette ui.Palette, sources map[string][]string, missing map[string]bool) error {
 	severity := styledSeverity(item.Severity, string(item.Severity), palette)
-	code := styledSeverity(item.Severity, "["+item.Code+"]", palette)
+	code := styledSeverity(item.Severity, "[" + item.Code + "]", palette)
 	if _, err := fmt.Fprintf(writer, "%s%s: %s\n", severity, code, palette.Bold(item.Message)); err != nil {
 		return err
 	}
@@ -145,7 +124,7 @@ func writeDiagnostic(
 
 	lines := sourceLines(item.File, sources, missing)
 	if item.Start.Line > 0 && item.Start.Line <= len(lines) {
-		line := lines[item.Start.Line-1]
+		line := lines[item.Start.Line - 1]
 		width := len(strconv.Itoa(item.Start.Line))
 		gutter := palette.Accent("│")
 		if _, err := fmt.Fprintf(writer, "%*s %s\n", width, "", gutter); err != nil {
@@ -157,27 +136,13 @@ func writeDiagnostic(
 		column := max(item.Start.Column, 1)
 		markerWidth := markerWidth(item, line, column)
 		marker := styledSeverity(item.Severity, strings.Repeat("^", markerWidth), palette)
-		if _, err := fmt.Fprintf(
-			writer,
-			"%*s %s %s%s\n",
-			width,
-			"",
-			gutter,
-			markerIndent(line, column),
-			marker,
-		); err != nil {
+		if _, err := fmt.Fprintf(writer, "%*s %s %s%s\n", width, "", gutter, markerIndent(line, column), marker); err != nil {
 			return err
 		}
 	}
 
 	for _, note := range item.Notes {
-		if _, err := fmt.Fprintf(
-			writer,
-			"  %s %s: %s\n",
-			palette.Accent("="),
-			palette.Note("note"),
-			note.Message,
-		); err != nil {
+		if _, err := fmt.Fprintf(writer, "  %s %s: %s\n", palette.Accent("="), palette.Note("note"), note.Message); err != nil {
 			return err
 		}
 	}
@@ -188,13 +153,7 @@ func writeDiagnostic(
 			label = string(fix.Safety) + " fix"
 			style = palette.Warning
 		}
-		if _, err := fmt.Fprintf(
-			writer,
-			"  %s %s: %s\n",
-			palette.Accent("="),
-			style(label),
-			fix.Message,
-		); err != nil {
+		if _, err := fmt.Fprintf(writer, "  %s %s: %s\n", palette.Accent("="), style(label), fix.Message); err != nil {
 			return err
 		}
 	}
@@ -202,7 +161,7 @@ func writeDiagnostic(
 }
 
 func markerIndent(line string, column int) string {
-	prefixLength := min(max(column-1, 0), len(line))
+	prefixLength := min(max(column - 1, 0), len(line))
 	var indent strings.Builder
 	for _, character := range line[:prefixLength] {
 		if character == '\t' {
@@ -232,10 +191,10 @@ func sourceLines(filename string, cache map[string][]string, missing map[string]
 }
 
 func markerWidth(item diagnostic.Diagnostic, line string, column int) int {
-	start := min(max(column-1, 0), len(line))
+	start := min(max(column - 1, 0), len(line))
 	remaining := max(utf8.RuneCountInString(line[start:]), 1)
 	if item.End.Line == item.Start.Line && item.End.Column > item.Start.Column {
-		end := min(max(item.End.Column-1, start), len(line))
+		end := min(max(item.End.Column - 1, start), len(line))
 		return min(max(utf8.RuneCountInString(line[start:end]), 1), remaining)
 	}
 	return remaining
@@ -252,11 +211,7 @@ func styledSeverity(severity diagnostic.Severity, text string, palette ui.Palett
 	}
 }
 
-func summary(
-	diagnostics []diagnostic.Diagnostic,
-	counts map[diagnostic.Severity]int,
-	palette ui.Palette,
-) string {
+func summary(diagnostics []diagnostic.Diagnostic, counts map[diagnostic.Severity]int, palette ui.Palette) string {
 	label := "issues"
 	if len(diagnostics) == 1 {
 		label = "issue"
@@ -266,17 +221,13 @@ func summary(
 		return palette.Success(prefix)
 	}
 	parts := make([]string, 0, 3)
-	for _, severity := range []diagnostic.Severity{
-		diagnostic.SeverityError,
-		diagnostic.SeverityWarning,
-		diagnostic.SeverityNote,
-	} {
+	for _, severity := range[]diagnostic.Severity{diagnostic.SeverityError, diagnostic.SeverityWarning, diagnostic.SeverityNote} {
 		if count := counts[severity]; count != 0 {
 			part := fmt.Sprintf("%d %s", count, plural(string(severity), count))
 			parts = append(parts, styledSeverity(severity, part, palette))
 		}
 	}
-	return palette.White(prefix+": ") + strings.Join(parts, palette.White(", "))
+	return palette.White(prefix + ": ") + strings.Join(parts, palette.White(", "))
 }
 
 func plural(word string, count int) string {

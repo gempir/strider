@@ -10,38 +10,34 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type slicePreallocationRule struct{}
+type slicePreallocationRule struct {}
 
 func (slicePreallocationRule) Meta() Meta {
 	return Meta{
-		Code:            "slice-preallocation",
-		Summary:         "detect slices that can use range-source capacity",
-		Explanation:     "A slice grown once per iteration of a range over a slice, array, map, or string has a useful capacity bound. Initializing it as make([]T, 0, len(source)) avoids repeated growth and copying while preserving its zero length.",
-		GoodExample:     "result := make([]Item, 0, len(source))\nfor _, item := range source { result = append(result, convert(item)) }",
-		BadExample:      "var result []Item\nfor _, item := range source { result = append(result, convert(item)) }",
+		Code: "slice-preallocation",
+		Summary: "detect slices that can use range-source capacity",
+		Explanation: "A slice grown once per iteration of a range over a slice, array, map, or string has a useful capacity bound. Initializing it as make([]T, 0, len(source)) avoids repeated growth and copying while preserving its zero length.",
+		GoodExample: "result := make([]Item, 0, len(source))\nfor _, item := range source { result = append(result, convert(item)) }",
+		BadExample: "var result []Item\nfor _, item := range source { result = append(result, convert(item)) }",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
 
 type emptySliceCandidate struct {
 	identifier *ast.Ident
-	variable   *types.Var
+	variable *types.Var
 }
 
 func (slicePreallocationRule) Run(pass *Pass) {
 	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				block,
-					ok := node.(*ast.BlockStmt)
-				if !ok {
-					return true
-				}
-				checkPreallocationBlock(pass, block)
+		ast.Inspect(file, func(node ast.Node) bool {
+			block, ok := node.(*ast.BlockStmt)
+			if !ok {
 				return true
-			},
-		)
+			}
+			checkPreallocationBlock(pass, block)
+			return true
+		})
 	}
 }
 
@@ -64,17 +60,10 @@ func checkPreallocationBlock(pass *Pass, block *ast.BlockStmt) {
 		if loop, ok := statement.(*ast.RangeStmt); ok {
 			if rangeHasUsefulLength(pass.TypesInfo.TypeOf(loop.X)) {
 				for variable, candidate := range candidates {
-					if !rangeSourceIsVariable(pass, loop.X, variable) && rangeAppendsExactlyOnce(
-						pass,
-						loop,
-						variable,
-					) {
+					if !rangeSourceIsVariable(pass, loop.X, variable) && rangeAppendsExactlyOnce(pass, loop, variable) {
 						pass.Report(
 							candidate.identifier,
-							fmt.Sprintf(
-								"preallocate %s with capacity len(range source) before appending once per iteration",
-								candidate.identifier.Name,
-							),
+							fmt.Sprintf("preallocate %s with capacity len(range source) before appending once per iteration", candidate.identifier.Name),
 						)
 						delete(candidates, variable)
 					}
@@ -108,11 +97,10 @@ func declaredEmptySlices(pass *Pass, statement ast.Stmt) []emptySliceCandidate {
 				if !ok || !isSliceType(variable.Type()) {
 					continue
 				}
-				if len(value.Values) == 0 || (index < len(value.Values) && emptySliceExpression(
-					pass,
-					value.Values[index],
-				)) {
-					result = append(result, emptySliceCandidate{identifier: name, variable: variable})
+				if len(value.Values) == 0 || (index < len(value.Values) && emptySliceExpression(pass, value.Values[index])) {
+					result = append(result, emptySliceCandidate{identifier:
+					name, variable:
+					variable})
 				}
 			}
 		}
@@ -130,7 +118,9 @@ func declaredEmptySlices(pass *Pass, statement ast.Stmt) []emptySliceCandidate {
 			}
 			variable, ok := pass.TypesInfo.Defs[name].(*types.Var)
 			if ok && isSliceType(variable.Type()) {
-				result = append(result, emptySliceCandidate{identifier: name, variable: variable})
+				result = append(result, emptySliceCandidate{identifier:
+				name, variable:
+				variable})
 			}
 		}
 	}
@@ -142,9 +132,7 @@ func emptySliceExpression(pass *Pass, expression ast.Expr) bool {
 	case *ast.CompositeLit:
 		return len(expression.Elts) == 0 && isSliceType(pass.TypesInfo.TypeOf(expression))
 	case *ast.CallExpr:
-		if len(expression.Args) != 2 || !isBuiltin(pass.TypesInfo, expression.Fun, "make") || !isSliceType(
-			pass.TypesInfo.TypeOf(expression),
-		) {
+		if len(expression.Args) != 2 || !isBuiltin(pass.TypesInfo, expression.Fun, "make") || !isSliceType(pass.TypesInfo.TypeOf(expression)) {
 			return false
 		}
 		length := pass.TypesInfo.Types[expression.Args[1]].Value
@@ -174,7 +162,7 @@ func rangeHasUsefulLength(valueType types.Type) bool {
 		_, ok := types.Unalias(underlying.Elem()).Underlying().(*types.Array)
 		return ok
 	case *types.Basic:
-		return underlying.Info()&types.IsString != 0
+		return underlying.Info() & types.IsString != 0
 	default:
 		return false
 	}
@@ -197,7 +185,7 @@ func rangeAppendsExactlyOnce(pass *Pass, loop *ast.RangeStmt, variable *types.Va
 		loop.Body,
 		func(node ast.Node) bool {
 			if _,
-				nested := node.(*ast.FuncLit); nested {
+			nested := node.(*ast.FuncLit); nested {
 				return false
 			}
 			switch node := node.(type) {
@@ -206,16 +194,17 @@ func rangeAppendsExactlyOnce(pass *Pass, loop *ast.RangeStmt, variable *types.Va
 					all++
 				}
 			case *ast.AssignStmt:
-				for _, left := range node.Lhs {
+				for _,
+				left := range node.Lhs {
 					identifier,
-						ok := left.(*ast.Ident)
+					ok := left.(*ast.Ident)
 					if ok && pass.TypesInfo.ObjectOf(identifier) == variable {
 						assignments++
 					}
 				}
 			case *ast.UnaryExpr:
 				identifier,
-					ok := node.X.(*ast.Ident)
+				ok := node.X.(*ast.Ident)
 				if node.Op == token.AND && ok && pass.TypesInfo.ObjectOf(identifier) == variable {
 					addressTaken = true
 				}
@@ -282,9 +271,10 @@ func statementMutatesSlice(pass *Pass, statement ast.Stmt, variable *types.Var) 
 			}
 			switch node := node.(type) {
 			case *ast.AssignStmt:
-				for _, left := range node.Lhs {
+				for _,
+				left := range node.Lhs {
 					identifier,
-						ok := left.(*ast.Ident)
+					ok := left.(*ast.Ident)
 					if ok && pass.TypesInfo.ObjectOf(identifier) == variable {
 						mutated = true
 						return false
@@ -297,7 +287,7 @@ func statementMutatesSlice(pass *Pass, statement ast.Stmt, variable *types.Var) 
 				}
 			case *ast.UnaryExpr:
 				identifier,
-					ok := node.X.(*ast.Ident)
+				ok := node.X.(*ast.Ident)
 				if node.Op == token.AND && ok && pass.TypesInfo.ObjectOf(identifier) == variable {
 					mutated = true
 					return false

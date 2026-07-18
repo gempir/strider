@@ -8,15 +8,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type unsafeFormattedURLHostPortRule struct{}
+type unsafeFormattedURLHostPortRule struct {}
 
 func (unsafeFormattedURLHostPortRule) Meta() Meta {
 	return Meta{
-		Code:            "unsafe-formatted-url-host-port",
-		Summary:         "detect URL and network-address construction that breaks IPv6",
-		Explanation:     "Formatting a URL or a network address as `host:port` does not add the brackets required around IPv6 literals. Build the authority with net.JoinHostPort so IPv4, hostnames, and IPv6 addresses are all encoded correctly.",
-		GoodExample:     `address := net.JoinHostPort(host, strconv.Itoa(port)); url := "http://" + address`,
-		BadExample:      `url := fmt.Sprintf("http://%s:%d/path", host, port)`,
+		Code: "unsafe-formatted-url-host-port",
+		Summary: "detect URL and network-address construction that breaks IPv6",
+		Explanation: "Formatting a URL or a network address as `host:port` does not add the brackets required around IPv6 literals. Build the authority with net.JoinHostPort so IPv4, hostnames, and IPv6 addresses are all encoded correctly.",
+		GoodExample: `address := net.JoinHostPort(host, strconv.Itoa(port)); url := "http://" + address`,
+		BadExample: `url := fmt.Sprintf("http://%s:%d/path", host, port)`,
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -27,7 +27,7 @@ func (unsafeFormattedURLHostPortRule) Run(pass *Pass) {
 			file,
 			func(node ast.Node) bool {
 				call,
-					ok := node.(*ast.CallExpr)
+				ok := node.(*ast.CallExpr)
 				if !ok {
 					return true
 				}
@@ -39,10 +39,7 @@ func (unsafeFormattedURLHostPortRule) Run(pass *Pass) {
 				if formatted == nil {
 					return true
 				}
-				pass.Report(
-					formatted.Args[0],
-					"formatted host and port may be invalid for IPv6; build the address with net.JoinHostPort",
-				)
+				pass.Report(formatted.Args[0], "formatted host and port may be invalid for IPv6; build the address with net.JoinHostPort")
 				return true
 			},
 		)
@@ -50,18 +47,11 @@ func (unsafeFormattedURLHostPortRule) Run(pass *Pass) {
 }
 
 func formattedHostPortCall(pass *Pass, call *ast.CallExpr) *ast.CallExpr {
-	if call == nil || len(call.Args) < 3 || !isPackageFunction(
-		pass.TypesInfo,
-		call.Fun,
-		"fmt",
-		"Sprintf",
-	) {
+	if call == nil || len(call.Args) < 3 || !isPackageFunction(pass.TypesInfo, call.Fun, "fmt", "Sprintf") {
 		return nil
 	}
 	value := pass.TypesInfo.Types[call.Args[0]].Value
-	if value == nil || value.Kind() != constant.String || !formatsURLHostAndPort(
-		constant.StringVal(value),
-	) {
+	if value == nil || value.Kind() != constant.String || !formatsURLHostAndPort(constant.StringVal(value)) {
 		return nil
 	}
 	return call
@@ -69,12 +59,7 @@ func formattedHostPortCall(pass *Pass, call *ast.CallExpr) *ast.CallExpr {
 
 func bareFormattedHostPortCall(pass *Pass, expression ast.Expr) *ast.CallExpr {
 	call, _ := ast.Unparen(expression).(*ast.CallExpr)
-	if call == nil || len(call.Args) < 3 || !isPackageFunction(
-		pass.TypesInfo,
-		call.Fun,
-		"fmt",
-		"Sprintf",
-	) {
+	if call == nil || len(call.Args) < 3 || !isPackageFunction(pass.TypesInfo, call.Fun, "fmt", "Sprintf") {
 		return nil
 	}
 	value := pass.TypesInfo.Types[call.Args[0]].Value
@@ -123,9 +108,9 @@ func formatsURLHostAndPort(format string) bool {
 	if scheme < 0 {
 		return false
 	}
-	authority := format[scheme+3:]
+	authority := format[scheme + 3:]
 	end := len(authority)
-	for _, separator := range []string{"/", "?", "#"} {
+	for _, separator := range[]string{"/", "?", "#"} {
 		if index := strings.Index(authority, separator); index >= 0 && index < end {
 			end = index
 		}

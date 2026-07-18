@@ -9,28 +9,28 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type nonPointerUnmarshalRule struct{}
+type nonPointerUnmarshalRule struct {}
 
 type unmarshalCall struct {
-	name           string
-	ssaArgument    int
+	name string
+	ssaArgument int
 	sourceArgument int
 }
 
 func (nonPointerUnmarshalRule) Meta() Meta {
 	return Meta{
-		Code:            "non-pointer-unmarshal",
-		Summary:         "detect non-pointer unmarshal destinations",
-		Explanation:     "JSON and XML unmarshalling and decoding APIs require a pointer destination so they can populate the provided value.",
-		GoodExample:     "json.Unmarshal(data, &value)",
-		BadExample:      "json.Unmarshal(data, value)",
+		Code: "non-pointer-unmarshal",
+		Summary: "detect non-pointer unmarshal destinations",
+		Explanation: "JSON and XML unmarshalling and decoding APIs require a pointer destination so they can populate the provided value.",
+		GoodExample: "json.Unmarshal(data, &value)",
+		BadExample: "json.Unmarshal(data, value)",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
 
 func (nonPointerUnmarshalRule) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
-	for _, packagePath := range []string{"encoding/json", "encoding/xml"} {
+	for _, packagePath := range[]string{"encoding/json", "encoding/xml"} {
 		for _, call := range pass.staticCallsInPackage(packagePath) {
 			descriptor, ok := unmarshalDescriptor(call)
 			if !ok || len(call.Common().Args) <= descriptor.ssaArgument {
@@ -41,13 +41,7 @@ func (nonPointerUnmarshalRule) Run(pass *Pass) {
 				continue
 			}
 			node := explicitCallArgument(calls[call.Pos()], descriptor.sourceArgument, call.Pos())
-			pass.Report(
-				node,
-				fmt.Sprintf(
-					"%s expects to unmarshal into a pointer, but the provided value is not a pointer",
-					descriptor.name,
-				),
-			)
+			pass.Report(node, fmt.Sprintf("%s expects to unmarshal into a pointer, but the provided value is not a pointer", descriptor.name))
 		}
 	}
 }
@@ -63,9 +57,15 @@ func unmarshalDescriptor(call ssa.CallInstruction) (unmarshalCall, bool) {
 	if !isMethod && name == "Unmarshal" {
 		switch path {
 		case "encoding/json":
-			return unmarshalCall{name: "json.Unmarshal", ssaArgument: 1, sourceArgument: 1}, true
+			return unmarshalCall{name:
+			"json.Unmarshal", ssaArgument:
+			1, sourceArgument:
+			1}, true
 		case "encoding/xml":
-			return unmarshalCall{name: "xml.Unmarshal", ssaArgument: 1, sourceArgument: 1}, true
+			return unmarshalCall{name:
+			"xml.Unmarshal", ssaArgument:
+			1, sourceArgument:
+			1}, true
 		}
 	}
 	if isMethod && path == "encoding/json" && name == "Decode" {

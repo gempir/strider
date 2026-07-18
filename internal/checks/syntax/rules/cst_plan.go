@@ -52,36 +52,15 @@ func compileCSTExecutionPlan(enabled map[string]bool) cstExecutionPlan {
 		}
 		return false
 	}
-	identifiers := any(
-		"confusing-naming",
-		"import-shadowing",
-		"redefines-builtin-id",
-		"unexported-naming",
-		"var-naming",
-	)
+	identifiers := any("confusing-naming", "import-shadowing", "redefines-builtin-id", "unexported-naming", "var-naming")
 	functionComplexity := any("cyclomatic", "cyclomatic-complexity")
 	functionCognitive := enabled["cognitive-complexity"]
 	functionStatements := enabled["function-length"]
 	functionFinal := enabled["unnecessary-stmt"]
 	return cstExecutionPlan{
 		filename: any("filename-format", "package-directory-mismatch", "package-naming"),
-		comments: any(
-			"bidirectional-control-character",
-			"comment-spacings",
-			"line-length-limit",
-			"package-comments",
-			"redundant-build-tag",
-			"spaced-compiler-directive",
-		),
-		imports: any(
-			"blank-imports",
-			"dot-imports",
-			"duplicated-imports",
-			"import-alias-naming",
-			"import-shadowing",
-			"redundant-import-alias",
-			"struct-tag",
-		),
+		comments: any("bidirectional-control-character", "comment-spacings", "line-length-limit", "package-comments", "redundant-build-tag", "spaced-compiler-directive"),
+		imports: any("blank-imports", "dot-imports", "duplicated-imports", "import-alias-naming", "import-shadowing", "redundant-import-alias", "struct-tag"),
 		repeatedLiterals: enabled["add-constant"],
 		functions: any(
 			"argument-limit",
@@ -128,14 +107,7 @@ func compileCSTExecutionPlan(enabled map[string]bool) cstExecutionPlan {
 			"unnecessary-if",
 		),
 		packageVars: enabled["no-package-var"],
-		binaryExpressions: any(
-			"bool-literal-in-expr",
-			"constant-logical-expr",
-			"modulo-one",
-			"optimize-operands-order",
-			"time-equal",
-			"zero-integer-division",
-		),
+		binaryExpressions: any("bool-literal-in-expr", "constant-logical-expr", "modulo-one", "optimize-operands-order", "time-equal", "zero-integer-division"),
 		unaryExpressions: any("double-negation", "ineffective-pointer-copy"),
 		interfaces: enabled["use-any"],
 		incrementAssignments: enabled["increment-decrement"],
@@ -158,28 +130,10 @@ func compileCSTExecutionPlan(enabled map[string]bool) cstExecutionPlan {
 		structs: enabled["nested-structs"],
 		fields: enabled["struct-tag"],
 		stringLiterals: enabled["unsecure-url-scheme"],
-		blocks: any(
-			"empty-block",
-			"empty-lines",
-			"if-return",
-			"unreachable-code",
-			"use-waitgroup-go",
-		),
-		loops: any(
-			"datarace",
-			"range",
-			"range-val-address",
-			"range-val-in-closure",
-			"spinning-select-default",
-		),
+		blocks: any("empty-block", "empty-lines", "if-return", "unreachable-code", "use-waitgroup-go"),
+		loops: any("datarace", "range", "range-val-address", "range-val-in-closure", "spinning-select-default"),
 		controlNesting: enabled["max-control-nesting"],
-		switches: any(
-			"enforce-switch-style",
-			"identical-switch-branches",
-			"identical-switch-conditions",
-			"unnecessary-stmt",
-			"useless-fallthrough",
-		),
+		switches: any("enforce-switch-style", "identical-switch-branches", "identical-switch-conditions", "unnecessary-stmt", "useless-fallthrough"),
 		typeAssertions: enabled["unchecked-type-assertion"],
 		varSpecs: any("error-naming", "exported", "time-naming", "var-declaration"),
 		constSpecs: enabled["exported"],
@@ -206,22 +160,10 @@ func (a *cstAnalyzer) observe(node cst.Node, ancestors []cst.Node) {
 		switch current := node.(type) {
 		case *cst.FunctionDecl:
 			if current.FunctionName != nil {
-				facts = a.addFunctionFacts(
-					current,
-					current.FunctionName.IDENT,
-					current.Signature,
-					current.FunctionBody,
-					nil,
-				)
+				facts = a.addFunctionFacts(current, current.FunctionName.IDENT, current.Signature, current.FunctionBody, nil)
 			}
 		case *cst.MethodDecl:
-			facts = a.addFunctionFacts(
-				current,
-				current.MethodName,
-				current.Signature,
-				current.FunctionBody,
-				current.Receiver,
-			)
+			facts = a.addFunctionFacts(current, current.MethodName, current.Signature, current.FunctionBody, current.Receiver)
 		}
 		if facts != nil && a.plan.functionTraversal {
 			a.activeFunction = facts
@@ -238,20 +180,8 @@ func (a *cstAnalyzer) observe(node cst.Node, ancestors []cst.Node) {
 	}
 }
 
-func (a *cstAnalyzer) addFunctionFacts(
-	node cst.Node,
-	name cst.Token,
-	signature *cst.Signature,
-	body cst.Node,
-	receiver *cst.Parameters,
-) *cstFunctionFacts {
-	facts := &cstFunctionFacts{
-		node: node,
-		name: name,
-		signature: signature,
-		body: body,
-		receiver: receiver,
-	}
+func (a *cstAnalyzer) addFunctionFacts(node cst.Node, name cst.Token, signature *cst.Signature, body cst.Node, receiver *cst.Parameters) *cstFunctionFacts {
+	facts := &cstFunctionFacts{node: node, name: name, signature: signature, body: body, receiver: receiver}
 	if a.plan.functionFinal {
 		facts.finalStatement = concreteDirectFinalStatement(body)
 	}
@@ -274,9 +204,7 @@ func (a *cstAnalyzer) observeFunctionNode(node cst.Node, ancestors []cst.Node) {
 	if node == facts.body {
 		a.functionBodyDepth = len(ancestors)
 	}
-	if a.functionBodyDepth < 0 || (node != facts.body && (len(ancestors) <= a.functionBodyDepth || ancestors[
-		a.functionBodyDepth,
-	] != facts.body)) {
+	if a.functionBodyDepth < 0 || (node != facts.body && (len(ancestors) <= a.functionBodyDepth || ancestors[a.functionBodyDepth] != facts.body)) {
 		return
 	}
 	if a.plan.functionStatements {

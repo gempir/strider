@@ -8,13 +8,7 @@ import (
 	"github.com/gempir/strider/internal/cst"
 )
 
-func (a *cstAnalyzer) checkConcreteFunctionRules(
-	name cst.Token,
-	signature *cst.Signature,
-	body cst.Node,
-	receiver *cst.Parameters,
-	facts *cstFunctionFacts,
-) {
+func (a *cstAnalyzer) checkConcreteFunctionRules(name cst.Token, signature *cst.Signature, body cst.Node, receiver *cst.Parameters, facts *cstFunctionFacts) {
 	if signature == nil || facts == nil {
 		return
 	}
@@ -22,36 +16,17 @@ func (a *cstAnalyzer) checkConcreteFunctionRules(
 	results := concreteResultDecls(signature.Result)
 	parameterTotal := concreteDeclCount(parameters)
 	if a.enabled["argument-limit"] && parameterTotal > 8 {
-		a.report(
-			"argument-limit",
-			name,
-			fmt.Sprintf("function has %d parameters; maximum is 8", parameterTotal),
-		)
+		a.report("argument-limit", name, fmt.Sprintf("function has %d parameters; maximum is 8", parameterTotal))
 	}
 	resultTotal := concreteDeclCount(results)
 	if a.enabled["function-result-limit"] && resultTotal > 3 {
-		a.report(
-			"function-result-limit",
-			name,
-			fmt.Sprintf("function returns %d values; maximum is 3", resultTotal),
-		)
+		a.report("function-result-limit", name, fmt.Sprintf("function returns %d values; maximum is 3", resultTotal))
 	}
 	if a.enabled["cyclomatic"] && facts.complexity > 10 {
-		a.report(
-			"cyclomatic",
-			name,
-			fmt.Sprintf("function has cyclomatic complexity %d; maximum is 10", facts.complexity),
-		)
+		a.report("cyclomatic", name, fmt.Sprintf("function has cyclomatic complexity %d; maximum is 10", facts.complexity))
 	}
 	if a.enabled["cognitive-complexity"] && facts.cognitiveComplexity > 7 {
-		a.report(
-			"cognitive-complexity",
-			name,
-			fmt.Sprintf(
-				"function has cognitive complexity %d; maximum is 7",
-				facts.cognitiveComplexity,
-			),
-		)
+		a.report("cognitive-complexity", name, fmt.Sprintf("function has cognitive complexity %d; maximum is 7", facts.cognitiveComplexity))
 	}
 	if body != nil && (a.enabled["function-length"] || a.enabled["unnecessary-stmt"]) {
 		a.checkConcreteFunctionBody(name, body, resultTotal, facts)
@@ -73,36 +48,19 @@ func (a *cstAnalyzer) checkConcreteFunctionRules(
 	}
 }
 
-func (a *cstAnalyzer) checkConcreteFunctionBody(
-	name cst.Token,
-	body cst.Node,
-	resultTotal int,
-	facts *cstFunctionFacts,
-) {
+func (a *cstAnalyzer) checkConcreteFunctionBody(name cst.Token, body cst.Node, resultTotal int, facts *cstFunctionFacts) {
 	if a.enabled["function-length"] {
 		start, end := cst.Range(body)
 		lines := a.tree.Position(end).Line - a.tree.Position(start).Line + 1
 		if facts.statements > 50 || lines > 75 {
-			a.report(
-				"function-length",
-				name,
-				fmt.Sprintf(
-					"function has %d statements and %d lines; maximum is 50 statements or 75 lines",
-					facts.statements,
-					lines,
-				),
-			)
+			a.report("function-length", name, fmt.Sprintf("function has %d statements and %d lines; maximum is 50 statements or 75 lines", facts.statements, lines))
 		}
 	}
 	if resultTotal != 0 || !a.enabled["unnecessary-stmt"] {
 		return
 	}
 	if returned, ok := facts.finalStatement.(*cst.ReturnStmt); ok && returned.ExpressionList == nil {
-		a.report(
-			"unnecessary-stmt",
-			returned,
-			"omit the unnecessary return at the end of a resultless function",
-		)
+		a.report("unnecessary-stmt", returned, "omit the unnecessary return at the end of a resultless function")
 	}
 }
 
@@ -127,7 +85,7 @@ func concreteResultDecls(result *cst.Result) []*cst.ParameterDecl {
 		return concreteParameterDecls(result.Parameters)
 	}
 	if result.TypeNode != nil {
-		return []*cst.ParameterDecl{{TypeNode: result.TypeNode}}
+		return[]*cst.ParameterDecl{{TypeNode: result.TypeNode}}
 	}
 	return nil
 }
@@ -148,27 +106,17 @@ func (a *cstAnalyzer) checkConcreteResults(name cst.Token, results []*cst.Parame
 	previous := ""
 	for index, result := range results {
 		typeName := cst.Spelling(result.TypeNode)
-		if typeName == "error" && index != len(results)-1 {
+		if typeName == "error" && index != len(results) - 1 {
 			a.report("error-return", result.TypeNode, "error should be the last returned value")
 		}
 		if token.IsExported(name.Src()) {
 			base := strings.TrimLeft(typeName, "*[]")
-			if identifierName(base) && base != "error" && !token.IsExported(base) && !builtinType(
-				base,
-			) {
-				a.report(
-					"unexported-return",
-					result.TypeNode,
-					"exported function returns an unexported type",
-				)
+			if identifierName(base) && base != "error" && !token.IsExported(base) && !builtinType(base) {
+				a.report("unexported-return", result.TypeNode, "exported function returns an unexported type")
 			}
 		}
 		if result.IdentifierList == nil && previous == typeName {
-			a.report(
-				"confusing-results",
-				result.TypeNode,
-				"adjacent unnamed results of the same type should be named",
-			)
+			a.report("confusing-results", result.TypeNode, "adjacent unnamed results of the same type should be named")
 		}
 		previous = typeName
 	}
@@ -179,38 +127,22 @@ func (a *cstAnalyzer) checkConcreteParameters(parameters []*cst.ParameterDecl) {
 	for _, parameter := range parameters {
 		typeName := cst.Spelling(parameter.TypeNode)
 		if typeName == "context.Context" && position != 0 {
-			a.report(
-				"context-as-argument",
-				parameter.TypeNode,
-				"context.Context should be the first parameter",
-			)
+			a.report("context-as-argument", parameter.TypeNode, "context.Context should be the first parameter")
 		}
 		if typeName == "sync.WaitGroup" {
-			a.report(
-				"waitgroup-by-value",
-				parameter.TypeNode,
-				"sync.WaitGroup should be passed by pointer",
-			)
+			a.report("waitgroup-by-value", parameter.TypeNode, "sync.WaitGroup should be passed by pointer")
 		}
 		names := concreteIdentifierTokens(parameter.IdentifierList)
 		for _, name := range names {
 			if typeName == "time.Duration" && hasTimeUnitSuffix(name.Src()) {
-				a.report(
-					"time-naming",
-					name,
-					"time.Duration name should not include a unit suffix",
-				)
+				a.report("time-naming", name, "time.Duration name should not include a unit suffix")
 			}
 		}
 		position += max(1, len(names))
 	}
 }
 
-func (a *cstAnalyzer) checkConcreteUnused(
-	parameters []*cst.ParameterDecl,
-	receiver *cst.Parameters,
-	body cst.Node,
-) {
+func (a *cstAnalyzer) checkConcreteUnused(parameters []*cst.ParameterDecl, receiver *cst.Parameters, body cst.Node) {
 	if body == nil {
 		return
 	}
@@ -226,21 +158,10 @@ func (a *cstAnalyzer) checkConcreteUnused(
 		for _, parameter := range parameters {
 			for _, name := range concreteIdentifierTokens(parameter.IdentifierList) {
 				if a.enabled["unused-parameter"] && name.Src() != "_" && uses[name.Src()] == 0 {
-					a.report(
-						"unused-parameter",
-						name,
-						fmt.Sprintf("parameter %s is unused", name.Src()),
-					)
+					a.report("unused-parameter", name, fmt.Sprintf("parameter %s is unused", name.Src()))
 				}
-				if a.enabled["flag-parameter"] && cst.Spelling(parameter.TypeNode) == "bool" && concreteConditionUses(
-					body,
-					name.Src(),
-				) {
-					a.report(
-						"flag-parameter",
-						name,
-						fmt.Sprintf("boolean parameter %s controls function flow", name.Src()),
-					)
+				if a.enabled["flag-parameter"] && cst.Spelling(parameter.TypeNode) == "bool" && concreteConditionUses(body, name.Src()) {
+					a.report("flag-parameter", name, fmt.Sprintf("boolean parameter %s controls function flow", name.Src()))
 				}
 			}
 		}
@@ -248,18 +169,10 @@ func (a *cstAnalyzer) checkConcreteUnused(
 	for _, declaration := range concreteParameterDecls(receiver) {
 		for _, name := range concreteIdentifierTokens(declaration.IdentifierList) {
 			if a.enabled["unused-receiver"] && name.Src() != "_" && uses[name.Src()] == 0 {
-				a.report(
-					"unused-receiver",
-					name,
-					fmt.Sprintf("receiver %s is unused", name.Src()),
-				)
+				a.report("unused-receiver", name, fmt.Sprintf("receiver %s is unused", name.Src()))
 			}
 			if a.enabled["receiver-naming"] && (name.Src() == "this" || name.Src() == "self") {
-				a.report(
-					"receiver-naming",
-					name,
-					"receiver name should be a short abbreviation of its type",
-				)
+				a.report("receiver-naming", name, "receiver name should be a short abbreviation of its type")
 			}
 		}
 	}
@@ -274,7 +187,8 @@ func concreteConditionUses(body cst.Node, name string) bool {
 			if kind != "IfStmt" && kind != "IfElseStmt" {
 				return true
 			}
-			for _, current := range cst.NodeTokens(node) {
+			for _,
+			current := range cst.NodeTokens(node) {
 				if current.Ch() == token.IDENT && current.Src() == name {
 					found = true
 					return false
@@ -288,7 +202,7 @@ func concreteConditionUses(body cst.Node, name string) bool {
 
 func concreteIdentifierTokens(list *cst.IdentifierList) []cst.Token {
 	result := []cst.Token{}
-	for ; list != nil; list = list.List {
+	for; list != nil; list = list.List {
 		if list.IDENT.IsValid() {
 			result = append(result, list.IDENT)
 		}
@@ -308,11 +222,7 @@ func (a *cstAnalyzer) checkConcreteReceiver(name cst.Token, receiver *cst.Parame
 	if a.enabled["receiver-naming"] && len(names) != 0 {
 		receiverName := names[0].Src()
 		if first, ok := a.receiverNames[base]; ok && first != receiverName {
-			a.report(
-				"receiver-naming",
-				names[0],
-				fmt.Sprintf("receiver name %s is inconsistent with %s", receiverName, first),
-			)
+			a.report("receiver-naming", names[0], fmt.Sprintf("receiver name %s is inconsistent with %s", receiverName, first))
 		} else {
 			a.receiverNames[base] = receiverName
 		}
@@ -325,11 +235,7 @@ func (a *cstAnalyzer) checkConcreteReceiver(name cst.Token, receiver *cst.Parame
 		kind = "pointer"
 	}
 	if first, ok := a.marshalKinds[base]; ok && first != kind {
-		a.report(
-			"marshal-receiver",
-			declaration,
-			"marshal and unmarshal methods should use a consistent receiver type",
-		)
+		a.report("marshal-receiver", declaration, "marshal and unmarshal methods should use a consistent receiver type")
 	} else {
 		a.marshalKinds[base] = kind
 	}

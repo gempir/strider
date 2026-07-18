@@ -34,10 +34,7 @@ func process(value int, flag bool, unused string, first, second, third int) (int
 	return value, nil
 }
 `
-	source := "package fixture\n\nimport (\n\t\"fmt\"\n\t\"strings\"\n)\n" + strings.Repeat(
-		function,
-		20,
-	)
+	source := "package fixture\n\nimport (\n\t\"fmt\"\n\t\"strings\"\n)\n" + strings.Repeat(function, 20)
 	tree, err := cst.Parse("fixture.go", []byte(source))
 	if err != nil {
 		tb.Fatal(err)
@@ -86,22 +83,12 @@ func (item) method() {}
 		t.Fatal(err)
 	}
 	analyzer := &cstAnalyzer{
-		plan: cstExecutionPlan{
-			functions:          true,
-			functionTraversal:  true,
-			functionComplexity: true,
-			functionCognitive:  true,
-			functionStatements: true,
-			functionFinal:      true,
-		},
+		plan: cstExecutionPlan{functions: true, functionTraversal: true, functionComplexity: true, functionCognitive: true, functionStatements: true, functionFinal: true},
 	}
-	cst.WalkProductionsWithAncestors(
-		tree.Root(),
-		func(node cst.Node, ancestors []cst.Node) bool {
-			analyzer.observe(node, ancestors)
-			return true
-		},
-	)
+	cst.WalkProductionsWithAncestors(tree.Root(), func(node cst.Node, ancestors []cst.Node) bool {
+		analyzer.observe(node, ancestors)
+		return true
+	})
 	if len(analyzer.functions) != 2 {
 		t.Fatalf("collected %d functions, want 2", len(analyzer.functions))
 	}
@@ -138,7 +125,7 @@ import (
 
 var packageValue = 1
 type Exported struct {
-	bad_name string `+"`json:\"name,,unknown\"`"+`
+	bad_name string ` + "`json:\"name,,unknown\"`" + `
 	fmt int
 }
 
@@ -185,13 +172,14 @@ func GetThing(first, second, third, fourth, fifth, sixth int, flag bool, unused 
 			code,
 			func(t *testing.T) {
 				rules,
-					selectErr := Select([]string{code}, false)
+				selectErr := Select([]string{code}, false)
 				if selectErr != nil {
 					t.Fatal(selectErr)
 				}
 				gotFindings := analyzeCSTFindings("bad_file.go", tree, rules)
 				got := make([]string, 0, len(gotFindings))
-				for _, finding := range gotFindings {
+				for _,
+				finding := range gotFindings {
 					got = append(got, findingKey(finding))
 				}
 				sort.Strings(got)
@@ -220,13 +208,13 @@ func (value *item) UnmarshalJSON([]byte) error { return nil }
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, code := range []string{"receiver-naming", "marshal-receiver"} {
+	for _, code := range[]string{"receiver-naming", "marshal-receiver"} {
 		code := code
 		t.Run(
 			code,
 			func(t *testing.T) {
 				rules,
-					selectErr := Select([]string{code}, false)
+				selectErr := Select([]string{code}, false)
 				if selectErr != nil {
 					t.Fatal(selectErr)
 				}
@@ -234,7 +222,8 @@ func (value *item) UnmarshalJSON([]byte) error { return nil }
 				if len(findings) == 0 {
 					t.Fatalf("%s produced no findings", code)
 				}
-				for _, finding := range findings {
+				for _,
+				finding := range findings {
 					if finding.Code != code {
 						t.Fatalf("%s run reported %s", code, finding.Code)
 					}
@@ -246,16 +235,9 @@ func (value *item) UnmarshalJSON([]byte) error { return nil }
 
 func analyzeCSTFindings(filename string, tree *cst.Tree, rules []Rule) []Finding {
 	result := []Finding{}
-	AnalyzeCST(
-		CSTInput{
-			Filename: filename,
-			Tree:     tree,
-			Rules:    rules,
-			Report: func(finding Finding) {
-				result = append(result, finding)
-			},
-		},
-	)
+	AnalyzeCST(CSTInput{Filename: filename, Tree: tree, Rules: rules, Report: func(finding Finding) {
+		result = append(result, finding)
+	}})
 	return result
 }
 
@@ -328,32 +310,24 @@ func referenceCognitiveComplexity(body cst.Node) int {
 
 func referenceStatementCount(body cst.Node) int {
 	count := 0
-	cst.Walk(
-		body,
-		func(node cst.Node) bool {
-			if list,
-				ok := node.(*cst.StatementList); ok && list.Statement != nil {
-				count++
-			}
-			return true
-		},
-	)
+	cst.Walk(body, func(node cst.Node) bool {
+		if list, ok := node.(*cst.StatementList); ok && list.Statement != nil {
+			count++
+		}
+		return true
+	})
 	return count
 }
 
 func referenceFinalStatement(body cst.Node) cst.Node {
 	var block *cst.Block
-	cst.Walk(
-		body,
-		func(node cst.Node) bool {
-			if current,
-				ok := node.(*cst.Block); ok && block == nil {
-				block = current
-				return false
-			}
-			return block == nil
-		},
-	)
+	cst.Walk(body, func(node cst.Node) bool {
+		if current, ok := node.(*cst.Block); ok && block == nil {
+			block = current
+			return false
+		}
+		return block == nil
+	})
 	if block == nil {
 		return nil
 	}
@@ -373,14 +347,9 @@ func benchmarkAnalyzeCST(b *testing.B, all bool) {
 		b.Fatal(err)
 	}
 	reports := 0
-	input := CSTInput{
-		Filename: "fixture.go",
-		Tree:     tree,
-		Rules:    rules,
-		Report: func(Finding) {
-			reports++
-		},
-	}
+	input := CSTInput{Filename: "fixture.go", Tree: tree, Rules: rules, Report: func(Finding) {
+		reports++
+	}}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for range b.N {

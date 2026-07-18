@@ -19,8 +19,8 @@ import (
 // RunOptions configures one read-only check pass.
 type RunOptions struct {
 	Formatter formatter.Options
-	Root      string
-	Excludes  []string
+	Root string
+	Excludes []string
 	// CollectCandidates retains complete formatted files for a future write or
 	// fix operation. Read-only check callers should leave it disabled.
 	CollectCandidates bool
@@ -31,14 +31,14 @@ type RunOptions struct {
 // mode can apply them without embedding whole files in diagnostic reports.
 type Result struct {
 	Diagnostics []diagnostic.Diagnostic
-	Candidates  map[string]formatter.Result
+	Candidates map[string]formatter.Result
 }
 
 type fileResult struct {
-	filename    string
+	filename string
 	diagnostics []diagnostic.Diagnostic
-	candidate   *formatter.Result
-	err         error
+	candidate *formatter.Result
+	err error
 }
 
 // Run executes the selected checks. Concrete-syntax checks and formatting
@@ -55,12 +55,7 @@ func Run(shared *workspace.Workspace, registry *Registry, options RunOptions) (R
 		options.Formatter = formatter.DefaultOptions()
 	}
 
-	result, err := runConcreteChecks(
-		shared.Files(),
-		registry,
-		options.Formatter,
-		options.CollectCandidates,
-	)
+	result, err := runConcreteChecks(shared.Files(), registry, options.Formatter, options.CollectCandidates)
 	if err != nil {
 		return Result{}, err
 	}
@@ -76,13 +71,7 @@ func Run(shared *workspace.Workspace, registry *Registry, options RunOptions) (R
 
 type analysisRunner func([]string, *semantic.Registry) ([]diagnostic.Diagnostic, error)
 
-func appendAnalysis(
-	result *Result,
-	shared *workspace.Workspace,
-	registry *Registry,
-	options RunOptions,
-	run analysisRunner,
-) error {
+func appendAnalysis(result *Result, shared *workspace.Workspace, registry *Registry, options RunOptions, run analysisRunner) error {
 	if registry.semantic == nil || len(registry.semantic.Rules()) == 0 {
 		return nil
 	}
@@ -99,12 +88,7 @@ func appendAnalysis(
 	return nil
 }
 
-func runConcreteChecks(
-	files []*workspace.File,
-	registry *Registry,
-	formatOptions formatter.Options,
-	collectCandidates bool,
-) (Result, error) {
+func runConcreteChecks(files []*workspace.File, registry *Registry, formatOptions formatter.Options, collectCandidates bool) (Result, error) {
 	applicable := make([]*workspace.File, 0, len(files))
 	for _, file := range files {
 		if registry.needsCST(file.Path()) {
@@ -118,7 +102,7 @@ func runConcreteChecks(
 
 	session := formatter.NewSession()
 	workers := min(runtime.GOMAXPROCS(0), len(applicable))
-	jobs := make(chan *workspace.File)
+	jobs := make(chan*workspace.File)
 	results := make(chan fileResult, len(applicable))
 	var group sync.WaitGroup
 	for range workers {
@@ -126,13 +110,7 @@ func runConcreteChecks(
 		go func() {
 			defer group.Done()
 			for file := range jobs {
-				results <- runConcreteFile(
-					file,
-					registry,
-					session,
-					formatOptions,
-					collectCandidates,
-				)
+				results <- runConcreteFile(file, registry, session, formatOptions, collectCandidates)
 			}
 		}()
 	}
@@ -149,12 +127,9 @@ func runConcreteChecks(
 	for item := range results {
 		completed = append(completed, item)
 	}
-	sort.Slice(
-		completed,
-		func(left, right int) bool {
-			return completed[left].filename < completed[right].filename
-		},
-	)
+	sort.Slice(completed, func(left, right int) bool {
+		return completed[left].filename < completed[right].filename
+	})
 	for _, item := range completed {
 		if item.err != nil {
 			return Result{}, fmt.Errorf("%s: %w", source.DisplayPath(item.filename), item.err)
@@ -172,13 +147,7 @@ func runConcreteChecks(
 	return result, nil
 }
 
-func runConcreteFile(
-	file *workspace.File,
-	registry *Registry,
-	session *formatter.Session,
-	formatOptions formatter.Options,
-	collectCandidate bool,
-) fileResult {
+func runConcreteFile(file *workspace.File, registry *Registry, session *formatter.Session, formatOptions formatter.Options, collectCandidate bool) fileResult {
 	filename := file.Path()
 	defer file.Release()
 	lintApplies := registry.syntax != nil && registry.syntax.Applies(filename)
@@ -203,20 +172,14 @@ func runConcreteFile(
 			return result
 		}
 		if formatted.Changed && !formatted.Ignored {
-			result.diagnostics = append(
-				result.diagnostics,
-				formatDiagnostic(filename, registry.Severity(formatMeta.Code)),
-			)
+			result.diagnostics = append(result.diagnostics, formatDiagnostic(filename, registry.Severity(formatMeta.Code)))
 			if collectCandidate {
 				result.candidate = &formatted
 			}
 		}
 	}
 	if lintApplies {
-		result.diagnostics = append(
-			result.diagnostics,
-			syntax.AnalyzeTree(filename, tree, registry.syntax)...,
-		)
+		result.diagnostics = append(result.diagnostics, syntax.AnalyzeTree(filename, tree, registry.syntax)...)
 	}
 	return result
 }
@@ -225,15 +188,13 @@ func formatDiagnostic(filename string, severity diagnostic.Severity) diagnostic.
 	display := source.DisplayPath(filename)
 	position := token.Position{Filename: display, Offset: 0, Line: 1, Column: 1}
 	return diagnostic.Diagnostic{
-		Code:     formatMeta.Code,
-		Message:  "file is not formatted",
+		Code: formatMeta.Code,
+		Message: "file is not formatted",
 		Severity: severity,
-		File:     display,
-		Start:    position,
-		End:      position,
-		Fixes: []diagnostic.Fix{
-			{Message: fmt.Sprintf("run `strider fmt %s`", display), Safety: diagnostic.Safe},
-		},
+		File: display,
+		Start: position,
+		End: position,
+		Fixes: []diagnostic.Fix{{Message: fmt.Sprintf("run `strider fmt %s`", display), Safety: diagnostic.Safe}},
 	}
 }
 

@@ -8,15 +8,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type singleIterationLoopRule struct{}
+type singleIterationLoopRule struct {}
 
 func (singleIterationLoopRule) Meta() Meta {
 	return Meta{
-		Code:            "single-iteration-loop",
-		Summary:         "detect loops that always exit during their first iteration",
-		Explanation:     "A loop whose top-level control flow always returns or breaks after a conditional branch cannot begin a second iteration. This usually means the exit was placed outside the intended branch.",
-		GoodExample:     "for _, value := range values { if done(value) { break }; use(value) }",
-		BadExample:      "for _, value := range values { if done(value) { use(value) }; return }",
+		Code: "single-iteration-loop",
+		Summary: "detect loops that always exit during their first iteration",
+		Explanation: "A loop whose top-level control flow always returns or breaks after a conditional branch cannot begin a second iteration. This usually means the exit was placed outside the intended branch.",
+		GoodExample: "for _, value := range values { if done(value) { break }; use(value) }",
+		BadExample: "for _, value := range values { if done(value) { use(value) }; return }",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -35,17 +35,13 @@ func (singleIterationLoopRule) Run(pass *Pass) {
 
 func analyzeFunctionLoops(pass *Pass, body *ast.BlockStmt) {
 	labels := make(map[types.Object]ast.Stmt)
-	inspectWithoutClosures(
-		body,
-		func(node ast.Node) bool {
-			label,
-				ok := node.(*ast.LabeledStmt)
-			if ok {
-				labels[pass.TypesInfo.ObjectOf(label.Label)] = label.Stmt
-			}
-			return true
-		},
-	)
+	inspectWithoutClosures(body, func(node ast.Node) bool {
+		label, ok := node.(*ast.LabeledStmt)
+		if ok {
+			labels[pass.TypesInfo.ObjectOf(label.Label)] = label.Stmt
+		}
+		return true
+	})
 
 	inspectWithoutClosures(
 		body,
@@ -67,40 +63,29 @@ func analyzeFunctionLoops(pass *Pass, body *ast.BlockStmt) {
 			}
 			exit := topLevelLoopExit(pass, loop, loopBody, labels)
 			if exit != nil && !loopHasEscape(pass, loop, loopBody, labels) {
-				pass.Report(
-					exit,
-					"the surrounding loop always terminates during its first iteration",
-				)
+				pass.Report(exit, "the surrounding loop always terminates during its first iteration")
 			}
 			return true
 		},
 	)
 
-	ast.Inspect(
-		body,
-		func(node ast.Node) bool {
-			closure,
-				ok := node.(*ast.FuncLit)
-			if !ok {
-				return true
-			}
-			analyzeFunctionLoops(pass, closure.Body)
-			return false
-		},
-	)
+	ast.Inspect(body, func(node ast.Node) bool {
+		closure, ok := node.(*ast.FuncLit)
+		if !ok {
+			return true
+		}
+		analyzeFunctionLoops(pass, closure.Body)
+		return false
+	})
 }
 
 func inspectWithoutClosures(root ast.Node, visit func(ast.Node) bool) {
-	ast.Inspect(
-		root,
-		func(node ast.Node) bool {
-			if _,
-				ok := node.(*ast.FuncLit); ok {
-				return false
-			}
-			return visit(node)
-		},
-	)
+	ast.Inspect(root, func(node ast.Node) bool {
+		if _, ok := node.(*ast.FuncLit); ok {
+			return false
+		}
+		return visit(node)
+	})
 }
 
 func orderedRangeType(valueType types.Type) bool {
@@ -138,12 +123,7 @@ func orderedRangeType(valueType types.Type) bool {
 	}
 }
 
-func topLevelLoopExit(
-	pass *Pass,
-	loop ast.Stmt,
-	body *ast.BlockStmt,
-	labels map[types.Object]ast.Stmt,
-) ast.Node {
+func topLevelLoopExit(pass *Pass, loop ast.Stmt, body *ast.BlockStmt, labels map[types.Object]ast.Stmt) ast.Node {
 	if len(body.List) < 2 {
 		return nil
 	}
@@ -174,18 +154,13 @@ func topLevelLoopExit(
 	return exit
 }
 
-func loopHasEscape(
-	pass *Pass,
-	loop ast.Stmt,
-	body *ast.BlockStmt,
-	labels map[types.Object]ast.Stmt,
-) bool {
+func loopHasEscape(pass *Pass, loop ast.Stmt, body *ast.BlockStmt, labels map[types.Object]ast.Stmt) bool {
 	hasEscape := false
 	inspectWithoutClosures(
 		body,
 		func(node ast.Node) bool {
 			branch,
-				ok := node.(*ast.BranchStmt)
+			ok := node.(*ast.BranchStmt)
 			if !ok {
 				return true
 			}

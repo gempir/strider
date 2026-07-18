@@ -12,10 +12,10 @@ import (
 
 // Registry is an immutable selection of analysis rules.
 type Registry struct {
-	rules      []Rule
-	settings   map[string]configuredRule
+	rules []Rule
+	settings map[string]configuredRule
 	knownCodes map[string]bool
-	root       string
+	root string
 }
 
 type configuredRule struct {
@@ -25,9 +25,9 @@ type configuredRule struct {
 
 // RegistryOptions selects and configures package-aware rules.
 type RegistryOptions struct {
-	Only            []string
-	Settings        map[string]config.RuleConfig
-	Root            string
+	Only []string
+	Settings map[string]config.RuleConfig
+	Root string
 	MinimumSeverity diagnostic.Severity
 }
 
@@ -58,7 +58,7 @@ const (
 
 // Has reports whether all wanted facts are included in the set.
 func (facts FactSet) Has(wanted FactSet) bool {
-	return facts&wanted == wanted
+	return facts & wanted == wanted
 }
 
 // SSAFeatureSet identifies optional SSA metadata that is expensive enough to
@@ -71,19 +71,19 @@ const (
 
 // Requirements describes the internal data dependencies of one rule.
 type Requirements struct {
-	Stage              AnalysisStage
-	Facts              FactSet
-	SSAFeatures        SSAFeatureSet
+	Stage AnalysisStage
+	Facts FactSet
+	SSAFeatures SSAFeatureSet
 	staticCallPackages []string
 }
 
 type ruleDefinition struct {
-	rule         Rule
+	rule Rule
 	requirements Requirements
 }
 
 type executionPlan struct {
-	requirements       Requirements
+	requirements Requirements
 	staticCallPackages map[string]bool
 }
 
@@ -131,18 +131,8 @@ func NewRegistry(only []string) (*Registry, error) {
 
 // NewRegistryConfigured applies analyzer rule settings. Explicit --only
 // selection enables the named analyzers even when configuration disables them.
-func NewRegistryConfigured(only []string, settings map[string]config.RuleConfig, root string) (
-	*Registry,
-	error,
-) {
-	return NewRegistryWithOptions(
-		RegistryOptions{
-			Only:            only,
-			Settings:        settings,
-			Root:            root,
-			MinimumSeverity: diagnostic.SeverityNote,
-		},
-	)
+func NewRegistryConfigured(only []string, settings map[string]config.RuleConfig, root string) (*Registry, error) {
+	return NewRegistryWithOptions(RegistryOptions{Only: only, Settings: settings, Root: root, MinimumSeverity: diagnostic.SeverityNote})
 }
 
 // NewRegistryWithOptions applies project settings and a minimum effective
@@ -180,13 +170,8 @@ func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
 		if byCode[normalized] == nil {
 			unknown = append(unknown, code)
 		}
-		if setting.Severity != "" && !diagnostic.ValidSeverity(
-			diagnostic.Severity(setting.Severity),
-		) {
-			return nil, fmt.Errorf(
-				"analysis rule %q severity must be note, warning, or error",
-				code,
-			)
+		if setting.Severity != "" && !diagnostic.ValidSeverity(diagnostic.Severity(setting.Severity)) {
+			return nil, fmt.Errorf("analysis rule %q severity must be note, warning, or error", code)
 		}
 	}
 	if len(unknown) != 0 {
@@ -198,11 +183,7 @@ func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
 	for code, setting := range options.Settings {
 		configured[strings.ToUpper(code)] = setting
 	}
-	registry := &Registry{
-		settings:   make(map[string]configuredRule, len(all)),
-		knownCodes: make(map[string]bool, len(all)),
-		root:       options.Root,
-	}
+	registry := &Registry{settings: make(map[string]configuredRule, len(all)), knownCodes: make(map[string]bool, len(all)), root: options.Root}
 	for _, rule := range all {
 		meta := rule.Meta()
 		registry.knownCodes[meta.Code] = true
@@ -266,21 +247,15 @@ func RequirementsFor(code string) (Requirements, bool) {
 }
 
 func typedDefinition(rule Rule, facts FactSet) ruleDefinition {
-	return ruleDefinition{
-		rule:         rule,
-		requirements: Requirements{Stage: AnalysisStageTypes, Facts: facts},
-	}
+	return ruleDefinition{rule: rule, requirements: Requirements{Stage: AnalysisStageTypes, Facts: facts}}
 }
 
 func ssaDefinition(rule Rule, facts FactSet, features SSAFeatureSet) ruleDefinition {
-	return ruleDefinition{
-		rule:         rule,
-		requirements: Requirements{Stage: AnalysisStageSSA, Facts: facts, SSAFeatures: features},
-	}
+	return ruleDefinition{rule: rule, requirements: Requirements{Stage: AnalysisStageSSA, Facts: facts, SSAFeatures: features}}
 }
 
-func ssaStaticCallDefinition(rule Rule, facts FactSet, packagePaths ...string) ruleDefinition {
-	definition := ssaDefinition(rule, facts|FactStaticCalls, 0)
+func ssaStaticCallDefinition(rule Rule, facts FactSet, packagePaths... string) ruleDefinition {
+	definition := ssaDefinition(rule, facts | FactStaticCalls, 0)
 	definition.requirements.staticCallPackages = append([]string(nil), packagePaths...)
 	return definition
 }
@@ -299,12 +274,7 @@ var ruleCatalog = []ruleDefinition{
 	ssaStaticCallDefinition(invalidUTF8StringArgumentRule{}, FactCallArguments, "strings"),
 	typedDefinition(nilContextRule{}, 0),
 	typedDefinition(swappedSeekArgumentsRule{}, 0),
-	ssaStaticCallDefinition(
-		nonPointerUnmarshalRule{},
-		FactCallArguments,
-		"encoding/json",
-		"encoding/xml",
-	),
+	ssaStaticCallDefinition(nonPointerUnmarshalRule{}, FactCallArguments, "encoding/json", "encoding/xml"),
 	ssaDefinition(leakyTimeTickRule{}, 0, 0),
 	typedDefinition(untrappableSignalRule{}, 0),
 	ssaStaticCallDefinition(unbufferedSignalChannelRule{}, FactCallArguments, "os/signal"),
@@ -315,24 +285,12 @@ var ruleCatalog = []ruleDefinition{
 	ssaDefinition(writerBufferMutationRule{}, 0, 0),
 	ssaStaticCallDefinition(duplicateTrimCutsetRule{}, FactCallArguments, "strings"),
 	ssaDefinition(timerResetDrainRaceRule{}, 0, 0),
-	ssaStaticCallDefinition(
-		unsupportedMarshalTypeRule{},
-		FactCallArguments,
-		"encoding/json",
-		"encoding/xml",
-	),
+	ssaStaticCallDefinition(unsupportedMarshalTypeRule{}, FactCallArguments, "encoding/json", "encoding/xml"),
 	ssaStaticCallDefinition(misalignedAtomic64Rule{}, FactCallArguments, "sync/atomic"),
 	ssaStaticCallDefinition(sortNonSliceRule{}, FactCallArguments, "sort"),
 	ssaStaticCallDefinition(contextKeyTypeRule{}, FactCallArguments, "context"),
 	ssaStaticCallDefinition(invalidStrconvArgumentRule{}, FactCallArguments, "strconv"),
-	ssaStaticCallDefinition(
-		overlappingEncodeBuffersRule{},
-		FactCallArguments,
-		"encoding/ascii85",
-		"encoding/base32",
-		"encoding/base64",
-		"encoding/hex",
-	),
+	ssaStaticCallDefinition(overlappingEncodeBuffersRule{}, FactCallArguments, "encoding/ascii85", "encoding/base32", "encoding/base64", "encoding/hex"),
 	ssaStaticCallDefinition(swappedErrorsIsArgumentsRule{}, FactCallArguments, "errors"),
 	typedDefinition(waitGroupAddInsideGoroutineRule{}, 0),
 	typedDefinition(emptyCriticalSectionRule{}, 0),
@@ -380,12 +338,7 @@ var ruleCatalog = []ruleDefinition{
 	typedDefinition(byteStringWriteRule{}, 0),
 	typedDefinition(decimalFileModeRule{}, 0),
 	typedDefinition(partiallyTypedConstantGroupRule{}, 0),
-	ssaStaticCallDefinition(
-		unexportedSerializationFieldsRule{},
-		FactCallArguments,
-		"encoding/json",
-		"encoding/xml",
-	),
+	ssaStaticCallDefinition(unexportedSerializationFieldsRule{}, FactCallArguments, "encoding/json", "encoding/xml"),
 	typedDefinition(oversizedFixedWidthShiftRule{}, 0),
 	ssaStaticCallDefinition(dangerousDirectoryRemovalRule{}, 0, "os"),
 	typedDefinition(failedAssertionShadowReadRule{}, 0),

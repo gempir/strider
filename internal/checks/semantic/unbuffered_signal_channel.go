@@ -8,15 +8,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type unbufferedSignalChannelRule struct{}
+type unbufferedSignalChannelRule struct {}
 
 func (unbufferedSignalChannelRule) Meta() Meta {
 	return Meta{
-		Code:            "unbuffered-signal-channel",
-		Summary:         "detect unbuffered channels used for signal notification",
-		Explanation:     "The os/signal package delivers notifications with non-blocking sends. An unbuffered channel can drop a signal whenever no receiver is immediately ready, so notification channels should have an appropriate buffer.",
-		GoodExample:     "ch := make(chan os.Signal, 1)\nsignal.Notify(ch, os.Interrupt)",
-		BadExample:      "ch := make(chan os.Signal)\nsignal.Notify(ch, os.Interrupt)",
+		Code: "unbuffered-signal-channel",
+		Summary: "detect unbuffered channels used for signal notification",
+		Explanation: "The os/signal package delivers notifications with non-blocking sends. An unbuffered channel can drop a signal whenever no receiver is immediately ready, so notification channels should have an appropriate buffer.",
+		GoodExample: "ch := make(chan os.Signal, 1)\nsignal.Notify(ch, os.Interrupt)",
+		BadExample: "ch := make(chan os.Signal)\nsignal.Notify(ch, os.Interrupt)",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -24,16 +24,11 @@ func (unbufferedSignalChannelRule) Meta() Meta {
 func (unbufferedSignalChannelRule) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
 	for _, call := range pass.staticCallsInPackage("os/signal") {
-		if !isStaticFunction(call, "os/signal", "Notify") || len(call.Common().Args) == 0 || !isUnbufferedChannel(
-			call.Common().Args[0],
-		) {
+		if !isStaticFunction(call, "os/signal", "Notify") || len(call.Common().Args) == 0 || !isUnbufferedChannel(call.Common().Args[0]) {
 			continue
 		}
 		node := explicitCallArgument(calls[call.Pos()], 0, call.Pos())
-		pass.Report(
-			node,
-			"the channel used with signal.Notify is unbuffered and can drop signals",
-		)
+		pass.Report(node, "the channel used with signal.Notify is unbuffered and can drop signals")
 	}
 }
 

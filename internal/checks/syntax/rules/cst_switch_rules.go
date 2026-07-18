@@ -17,11 +17,7 @@ type concreteCase struct {
 func (a *cstAnalyzer) checkConcreteSwitch(node cst.Node) {
 	cases := concreteSwitchCases(node)
 	if len(cases) == 1 && len(cases[0].conditions) <= 1 {
-		a.report(
-			"unnecessary-stmt",
-			node,
-			"switch with one case can be replaced by an if statement",
-		)
+		a.report("unnecessary-stmt", node, "switch with one case can be replaced by an if statement")
 	}
 	conditions := map[string]bool{}
 	branches := map[string]bool{}
@@ -33,11 +29,7 @@ func (a *cstAnalyzer) checkConcreteSwitch(node cst.Node) {
 		for _, condition := range clause.conditions {
 			text := cst.Spelling(condition)
 			if conditions[text] {
-				a.report(
-					"identical-switch-conditions",
-					condition,
-					"switch repeats a case condition",
-				)
+				a.report("identical-switch-conditions", condition, "switch repeats a case condition")
 			} else {
 				conditions[text] = true
 			}
@@ -53,20 +45,12 @@ func (a *cstAnalyzer) checkConcreteSwitch(node cst.Node) {
 		if index == len(cases) - 1 {
 			statements := concreteStatementsFromList(clause.body)
 			if len(statements) != 0 && cst.Kind(statements[len(statements) - 1]) == "FallthroughStmt" {
-				a.report(
-					"useless-fallthrough",
-					statements[len(statements) - 1],
-					"fallthrough in the final switch case has no effect",
-				)
+				a.report("useless-fallthrough", statements[len(statements) - 1], "fallthrough in the final switch case has no effect")
 			}
 		}
 	}
 	if defaultIndex >= 0 && defaultIndex != len(cases) - 1 {
-		a.report(
-			"enforce-switch-style",
-			cases[defaultIndex].node,
-			"default clause should be the last switch clause",
-		)
+		a.report("enforce-switch-style", cases[defaultIndex].node, "default clause should be the last switch clause")
 	}
 }
 
@@ -81,10 +65,7 @@ func concreteSwitchCases(node cst.Node) []concreteCase {
 				clause, body:
 				clause.StatementList}
 				if clause.ExprSwitchCase != nil {
-					item.isDefault = strings.HasPrefix(
-						cst.Spelling(clause.ExprSwitchCase),
-						"default",
-					)
+					item.isDefault = strings.HasPrefix(cst.Spelling(clause.ExprSwitchCase), "default")
 					switch header := clause.ExprSwitchCase.(type) {
 					case *cst.ExprSwitchCase:
 						if header.Expression != nil {
@@ -116,16 +97,11 @@ func concreteSwitchCases(node cst.Node) []concreteCase {
 			return true
 		},
 	)
-	sort.SliceStable(
-		result,
-		func(i, j int) bool {
-			left,
-			_ := cst.Range(result[i].node)
-			right,
-			_ := cst.Range(result[j].node)
-			return left < right
-		},
-	)
+	sort.SliceStable(result, func(i, j int) bool {
+		left, _ := cst.Range(result[i].node)
+		right, _ := cst.Range(result[j].node)
+		return left < right
+	})
 	return result
 }
 

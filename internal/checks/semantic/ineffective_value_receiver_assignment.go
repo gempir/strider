@@ -10,15 +10,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type ineffectiveValueReceiverAssignmentRule struct{}
+type ineffectiveValueReceiverAssignmentRule struct {}
 
 func (ineffectiveValueReceiverAssignmentRule) Meta() Meta {
 	return Meta{
-		Code:            "ineffective-value-receiver-assignment",
-		Summary:         "detect field assignments that cannot escape a value receiver",
-		Explanation:     "A method with a value receiver modifies only its local receiver copy. When an assigned field is never read afterward, the write has no observable effect and often indicates that the method should use a pointer receiver.",
-		GoodExample:     "func (item *Item) Rename(name string) { item.Name = name }",
-		BadExample:      "func (item Item) Rename(name string) { item.Name = name }",
+		Code: "ineffective-value-receiver-assignment",
+		Summary: "detect field assignments that cannot escape a value receiver",
+		Explanation: "A method with a value receiver modifies only its local receiver copy. When an assigned field is never read afterward, the write has no observable effect and often indicates that the method should use a pointer receiver.",
+		GoodExample: "func (item *Item) Rename(name string) { item.Name = name }",
+		BadExample: "func (item Item) Rename(name string) { item.Name = name }",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -44,11 +44,7 @@ func (ineffectiveValueReceiverAssignmentRule) Run(pass *Pass) {
 				}
 				pass.Report(
 					positionNode{position: store.Pos()},
-					fmt.Sprintf(
-						"assignment to value receiver field %s.%s has no observable effect",
-						receiverTypeName(receiver.Type()),
-						fields.Field(field).Name(),
-					),
+					fmt.Sprintf("assignment to value receiver field %s.%s has no observable effect", receiverTypeName(receiver.Type()), fields.Field(field).Name()),
 				)
 			}
 		}
@@ -56,9 +52,7 @@ func (ineffectiveValueReceiverAssignmentRule) Run(pass *Pass) {
 }
 
 func valueReceiver(function *ssa.Function) (*ssa.Parameter, *types.Struct, bool) {
-	if function == nil || function.Synthetic != "" || function.Signature == nil || function.Signature.Recv() == nil || len(
-		function.Params,
-	) == 0 {
+	if function == nil || function.Synthetic != "" || function.Signature == nil || function.Signature.Recv() == nil || len(function.Params) == 0 {
 		return nil, nil, false
 	}
 	receiver := function.Params[0]
@@ -95,11 +89,7 @@ func receiverAllocation(receiver *ssa.Parameter) (*ssa.Alloc, *ssa.Store, bool) 
 	return allocation, initialStore, true
 }
 
-func receiverFieldAccesses(allocation *ssa.Alloc, initialStore *ssa.Store, fieldCount int) (
-	map[int][]ssa.Instruction,
-	map[int][]*ssa.Store,
-	bool,
-) {
+func receiverFieldAccesses(allocation *ssa.Alloc, initialStore *ssa.Store, fieldCount int) (map[int][]ssa.Instruction, map[int][]*ssa.Store, bool) {
 	reads := make(map[int][]ssa.Instruction)
 	writes := make(map[int][]*ssa.Store)
 	references := allocation.Referrers()
@@ -173,8 +163,8 @@ func blockReachable(start, target *ssa.BasicBlock) bool {
 	seen := make(map[*ssa.BasicBlock]bool)
 	work := []*ssa.BasicBlock{start}
 	for len(work) != 0 {
-		block := work[len(work)-1]
-		work = work[:len(work)-1]
+		block := work[len(work) - 1]
+		work = work[:len(work) - 1]
 		if block == target {
 			return true
 		}

@@ -10,15 +10,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type discardedPureResultRule struct{}
+type discardedPureResultRule struct {}
 
 func (discardedPureResultRule) Meta() Meta {
 	return Meta{
-		Code:            "discarded-pure-result",
-		Summary:         "detect ignored results from functions without side effects",
-		Explanation:     "Calling a function that has no side effects and then discarding all of its return values cannot affect program behavior. The call is either dead code or its result was meant to be used.",
-		GoodExample:     "message := strings.TrimSpace(input)",
-		BadExample:      "strings.TrimSpace(input)",
+		Code: "discarded-pure-result",
+		Summary: "detect ignored results from functions without side effects",
+		Explanation: "Calling a function that has no side effects and then discarding all of its return values cannot affect program behavior. The call is either dead code or its result was meant to be used.",
+		GoodExample: "message := strings.TrimSpace(input)",
+		BadExample: "strings.TrimSpace(input)",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -39,13 +39,7 @@ func (discardedPureResultRule) Run(pass *Pass) {
 				if callee == nil || callee.Object() == nil || !purity.pure(callee) {
 					continue
 				}
-				pass.Report(
-					positionNode{position: call.Pos()},
-					fmt.Sprintf(
-						"%s has no side effects and its return value is ignored",
-						callee.Object().Name(),
-					),
-				)
+				pass.Report(positionNode{position: call.Pos()}, fmt.Sprintf("%s has no side effects and its return value is ignored", callee.Object().Name()))
 			}
 		}
 	}
@@ -87,7 +81,7 @@ const (
 )
 
 type purityChecker struct {
-	pass  *Pass
+	pass *Pass
 	state map[*ssa.Function]purityState
 }
 
@@ -162,9 +156,7 @@ func (checker *purityChecker) inspect(function *ssa.Function) bool {
 					return false
 				}
 			case *ssa.UnOp:
-				if instruction.Op == token.ARROW || (instruction.Op == token.MUL && !stackAddress(
-					instruction.X,
-				)) {
+				if instruction.Op == token.ARROW || (instruction.Op == token.MUL && !stackAddress(instruction.X)) {
 					return false
 				}
 			}
@@ -224,75 +216,75 @@ func knownPureFunction(function *types.Func) bool {
 }
 
 var pureStandardFunctions = map[string]bool{
-	"errors.New":                      true,
-	"fmt.Errorf":                      true,
-	"fmt.Sprintf":                     true,
-	"fmt.Sprint":                      true,
-	"sort.Reverse":                    true,
-	"strings.Map":                     true,
-	"strings.Repeat":                  true,
-	"strings.Replace":                 true,
-	"strings.Title":                   true,
-	"strings.ToLower":                 true,
-	"strings.ToLowerSpecial":          true,
-	"strings.ToTitle":                 true,
-	"strings.ToTitleSpecial":          true,
-	"strings.ToUpper":                 true,
-	"strings.ToUpperSpecial":          true,
-	"strings.Trim":                    true,
-	"strings.TrimFunc":                true,
-	"strings.TrimLeft":                true,
-	"strings.TrimLeftFunc":            true,
-	"strings.TrimPrefix":              true,
-	"strings.TrimRight":               true,
-	"strings.TrimRightFunc":           true,
-	"strings.TrimSpace":               true,
-	"strings.TrimSuffix":              true,
+	"errors.New": true,
+	"fmt.Errorf": true,
+	"fmt.Sprintf": true,
+	"fmt.Sprint": true,
+	"sort.Reverse": true,
+	"strings.Map": true,
+	"strings.Repeat": true,
+	"strings.Replace": true,
+	"strings.Title": true,
+	"strings.ToLower": true,
+	"strings.ToLowerSpecial": true,
+	"strings.ToTitle": true,
+	"strings.ToTitleSpecial": true,
+	"strings.ToUpper": true,
+	"strings.ToUpperSpecial": true,
+	"strings.Trim": true,
+	"strings.TrimFunc": true,
+	"strings.TrimLeft": true,
+	"strings.TrimLeftFunc": true,
+	"strings.TrimPrefix": true,
+	"strings.TrimRight": true,
+	"strings.TrimRightFunc": true,
+	"strings.TrimSpace": true,
+	"strings.TrimSuffix": true,
 	"(*net/http.Request).WithContext": true,
-	"time.Now":                        true,
-	"time.Parse":                      true,
-	"time.ParseInLocation":            true,
-	"time.Unix":                       true,
-	"time.UnixMicro":                  true,
-	"time.UnixMilli":                  true,
-	"(time.Time).Add":                 true,
-	"(time.Time).AddDate":             true,
-	"(time.Time).After":               true,
-	"(time.Time).Before":              true,
-	"(time.Time).Clock":               true,
-	"(time.Time).Compare":             true,
-	"(time.Time).Date":                true,
-	"(time.Time).Day":                 true,
-	"(time.Time).Equal":               true,
-	"(time.Time).Format":              true,
-	"(time.Time).GoString":            true,
-	"(time.Time).GobEncode":           true,
-	"(time.Time).Hour":                true,
-	"(time.Time).ISOWeek":             true,
-	"(time.Time).In":                  true,
-	"(time.Time).IsDST":               true,
-	"(time.Time).IsZero":              true,
-	"(time.Time).Local":               true,
-	"(time.Time).Location":            true,
-	"(time.Time).MarshalBinary":       true,
-	"(time.Time).MarshalJSON":         true,
-	"(time.Time).MarshalText":         true,
-	"(time.Time).Minute":              true,
-	"(time.Time).Month":               true,
-	"(time.Time).Nanosecond":          true,
-	"(time.Time).Round":               true,
-	"(time.Time).Second":              true,
-	"(time.Time).String":              true,
-	"(time.Time).Sub":                 true,
-	"(time.Time).Truncate":            true,
-	"(time.Time).UTC":                 true,
-	"(time.Time).Unix":                true,
-	"(time.Time).UnixMicro":           true,
-	"(time.Time).UnixMilli":           true,
-	"(time.Time).UnixNano":            true,
-	"(time.Time).Weekday":             true,
-	"(time.Time).Year":                true,
-	"(time.Time).YearDay":             true,
-	"(time.Time).Zone":                true,
-	"(time.Time).ZoneBounds":          true,
+	"time.Now": true,
+	"time.Parse": true,
+	"time.ParseInLocation": true,
+	"time.Unix": true,
+	"time.UnixMicro": true,
+	"time.UnixMilli": true,
+	"(time.Time).Add": true,
+	"(time.Time).AddDate": true,
+	"(time.Time).After": true,
+	"(time.Time).Before": true,
+	"(time.Time).Clock": true,
+	"(time.Time).Compare": true,
+	"(time.Time).Date": true,
+	"(time.Time).Day": true,
+	"(time.Time).Equal": true,
+	"(time.Time).Format": true,
+	"(time.Time).GoString": true,
+	"(time.Time).GobEncode": true,
+	"(time.Time).Hour": true,
+	"(time.Time).ISOWeek": true,
+	"(time.Time).In": true,
+	"(time.Time).IsDST": true,
+	"(time.Time).IsZero": true,
+	"(time.Time).Local": true,
+	"(time.Time).Location": true,
+	"(time.Time).MarshalBinary": true,
+	"(time.Time).MarshalJSON": true,
+	"(time.Time).MarshalText": true,
+	"(time.Time).Minute": true,
+	"(time.Time).Month": true,
+	"(time.Time).Nanosecond": true,
+	"(time.Time).Round": true,
+	"(time.Time).Second": true,
+	"(time.Time).String": true,
+	"(time.Time).Sub": true,
+	"(time.Time).Truncate": true,
+	"(time.Time).UTC": true,
+	"(time.Time).Unix": true,
+	"(time.Time).UnixMicro": true,
+	"(time.Time).UnixMilli": true,
+	"(time.Time).UnixNano": true,
+	"(time.Time).Weekday": true,
+	"(time.Time).Year": true,
+	"(time.Time).YearDay": true,
+	"(time.Time).Zone": true,
+	"(time.Time).ZoneBounds": true,
 }

@@ -43,14 +43,7 @@ func TestUnifiedRegistryPreservesDefaults(t *testing.T) {
 func TestUnifiedRegistryAllOverridesConfiguredDisable(t *testing.T) {
 	disabled := false
 	registry, err := NewRegistry(
-		RegistryOptions{
-			All: true,
-			Settings: map[string]config.RuleConfig{
-				"format":         {Enabled: &disabled},
-				"no-init":        {Enabled: &disabled},
-				"invalid-regexp": {Enabled: &disabled},
-			},
-		},
+		RegistryOptions{All: true, Settings: map[string]config.RuleConfig{"format": {Enabled: &disabled}, "no-init": {Enabled: &disabled}, "invalid-regexp": {Enabled: &disabled}}},
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -92,10 +85,10 @@ func TestUnifiedRegistryFiltersEffectiveSeverityBeforeCapabilities(t *testing.T)
 		RegistryOptions{
 			Only: []string{"format", "no-init", "regexp-match-in-loop", "invalid-template"},
 			Settings: map[string]config.RuleConfig{
-				"format":               {Severity: "warning"},
-				"no-init":              {Severity: "error"},
+				"format": {Severity: "warning"},
+				"no-init": {Severity: "error"},
 				"regexp-match-in-loop": {Severity: "warning"},
-				"invalid-template":     {Severity: "error"},
+				"invalid-template": {Severity: "error"},
 			},
 			MinimumSeverity: diagnostic.SeverityError,
 		},
@@ -107,7 +100,7 @@ func TestUnifiedRegistryFiltersEffectiveSeverityBeforeCapabilities(t *testing.T)
 	if got := len(rules); got != 2 || rules[0].Meta().Code != "invalid-template" || rules[1].Meta().Code != "no-init" {
 		t.Fatalf("filtered checks = %#v, want invalid-template and no-init", rules)
 	}
-	if capabilities := registry.Capabilities(); capabilities&CapabilitySSA != 0 {
+	if capabilities := registry.Capabilities(); capabilities & CapabilitySSA != 0 {
 		t.Fatalf("filtered SSA check still affected capabilities: %d", capabilities)
 	}
 	if registry.Severity("no-init") != diagnostic.SeverityError {
@@ -116,13 +109,7 @@ func TestUnifiedRegistryFiltersEffectiveSeverityBeforeCapabilities(t *testing.T)
 }
 
 func TestUnifiedRegistryAllDoesNotBypassMinimumSeverity(t *testing.T) {
-	registry, err := NewRegistry(
-		RegistryOptions{
-			All:             true,
-			Settings:        map[string]config.RuleConfig{"no-init": {Severity: "warning"}},
-			MinimumSeverity: diagnostic.SeverityError,
-		},
-	)
+	registry, err := NewRegistry(RegistryOptions{All: true, Settings: map[string]config.RuleConfig{"no-init": {Severity: "warning"}}, MinimumSeverity: diagnostic.SeverityError})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -138,12 +125,7 @@ func TestUnifiedRegistryRejectsInvalidMinimumSeverity(t *testing.T) {
 	if err == nil {
 		t.Fatal("invalid minimum severity was accepted")
 	}
-	_, err = NewRegistry(
-		RegistryOptions{
-			Only:     []string{"format"},
-			Settings: map[string]config.RuleConfig{"no-init": {Severity: "fatal"}},
-		},
-	)
+	_, err = NewRegistry(RegistryOptions{Only: []string{"format"}, Settings: map[string]config.RuleConfig{"no-init": {Severity: "fatal"}}})
 	if err == nil || !strings.Contains(err.Error(), "severity must be") {
 		t.Fatalf("got %v, want rule severity error", err)
 	}

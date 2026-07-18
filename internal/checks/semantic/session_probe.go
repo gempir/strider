@@ -23,28 +23,25 @@ type analysisSessionFingerprinter struct {
 }
 
 type analysisProbeScope struct {
-	key            analysisCacheKey
-	cwd            string
-	patterns       []string
+	key analysisCacheKey
+	cwd string
+	patterns []string
 	recursiveRoots []string
 }
 
 type analysisProbe struct {
-	scope                analysisProbeScope
-	static               analysisCacheKey
-	resolvedEnvironment  []byte
-	requiredFiles        []string
-	optionalFiles        []string
-	directories          []string
+	scope analysisProbeScope
+	static analysisCacheKey
+	resolvedEnvironment []byte
+	requiredFiles []string
+	optionalFiles []string
+	directories []string
 	recursiveDirectories []string
-	packageDirectories   map[string]bool
-	baseline             analysisCacheKey
+	packageDirectories map[string]bool
+	baseline analysisCacheKey
 }
 
-func (fingerprinter *analysisSessionFingerprinter) fingerprint(paths []string, registry *Registry) (
-	analysisCacheKey,
-	error,
-) {
+func (fingerprinter *analysisSessionFingerprinter) fingerprint(paths []string, registry *Registry) (analysisCacheKey, error) {
 	scope, err := newAnalysisProbeScope(paths, registry)
 	if err != nil {
 		return analysisCacheKey{}, err
@@ -109,10 +106,7 @@ func buildAnalysisProbe(scope analysisProbeScope) (*analysisProbe, error) {
 	if err != nil {
 		return nil, err
 	}
-	loaded, err := packages.Load(
-		&packages.Config{Mode: fingerprintLoadMode, Tests: true},
-		scope.patterns...,
-	)
+	loaded, err := packages.Load(&packages.Config{Mode: fingerprintLoadMode, Tests: true}, scope.patterns...)
 	if err != nil {
 		return nil, err
 	}
@@ -139,10 +133,7 @@ func buildAnalysisProbe(scope analysisProbeScope) (*analysisProbe, error) {
 	return probe, nil
 }
 
-func (probe *analysisProbe) collectPackageGraph(
-	writer *fingerprintWriter,
-	roots []*packages.Package,
-) {
+func (probe *analysisProbe) collectPackageGraph(writer *fingerprintWriter, roots []*packages.Package) {
 	seen := make(map[*packages.Package]bool)
 	var visit func(*packages.Package)
 	visit = func(pkg *packages.Package) {
@@ -165,8 +156,8 @@ func (probe *analysisProbe) collectPackageGraph(
 		all,
 		func(leftIndex, rightIndex int) bool {
 			left,
-				right := all[leftIndex],
-				all[rightIndex]
+			right := all[leftIndex],
+			all[rightIndex]
 			if left.ID != right.ID {
 				return left.ID < right.ID
 			}
@@ -226,7 +217,7 @@ func (probe *analysisProbe) collectConfigurationFiles() error {
 		return fmt.Errorf("decode Go build environment: %w", err)
 	}
 	optional := make(map[string]bool)
-	for _, variable := range []string{"GOENV", "GOMOD", "GOWORK"} {
+	for _, variable := range[]string{"GOENV", "GOMOD", "GOWORK"} {
 		value := values[variable]
 		if value != "" && value != "off" && value != os.DevNull {
 			optional[value] = true
@@ -298,11 +289,7 @@ func (probe *analysisProbe) currentKey() (analysisCacheKey, error) {
 	return writer.sum(), nil
 }
 
-func addRecursiveTargetTopology(
-	writer *fingerprintWriter,
-	root string,
-	packageDirectories map[string]bool,
-) error {
+func addRecursiveTargetTopology(writer *fingerprintWriter, root string, packageDirectories map[string]bool) error {
 	writer.addString(root)
 	err := filepath.WalkDir(
 		root,
@@ -319,7 +306,7 @@ func addRecursiveTargetTopology(
 				}
 				boundary := filepath.Join(path, "go.mod")
 				info,
-					err := os.Stat(boundary)
+				err := os.Stat(boundary)
 				switch {
 				case err == nil && info.Mode().IsRegular():
 					writer.addString("nested-module-boundary")
@@ -335,7 +322,7 @@ func addRecursiveTargetTopology(
 					return err
 				}
 			}
-			if entry.Type()&os.ModeSymlink != 0 {
+			if entry.Type() & os.ModeSymlink != 0 {
 				return nil
 			}
 			if entry.Name() == "go.mod" {
@@ -388,14 +375,11 @@ func addDirectoryFingerprint(writer *fingerprintWriter, directory string, recurs
 			if walkErr != nil {
 				return walkErr
 			}
-			if path != directory && entry.IsDir() && (entry.Name() == ".git" || strings.HasPrefix(
-				entry.Name(),
-				".strider-",
-			)) {
+			if path != directory && entry.IsDir() && (entry.Name() == ".git" || strings.HasPrefix(entry.Name(), ".strider-")) {
 				return filepath.SkipDir
 			}
 			relative,
-				err := filepath.Rel(directory, path)
+			err := filepath.Rel(directory, path)
 			if err != nil {
 				return err
 			}

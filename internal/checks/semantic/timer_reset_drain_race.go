@@ -9,15 +9,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type timerResetDrainRaceRule struct{}
+type timerResetDrainRaceRule struct {}
 
 func (timerResetDrainRaceRule) Meta() Meta {
 	return Meta{
-		Code:            "timer-reset-drain-race",
-		Summary:         "detect attempts to drain a timer based on Reset's result",
-		Explanation:     "Using time.Timer.Reset's boolean result to decide whether to receive from a timer channel is racy on older timer implementations and can block with current synchronous timer channels. Stop and drain before resetting when compatibility requires it, or reset without conditionally draining afterward.",
-		GoodExample:     "if !timer.Stop() { select { case <-timer.C: default: } }\ntimer.Reset(delay)",
-		BadExample:      "if !timer.Reset(delay) { <-timer.C }",
+		Code: "timer-reset-drain-race",
+		Summary: "detect attempts to drain a timer based on Reset's result",
+		Explanation: "Using time.Timer.Reset's boolean result to decide whether to receive from a timer channel is racy on older timer implementations and can block with current synchronous timer channels. Stop and drain before resetting when compatibility requires it, or reset without conditionally draining afterward.",
+		GoodExample: "if !timer.Stop() { select { case <-timer.C: default: } }\ntimer.Reset(delay)",
+		BadExample: "if !timer.Reset(delay) { <-timer.C }",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -32,10 +32,7 @@ func (timerResetDrainRaceRule) Run(pass *Pass) {
 				}
 				for _, conditional := range conditionalUses(call) {
 					if conditionBranchesReceiveTime(conditional) {
-						pass.Report(
-							positionNode{position: call.Pos()},
-							"do not use Timer.Reset's return value to decide whether to drain the timer channel",
-						)
+						pass.Report(positionNode{position: call.Pos()}, "do not use Timer.Reset's return value to decide whether to drain the timer channel")
 						break
 					}
 				}
@@ -101,8 +98,8 @@ func conditionBranchesReceiveTime(conditional *ssa.If) bool {
 		seen := make(map[*ssa.BasicBlock]bool)
 		work := []*ssa.BasicBlock{successor}
 		for len(work) != 0 {
-			block := work[len(work)-1]
-			work = work[:len(work)-1]
+			block := work[len(work) - 1]
+			work = work[:len(work) - 1]
 			if seen[block] || !successor.Dominates(block) {
 				continue
 			}

@@ -15,10 +15,7 @@ import (
 func equivalentTrees(originalTree, formattedTree *cst.Tree) error {
 	original := concreteFingerprint(originalTree)
 	formatted := concreteFingerprint(formattedTree)
-	if !slices.Equal(original.imports, formatted.imports) || !bytes.Equal(
-		original.syntax,
-		formatted.syntax,
-	) {
+	if !slices.Equal(original.imports, formatted.imports) || !bytes.Equal(original.syntax, formatted.syntax) {
 		return errors.New("formatted output changed the concrete syntax tree")
 	}
 	originalComments := originalTree.Comments()

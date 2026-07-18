@@ -8,15 +8,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type spinningEmptyLoopRule struct{}
+type spinningEmptyLoopRule struct {}
 
 func (spinningEmptyLoopRule) Meta() Meta {
 	return Meta{
-		Code:            "spinning-empty-loop",
-		Summary:         "detect empty loops that consume a core while waiting unsafely",
-		Explanation:     "An empty unconditional loop spins at full speed. An empty loop that only rereads variables can terminate only through unsynchronized mutation, which is a data race; use synchronization or a blocking operation instead.",
-		GoodExample:     "for !ready() {} // condition is dynamically evaluated",
-		BadExample:      "for {}",
+		Code: "spinning-empty-loop",
+		Summary: "detect empty loops that consume a core while waiting unsafely",
+		Explanation: "An empty unconditional loop spins at full speed. An empty loop that only rereads variables can terminate only through unsynchronized mutation, which is a data race; use synchronization or a blocking operation instead.",
+		GoodExample: "for !ready() {} // condition is dynamically evaluated",
+		BadExample: "for {}",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -27,7 +27,7 @@ func (spinningEmptyLoopRule) Run(pass *Pass) {
 			file,
 			func(node ast.Node) bool {
 				loop,
-					ok := node.(*ast.ForStmt)
+				ok := node.(*ast.ForStmt)
 				if !ok || len(loop.Body.List) != 0 || loop.Init != nil || loop.Post != nil {
 					return true
 				}
@@ -38,10 +38,7 @@ func (spinningEmptyLoopRule) Run(pass *Pass) {
 				if analysisExpressionHasDynamicEffect(loop.Cond) || constantFalse(pass, loop.Cond) {
 					return true
 				}
-				pass.Report(
-					loop,
-					"empty loop condition cannot change safely; synchronize instead of spinning",
-				)
+				pass.Report(loop, "empty loop condition cannot change safely; synchronize instead of spinning")
 				return true
 			},
 		)

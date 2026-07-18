@@ -12,15 +12,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type selfAssignmentRule struct{}
+type selfAssignmentRule struct {}
 
 func (selfAssignmentRule) Meta() Meta {
 	return Meta{
-		Code:            "self-assignment",
-		Summary:         "detect assignments that store an expression back into itself",
-		Explanation:     "Assigning a side-effect-free expression to the identical destination does nothing and usually indicates a mistaken variable on one side. Expressions with effectful calls or receives are excluded.",
-		GoodExample:     "current = next",
-		BadExample:      "current = current",
+		Code: "self-assignment",
+		Summary: "detect assignments that store an expression back into itself",
+		Explanation: "Assigning a side-effect-free expression to the identical destination does nothing and usually indicates a mistaken variable on one side. Expressions with effectful calls or receives are excluded.",
+		GoodExample: "current = next",
+		BadExample: "current = current",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -33,18 +33,14 @@ func (selfAssignmentRule) Run(pass *Pass) {
 			file,
 			func(node ast.Node) bool {
 				assignment,
-					ok := node.(*ast.AssignStmt)
-				if !ok || assignment.Tok != token.ASSIGN || len(assignment.Lhs) != len(
-					assignment.Rhs,
-				) {
+				ok := node.(*ast.AssignStmt)
+				if !ok || assignment.Tok != token.ASSIGN || len(assignment.Lhs) != len(assignment.Rhs) {
 					return true
 				}
-				for index, left := range assignment.Lhs {
+				for index,
+				left := range assignment.Lhs {
 					right := assignment.Rhs[index]
-					if reflect.TypeOf(left) != reflect.TypeOf(right) || renderAnalysisExpression(
-						pass,
-						left,
-					) != renderAnalysisExpression(pass, right) || !sideEffectFreeExpression(
+					if reflect.TypeOf(left) != reflect.TypeOf(right) || renderAnalysisExpression(pass, left) != renderAnalysisExpression(pass, right) || !sideEffectFreeExpression(
 						pass,
 						purity,
 						functions,
@@ -53,10 +49,7 @@ func (selfAssignmentRule) Run(pass *Pass) {
 						continue
 					}
 					text := renderAnalysisExpression(pass, left)
-					pass.Report(
-						assignment,
-						fmt.Sprintf("self-assignment of %s has no effect", text),
-					)
+					pass.Report(assignment, fmt.Sprintf("self-assignment of %s has no effect", text))
 				}
 				return true
 			},
@@ -78,12 +71,7 @@ func functionsByObject(functions []*ssa.Function) map[*types.Func]*ssa.Function 
 	return byObject
 }
 
-func sideEffectFreeExpression(
-	pass *Pass,
-	purity *purityChecker,
-	functions map[*types.Func]*ssa.Function,
-	expression ast.Expr,
-) bool {
+func sideEffectFreeExpression(pass *Pass, purity *purityChecker, functions map[*types.Func]*ssa.Function, expression ast.Expr) bool {
 	safe := true
 	ast.Inspect(
 		expression,

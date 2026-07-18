@@ -19,24 +19,11 @@ var benchmarkStaticCallCount int
 func TestStaticCallIndexMatchesInstructionScan(t *testing.T) {
 	functions := staticCallFixture(t)
 	indexed := buildPackageSSAFacts(functions, FactStaticCalls).staticCallsByPackage
-	for _, packagePath := range []string{
-		"bytes",
-		"context",
-		"regexp",
-		"strconv",
-		"strings",
-		"time",
-		"missing/package",
-	} {
+	for _, packagePath := range[]string{"bytes", "context", "regexp", "strconv", "strings", "time", "missing/package"} {
 		want := scanStaticCallsInPackage(functions, packagePath)
 		got := indexed[packagePath]
 		if len(got) != len(want) {
-			t.Fatalf(
-				"%s index has %d calls, instruction scan has %d",
-				packagePath,
-				len(got),
-				len(want),
-			)
+			t.Fatalf("%s index has %d calls, instruction scan has %d", packagePath, len(got), len(want))
 		}
 		for index := range want {
 			if got[index] != want[index] {
@@ -68,10 +55,7 @@ func BenchmarkStaticCallCohort(benchmark *testing.B) {
 			for range benchmark.N {
 				total := 0
 				for consumer := range consumers {
-					total += countStaticCallsInPackage(
-						functions,
-						packagePaths[consumer%len(packagePaths)],
-					)
+					total += countStaticCallsInPackage(functions, packagePaths[consumer % len(packagePaths)])
 				}
 				benchmarkStaticCallCount = total
 			}
@@ -85,7 +69,7 @@ func BenchmarkStaticCallCohort(benchmark *testing.B) {
 				indexed := buildPackageSSAFacts(functions, FactStaticCalls).staticCallsByPackage
 				total := 0
 				for consumer := range consumers {
-					total += len(indexed[packagePaths[consumer%len(packagePaths)]])
+					total += len(indexed[packagePaths[consumer % len(packagePaths)]])
 				}
 				benchmarkStaticCallCount = total
 			}
@@ -135,8 +119,7 @@ func scanStaticCallsInPackage(functions []*ssa.Function, packagePath string) []s
 func staticCallFixture(testingObject testing.TB) []*ssa.Function {
 	testingObject.Helper()
 	var source strings.Builder
-	source.WriteString(
-		`package fixture
+	source.WriteString(`package fixture
 
 import (
 	"bytes"
@@ -147,8 +130,7 @@ import (
 	"time"
 )
 
-`,
-	)
+`)
 	for index := range 128 {
 		fmt.Fprintf(
 			&source,

@@ -28,14 +28,8 @@ func (a *cstAnalyzer) checkConcreteFor(statement *cst.ForStmt) {
 	}
 	for list := selection.CommClauseList; list != nil; list = list.List {
 		clause := list.CommClause
-		if clause != nil && clause.CommCase != nil && clause.CommCase.DEFAULT.IsValid() && len(
-			concreteStatementsFromList(clause.StatementList),
-		) == 0 {
-			a.report(
-				"spinning-select-default",
-				clause,
-				"empty default prevents the select loop from blocking and causes it to spin",
-			)
+		if clause != nil && clause.CommCase != nil && clause.CommCase.DEFAULT.IsValid() && len(concreteStatementsFromList(clause.StatementList)) == 0 {
+			a.report("spinning-select-default", clause, "empty default prevents the select loop from blocking and causes it to spin")
 			return
 		}
 	}
@@ -43,15 +37,8 @@ func (a *cstAnalyzer) checkConcreteFor(statement *cst.ForStmt) {
 
 func (a *cstAnalyzer) checkConcreteRange(clause *cst.RangeClause, body *cst.Block) {
 	variables := concreteRangeVariables(clause)
-	if concreteRangeIndexDiscarded(clause) && strings.HasPrefix(
-		cst.Spelling(clause.Expression),
-		"[]rune(",
-	) {
-		a.report(
-			"range",
-			clause.Expression,
-			"range directly over the string to avoid allocating a rune slice",
-		)
+	if concreteRangeIndexDiscarded(clause) && strings.HasPrefix(cst.Spelling(clause.Expression), "[]rune(") {
+		a.report("range", clause.Expression, "range directly over the string to avoid allocating a rune slice")
 	}
 	if len(variables) > 1 && variables[1].Src() == "_" {
 		a.report("range", variables[1], "omit the blank range value")
@@ -66,34 +53,13 @@ func (a *cstAnalyzer) checkConcreteRange(clause *cst.RangeClause, body *cst.Bloc
 			func(node cst.Node) bool {
 				switch current := node.(type) {
 				case *cst.UnaryExpr:
-					if current.Op.Src() == "&" && concreteContainsIdentifier(
-						current.UnaryExpr,
-						name,
-					) {
-						a.report(
-							"range-val-address",
-							current,
-							fmt.Sprintf(
-								"taking the address of range value %s can be misleading",
-								name,
-							),
-						)
+					if current.Op.Src() == "&" && concreteContainsIdentifier(current.UnaryExpr, name) {
+						a.report("range-val-address", current, fmt.Sprintf("taking the address of range value %s can be misleading", name))
 					}
 				case *cst.FunctionLit:
 					if concreteContainsIdentifier(current.FunctionBody, name) {
-						a.report(
-							"range-val-in-closure",
-							current,
-							fmt.Sprintf("closure captures range value %s", name),
-						)
-						a.report(
-							"datarace",
-							current,
-							fmt.Sprintf(
-								"goroutine or closure captures changing range value %s",
-								name,
-							),
-						)
+						a.report("range-val-in-closure", current, fmt.Sprintf("closure captures range value %s", name))
+						a.report("datarace", current, fmt.Sprintf("goroutine or closure captures changing range value %s", name))
 					}
 					return false
 				}

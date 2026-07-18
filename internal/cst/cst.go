@@ -177,16 +177,7 @@ func (t *Tree) Comments() []Comment {
 				}
 				start := file.Offset(position)
 				location := file.Position(position)
-				t.comments = append(
-					t.comments,
-					Comment{
-						Text: literal,
-						Start: start,
-						End: start + len(literal),
-						Line: location.Line,
-						Column: location.Column,
-					},
-				)
+				t.comments = append(t.comments, Comment{Text: literal, Start: start, End: start + len(literal), Line: location.Line, Column: location.Column})
 			}
 		},
 	)
@@ -277,41 +268,30 @@ func (t *Tree) Position(offset int) token.Position {
 		offset = len(t.source)
 	}
 	tokens := t.Tokens()
-	index := sort.Search(
-		len(tokens),
-		func(index int) bool {
-			return tokens[index].Position().Offset >= offset
-		},
-	)
+	index := sort.Search(len(tokens), func(index int) bool {
+		return tokens[index].Position().Offset >= offset
+	})
 	if index < len(tokens) {
 		position := tokens[index].Position()
 		if position.Offset == offset {
 			return position
 		}
 	}
-	t.linesOnce.Do(
-		func() {
-			t.lines = make([]int, 1, len(t.source) / 40 + 1)
-			for index,
-			current := range t.source {
-				if current == '\n' {
-					t.lines = append(t.lines, index + 1)
-				}
+	t.linesOnce.Do(func() {
+		t.lines = make([]int, 1, len(t.source) / 40 + 1)
+		for index, current := range t.source {
+			if current == '\n' {
+				t.lines = append(t.lines, index + 1)
 			}
-		},
-	)
+		}
+	})
 	lineIndex := sort.Search(len(t.lines), func(index int) bool {
 		return t.lines[index] > offset
 	}) - 1
 	if lineIndex < 0 {
 		lineIndex = 0
 	}
-	return token.Position{
-		Filename: t.filename,
-		Offset: offset,
-		Line: lineIndex + 1,
-		Column: offset - t.lines[lineIndex] + 1,
-	}
+	return token.Position{Filename: t.filename, Offset: offset, Line: lineIndex + 1, Column: offset - t.lines[lineIndex] + 1}
 }
 
 // Tokens returns every token in source order, including the EOF token. Trivia

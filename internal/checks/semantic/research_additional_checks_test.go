@@ -126,9 +126,7 @@ func check() {
 }
 
 func TestTestParallelismReportsOnlyPlausiblyIndependentTests(t *testing.T) {
-	root := analysisModule(
-		t,
-		`package sample
+	root := analysisModule(t, `package sample
 
 import "testing"
 
@@ -136,8 +134,7 @@ var shared int
 
 func helper() {}
 func TestProduction(t *testing.T) {}
-`,
-	)
+`)
 	if err := os.WriteFile(
 		filepath.Join(root, "parallel_test.go"),
 		[]byte(`package sample
@@ -218,9 +215,7 @@ type later struct{}
 }
 
 func TestDeclarationOrderAcceptsTypeConstVarAndFunctions(t *testing.T) {
-	root := analysisModule(
-		t,
-		`package sample
+	root := analysisModule(t, `package sample
 
 type item struct{}
 
@@ -230,8 +225,7 @@ var current item
 
 func init() { current = item{} }
 func use() item { return current }
-`,
-	)
+`)
 	diagnostics := runStandaloneAnalysisRule(t, root, declarationOrderRule{})
 	if len(diagnostics) != 0 {
 		t.Fatalf("unexpected diagnostics: %#v", diagnostics)
@@ -267,11 +261,7 @@ func runStandaloneAnalysisRule(t *testing.T, root string, rule Rule) []diagnosti
 			delete(requirementsByCode, meta.Code)
 		}
 	}()
-	registry := &Registry{
-		rules: []Rule{rule},
-		settings: map[string]configuredRule{meta.Code: {severity: meta.DefaultSeverity}},
-		knownCodes: map[string]bool{meta.Code: true},
-	}
+	registry := &Registry{rules: []Rule{rule}, settings: map[string]configuredRule{meta.Code: {severity: meta.DefaultSeverity}}, knownCodes: map[string]bool{meta.Code: true}}
 	diagnostics, err := Run([]string{root}, registry)
 	if err != nil {
 		t.Fatal(err)

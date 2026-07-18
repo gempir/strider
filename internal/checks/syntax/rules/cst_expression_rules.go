@@ -17,46 +17,27 @@ func (a *cstAnalyzer) checkBinaryExpression(binary *cst.BinaryExpression) {
 	}
 	if binary.Op.Ch() == token.EQL || binary.Op.Ch() == token.NEQ {
 		if cstBooleanLiteral(binary.LHS) || cstBooleanLiteral(binary.RHS) {
-			a.report(
-				"bool-literal-in-expr",
-				binary,
-				"omit the boolean literal from the logical expression",
-			)
+			a.report("bool-literal-in-expr", binary, "omit the boolean literal from the logical expression")
 		}
 		if concreteLooksLikeTime(binary.LHS) || concreteLooksLikeTime(binary.RHS) {
-			a.report(
-				"time-equal",
-				binary,
-				"compare time.Time values with Equal instead of == or !=",
-			)
+			a.report("time-equal", binary, "compare time.Time values with Equal instead of == or !=")
 		}
 	}
 	if binary.Op.Ch() == token.LAND || binary.Op.Ch() == token.LOR {
 		if value, ok := concreteStaticBool(binary.LHS); ok {
-			if (binary.Op.Ch() == token.LAND && !value) || (binary.Op.Ch() == token.LOR && value) {
-				a.report(
-					"constant-logical-expr",
-					binary,
-					"logical expression always has the same value",
-				)
+			if(binary.Op.Ch() == token.LAND && !value) || (binary.Op.Ch() == token.LOR && value) {
+				a.report("constant-logical-expr", binary, "logical expression always has the same value")
 			}
 		}
 		if concreteExpressionCost(binary.LHS) > concreteExpressionCost(binary.RHS) {
-			a.report(
-				"optimize-operands-order",
-				binary,
-				"place the cheaper logical operand first to improve short-circuiting",
-			)
+			a.report("optimize-operands-order", binary, "place the cheaper logical operand first to improve short-circuiting")
 		}
 	}
 }
 
 func concreteLooksLikeTime(node cst.Node) bool {
 	text := cst.Spelling(node)
-	return strings.Contains(text, "time.Now(") || strings.Contains(text, "time.Date(") || strings.Contains(
-		text,
-		".Time",
-	)
+	return strings.Contains(text, "time.Now(") || strings.Contains(text, "time.Date(") || strings.Contains(text, ".Time")
 }
 
 func concreteStaticBool(node cst.Node) (bool, bool) {
@@ -98,11 +79,7 @@ func cstModuloOne(binary *cst.BinaryExpression) bool {
 		return false
 	}
 	value := constant.MakeFromLiteral(literal.Src(), token.INT, 0)
-	return value.Kind() != constant.Unknown && constant.Compare(
-		value,
-		token.EQL,
-		constant.MakeInt64(1),
-	)
+	return value.Kind() != constant.Unknown && constant.Compare(value, token.EQL, constant.MakeInt64(1))
 }
 
 func cstZeroIntegerLiteralDivision(binary *cst.BinaryExpression) bool {
@@ -116,9 +93,7 @@ func cstZeroIntegerLiteralDivision(binary *cst.BinaryExpression) bool {
 	}
 	numerator := constant.MakeFromLiteral(left.Src(), token.INT, 0)
 	denominator := constant.MakeFromLiteral(right.Src(), token.INT, 0)
-	if numerator.Kind() == constant.Unknown || denominator.Kind() == constant.Unknown || constant.Sign(
-		denominator,
-	) == 0 {
+	if numerator.Kind() == constant.Unknown || denominator.Kind() == constant.Unknown || constant.Sign(denominator) == 0 {
 		return false
 	}
 	return constant.Compare(numerator, token.LSS, denominator)
@@ -146,25 +121,11 @@ func (a *cstAnalyzer) checkUnaryExpression(expression *cst.UnaryExpr) {
 	}
 	switch {
 	case expression.Op.Ch() == token.NOT && inner.Op.Ch() == token.NOT:
-		a.report(
-			"double-negation",
-			expression,
-			"double boolean negation has no effect and should be removed",
-		)
-	case expression.Op.Ch() == token.AND && inner.Op.Ch() == token.MUL && !cgoPointerIdentifier.MatchString(
-		cst.Spelling(inner.UnaryExpr),
-	):
-		a.report(
-			"ineffective-pointer-copy",
-			expression,
-			"&*value simplifies to value and does not copy the pointed-to data",
-		)
+		a.report("double-negation", expression, "double boolean negation has no effect and should be removed")
+	case expression.Op.Ch() == token.AND && inner.Op.Ch() == token.MUL && !cgoPointerIdentifier.MatchString(cst.Spelling(inner.UnaryExpr)):
+		a.report("ineffective-pointer-copy", expression, "&*value simplifies to value and does not copy the pointed-to data")
 	case expression.Op.Ch() == token.MUL && inner.Op.Ch() == token.AND:
-		a.report(
-			"ineffective-pointer-copy",
-			expression,
-			"*&value simplifies to value and does not make a copy",
-		)
+		a.report("ineffective-pointer-copy", expression, "*&value simplifies to value and does not make a copy")
 	}
 }
 
@@ -178,11 +139,7 @@ func (a *cstAnalyzer) checkIncrementAssignment(statement *cst.Assignment) {
 	if statement.Op.Ch() != token.ASSIGN || statement.ExpressionList == nil || statement.ExpressionList2 == nil || statement.ExpressionList.Len() != 1 || statement.ExpressionList2.Len() != 1 {
 		return
 	}
-	a.checkIncrementParts(
-		statement,
-		statement.ExpressionList.Expression,
-		statement.ExpressionList2.Expression,
-	)
+	a.checkIncrementParts(statement, statement.ExpressionList.Expression, statement.ExpressionList2.Expression)
 }
 
 func (a *cstAnalyzer) checkIncrementShortDeclaration(statement *cst.ShortVarDecl) {
@@ -194,18 +151,12 @@ func (a *cstAnalyzer) checkIncrementShortDeclaration(statement *cst.ShortVarDecl
 
 func (a *cstAnalyzer) checkIncrementParts(statement, left, right cst.Node) {
 	binary, ok := right.(*cst.BinaryExpression)
-	if !ok || (binary.Op.Ch() != token.ADD && binary.Op.Ch() != token.SUB) || cst.Spelling(left) != cst.Spelling(
-		binary.LHS,
-	) {
+	if !ok || (binary.Op.Ch() != token.ADD && binary.Op.Ch() != token.SUB) || cst.Spelling(left) != cst.Spelling(binary.LHS) {
 		return
 	}
 	literal, ok := cstUnparen(binary.RHS).(*cst.BasicLit)
 	if !ok || literal.Ch() != token.INT || literal.Src() != "1" {
 		return
 	}
-	a.report(
-		"increment-decrement",
-		statement,
-		"use ++ or -- instead of assigning an addition or subtraction of one",
-	)
+	a.report("increment-decrement", statement, "use ++ or -- instead of assigning an addition or subtraction of one")
 }

@@ -9,15 +9,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type invalidUTF8StringArgumentRule struct{}
+type invalidUTF8StringArgumentRule struct {}
 
 func (invalidUTF8StringArgumentRule) Meta() Meta {
 	return Meta{
-		Code:            "invalid-utf8",
-		Summary:         "detect invalid UTF-8 arguments to strings functions",
-		Explanation:     "The cutset and character-list arguments of selected strings functions must contain valid UTF-8.",
-		GoodExample:     `strings.Trim(value, "é")`,
-		BadExample:      `strings.Trim(value, "\xff")`,
+		Code: "invalid-utf8",
+		Summary: "detect invalid UTF-8 arguments to strings functions",
+		Explanation: "The cutset and character-list arguments of selected strings functions must contain valid UTF-8.",
+		GoodExample: `strings.Trim(value, "é")`,
+		BadExample: `strings.Trim(value, "\xff")`,
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }

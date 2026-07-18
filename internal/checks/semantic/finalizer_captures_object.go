@@ -8,15 +8,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type finalizerCapturesObjectRule struct{}
+type finalizerCapturesObjectRule struct {}
 
 func (finalizerCapturesObjectRule) Meta() Meta {
 	return Meta{
-		Code:            "finalizer-captures-object",
-		Summary:         "detect finalizers that retain the object they should release",
-		Explanation:     "A finalizer closure that captures the finalized object keeps that object reachable. The garbage collector can never make the object eligible for finalization, so the finalizer never runs and the object leaks. Use the finalizer function's parameter instead.",
-		GoodExample:     "runtime.SetFinalizer(object, func(object *resource) { object.Close() })",
-		BadExample:      "runtime.SetFinalizer(object, func(*resource) { object.Close() })",
+		Code: "finalizer-captures-object",
+		Summary: "detect finalizers that retain the object they should release",
+		Explanation: "A finalizer closure that captures the finalized object keeps that object reachable. The garbage collector can never make the object eligible for finalization, so the finalizer never runs and the object leaks. Use the finalizer function's parameter instead.",
+		GoodExample: "runtime.SetFinalizer(object, func(object *resource) { object.Close() })",
+		BadExample: "runtime.SetFinalizer(object, func(*resource) { object.Close() })",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -31,10 +31,7 @@ func (finalizerCapturesObjectRule) Run(pass *Pass) {
 		if !ok || !closureCapturesFinalizerObject(closure, object) {
 			continue
 		}
-		pass.Report(
-			positionNode{position: call.Pos()},
-			"finalizer captures the finalized object and prevents it from being collected; use the finalizer parameter instead",
-		)
+		pass.Report(positionNode{position: call.Pos()}, "finalizer captures the finalized object and prevents it from being collected; use the finalizer parameter instead")
 	}
 }
 

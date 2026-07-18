@@ -8,15 +8,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type nanComparisonRule struct{}
+type nanComparisonRule struct {}
 
 func (nanComparisonRule) Meta() Meta {
 	return Meta{
-		Code:            "nan-comparison",
-		Summary:         "detect direct comparisons with NaN",
-		Explanation:     "IEEE floating-point NaN is unequal to every value, including itself, and all ordered comparisons with it are false. Use math.IsNaN when testing whether a value is NaN.",
-		GoodExample:     "if math.IsNaN(value) { handle() }",
-		BadExample:      "if value == math.NaN() { handle() }",
+		Code: "nan-comparison",
+		Summary: "detect direct comparisons with NaN",
+		Explanation: "IEEE floating-point NaN is unequal to every value, including itself, and all ordered comparisons with it are false. Use math.IsNaN when testing whether a value is NaN.",
+		GoodExample: "if math.IsNaN(value) { handle() }",
+		BadExample: "if value == math.NaN() { handle() }",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -26,15 +26,10 @@ func (nanComparisonRule) Run(pass *Pass) {
 		for _, block := range function.Blocks {
 			for _, instruction := range block.Instrs {
 				binary, ok := instruction.(*ssa.BinOp)
-				if !ok || !comparisonOperator(binary.Op) || (!isNaNValue(
-					flattenEquivalentPhi(binary.X),
-				) && !isNaNValue(flattenEquivalentPhi(binary.Y))) {
+				if !ok || !comparisonOperator(binary.Op) || (!isNaNValue(flattenEquivalentPhi(binary.X)) && !isNaNValue(flattenEquivalentPhi(binary.Y))) {
 					continue
 				}
-				pass.Report(
-					positionNode{position: binary.Pos()},
-					"direct comparison with NaN can never test for NaN; use math.IsNaN",
-				)
+				pass.Report(positionNode{position: binary.Pos()}, "direct comparison with NaN can never test for NaN; use math.IsNaN")
 			}
 		}
 	}

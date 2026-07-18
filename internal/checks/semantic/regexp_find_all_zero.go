@@ -11,15 +11,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type regexpFindAllZeroRule struct{}
+type regexpFindAllZeroRule struct {}
 
 func (regexpFindAllZeroRule) Meta() Meta {
 	return Meta{
-		Code:            "regexp-find-all-zero",
-		Summary:         "detect regexp FindAll calls with n equal to zero",
-		Explanation:     "Regexp FindAll methods return at most n matches when n is non-negative. Passing zero always returns no results; use a negative value to request all matches.",
-		GoodExample:     `matches := expression.FindAllString(input, -1)`,
-		BadExample:      `matches := expression.FindAllString(input, 0)`,
+		Code: "regexp-find-all-zero",
+		Summary: "detect regexp FindAll calls with n equal to zero",
+		Explanation: "Regexp FindAll methods return at most n matches when n is non-negative. Passing zero always returns no results; use a negative value to request all matches.",
+		GoodExample: `matches := expression.FindAllString(input, -1)`,
+		BadExample: `matches := expression.FindAllString(input, 0)`,
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -39,10 +39,7 @@ func (regexpFindAllZeroRule) Run(pass *Pass) {
 			continue
 		}
 		node := explicitCallArgument(calls[call.Pos()], 1, call.Pos())
-		pass.Report(
-			node,
-			"calling a FindAll method with n == 0 will return no results, did you mean -1?",
-		)
+		pass.Report(node, "calling a FindAll method with n == 0 will return no results, did you mean -1?")
 	}
 }
 

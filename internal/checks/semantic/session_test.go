@@ -21,9 +21,7 @@ func TestSessionCachesDeepCopiedWholeTargetResult(t *testing.T) {
 		Code: "check",
 		Message: "original",
 		Notes: []diagnostic.Note{{Message: "note"}},
-		Fixes: []diagnostic.Fix{
-			{Message: "fix", Edits: []diagnostic.TextEdit{{NewText: "replacement"}}},
-		},
+		Fixes: []diagnostic.Fix{{Message: "fix", Edits: []diagnostic.TextEdit{{NewText: "replacement"}}}},
 	}
 	session := newSession(
 		SessionOptions{MaxEntries: 2, MaxBytes: 1 << 20},
@@ -119,11 +117,7 @@ func TestSessionRetriesGenerationChangedDuringAnalysis(t *testing.T) {
 		t.Fatal(err)
 	}
 	if runs.Load() != 2 || len(diagnostics) != 1 || diagnostics[0].Code != "2" {
-		t.Fatalf(
-			"unstable result was returned or cached: runs %d, diagnostics %#v",
-			runs.Load(),
-			diagnostics,
-		)
+		t.Fatalf("unstable result was returned or cached: runs %d, diagnostics %#v", runs.Load(), diagnostics)
 	}
 	if _, err := session.Run([]string{"target"}, &Registry{}); err != nil {
 		t.Fatal(err)
@@ -148,10 +142,7 @@ func TestSessionRejectsContinuallyChangingGeneration(t *testing.T) {
 			nil
 		},
 	)
-	if _, err := session.Run([]string{"target"}, &Registry{}); err == nil || !strings.Contains(
-		err.Error(),
-		"inputs changed",
-	) {
+	if _, err := session.Run([]string{"target"}, &Registry{}); err == nil || !strings.Contains(err.Error(), "inputs changed") {
 		t.Fatalf("continually changing inputs returned error %v", err)
 	}
 	if runs.Load() != maxGenerationAttempts {
@@ -234,9 +225,7 @@ func check() { time.Sleep(1) }
 	filename := filepath.Join(root, "main.go")
 	registry, err := NewRegistryConfigured(
 		[]string{"suspicious-sleep"},
-		map[string]config.RuleConfig{
-			"suspicious-sleep": {Severity: "warning", Excludes: []string{"second.go", "first.go"}},
-		},
+		map[string]config.RuleConfig{"suspicious-sleep": {Severity: "warning", Excludes: []string{"second.go", "first.go"}}},
 		root,
 	)
 	if err != nil {
@@ -272,9 +261,7 @@ func check() { time.Sleep(2) }
 
 	reordered, err := NewRegistryConfigured(
 		[]string{"suspicious-sleep"},
-		map[string]config.RuleConfig{
-			"suspicious-sleep": {Severity: "warning", Excludes: []string{"first.go", "second.go"}},
-		},
+		map[string]config.RuleConfig{"suspicious-sleep": {Severity: "warning", Excludes: []string{"first.go", "second.go"}}},
 		root,
 	)
 	if err != nil {
@@ -290,9 +277,7 @@ func check() { time.Sleep(2) }
 
 	differentSeverity, err := NewRegistryConfigured(
 		[]string{"suspicious-sleep"},
-		map[string]config.RuleConfig{
-			"suspicious-sleep": {Severity: "error", Excludes: []string{"first.go", "second.go"}},
-		},
+		map[string]config.RuleConfig{"suspicious-sleep": {Severity: "error", Excludes: []string{"first.go", "second.go"}}},
 		root,
 	)
 	if err != nil {
@@ -342,11 +327,7 @@ func check() { time.Sleep(1) }
 	if stats := session.Stats(); stats.Hits != 1 || stats.Misses != 1 {
 		t.Fatalf("unchanged target was not reused: %#v", stats)
 	}
-	if err := os.WriteFile(
-		filepath.Join(root, "main.go"),
-		[]byte("package sample\nfunc check() {}\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "main.go"), []byte("package sample\nfunc check() {}\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	third, err := session.Run([]string{root}, registry)
@@ -363,22 +344,14 @@ func check() { time.Sleep(1) }
 
 func TestSessionRecursiveTargetDetectsNewSiblingPackage(t *testing.T) {
 	root := t.TempDir()
-	if err := os.WriteFile(
-		filepath.Join(root, "go.mod"),
-		[]byte("module example.com/sessiontopology\n\ngo 1.26\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/sessiontopology\n\ngo 1.26\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	existing := filepath.Join(root, "existing")
 	if err := os.Mkdir(existing, 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(
-		filepath.Join(existing, "existing.go"),
-		[]byte("package existing\nfunc Value() int { return 1 }\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(filepath.Join(existing, "existing.go"), []byte("package existing\nfunc Value() int { return 1 }\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	previousDirectory, err := os.Getwd()
@@ -408,11 +381,7 @@ func TestSessionRecursiveTargetDetectsNewSiblingPackage(t *testing.T) {
 	if err := os.Mkdir(sibling, 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(
-		filepath.Join(sibling, "sibling.go"),
-		[]byte("package sibling\nimport \"time\"\nfunc Check() { time.Sleep(1) }\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(filepath.Join(sibling, "sibling.go"), []byte("package sibling\nimport \"time\"\nfunc Check() { time.Sleep(1) }\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	second, err := session.Run([]string{root}, registry)
@@ -483,41 +452,24 @@ func TestSessionRecursiveTargetDetectsDeletedNestedModuleBoundary(t *testing.T) 
 	}
 }
 
-func nestedModuleBoundaryFixture(t *testing.T, withBoundary bool) (
-	string,
-	string,
-	*Registry,
-	*Session,
-) {
+func nestedModuleBoundaryFixture(t *testing.T, withBoundary bool) (string, string, *Registry, *Session) {
 	t.Helper()
 	root := t.TempDir()
-	if err := os.WriteFile(
-		filepath.Join(root, "go.mod"),
-		[]byte("module example.com/sessionboundary\n\ngo 1.26\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/sessionboundary\n\ngo 1.26\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	existing := filepath.Join(root, "existing")
 	if err := os.Mkdir(existing, 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(
-		filepath.Join(existing, "existing.go"),
-		[]byte("package existing\nfunc Value() int { return 1 }\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(filepath.Join(existing, "existing.go"), []byte("package existing\nfunc Value() int { return 1 }\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	nested := filepath.Join(root, "nested")
 	if err := os.Mkdir(nested, 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(
-		filepath.Join(nested, "nested.go"),
-		[]byte("package nested\nimport \"time\"\nfunc Check() { time.Sleep(1) }\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(filepath.Join(nested, "nested.go"), []byte("package nested\nimport \"time\"\nfunc Check() { time.Sleep(1) }\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	boundary := filepath.Join(nested, "go.mod")
@@ -551,11 +503,7 @@ func TestRecursiveTargetTopologySkipsIrrelevantTrees(t *testing.T) {
 		if err := os.Mkdir(path, 0o700); err != nil {
 			t.Fatal(err)
 		}
-		if err := os.WriteFile(
-			filepath.Join(path, "ignored.go"),
-			[]byte("package ignored\n"),
-			0o600,
-		); err != nil {
+		if err := os.WriteFile(filepath.Join(path, "ignored.go"), []byte("package ignored\n"), 0o600); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -568,11 +516,7 @@ func TestRecursiveTargetTopologySkipsIrrelevantTrees(t *testing.T) {
 	}
 	first := fingerprint()
 	for _, directory := range ignoredDirectories {
-		if err := os.WriteFile(
-			filepath.Join(root, directory, "new.go"),
-			[]byte("package changed\n"),
-			0o600,
-		); err != nil {
+		if err := os.WriteFile(filepath.Join(root, directory, "new.go"), []byte("package changed\n"), 0o600); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -602,43 +546,27 @@ func TestRecursiveTargetTopologySkipsIrrelevantTrees(t *testing.T) {
 	if err := os.Mkdir(visible, 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(
-		filepath.Join(visible, "visible.go"),
-		[]byte("package visible\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(filepath.Join(visible, "visible.go"), []byte("package visible\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if third := fingerprint(); third == nodeModulesContentKey {
 		t.Fatal("visible package did not change the topology fingerprint")
 	} else {
-		if err := os.WriteFile(
-			filepath.Join(visible, "visible.go"),
-			[]byte("package visible\nfunc Changed() {}\n"),
-			0o600,
-		); err != nil {
+		if err := os.WriteFile(filepath.Join(visible, "visible.go"), []byte("package visible\nfunc Changed() {}\n"), 0o600); err != nil {
 			t.Fatal(err)
 		}
 		if fourth := fingerprint(); fourth == third {
 			t.Fatal("unloaded package content did not change the topology fingerprint")
 		} else {
 			boundary := filepath.Join(visible, "go.mod")
-			if err := os.WriteFile(
-				boundary,
-				[]byte("module example.com/visible-one\n\ngo 1.26\n"),
-				0o600,
-			); err != nil {
+			if err := os.WriteFile(boundary, []byte("module example.com/visible-one\n\ngo 1.26\n"), 0o600); err != nil {
 				t.Fatal(err)
 			}
 			fifth := fingerprint()
 			if fifth == fourth {
 				t.Fatal("nested module boundary did not change the topology fingerprint")
 			}
-			if err := os.WriteFile(
-				boundary,
-				[]byte("module example.com/visible-two\n\ngo 1.26\n"),
-				0o600,
-			); err != nil {
+			if err := os.WriteFile(boundary, []byte("module example.com/visible-two\n\ngo 1.26\n"), 0o600); err != nil {
 				t.Fatal(err)
 			}
 			if sixth := fingerprint(); sixth == fifth {
@@ -688,19 +616,13 @@ func TestProbeConfigurationTracksVendorModulesMetadata(t *testing.T) {
 	}
 	moduleFile := filepath.Join(moduleRoot, "go.mod")
 	workFile := filepath.Join(workRoot, "go.work")
-	if err := os.WriteFile(
-		moduleFile,
-		[]byte("module example.com/vendorprobe\n\ngo 1.26\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(moduleFile, []byte("module example.com/vendorprobe\n\ngo 1.26\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(workFile, []byte("go 1.26\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	resolved, err := json.Marshal(
-		map[string]string{"GOENV": "", "GOMOD": moduleFile, "GOWORK": workFile},
-	)
+	resolved, err := json.Marshal(map[string]string{"GOENV": "", "GOMOD": moduleFile, "GOWORK": workFile})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -708,10 +630,7 @@ func TestProbeConfigurationTracksVendorModulesMetadata(t *testing.T) {
 		t.Run(
 			name,
 			func(t *testing.T) {
-				probe := &analysisProbe{
-					scope: analysisProbeScope{cwd: moduleRoot},
-					resolvedEnvironment: resolved,
-				}
+				probe := &analysisProbe{scope: analysisProbeScope{cwd: moduleRoot}, resolvedEnvironment: resolved}
 				if err := probe.collectConfigurationFiles(); err != nil {
 					t.Fatal(err)
 				}
@@ -877,30 +796,16 @@ func BenchmarkSessionWatchIteration(benchmark *testing.B) {
 func benchmarkAnalysisModule(benchmark *testing.B) (string, string, string) {
 	benchmark.Helper()
 	root := benchmark.TempDir()
-	if err := os.WriteFile(
-		filepath.Join(root, "go.mod"),
-		[]byte("module example.com/sessionbenchmark\n\ngo 1.26\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/sessionbenchmark\n\ngo 1.26\n"), 0o600); err != nil {
 		benchmark.Fatal(err)
 	}
 	for fileIndex := range 16 {
 		var source strings.Builder
 		source.WriteString("package benchmark\n\n")
 		for functionIndex := range 64 {
-			fmt.Fprintf(
-				&source,
-				"func check%d_%d(value *int) int { if value == nil {} ; return *value + %d }\n",
-				fileIndex,
-				functionIndex,
-				functionIndex,
-			)
+			fmt.Fprintf(&source, "func check%d_%d(value *int) int { if value == nil {} ; return *value + %d }\n", fileIndex, functionIndex, functionIndex)
 		}
-		if err := os.WriteFile(
-			filepath.Join(root, fmt.Sprintf("checks_%02d.go", fileIndex)),
-			[]byte(source.String()),
-			0o600,
-		); err != nil {
+		if err := os.WriteFile(filepath.Join(root, fmt.Sprintf("checks_%02d.go", fileIndex)), []byte(source.String()), 0o600); err != nil {
 			benchmark.Fatal(err)
 		}
 	}

@@ -10,15 +10,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type negativeLengthCapacityComparisonRule struct{}
+type negativeLengthCapacityComparisonRule struct {}
 
 func (negativeLengthCapacityComparisonRule) Meta() Meta {
 	return Meta{
-		Code:            "negative-length-capacity-comparison",
-		Summary:         "detect checks for negative len or cap results",
-		Explanation:     "The predeclared len and cap functions always return non-negative values, so testing whether either result is below zero can never succeed.",
-		GoodExample:     "if len(values) == 0 { handleEmpty() }",
-		BadExample:      "if len(values) < 0 { unreachable() }",
+		Code: "negative-length-capacity-comparison",
+		Summary: "detect checks for negative len or cap results",
+		Explanation: "The predeclared len and cap functions always return non-negative values, so testing whether either result is below zero can never succeed.",
+		GoodExample: "if len(values) == 0 { handleEmpty() }",
+		BadExample: "if len(values) < 0 { unreachable() }",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -29,7 +29,7 @@ func (negativeLengthCapacityComparisonRule) Run(pass *Pass) {
 			file,
 			func(node ast.Node) bool {
 				binary,
-					ok := node.(*ast.BinaryExpr)
+				ok := node.(*ast.BinaryExpr)
 				if !ok {
 					return true
 				}

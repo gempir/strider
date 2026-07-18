@@ -11,22 +11,14 @@ func (a *cstAnalyzer) checkConcreteAssignmentPolicy(statement *cst.Assignment) {
 	if statement == nil || statement.ExpressionList == nil || statement.ExpressionList2 == nil || statement.ExpressionList.Len() != 1 || statement.ExpressionList2.Len() != 1 {
 		return
 	}
-	a.checkConcreteAssignedCall(
-		statement,
-		statement.ExpressionList.Expression,
-		statement.ExpressionList2.Expression,
-	)
+	a.checkConcreteAssignedCall(statement, statement.ExpressionList.Expression, statement.ExpressionList2.Expression)
 }
 
 func (a *cstAnalyzer) checkConcreteShortDeclarationPolicy(statement *cst.ShortVarDecl) {
 	if statement == nil || statement.IdentifierList == nil || statement.ExpressionList == nil || statement.IdentifierList.Len() != 1 || statement.ExpressionList.Len() != 1 {
 		return
 	}
-	a.checkConcreteAssignedCall(
-		statement,
-		statement.IdentifierList,
-		statement.ExpressionList.Expression,
-	)
+	a.checkConcreteAssignedCall(statement, statement.IdentifierList, statement.ExpressionList.Expression)
 }
 
 func (a *cstAnalyzer) checkConcreteAssignedCall(statement, left, right cst.Node) {
@@ -38,20 +30,11 @@ func (a *cstAnalyzer) checkConcreteAssignedCall(statement, left, right cst.Node)
 	root := concreteRootIdentifier(left)
 	if strings.HasPrefix(name, "atomic.") {
 		arguments := concreteCallArguments(call.Postfix)
-		if len(arguments) > 0 && strings.TrimPrefix(cst.Spelling(arguments[0]), "&") == cst.Spelling(
-			left,
-		) {
-			a.report(
-				"atomic",
-				statement,
-				"do not assign an atomic operation result back to the same value",
-			)
+		if len(arguments) > 0 && strings.TrimPrefix(cst.Spelling(arguments[0]), "&") == cst.Spelling(left) {
+			a.report("atomic", statement, "do not assign an atomic operation result back to the same value")
 		}
 	}
-	if unit := concreteEpochUnit(name); unit != "" && root.IsValid() && !validEpochName(
-		root.Src(),
-		unit,
-	) {
+	if unit := concreteEpochUnit(name); unit != "" && root.IsValid() && !validEpochName(root.Src(), unit) {
 		a.report("epoch-naming", root, fmt.Sprintf("name should end with a %s unit suffix", unit))
 	}
 }
@@ -71,11 +54,7 @@ func concreteEpochUnit(name string) string {
 	}
 }
 
-func (a *cstAnalyzer) checkConcreteFunctionMutation(
-	parameters *cst.Parameters,
-	receiver *cst.Parameters,
-	body cst.Node,
-) {
+func (a *cstAnalyzer) checkConcreteFunctionMutation(parameters *cst.Parameters, receiver *cst.Parameters, body cst.Node) {
 	if body == nil {
 		return
 	}
@@ -88,20 +67,10 @@ func (a *cstAnalyzer) checkConcreteFunctionMutation(
 			switch current := node.(type) {
 			case *cst.Assignment:
 				for list := current.ExpressionList; list != nil; list = list.List {
-					a.reportConcreteMutation(
-						list.Expression,
-						parameterNames,
-						receiverNames,
-						valueReceiver,
-					)
+					a.reportConcreteMutation(list.Expression, parameterNames, receiverNames, valueReceiver)
 				}
 			case *cst.IncDecStmt:
-				a.reportConcreteMutation(
-					current.Expression,
-					parameterNames,
-					receiverNames,
-					valueReceiver,
-				)
+				a.reportConcreteMutation(current.Expression, parameterNames, receiverNames, valueReceiver)
 			}
 			return true
 		},
@@ -123,29 +92,16 @@ func concreteValueReceiver(receiver *cst.Parameters) bool {
 	return len(declarations) != 0 && !strings.HasPrefix(cst.Spelling(declarations[0].TypeNode), "*")
 }
 
-func (a *cstAnalyzer) reportConcreteMutation(
-	target cst.Node,
-	parameters,
-	receivers map[string]bool,
-	valueReceiver bool,
-) {
+func (a *cstAnalyzer) reportConcreteMutation(target cst.Node, parameters, receivers map[string]bool, valueReceiver bool) {
 	root := concreteRootIdentifier(target)
 	if !root.IsValid() {
 		return
 	}
 	if parameters[root.Src()] {
-		a.report(
-			"modifies-parameter",
-			target,
-			fmt.Sprintf("assignment modifies parameter %s", root.Src()),
-		)
+		a.report("modifies-parameter", target, fmt.Sprintf("assignment modifies parameter %s", root.Src()))
 	}
 	if valueReceiver && receivers[root.Src()] {
-		a.report(
-			"modifies-value-receiver",
-			target,
-			fmt.Sprintf("assignment modifies value receiver %s", root.Src()),
-		)
+		a.report("modifies-value-receiver", target, fmt.Sprintf("assignment modifies value receiver %s", root.Src()))
 	}
 }
 

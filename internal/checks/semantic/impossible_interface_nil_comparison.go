@@ -10,15 +10,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type impossibleInterfaceNilComparisonRule struct{}
+type impossibleInterfaceNilComparisonRule struct {}
 
 func (impossibleInterfaceNilComparisonRule) Meta() Meta {
 	return Meta{
-		Code:            "impossible-interface-nil-comparison",
-		Summary:         "detect interface comparisons made non-nil by a concrete dynamic type",
-		Explanation:     "An interface is nil only when both its dynamic type and value are absent. Storing a typed nil pointer in an interface gives it a concrete dynamic type, so the interface itself is non-nil.",
-		GoodExample:     "func result(ok bool) error { if !ok { return nil }; return &problem{} }",
-		BadExample:      "func result() error { var problem *Problem; return problem }",
+		Code: "impossible-interface-nil-comparison",
+		Summary: "detect interface comparisons made non-nil by a concrete dynamic type",
+		Explanation: "An interface is nil only when both its dynamic type and value are absent. Storing a typed nil pointer in an interface gives it a concrete dynamic type, so the interface itself is non-nil.",
+		GoodExample: "func result(ok bool) error { if !ok { return nil }; return &problem{} }",
+		BadExample: "func result() error { var problem *Problem; return problem }",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -40,20 +40,14 @@ func (impossibleInterfaceNilComparisonRule) Run(pass *Pass) {
 					continue
 				}
 				proof := checker.neverNil(interfaceValue, make(map[ssa.Value]bool))
-				if proof == interfaceNilUnknown || proof == interfaceNilFromCall && strings.HasSuffix(
-					pass.FileSet.Position(binary.Pos()).Filename,
-					"_test.go",
-				) {
+				if proof == interfaceNilUnknown || proof == interfaceNilFromCall && strings.HasSuffix(pass.FileSet.Position(binary.Pos()).Filename, "_test.go") {
 					continue
 				}
 				truth := "never"
 				if binary.Op == token.NEQ {
 					truth = "always"
 				}
-				pass.Report(
-					positionNode{position: binary.Pos()},
-					"interface has a concrete dynamic type; this comparison is "+truth+" true",
-				)
+				pass.Report(positionNode{position: binary.Pos()}, "interface has a concrete dynamic type; this comparison is " + truth + " true")
 			}
 		}
 	}
@@ -80,21 +74,17 @@ const (
 
 type interfaceResultKey struct {
 	function *ssa.Function
-	index    int
+	index int
 }
 
 type interfaceNilChecker struct {
-	pass     *Pass
+	pass *Pass
 	checking map[interfaceResultKey]bool
-	results  map[interfaceResultKey]interfaceNilProof
+	results map[interfaceResultKey]interfaceNilProof
 }
 
 func newInterfaceNilChecker(pass *Pass) *interfaceNilChecker {
-	return &interfaceNilChecker{
-		pass:     pass,
-		checking: make(map[interfaceResultKey]bool),
-		results:  make(map[interfaceResultKey]interfaceNilProof),
-	}
+	return &interfaceNilChecker{pass: pass, checking: make(map[interfaceResultKey]bool), results: make(map[interfaceResultKey]interfaceNilProof)}
 }
 
 func (checker *interfaceNilChecker) neverNil(value ssa.Value, seen map[ssa.Value]bool) interfaceNilProof {
@@ -147,7 +137,9 @@ func (checker *interfaceNilChecker) resultNeverNil(function *ssa.Function, index
 	if proof, known := checker.results[key]; known {
 		return proof
 	}
-	if function == nil || function.Pkg != checker.pass.SSAPackage || function.Blocks == nil || function.Signature == nil || index >= function.Signature.Results().Len() || checker.checking[key] {
+	if function == nil || function.Pkg != checker.pass.SSAPackage || function.Blocks == nil || function.Signature == nil || index >= function.Signature.Results().Len() || checker.checking[
+		key,
+	] {
 		return interfaceNilUnknown
 	}
 	checker.checking[key] = true

@@ -178,11 +178,7 @@ var extendedCatalog = []spec{
 	{"redundant-test-main-exit", "remove redundant os.Exit in TestMain", "enabled"},
 	{"string-format", "enforce configured string constraints", "no constraints"},
 	{"string-of-int", "make integer-to-string intent explicit", "enabled"},
-	{
-		"spaced-compiler-directive",
-		"detect compiler directives disabled by leading whitespace",
-		"enabled",
-	},
+	{"spaced-compiler-directive", "detect compiler directives disabled by leading whitespace", "enabled"},
 	{"spinning-select-default", "detect select loops that spin on an empty default", "enabled"},
 	{"struct-tag", "validate struct tag syntax and options", "standard tags"},
 	{"superfluous-else", "remove else after terminating branches", "enabled"},

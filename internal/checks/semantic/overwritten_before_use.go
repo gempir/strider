@@ -11,24 +11,22 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type overwrittenBeforeUseRule struct{}
+type overwrittenBeforeUseRule struct {}
 
 func (overwrittenBeforeUseRule) Meta() Meta {
 	return Meta{
-		Code:            "overwritten-before-use",
-		Summary:         "detect assigned values that are replaced before being used",
-		Explanation:     "A non-constant value assigned to a local variable but never read is often a forgotten error check or dead computation. The analyzer follows SSA phi nodes so values flowing across control-flow joins still count as used.",
-		GoodExample:     "result := calculate(); use(result); result = calculateAgain()",
-		BadExample:      "result := calculate(); result = calculateAgain()",
+		Code: "overwritten-before-use",
+		Summary: "detect assigned values that are replaced before being used",
+		Explanation: "A non-constant value assigned to a local variable but never read is often a forgotten error check or dead computation. The analyzer follows SSA phi nodes so values flowing across control-flow joins still count as used.",
+		GoodExample: "result := calculate(); use(result); result = calculateAgain()",
+		BadExample: "result := calculate(); result = calculateAgain()",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
 
 func (overwrittenBeforeUseRule) Run(pass *Pass) {
 	for _, function := range pass.Functions {
-		if function == nil || function.Synthetic != "" || function.Blocks == nil || isExampleFunction(
-			function,
-		) {
+		if function == nil || function.Synthetic != "" || function.Blocks == nil || isExampleFunction(function) {
 			continue
 		}
 		syntax := function.Syntax()
@@ -61,17 +59,13 @@ func isExampleFunction(function *ssa.Function) bool {
 
 func inspectFunctionSyntax(root ast.Node, visit func(ast.Node) bool) {
 	first := true
-	ast.Inspect(
-		root,
-		func(node ast.Node) bool {
-			if _,
-				ok := node.(*ast.FuncLit); ok && !first {
-				return false
-			}
-			first = false
-			return visit(node)
-		},
-	)
+	ast.Inspect(root, func(node ast.Node) bool {
+		if _, ok := node.(*ast.FuncLit); ok && !first {
+			return false
+		}
+		first = false
+		return visit(node)
+	})
 }
 
 func functionSwitchTags(function *ssa.Function, syntax ast.Node) map[ssa.Value]bool {
@@ -80,12 +74,12 @@ func functionSwitchTags(function *ssa.Function, syntax ast.Node) map[ssa.Value]b
 		syntax,
 		func(node ast.Node) bool {
 			switchStatement,
-				ok := node.(*ast.SwitchStmt)
+			ok := node.(*ast.SwitchStmt)
 			if !ok || switchStatement.Tag == nil {
 				return true
 			}
 			value,
-				_ := function.ValueForExpr(switchStatement.Tag)
+			_ := function.ValueForExpr(switchStatement.Tag)
 			if value != nil {
 				tags[value] = true
 			}
@@ -95,12 +89,7 @@ func functionSwitchTags(function *ssa.Function, syntax ast.Node) map[ssa.Value]b
 	return tags
 }
 
-func reportUnusedIncrementValue(
-	pass *Pass,
-	function *ssa.Function,
-	statement *ast.IncDecStmt,
-	switchTags map[ssa.Value]bool,
-) {
+func reportUnusedIncrementValue(pass *Pass, function *ssa.Function, statement *ast.IncDecStmt, switchTags map[ssa.Value]bool) {
 	value, _ := function.ValueForExpr(statement.X)
 	if value == nil {
 		return
@@ -108,21 +97,10 @@ func reportUnusedIncrementValue(
 	if _, constant := value.(*ssa.Const); constant || ssaValueHasUse(value, switchTags, nil) {
 		return
 	}
-	pass.Report(
-		statement,
-		fmt.Sprintf(
-			"this value of %s is overwritten before use",
-			renderAnalysisExpression(pass, statement.X),
-		),
-	)
+	pass.Report(statement, fmt.Sprintf("this value of %s is overwritten before use", renderAnalysisExpression(pass, statement.X)))
 }
 
-func reportUnusedAssignedValues(
-	pass *Pass,
-	function *ssa.Function,
-	statement *ast.AssignStmt,
-	switchTags map[ssa.Value]bool,
-) {
+func reportUnusedAssignedValues(pass *Pass, function *ssa.Function, statement *ast.AssignStmt, switchTags map[ssa.Value]bool) {
 	if len(statement.Lhs) > 1 && len(statement.Rhs) == 1 {
 		reportUnusedTupleValues(pass, function, statement, switchTags)
 		return
@@ -142,19 +120,11 @@ func reportUnusedAssignedValues(
 		if _, constant := value.(*ssa.Const); constant || ssaValueHasUse(value, switchTags, nil) {
 			continue
 		}
-		pass.Report(
-			statement,
-			fmt.Sprintf("this value of %s is overwritten before use", identifier.Name),
-		)
+		pass.Report(statement, fmt.Sprintf("this value of %s is overwritten before use", identifier.Name))
 	}
 }
 
-func reportUnusedTupleValues(
-	pass *Pass,
-	function *ssa.Function,
-	statement *ast.AssignStmt,
-	switchTags map[ssa.Value]bool,
-) {
+func reportUnusedTupleValues(pass *Pass, function *ssa.Function, statement *ast.AssignStmt, switchTags map[ssa.Value]bool) {
 	tuple, _ := function.ValueForExpr(statement.Rhs[0])
 	if tuple == nil || tuple.Referrers() == nil {
 		return
@@ -168,10 +138,7 @@ func reportUnusedTupleValues(
 		if !ok || identifier.Name == "_" {
 			continue
 		}
-		pass.Report(
-			statement,
-			fmt.Sprintf("this value of %s is overwritten before use", identifier.Name),
-		)
+		pass.Report(statement, fmt.Sprintf("this value of %s is overwritten before use", identifier.Name))
 	}
 }
 

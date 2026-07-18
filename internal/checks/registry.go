@@ -55,9 +55,7 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 	normalizedSettings := make(map[string]config.RuleConfig, len(options.Settings))
 	unknown := []string{}
 	for code, setting := range options.Settings {
-		if setting.Severity != "" && !diagnostic.ValidSeverity(
-			diagnostic.Severity(setting.Severity),
-		) {
+		if setting.Severity != "" && !diagnostic.ValidSeverity(diagnostic.Severity(setting.Severity)) {
 			return nil, fmt.Errorf("check %q severity must be note, warning, or error", code)
 		}
 		normalized := strings.ToLower(code)
@@ -93,23 +91,13 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 	syntaxSettings := selectedSettings(normalizedSettings, syntaxCodes)
 	semanticSettings := selectedSettings(normalizedSettings, semanticCodes)
 
-	registry := &Registry{
-		settings: make(map[string]configuredRule, len(available)),
-		knownCodes: make(map[string]bool, len(available)),
-		root: options.Root,
-	}
+	registry := &Registry{settings: make(map[string]configuredRule, len(available)), knownCodes: make(map[string]bool, len(available)), root: options.Root}
 	for _, meta := range available {
 		registry.knownCodes[meta.Code] = true
 	}
 	if !explicit || len(syntaxOnly) != 0 {
 		registry.syntax, err = syntax.NewRegistryWithOptions(
-			syntax.RegistryOptions{
-				Only: syntaxOnly,
-				EnableAll: options.All,
-				Settings: syntaxSettings,
-				Root: options.Root,
-				MinimumSeverity: minimumSeverity,
-			},
+			syntax.RegistryOptions{Only: syntaxOnly, EnableAll: options.All, Settings: syntaxSettings, Root: options.Root, MinimumSeverity: minimumSeverity},
 		)
 		if err != nil {
 			return nil, err
@@ -117,12 +105,7 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 	}
 	if !explicit || len(semanticOnly) != 0 {
 		registry.semantic, err = semantic.NewRegistryWithOptions(
-			semantic.RegistryOptions{
-				Only: semanticOnly,
-				Settings: semanticSettings,
-				Root: options.Root,
-				MinimumSeverity: minimumSeverity,
-			},
+			semantic.RegistryOptions{Only: semanticOnly, Settings: semanticSettings, Root: options.Root, MinimumSeverity: minimumSeverity},
 		)
 		if err != nil {
 			return nil, err
@@ -130,10 +113,7 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 	}
 
 	formatSetting := normalizedSettings[formatMeta.Code]
-	formatSetting.Excludes = append(
-		append([]string(nil), options.FormatExcludes...),
-		formatSetting.Excludes...,
-	)
+	formatSetting.Excludes = append(append([]string(nil), options.FormatExcludes...), formatSetting.Excludes...)
 	registry.format = !explicit || wanted[formatMeta.Code]
 	if formatSetting.Enabled != nil && !explicit {
 		registry.format = *formatSetting.Enabled
@@ -238,45 +218,32 @@ func selectedSettings(settings map[string]config.RuleConfig, category map[string
 	return result
 }
 
-func (registry *Registry) addSelectedRules(
-	available map[string]Meta,
-	formatSetting config.RuleConfig,
-) {
+func (registry *Registry) addSelectedRules(available map[string]Meta, formatSetting config.RuleConfig) {
 	if registry.format {
 		registry.rules = append(registry.rules, Rule{meta: formatMeta})
 		severity := formatMeta.DefaultSeverity
 		if formatSetting.Severity != "" {
 			severity = diagnostic.Severity(formatSetting.Severity)
 		}
-		registry.settings[formatMeta.Code] = configuredRule{
-			severity: severity,
-			excludes: formatSetting.Excludes,
-		}
+		registry.settings[formatMeta.Code] = configuredRule{severity: severity, excludes: formatSetting.Excludes}
 	}
 	if registry.syntax != nil {
 		for _, selected := range registry.syntax.Rules() {
 			meta := available[strings.ToLower(selected.Meta().Code)]
 			registry.rules = append(registry.rules, Rule{meta: meta})
-			registry.settings[meta.Code] = configuredRule{
-				severity: registry.syntax.Severity(meta.Code),
-			}
+			registry.settings[meta.Code] = configuredRule{severity: registry.syntax.Severity(meta.Code)}
 		}
 	}
 	if registry.semantic != nil {
 		for _, selected := range registry.semantic.Rules() {
 			meta := available[strings.ToLower(selected.Meta().Code)]
 			registry.rules = append(registry.rules, Rule{meta: meta})
-			registry.settings[meta.Code] = configuredRule{
-				severity: registry.semantic.Severity(meta.Code),
-			}
+			registry.settings[meta.Code] = configuredRule{severity: registry.semantic.Severity(meta.Code)}
 		}
 	}
-	sort.Slice(
-		registry.rules,
-		func(left, right int) bool {
-			return registry.rules[left].Meta().Code < registry.rules[right].Meta().Code
-		},
-	)
+	sort.Slice(registry.rules, func(left, right int) bool {
+		return registry.rules[left].Meta().Code < registry.rules[right].Meta().Code
+	})
 }
 
 // Rules returns the selected checks in code order.
@@ -317,15 +284,9 @@ func (registry *Registry) Severity(code string) diagnostic.Severity {
 }
 
 func (registry *Registry) needsCST(filename string) bool {
-	return registry.formatApplies(filename) || registry.syntax != nil && registry.syntax.Applies(
-		filename,
-	)
+	return registry.formatApplies(filename) || registry.syntax != nil && registry.syntax.Applies(filename)
 }
 
 func (registry *Registry) formatApplies(filename string) bool {
-	return registry != nil && registry.format && !pathfilter.Matches(
-		registry.root,
-		filename,
-		registry.settings[formatMeta.Code].excludes,
-	)
+	return registry != nil && registry.format && !pathfilter.Matches(registry.root, filename, registry.settings[formatMeta.Code].excludes)
 }

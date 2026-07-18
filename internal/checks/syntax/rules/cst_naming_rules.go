@@ -19,31 +19,16 @@ func (a *cstAnalyzer) checkConcreteIdentifier(name cst.Token) {
 	}
 	value := name.Src()
 	if strings.HasPrefix(value, "_") {
-		a.report(
-			"unexported-naming",
-			name,
-			"unexported identifier should not begin with an underscore",
-		)
+		a.report("unexported-naming", name, "unexported identifier should not begin with an underscore")
 	}
-	if strings.Contains(value, "_") && !strings.HasPrefix(value, "Test") && !strings.HasPrefix(
-		value,
-		"Benchmark",
-	) && !strings.HasPrefix(value, "Example") {
+	if strings.Contains(value, "_") && !strings.HasPrefix(value, "Test") && !strings.HasPrefix(value, "Benchmark") && !strings.HasPrefix(value, "Example") {
 		a.report("var-naming", name, "identifier should use MixedCaps rather than underscores")
 	}
 	if builtinIdentifiers[value] {
-		a.report(
-			"redefines-builtin-id",
-			name,
-			fmt.Sprintf("identifier %s shadows a predeclared identifier", value),
-		)
+		a.report("redefines-builtin-id", name, fmt.Sprintf("identifier %s shadows a predeclared identifier", value))
 	}
 	if a.importNames[value] {
-		a.report(
-			"import-shadowing",
-			name,
-			fmt.Sprintf("identifier %s shadows an imported package", value),
-		)
+		a.report("import-shadowing", name, fmt.Sprintf("identifier %s shadows an imported package", value))
 	}
 }
 
@@ -82,11 +67,7 @@ func (a *cstAnalyzer) checkConcreteFoldedName(owner string, name cst.Token) {
 	}
 	key := strings.ToLower(name.Src())
 	if first := a.foldedNames[owner][key]; first != "" && first != name.Src() {
-		a.report(
-			"confusing-naming",
-			name,
-			fmt.Sprintf("name %s differs from %s only by capitalization", name.Src(), first),
-		)
+		a.report("confusing-naming", name, fmt.Sprintf("name %s differs from %s only by capitalization", name.Src(), first))
 	} else {
 		a.foldedNames[owner][key] = name.Src()
 	}

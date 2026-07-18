@@ -8,15 +8,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type testMainMissingExitRule struct{}
+type testMainMissingExitRule struct {}
 
 func (testMainMissingExitRule) Meta() Meta {
 	return Meta{
-		Code:            "testmain-missing-exit",
-		Summary:         "detect legacy TestMain functions that lose the test exit code",
-		Explanation:     "Before Go 1.15, a custom TestMain that called testing.M.Run had to pass its result to os.Exit or failed tests could appear successful. Go 1.15 and newer propagate the returned status automatically.",
-		GoodExample:     "func TestMain(m *testing.M) { os.Exit(m.Run()) }",
-		BadExample:      "func TestMain(m *testing.M) { m.Run() }",
+		Code: "testmain-missing-exit",
+		Summary: "detect legacy TestMain functions that lose the test exit code",
+		Explanation: "Before Go 1.15, a custom TestMain that called testing.M.Run had to pass its result to os.Exit or failed tests could appear successful. Go 1.15 and newer propagate the returned status automatically.",
+		GoodExample: "func TestMain(m *testing.M) { os.Exit(m.Run()) }",
+		BadExample: "func TestMain(m *testing.M) { m.Run() }",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -37,7 +37,7 @@ func (testMainMissingExitRule) Run(pass *Pass) {
 				function.Body,
 				func(node ast.Node) bool {
 					call,
-						ok := node.(*ast.CallExpr)
+					ok := node.(*ast.CallExpr)
 					if !ok {
 						return true
 					}
@@ -45,12 +45,12 @@ func (testMainMissingExitRule) Run(pass *Pass) {
 						callsExit = true
 					}
 					selector,
-						ok := call.Fun.(*ast.SelectorExpr)
+					ok := call.Fun.(*ast.SelectorExpr)
 					if !ok || selector.Sel.Name != "Run" {
 						return true
 					}
 					identifier,
-						ok := selector.X.(*ast.Ident)
+					ok := selector.X.(*ast.Ident)
 					if ok && pass.TypesInfo.Uses[identifier] == parameter {
 						callsRun = true
 					}
@@ -58,19 +58,14 @@ func (testMainMissingExitRule) Run(pass *Pass) {
 				},
 			)
 			if callsRun && !callsExit {
-				pass.Report(
-					function,
-					"TestMain must call os.Exit with the result of m.Run on this Go version",
-				)
+				pass.Report(function, "TestMain must call os.Exit with the result of m.Run on this Go version")
 			}
 		}
 	}
 }
 
 func isTestMainFunction(pass *Pass, function *ast.FuncDecl) bool {
-	if function.Name.Name != "TestMain" || function.Recv != nil || function.Type.Params == nil || len(
-		function.Type.Params.List,
-	) != 1 || len(function.Type.Params.List[0].Names) != 1 {
+	if function.Name.Name != "TestMain" || function.Recv != nil || function.Type.Params == nil || len(function.Type.Params.List) != 1 || len(function.Type.Params.List[0].Names) != 1 {
 		return false
 	}
 	parameterType := pass.TypesInfo.TypeOf(function.Type.Params.List[0].Type)

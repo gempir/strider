@@ -65,10 +65,7 @@ excludes = ["legacy/**"]
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := configuration.Resolve("strider-baseline.toml"); got != filepath.Join(
-		canonicalRoot,
-		"strider-baseline.toml",
-	) {
+	if got := configuration.Resolve("strider-baseline.toml"); got != filepath.Join(canonicalRoot, "strider-baseline.toml") {
 		t.Fatalf("resolved path %q", got)
 	}
 }
@@ -83,10 +80,7 @@ func TestLoadRejectsUnknownAndInvalidSettings(t *testing.T) {
 		"width": {"version = 1\n[formatter]\nprint-width = 20\n", "print-width"},
 		"empty": {"version = 1\n[formatter]\nmax-empty-lines = -1\n", "max-empty-lines"},
 		"severity": {"version = 1\n[checks.rules.no-init]\nseverity = \"fatal\"\n", "severity"},
-		"minimum-severity": {
-			"version = 1\n[checks]\nminimum-severity = \"fatal\"\n",
-			"minimum-severity",
-		},
+		"minimum-severity": {"version = 1\n[checks]\nminimum-severity = \"fatal\"\n", "minimum-severity"},
 		"checks-unknown": {"version = 1\n[checks]\nunknown = true\n", "unknown configuration key"},
 		"legacy-linter": {"version = 1\n[linter]\n", "unknown configuration key"},
 		"legacy-analyzer": {"version = 1\n[analyzer]\n", "unknown configuration key"},
@@ -118,11 +112,9 @@ func chdir(t *testing.T, directory string) {
 	if err := os.Chdir(directory); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(
-		func() {
-			if err := os.Chdir(previous); err != nil {
-				t.Errorf("restore working directory: %v", err)
-			}
-		},
-	)
+	t.Cleanup(func() {
+		if err := os.Chdir(previous); err != nil {
+			t.Errorf("restore working directory: %v", err)
+		}
+	})
 }

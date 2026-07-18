@@ -9,15 +9,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type emptyCriticalSectionRule struct{}
+type emptyCriticalSectionRule struct {}
 
 func (emptyCriticalSectionRule) Meta() Meta {
 	return Meta{
-		Code:            "empty-critical-section",
-		Summary:         "detect adjacent lock and unlock calls",
-		Explanation:     "A lock immediately followed by its matching unlock protects no work and is commonly a missing defer. Intentional empty critical sections used for synchronization should be documented and suppressed explicitly.",
-		GoodExample:     "mutex.Lock()\ndefer mutex.Unlock()",
-		BadExample:      "mutex.Lock()\nmutex.Unlock()",
+		Code: "empty-critical-section",
+		Summary: "detect adjacent lock and unlock calls",
+		Explanation: "A lock immediately followed by its matching unlock protects no work and is commonly a missing defer. Intentional empty critical sections used for synchronization should be documented and suppressed explicitly.",
+		GoodExample: "mutex.Lock()\ndefer mutex.Unlock()",
+		BadExample: "mutex.Lock()\nmutex.Unlock()",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -31,27 +31,24 @@ func (emptyCriticalSectionRule) Run(pass *Pass) {
 			file,
 			func(node ast.Node) bool {
 				block,
-					ok := node.(*ast.BlockStmt)
+				ok := node.(*ast.BlockStmt)
 				if !ok || len(block.List) < 2 {
 					return true
 				}
-				for index := 0; index+1 < len(block.List); index++ {
+				for index := 0; index + 1 < len(block.List); index++ {
 					firstReceiver,
-						firstMethod,
-						firstOK := lockStatement(pass, block.List[index])
+					firstMethod,
+					firstOK := lockStatement(pass, block.List[index])
 					secondReceiver,
-						secondMethod,
-						secondOK := lockStatement(pass, block.List[index+1])
-					if !firstOK || !secondOK || !matchingLockMethods(firstMethod, secondMethod) || renderAnalysisExpression(
+					secondMethod,
+					secondOK := lockStatement(pass, block.List[index + 1])
+					if !firstOK || !secondOK || !matchingLockMethods(firstMethod, secondMethod) || renderAnalysisExpression(pass, firstReceiver) != renderAnalysisExpression(
 						pass,
-						firstReceiver,
-					) != renderAnalysisExpression(pass, secondReceiver) {
+						secondReceiver,
+					) {
 						continue
 					}
-					pass.Report(
-						block.List[index+1],
-						"empty critical section; did you mean to defer the unlock?",
-					)
+					pass.Report(block.List[index + 1], "empty critical section; did you mean to defer the unlock?")
 				}
 				return true
 			},

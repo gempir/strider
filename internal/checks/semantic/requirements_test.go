@@ -45,7 +45,7 @@ func TestRuleRequirementsCoverCatalog(t *testing.T) {
 
 func TestExecutionPlanSelectsNamedFacts(t *testing.T) {
 	tests := []struct {
-		code  string
+		code string
 		facts FactSet
 	}{
 		{code: "invalid-regexp", facts: FactFirstCallArgument | FactStaticCalls},
@@ -59,7 +59,7 @@ func TestExecutionPlanSelectsNamedFacts(t *testing.T) {
 			test.code,
 			func(t *testing.T) {
 				registry,
-					err := NewRegistry([]string{test.code})
+				err := NewRegistry([]string{test.code})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -90,9 +90,7 @@ func TestStaticCallFactsInitializeOnce(t *testing.T) {
 		if !required.Has(FactStaticCalls) {
 			t.Fatal("static-call capability missing from fact builder")
 		}
-		return packageSSAFactData{
-			staticCallsByPackage: map[string][]ssa.CallInstruction{"strings": {nil}},
-		}
+		return packageSSAFactData{staticCallsByPackage: map[string][]ssa.CallInstruction{"strings": {nil}}}
 	}
 	pass := &Pass{facts: facts}
 	var group sync.WaitGroup
@@ -121,14 +119,10 @@ func valid() string { return "ok" }
 		t.Fatal(err)
 	}
 	calls := 0
-	_, err = run(
-		[]string{root},
-		registry,
-		func([]*packages.Package, ssa.BuilderMode) ssaBuildResult {
-			calls++
-			return ssaBuildResult{}
-		},
-	)
+	_, err = run([]string{root}, registry, func([]*packages.Package, ssa.BuilderMode) ssaBuildResult {
+		calls++
+		return ssaBuildResult{}
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,7 +133,7 @@ func valid() string { return "ok" }
 
 func TestSSADebugMetadataIsCapabilityDriven(t *testing.T) {
 	tests := []struct {
-		code        string
+		code string
 		globalDebug bool
 	}{{code: "invalid-regexp"}, {code: "overwritten-before-use", globalDebug: true}}
 	for _, test := range tests {
@@ -147,7 +141,7 @@ func TestSSADebugMetadataIsCapabilityDriven(t *testing.T) {
 			test.code,
 			func(t *testing.T) {
 				registry,
-					err := NewRegistry([]string{test.code})
+				err := NewRegistry([]string{test.code})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -157,7 +151,7 @@ func TestSSADebugMetadataIsCapabilityDriven(t *testing.T) {
 					registry.executionPlan(),
 					func(_ []*packages.Package, mode ssa.BuilderMode) ssaBuildResult {
 						calls++
-						if got := mode&ssa.GlobalDebug != 0; got != test.globalDebug {
+						if got := mode & ssa.GlobalDebug != 0; got != test.globalDebug {
 							t.Fatalf("GlobalDebug = %t, want %t", got, test.globalDebug)
 						}
 						return ssaBuildResult{}
@@ -173,12 +167,7 @@ func TestSSADebugMetadataIsCapabilityDriven(t *testing.T) {
 
 func TestNamedPackageFactsInitializeOnce(t *testing.T) {
 	fileSet := token.NewFileSet()
-	file, err := parser.ParseFile(
-		fileSet,
-		"fixture.go",
-		"package fixture\nfunc f() { g(1, 2) }\n",
-		0,
-	)
+	file, err := parser.ParseFile(fileSet, "fixture.go", "package fixture\nfunc f() { g(1, 2) }\n", 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -213,10 +202,7 @@ func TestNamedPackageFactsInitializeOnce(t *testing.T) {
 		t.Fatalf("call argument index has %d entries, want 2", len(pass.argumentsByCallPosition()))
 	}
 	if len(pass.firstArgumentsByCallPosition()) != 2 {
-		t.Fatalf(
-			"first call argument index has %d entries, want 2",
-			len(pass.firstArgumentsByCallPosition()),
-		)
+		t.Fatalf("first call argument index has %d entries, want 2", len(pass.firstArgumentsByCallPosition()))
 	}
 	if len(pass.analysisParents()) == 0 {
 		t.Fatal("parent index is empty")

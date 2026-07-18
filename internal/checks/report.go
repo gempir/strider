@@ -16,12 +16,7 @@ func ReportText(writer io.Writer, diagnostics []diagnostic.Diagnostic, colorMode
 
 // ReportSummary writes only the aggregate text summary.
 func ReportSummary(writer io.Writer, diagnostics []diagnostic.Diagnostic, colorMode ui.ColorMode) error {
-	return report.TextWithOptions(
-		writer,
-		diagnostics,
-		colorMode,
-		report.TextOptions{SummaryOnly: true},
-	)
+	return report.TextWithOptions(writer, diagnostics, colorMode, report.TextOptions{SummaryOnly: true})
 }
 
 // ReportJSON writes diagnostics as indented JSON.

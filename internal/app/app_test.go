@@ -24,7 +24,7 @@ func listedSeverity(output, code string) (string, bool) {
 }
 
 func stripTerminalStyles(output string) string {
-	for _, sequence := range []string{"\x1b[0m", "\x1b[1;31m", "\x1b[1;33m", "\x1b[1;34m"} {
+	for _, sequence := range[]string{"\x1b[0m", "\x1b[1;31m", "\x1b[1;33m", "\x1b[1;34m"} {
 		output = strings.ReplaceAll(output, sequence, "")
 	}
 	return output
@@ -48,23 +48,14 @@ func TestVersion(t *testing.T) {
 }
 
 func TestShortOptionAliases(t *testing.T) {
-	for _, arguments := range [][]string{
-		{"-n", "check", "-s", "error", "-l"},
-		{"-n", "lint", "-s", "error", "-l"},
-		{"-n", "analyze", "-s", "error", "-l"},
-	} {
+	for _, arguments := range[][]string{{"-n", "check", "-s", "error", "-l"}, {"-n", "lint", "-s", "error", "-l"}, {"-n", "analyze", "-s", "error", "-l"}} {
 		t.Run(
 			arguments[1],
 			func(t *testing.T) {
 				var stdout,
-					stderr bytes.Buffer
+				stderr bytes.Buffer
 				if code := Run(arguments, strings.NewReader(""), &stdout, &stderr); code != exitSuccess {
-					t.Fatalf(
-						"exit %d, stdout %q, stderr %q",
-						code,
-						stdout.String(),
-						stderr.String(),
-					)
+					t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 				}
 				if stderr.Len() != 0 {
 					t.Fatalf("stdout %q, stderr %q", stdout.String(), stderr.String())
@@ -74,12 +65,7 @@ func TestShortOptionAliases(t *testing.T) {
 	}
 
 	var stdout, stderr bytes.Buffer
-	code := Run(
-		[]string{"-n", "fmt", "-s", "-f", "alias.go"},
-		strings.NewReader("package p\nfunc F( ){return}\n"),
-		&stdout,
-		&stderr,
-	)
+	code := Run([]string{"-n", "fmt", "-s", "-f", "alias.go"}, strings.NewReader("package p\nfunc F( ){return}\n"), &stdout, &stderr)
 	if code != exitSuccess || !strings.Contains(stdout.String(), "func F()") || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
@@ -94,25 +80,20 @@ func TestShortOptionAliases(t *testing.T) {
 
 func TestLongOptionsRequireTwoDashes(t *testing.T) {
 	for name, arguments := range map[string][]string{
-		"global":  {"-config", "missing.toml", "check"},
-		"check":   {"-n", "check", "-minimum-severity", "error"},
-		"fmt":     {"-n", "fmt", "-stdin"},
-		"lint":    {"-n", "lint", "-minimum-severity", "error"},
+		"global": {"-config", "missing.toml", "check"},
+		"check": {"-n", "check", "-minimum-severity", "error"},
+		"fmt": {"-n", "fmt", "-stdin"},
+		"lint": {"-n", "lint", "-minimum-severity", "error"},
 		"analyze": {"-n", "analyze", "-minimum-severity", "error"},
 	} {
 		t.Run(
 			name,
 			func(t *testing.T) {
 				var stdout,
-					stderr bytes.Buffer
+				stderr bytes.Buffer
 				code := Run(arguments, strings.NewReader(""), &stdout, &stderr)
 				if code != exitError || !strings.Contains(stderr.String(), "must use two dashes") {
-					t.Fatalf(
-						"exit %d, stdout %q, stderr %q",
-						code,
-						stdout.String(),
-						stderr.String(),
-					)
+					t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 				}
 				if strings.Contains(stderr.String(), "Usage:") {
 					t.Fatalf("unexpected usage noise: %q", stderr.String())
@@ -128,7 +109,7 @@ func TestCommandUsageShowsShortAndLongOptions(t *testing.T) {
 	if code != exitError {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
-	for _, wanted := range []string{"-s, --stdin", "-f, --stdin-filename"} {
+	for _, wanted := range[]string{"-s, --stdin", "-f, --stdin-filename"} {
 		if !strings.Contains(stderr.String(), wanted) {
 			t.Fatalf("usage missing %q: %q", wanted, stderr.String())
 		}
@@ -139,11 +120,7 @@ func TestCommandUsageShowsShortAndLongOptions(t *testing.T) {
 }
 
 func TestDoubleDashAllowsDashPrefixedPaths(t *testing.T) {
-	options, ok := parseFormatOptions(
-		[]string{"--", "-generated.go"},
-		ui.ColorNever,
-		&bytes.Buffer{},
-	)
+	options, ok := parseFormatOptions([]string{"--", "-generated.go"}, ui.ColorNever, &bytes.Buffer{})
 	if !ok || len(options.paths) != 1 || options.paths[0] != "-generated.go" {
 		t.Fatalf("options %#v, ok %v", options, ok)
 	}
@@ -211,10 +188,7 @@ func TestFormatBatchDoesNotWriteWhenAnyFileDoesNotParse(t *testing.T) {
 
 func TestFormatBatchReportsFirstFilenameError(t *testing.T) {
 	root := t.TempDir()
-	for name, source := range map[string]string{
-		"a.go": "package p\nfunc A( {\n",
-		"z.go": "package p\nfunc Z( {\n",
-	} {
+	for name, source := range map[string]string{"a.go": "package p\nfunc A( {\n", "z.go": "package p\nfunc Z( {\n"} {
 		if err := os.WriteFile(filepath.Join(root, name), []byte(source), 0o600); err != nil {
 			t.Fatal(err)
 		}
@@ -231,12 +205,8 @@ func TestFormatBatchReportsFirstFilenameError(t *testing.T) {
 
 func TestFormatBatchReportsChangesInFilenameOrder(t *testing.T) {
 	root := t.TempDir()
-	for _, name := range []string{"z.go", "a.go"} {
-		if err := os.WriteFile(
-			filepath.Join(root, name),
-			[]byte("package p\nfunc F( ){return}\n"),
-			0o600,
-		); err != nil {
+	for _, name := range[]string{"z.go", "a.go"} {
+		if err := os.WriteFile(filepath.Join(root, name), []byte("package p\nfunc F( ){return}\n"), 0o600); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -263,7 +233,7 @@ func TestFormatCheckDiffAndWrite(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, test := range []struct {
+	for _, test := range[]struct {
 		flag string
 		text string
 	}{{flag: "--check", text: "main.go"}, {flag: "--diff", text: "--- "}} {
@@ -307,11 +277,7 @@ func assertFormatReadOnly(t *testing.T, filename string, original []byte, flag, 
 
 func TestCheckCombinesFormattingSyntaxAndPackageChecks(t *testing.T) {
 	root := t.TempDir()
-	if err := os.WriteFile(
-		filepath.Join(root, "go.mod"),
-		[]byte("module example.com/combined\n\ngo 1.26\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/combined\n\ngo 1.26\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	filename := filepath.Join(root, "main.go")
@@ -332,17 +298,7 @@ func TestCheckCombinesFormattingSyntaxAndPackageChecks(t *testing.T) {
 
 	var stdout, stderr bytes.Buffer
 	code := Run(
-		[]string{
-			"--no-config",
-			"check",
-			"--format",
-			"json",
-			"--minimum-severity",
-			"note",
-			"--only",
-			"format,no-init,invalid-regexp",
-			filename,
-		},
+		[]string{"--no-config", "check", "--format", "json", "--minimum-severity", "note", "--only", "format,no-init,invalid-regexp", filename},
 		strings.NewReader(""),
 		&stdout,
 		&stderr,
@@ -350,11 +306,7 @@ func TestCheckCombinesFormattingSyntaxAndPackageChecks(t *testing.T) {
 	if code != exitFindings || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
-	for _, wanted := range []string{
-		`"code": "format"`,
-		`"code": "no-init"`,
-		`"code": "invalid-regexp"`,
-	} {
+	for _, wanted := range[]string{`"code": "format"`, `"code": "no-init"`, `"code": "invalid-regexp"`} {
 		if !strings.Contains(stdout.String(), wanted) {
 			t.Fatalf("combined report missing %q: %s", wanted, stdout.String())
 		}
@@ -370,19 +322,14 @@ func TestCheckCombinesFormattingSyntaxAndPackageChecks(t *testing.T) {
 
 func TestCheckListsOneUnifiedCatalog(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := Run(
-		[]string{"--no-config", "check", "--all", "--minimum-severity", "note", "--list-checks"},
-		strings.NewReader(""),
-		&stdout,
-		&stderr,
-	)
+	code := Run([]string{"--no-config", "check", "--all", "--minimum-severity", "note", "--list-checks"}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitSuccess || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 	if got := strings.Count(strings.TrimSpace(stdout.String()), "\n") + 1; got != 227 {
 		t.Fatalf("listed %d checks; want 227", got)
 	}
-	for _, wanted := range []string{"format", "no-init", "invalid-regexp"} {
+	for _, wanted := range[]string{"format", "no-init", "invalid-regexp"} {
 		if _, ok := listedSeverity(stdout.String(), wanted); !ok {
 			t.Fatalf("unified catalog missing %q", wanted)
 		}
@@ -394,17 +341,7 @@ func TestCheckListAlignsAndColorsRulesBySeverity(t *testing.T) {
 	t.Setenv("NO_COLOR", "")
 	var stdout, stderr bytes.Buffer
 	code := Run(
-		[]string{
-			"--color",
-			"always",
-			"--no-config",
-			"check",
-			"--minimum-severity",
-			"note",
-			"--only",
-			"address-nil-comparison,format,invalid-regexp",
-			"--list-checks",
-		},
+		[]string{"--color", "always", "--no-config", "check", "--minimum-severity", "note", "--only", "address-nil-comparison,format,invalid-regexp", "--list-checks"},
 		strings.NewReader(""),
 		&stdout,
 		&stderr,
@@ -412,11 +349,7 @@ func TestCheckListAlignsAndColorsRulesBySeverity(t *testing.T) {
 	if code != exitSuccess || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
-	for _, wanted := range []string{
-		"\x1b[1;33maddress-nil-comparison",
-		"\x1b[1;33mformat",
-		"\x1b[1;31minvalid-regexp",
-	} {
+	for _, wanted := range[]string{"\x1b[1;33maddress-nil-comparison", "\x1b[1;33mformat", "\x1b[1;31minvalid-regexp"} {
 		if !strings.Contains(stdout.String(), wanted) {
 			t.Fatalf("severity color missing %q: %q", wanted, stdout.String())
 		}
@@ -444,12 +377,7 @@ func TestCheckSummaryOnly(t *testing.T) {
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	code := Run(
-		[]string{"--no-config", "check", "-s", "note", "-o", "no-init", "-q", filename},
-		strings.NewReader(""),
-		&stdout,
-		&stderr,
-	)
+	code := Run([]string{"--no-config", "check", "-s", "note", "-o", "no-init", "-q", filename}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitFindings || stdout.String() != "no-init  1\nfound 1 issue: 1 note\n" || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
@@ -457,12 +385,7 @@ func TestCheckSummaryOnly(t *testing.T) {
 
 func TestCheckSummaryOnlyRejectsStructuredReports(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := Run(
-		[]string{"--no-config", "check", "--summary-only", "--format", "json"},
-		strings.NewReader(""),
-		&stdout,
-		&stderr,
-	)
+	code := Run([]string{"--no-config", "check", "--summary-only", "--format", "json"}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitError || !strings.Contains(stderr.String(), "--summary-only requires text") {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
@@ -470,32 +393,17 @@ func TestCheckSummaryOnlyRejectsStructuredReports(t *testing.T) {
 
 func TestCheckDefaultsToWarningMinimumSeverity(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := Run(
-		[]string{"--no-config", "check", "--only", "no-init,invalid-regexp", "--list-checks"},
-		strings.NewReader(""),
-		&stdout,
-		&stderr,
-	)
+	code := Run([]string{"--no-config", "check", "--only", "no-init,invalid-regexp", "--list-checks"}, strings.NewReader(""), &stdout, &stderr)
 	invalidSeverity, invalidListed := listedSeverity(stdout.String(), "invalid-regexp")
 	_, noInitListed := listedSeverity(stdout.String(), "no-init")
 	if code != exitSuccess || stderr.Len() != 0 || noInitListed || !invalidListed || invalidSeverity != "error" {
-		t.Fatalf(
-			"default severity floor: exit %d, stdout %q, stderr %q",
-			code,
-			stdout.String(),
-			stderr.String(),
-		)
+		t.Fatalf("default severity floor: exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 }
 
 func TestCheckWatchRejectsStructuredReports(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := Run(
-		[]string{"--no-config", "check", "--watch", "--format", "json"},
-		strings.NewReader(""),
-		&stdout,
-		&stderr,
-	)
+	code := Run([]string{"--no-config", "check", "--watch", "--format", "json"}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitError || !strings.Contains(stderr.String(), "--watch requires text") {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
@@ -511,32 +419,25 @@ func TestCheckWatcherReportsOnlyChangedGenerations(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	session, err := checkengine.NewSession(
-		registry,
-		checkengine.RunOptions{},
-		checkengine.SessionOptions{},
-	)
+	session, err := checkengine.NewSession(registry, checkengine.RunOptions{}, checkengine.SessionOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
 	watcher := &checkWatcher{
-		paths:            []string{filename},
+		paths: []string{filename},
 		workspaceOptions: workspace.Options{},
-		cache:            workspace.NewCache(workspace.CacheOptions{}),
-		session:          session,
-		colorMode:        ui.ColorNever,
-		stdout:           &stdout,
-		stderr:           &stderr,
+		cache: workspace.NewCache(workspace.CacheOptions{}),
+		session: session,
+		colorMode: ui.ColorNever,
+		stdout: &stdout,
+		stderr: &stderr,
 	}
 	if err := watcher.run(); err != nil {
 		t.Fatal(err)
 	}
 	firstOutput := stdout.String()
-	if !strings.Contains(firstOutput, "strider check #1") || !strings.Contains(
-		firstOutput,
-		"no-init",
-	) {
+	if !strings.Contains(firstOutput, "strider check #1") || !strings.Contains(firstOutput, "no-init") {
 		t.Fatalf("initial output = %q", firstOutput)
 	}
 	if err := watcher.run(); err != nil {
@@ -555,10 +456,7 @@ func TestCheckWatcherReportsOnlyChangedGenerations(t *testing.T) {
 	if got := strings.Count(stdout.String(), "== strider check #"); got != 2 {
 		t.Fatalf("generation headers = %d: %q", got, stdout.String())
 	}
-	if !strings.Contains(stdout.String(), "strider check #2") || !strings.Contains(
-		stdout.String(),
-		"No findings.",
-	) {
+	if !strings.Contains(stdout.String(), "strider check #2") || !strings.Contains(stdout.String(), "No findings.") {
 		t.Fatalf("changed output = %q", stdout.String())
 	}
 	if stderr.Len() != 0 {
@@ -581,12 +479,7 @@ enabled = false
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	code := Run(
-		[]string{"--config", configurationPath, "check", "--list-checks"},
-		strings.NewReader(""),
-		&stdout,
-		&stderr,
-	)
+	code := Run([]string{"--config", configurationPath, "check", "--list-checks"}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitSuccess || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
@@ -615,19 +508,7 @@ severity = "warning"
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	code := Run(
-		[]string{
-			"--config",
-			configurationPath,
-			"check",
-			"--only",
-			"no-init,suspicious-sleep",
-			"--list-checks",
-		},
-		strings.NewReader(""),
-		&stdout,
-		&stderr,
-	)
+	code := Run([]string{"--config", configurationPath, "check", "--only", "no-init,suspicious-sleep", "--list-checks"}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitSuccess || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
@@ -639,16 +520,7 @@ severity = "warning"
 
 	stdout.Reset()
 	code = Run(
-		[]string{
-			"--config",
-			configurationPath,
-			"check",
-			"--minimum-severity",
-			"warning",
-			"--only",
-			"no-init,suspicious-sleep",
-			"--list-checks",
-		},
+		[]string{"--config", configurationPath, "check", "--minimum-severity", "warning", "--only", "no-init,suspicious-sleep", "--list-checks"},
 		strings.NewReader(""),
 		&stdout,
 		&stderr,
@@ -656,12 +528,7 @@ severity = "warning"
 	noInitSeverity, noInitListed = listedSeverity(stdout.String(), "no-init")
 	sleepSeverity, sleepListed := listedSeverity(stdout.String(), "suspicious-sleep")
 	if code != exitSuccess || !noInitListed || noInitSeverity != "error" || !sleepListed || sleepSeverity != "warning" {
-		t.Fatalf(
-			"CLI minimum override: exit %d, stdout %q, stderr %q",
-			code,
-			stdout.String(),
-			stderr.String(),
-		)
+		t.Fatalf("CLI minimum override: exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 }
 
@@ -680,47 +547,27 @@ severity = "warning"
 		t.Fatal(err)
 	}
 	for name, test := range map[string]struct {
-		command          string
-		includedCode     string
+		command string
+		includedCode string
 		includedSeverity string
-		excludedCode     string
+		excludedCode string
 	}{
-		"lint": {
-			command:          "lint",
-			includedCode:     "no-init",
-			includedSeverity: "error",
-			excludedCode:     "invalid-regexp",
-		},
-		"analyze": {
-			command:          "analyze",
-			includedCode:     "invalid-regexp",
-			includedSeverity: "warning",
-			excludedCode:     "no-init",
-		},
+		"lint": {command: "lint", includedCode: "no-init", includedSeverity: "error", excludedCode: "invalid-regexp"},
+		"analyze": {command: "analyze", includedCode: "invalid-regexp", includedSeverity: "warning", excludedCode: "no-init"},
 	} {
 		t.Run(
 			name,
 			func(t *testing.T) {
 				var stdout,
-					stderr bytes.Buffer
-				code := Run(
-					[]string{"--config", configurationPath, test.command, "--list-rules"},
-					strings.NewReader(""),
-					&stdout,
-					&stderr,
-				)
+				stderr bytes.Buffer
+				code := Run([]string{"--config", configurationPath, test.command, "--list-rules"}, strings.NewReader(""), &stdout, &stderr)
 				if code != exitSuccess || stderr.Len() != 0 {
-					t.Fatalf(
-						"exit %d, stdout %q, stderr %q",
-						code,
-						stdout.String(),
-						stderr.String(),
-					)
+					t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 				}
 				severity,
-					included := listedSeverity(stdout.String(), test.includedCode)
+				included := listedSeverity(stdout.String(), test.includedCode)
 				_,
-					excluded := listedSeverity(stdout.String(), test.excludedCode)
+				excluded := listedSeverity(stdout.String(), test.excludedCode)
 				if !included || severity != test.includedSeverity || excluded {
 					t.Fatalf("canonical settings were not scoped: %q", stdout.String())
 				}
@@ -739,28 +586,15 @@ enabled = false
 	if err := os.WriteFile(configurationPath, []byte(configuration), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	for _, command := range []string{"lint", "analyze"} {
+	for _, command := range[]string{"lint", "analyze"} {
 		t.Run(
 			command,
 			func(t *testing.T) {
 				var stdout,
-					stderr bytes.Buffer
-				code := Run(
-					[]string{"--config", configurationPath, command, "--list-rules"},
-					strings.NewReader(""),
-					&stdout,
-					&stderr,
-				)
-				if code != exitError || !strings.Contains(
-					stderr.String(),
-					"unknown check(s): removed-check",
-				) {
-					t.Fatalf(
-						"exit %d, stdout %q, stderr %q",
-						code,
-						stdout.String(),
-						stderr.String(),
-					)
+				stderr bytes.Buffer
+				code := Run([]string{"--config", configurationPath, command, "--list-rules"}, strings.NewReader(""), &stdout, &stderr)
+				if code != exitError || !strings.Contains(stderr.String(), "unknown check(s): removed-check") {
+					t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 				}
 			},
 		)
@@ -779,10 +613,7 @@ severity = "warning"
 	if err := os.WriteFile(configurationPath, []byte(configuration), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	for name, command := range map[string][]string{
-		"lint":    {"lint", "--only", "no-init", "--list-rules"},
-		"analyze": {"analyze", "--only", "suspicious-sleep", "--list-rules"},
-	} {
+	for name, command := range map[string][]string{"lint": {"lint", "--only", "no-init", "--list-rules"}, "analyze": {"analyze", "--only", "suspicious-sleep", "--list-rules"}} {
 		t.Run(
 			name,
 			func(t *testing.T) {
@@ -790,14 +621,9 @@ severity = "warning"
 				args = append(args, command[0], "--minimum-severity", "error")
 				args = append(args, command[1:]...)
 				var stdout,
-					stderr bytes.Buffer
+				stderr bytes.Buffer
 				if code := Run(args, strings.NewReader(""), &stdout, &stderr); code != exitSuccess || stdout.Len() != 0 || stderr.Len() != 0 {
-					t.Fatalf(
-						"exit %d, stdout %q, stderr %q",
-						code,
-						stdout.String(),
-						stderr.String(),
-					)
+					t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 				}
 			},
 		)
@@ -806,27 +632,19 @@ severity = "warning"
 
 func TestCommandsRejectInvalidMinimumSeverity(t *testing.T) {
 	for name, args := range map[string][]string{
-		"check":   {"check", "--minimum-severity", "fatal", "--list-checks"},
-		"lint":    {"lint", "--minimum-severity", "fatal", "--list-rules"},
+		"check": {"check", "--minimum-severity", "fatal", "--list-checks"},
+		"lint": {"lint", "--minimum-severity", "fatal", "--list-rules"},
 		"analyze": {"analyze", "--minimum-severity", "fatal", "--list-rules"},
 	} {
 		t.Run(
 			name,
 			func(t *testing.T) {
 				var stdout,
-					stderr bytes.Buffer
+				stderr bytes.Buffer
 				arguments := append([]string{"--no-config"}, args...)
 				code := Run(arguments, strings.NewReader(""), &stdout, &stderr)
-				if code != exitError || !strings.Contains(
-					stderr.String(),
-					"--minimum-severity must be",
-				) {
-					t.Fatalf(
-						"exit %d, stdout %q, stderr %q",
-						code,
-						stdout.String(),
-						stderr.String(),
-					)
+				if code != exitError || !strings.Contains(stderr.String(), "--minimum-severity must be") {
+					t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 				}
 			},
 		)
@@ -842,18 +660,7 @@ func TestCheckBaselineDoesNotCaptureFormattingDebt(t *testing.T) {
 	}
 	var stdout, stderr bytes.Buffer
 	code := Run(
-		[]string{
-			"--no-config",
-			"check",
-			"--only",
-			"format,no-init",
-			"--minimum-severity",
-			"note",
-			"--baseline",
-			baselinePath,
-			"--generate-baseline",
-			filename,
-		},
+		[]string{"--no-config", "check", "--only", "format,no-init", "--minimum-severity", "note", "--baseline", baselinePath, "--generate-baseline", filename},
 		strings.NewReader(""),
 		&stdout,
 		&stderr,
@@ -880,21 +687,7 @@ func TestLintJSONAndExitCode(t *testing.T) {
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	code := Run(
-		[]string{
-			"lint",
-			"--format",
-			"json",
-			"--minimum-severity",
-			"note",
-			"--only",
-			"no-init",
-			root,
-		},
-		strings.NewReader(""),
-		&stdout,
-		&stderr,
-	)
+	code := Run([]string{"lint", "--format", "json", "--minimum-severity", "note", "--only", "no-init", root}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitFindings {
 		t.Fatalf("exit %d, stderr %s", code, stderr.String())
 	}
@@ -910,30 +703,11 @@ func TestLintHTMLAndExitCode(t *testing.T) {
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	code := Run(
-		[]string{
-			"lint",
-			"--format",
-			"html",
-			"--minimum-severity",
-			"note",
-			"--only",
-			"no-init",
-			root,
-		},
-		strings.NewReader(""),
-		&stdout,
-		&stderr,
-	)
+	code := Run([]string{"lint", "--format", "html", "--minimum-severity", "note", "--only", "no-init", root}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitFindings {
 		t.Fatalf("exit %d, stderr %s", code, stderr.String())
 	}
-	for _, wanted := range []string{
-		"<!doctype html>",
-		"Strider lint report",
-		"no-init",
-		"func <mark>init</mark>() {}",
-	} {
+	for _, wanted := range[]string{"<!doctype html>", "Strider lint report", "no-init", "func <mark>init</mark>() {}"} {
 		if !strings.Contains(stdout.String(), wanted) {
 			t.Fatalf("HTML output missing %q: %s", wanted, stdout.String())
 		}
@@ -950,47 +724,18 @@ func TestColorFlagRendersRichDiagnosticsAndLeavesJSONPlain(t *testing.T) {
 	}
 
 	var stdout, stderr bytes.Buffer
-	code := Run(
-		[]string{
-			"--color",
-			"always",
-			"lint",
-			"--minimum-severity",
-			"note",
-			"--only",
-			"no-init",
-			filename,
-		},
-		strings.NewReader(""),
-		&stdout,
-		&stderr,
-	)
+	code := Run([]string{"--color", "always", "lint", "--minimum-severity", "note", "--only", "no-init", filename}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitFindings || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
-	for _, wanted := range []string{"\x1b[", "func init() {}", "┌─", "found 1 issue"} {
+	for _, wanted := range[]string{"\x1b[", "func init() {}", "┌─", "found 1 issue"} {
 		if !strings.Contains(stdout.String(), wanted) {
 			t.Fatalf("rich output missing %q: %q", wanted, stdout.String())
 		}
 	}
 
 	stdout.Reset()
-	code = Run(
-		[]string{
-			"--color=always",
-			"lint",
-			"--format",
-			"json",
-			"--minimum-severity",
-			"note",
-			"--only",
-			"no-init",
-			filename,
-		},
-		strings.NewReader(""),
-		&stdout,
-		&stderr,
-	)
+	code = Run([]string{"--color=always", "lint", "--format", "json", "--minimum-severity", "note", "--only", "no-init", filename}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitFindings || strings.Contains(stdout.String(), "\x1b[") {
 		t.Fatalf("JSON output should remain unstyled: exit %d, stdout %q", code, stdout.String())
 	}
@@ -1010,62 +755,22 @@ func TestConfiguredColorAndCLIOverride(t *testing.T) {
 	}
 
 	var stdout, stderr bytes.Buffer
-	code := Run(
-		[]string{
-			"--config",
-			filepath.Join(root, "strider.toml"),
-			"lint",
-			"--only",
-			"no-init",
-			filename,
-		},
-		strings.NewReader(""),
-		&stdout,
-		&stderr,
-	)
+	code := Run([]string{"--config", filepath.Join(root, "strider.toml"), "lint", "--only", "no-init", filename}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitFindings || !strings.Contains(stdout.String(), "\x1b[") {
-		t.Fatalf(
-			"configured color not applied: exit %d, stdout %q, stderr %q",
-			code,
-			stdout.String(),
-			stderr.String(),
-		)
+		t.Fatalf("configured color not applied: exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 
 	stdout.Reset()
 	stderr.Reset()
-	code = Run(
-		[]string{
-			"--config",
-			filepath.Join(root, "strider.toml"),
-			"--color",
-			"never",
-			"lint",
-			"--only",
-			"no-init",
-			filename,
-		},
-		strings.NewReader(""),
-		&stdout,
-		&stderr,
-	)
+	code = Run([]string{"--config", filepath.Join(root, "strider.toml"), "--color", "never", "lint", "--only", "no-init", filename}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitFindings || strings.Contains(stdout.String(), "\x1b[") {
-		t.Fatalf(
-			"CLI color override not applied: exit %d, stdout %q, stderr %q",
-			code,
-			stdout.String(),
-			stderr.String(),
-		)
+		t.Fatalf("CLI color override not applied: exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 }
 
 func TestLintWithoutPathsScansCurrentDirectory(t *testing.T) {
 	root := t.TempDir()
-	if err := os.WriteFile(
-		filepath.Join(root, "main.go"),
-		[]byte("package p\nfunc init() {}\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "main.go"), []byte("package p\nfunc init() {}\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	previous, err := os.Getwd()
@@ -1079,12 +784,7 @@ func TestLintWithoutPathsScansCurrentDirectory(t *testing.T) {
 		restoreWorkingDirectory(t, previous)
 	})
 	var stdout, stderr bytes.Buffer
-	code := Run(
-		[]string{"lint", "--minimum-severity", "note", "--only", "no-init"},
-		strings.NewReader(""),
-		&stdout,
-		&stderr,
-	)
+	code := Run([]string{"lint", "--minimum-severity", "note", "--only", "no-init"}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitFindings || !strings.Contains(stdout.String(), "no-init") {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
@@ -1092,12 +792,7 @@ func TestLintWithoutPathsScansCurrentDirectory(t *testing.T) {
 
 func TestLintAllRulesListsCompleteRegistry(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := Run(
-		[]string{"lint", "--all-rules", "--minimum-severity", "note", "--list-rules"},
-		strings.NewReader(""),
-		&stdout,
-		&stderr,
-	)
+	code := Run([]string{"lint", "--all-rules", "--minimum-severity", "note", "--list-rules"}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitSuccess {
 		t.Fatalf("exit %d, stderr %s", code, stderr.String())
 	}
@@ -1113,12 +808,7 @@ func TestLintAllRulesListsCompleteRegistry(t *testing.T) {
 
 func TestLintAllRulesAndOnlyAreMutuallyExclusive(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := Run(
-		[]string{"lint", "--all-rules", "--only", "atomic"},
-		strings.NewReader(""),
-		&stdout,
-		&stderr,
-	)
+	code := Run([]string{"lint", "--all-rules", "--only", "atomic"}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitError || !strings.Contains(stderr.String(), "mutually exclusive") {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
@@ -1126,18 +816,10 @@ func TestLintAllRulesAndOnlyAreMutuallyExclusive(t *testing.T) {
 
 func TestAnalyzeInvalidRegexpJSONAndExitCode(t *testing.T) {
 	root := t.TempDir()
-	if err := os.WriteFile(
-		filepath.Join(root, "go.mod"),
-		[]byte("module example.com/analyzeapp\n\ngo 1.26\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/analyzeapp\n\ngo 1.26\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(
-		filepath.Join(root, "main.go"),
-		[]byte("package sample\nimport \"regexp\"\nvar _ = regexp.MustCompile(\"[\")\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "main.go"), []byte("package sample\nimport \"regexp\"\nvar _ = regexp.MustCompile(\"[\")\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	previous, err := os.Getwd()
@@ -1152,12 +834,7 @@ func TestAnalyzeInvalidRegexpJSONAndExitCode(t *testing.T) {
 	})
 
 	var stdout, stderr bytes.Buffer
-	code := Run(
-		[]string{"analyze", "--format", "json", "--only", "invalid-regexp"},
-		strings.NewReader(""),
-		&stdout,
-		&stderr,
-	)
+	code := Run([]string{"analyze", "--format", "json", "--only", "invalid-regexp"}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitFindings {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
@@ -1189,19 +866,11 @@ enabled = false
 	if err := os.WriteFile(filepath.Join(root, "strider.toml"), []byte(configuration), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(
-		filepath.Join(root, "go.mod"),
-		[]byte("module example.com/configured\n\ngo 1.26\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/configured\n\ngo 1.26\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	filename := filepath.Join(root, "main.go")
-	if err := os.WriteFile(
-		filename,
-		[]byte("package p\nimport \"regexp\"\nfunc init() { regexp.MustCompile(\"[\") }\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(filename, []byte("package p\nimport \"regexp\"\nfunc init() { regexp.MustCompile(\"[\") }\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	previous, err := os.Getwd()
@@ -1216,12 +885,7 @@ enabled = false
 	})
 
 	var stdout, stderr bytes.Buffer
-	code := Run(
-		[]string{"lint", "--only", "no-init", filename},
-		strings.NewReader(""),
-		&stdout,
-		&stderr,
-	)
+	code := Run([]string{"lint", "--only", "no-init", filename}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitFindings || !strings.Contains(stdout.String(), "error[no-init]") {
 		t.Fatalf("lint exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
@@ -1233,16 +897,8 @@ enabled = false
 	}
 	stdout.Reset()
 	stderr.Reset()
-	code = Run(
-		[]string{"fmt", "--stdin"},
-		strings.NewReader("package p\nfunc f( ){return}\n"),
-		&stdout,
-		&stderr,
-	)
-	if code != exitSuccess || !strings.Contains(stdout.String(), "\r\n") || strings.Contains(
-		stdout.String(),
-		"\r\n\r\n",
-	) {
+	code = Run([]string{"fmt", "--stdin"}, strings.NewReader("package p\nfunc f( ){return}\n"), &stdout, &stderr)
+	if code != exitSuccess || !strings.Contains(stdout.String(), "\r\n") || strings.Contains(stdout.String(), "\r\n\r\n") {
 		t.Fatalf("format exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 }
@@ -1269,17 +925,9 @@ func TestLintBaselineGenerateApplyIgnoreAndPrune(t *testing.T) {
 		restoreWorkingDirectory(t, previous)
 	})
 
-	run := func(extra ...string) (int, string, string) {
+	run := func(extra... string) (int, string, string) {
 		t.Helper()
-		args := []string{
-			"lint",
-			"--minimum-severity",
-			"note",
-			"--only",
-			"no-init",
-			"--baseline",
-			baselinePath,
-		}
+		args := []string{"lint", "--minimum-severity", "note", "--only", "no-init", "--baseline", baselinePath}
 		args = append(args, extra...)
 		args = append(args, filename)
 		var stdout, stderr bytes.Buffer
@@ -1296,17 +944,11 @@ func TestLintBaselineGenerateApplyIgnoreAndPrune(t *testing.T) {
 	if code, stdout, stderr := run(); code != exitFindings || strings.Count(stdout, "note[no-init]") != 1 || stderr != "" {
 		t.Fatalf("new issue exit %d, stdout %q, stderr %q", code, stdout, stderr)
 	}
-	if code, stdout, stderr := run("--ignore-baseline"); code != exitFindings || strings.Count(
-		stdout,
-		"note[no-init]",
-	) != 2 || stderr != "" {
+	if code, stdout, stderr := run("--ignore-baseline"); code != exitFindings || strings.Count(stdout, "note[no-init]") != 2 || stderr != "" {
 		t.Fatalf("ignore exit %d, stdout %q, stderr %q", code, stdout, stderr)
 	}
 	write("package p\n")
-	if code, stdout, stderr := run(); code != exitSuccess || stdout != "found 0 issues\n" || !strings.Contains(
-		stderr,
-		"1 outdated issue",
-	) {
+	if code, stdout, stderr := run(); code != exitSuccess || stdout != "found 0 issues\n" || !strings.Contains(stderr, "1 outdated issue") {
 		t.Fatalf("stale exit %d, stdout %q, stderr %q", code, stdout, stderr)
 	}
 	if code, stdout, stderr := run("--remove-outdated-baseline-entries"); code != exitSuccess || stdout != "found 0 issues\n" || stderr != "" {
@@ -1344,18 +986,7 @@ func TestSeverityFilteredBaselinePrunePreservesKnownAndRemovesUnknownCodes(t *te
 	}
 	var stdout, stderr bytes.Buffer
 	code := Run(
-		[]string{
-			"--no-config",
-			"check",
-			"--only",
-			"no-init",
-			"--minimum-severity",
-			"error",
-			"--baseline",
-			baselinePath,
-			"--remove-outdated-baseline-entries",
-			filename,
-		},
+		[]string{"--no-config", "check", "--only", "no-init", "--minimum-severity", "error", "--baseline", baselinePath, "--remove-outdated-baseline-entries", filename},
 		strings.NewReader(""),
 		&stdout,
 		&stderr,
@@ -1374,26 +1005,14 @@ func TestSeverityFilteredBaselinePrunePreservesKnownAndRemovesUnknownCodes(t *te
 
 func TestConfiguredAnalyzerBaseline(t *testing.T) {
 	root := t.TempDir()
-	if err := os.WriteFile(
-		filepath.Join(root, "go.mod"),
-		[]byte("module example.com/baseline\n\ngo 1.26\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/baseline\n\ngo 1.26\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(
-		filepath.Join(root, "strider.toml"),
-		[]byte("version = 1\n[checks]\nbaseline = \"analysis-baseline.toml\"\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "strider.toml"), []byte("version = 1\n[checks]\nbaseline = \"analysis-baseline.toml\"\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	filename := filepath.Join(root, "main.go")
-	if err := os.WriteFile(
-		filename,
-		[]byte("package p\nimport \"regexp\"\nvar _ = regexp.MustCompile(\"[\")\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(filename, []byte("package p\nimport \"regexp\"\nvar _ = regexp.MustCompile(\"[\")\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	previous, err := os.Getwd()
@@ -1407,23 +1026,13 @@ func TestConfiguredAnalyzerBaseline(t *testing.T) {
 		restoreWorkingDirectory(t, previous)
 	})
 	var stdout, stderr bytes.Buffer
-	code := Run(
-		[]string{"analyze", "--only", "invalid-regexp", "--generate-baseline", filename},
-		strings.NewReader(""),
-		&stdout,
-		&stderr,
-	)
+	code := Run([]string{"analyze", "--only", "invalid-regexp", "--generate-baseline", filename}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitSuccess || stdout.Len() != 0 || stderr.Len() != 0 {
 		t.Fatalf("generate exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 	stdout.Reset()
 	stderr.Reset()
-	code = Run(
-		[]string{"analyze", "--only", "invalid-regexp", filename},
-		strings.NewReader(""),
-		&stdout,
-		&stderr,
-	)
+	code = Run([]string{"analyze", "--only", "invalid-regexp", filename}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitSuccess || stdout.String() != "found 0 issues\n" || stderr.Len() != 0 {
 		t.Fatalf("apply exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}

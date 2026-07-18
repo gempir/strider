@@ -9,15 +9,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type misalignedAtomic64Rule struct{}
+type misalignedAtomic64Rule struct {}
 
 func (misalignedAtomic64Rule) Meta() Meta {
 	return Meta{
-		Code:            "misaligned-atomic-64",
-		Summary:         "detect misaligned 64-bit atomic field access on 32-bit targets",
-		Explanation:     "On 32-bit ARM, x86, and MIPS targets, callers must ensure 64-bit words passed to legacy sync/atomic functions are aligned to 8 bytes. A uint64 field after a narrow field may not satisfy that requirement.",
-		GoodExample:     "type counters struct { total uint64; ready uint32 }",
-		BadExample:      "type counters struct { ready uint32; total uint64 }",
+		Code: "misaligned-atomic-64",
+		Summary: "detect misaligned 64-bit atomic field access on 32-bit targets",
+		Explanation: "On 32-bit ARM, x86, and MIPS targets, callers must ensure 64-bit words passed to legacy sync/atomic functions are aligned to 8 bytes. A uint64 field after a narrow field may not satisfy that requirement.",
+		GoodExample: "type counters struct { total uint64; ready uint32 }",
+		BadExample: "type counters struct { ready uint32; total uint64 }",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -35,22 +35,16 @@ func (misalignedAtomic64Rule) Run(pass *Pass) {
 		if !ok || field >= structure.NumFields() {
 			continue
 		}
-		fields := make([]*types.Var, field+1)
+		fields := make([]*types.Var, field + 1)
 		for index := range fields {
 			fields[index] = structure.Field(index)
 		}
 		offset := pass.TypesSizes.Offsetsof(fields)[field]
-		if offset%8 == 0 {
+		if offset % 8 == 0 {
 			continue
 		}
 		node := explicitCallArgument(calls[call.Pos()], 0, call.Pos())
-		pass.Report(
-			node,
-			fmt.Sprintf(
-				"field %s is not 64-bit aligned for atomic access on this target",
-				structure.Field(field).Name(),
-			),
-		)
+		pass.Report(node, fmt.Sprintf("field %s is not 64-bit aligned for atomic access on this target", structure.Field(field).Name()))
 	}
 }
 

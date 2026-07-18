@@ -24,9 +24,9 @@ type SessionOptions struct {
 
 // SessionStats reports reuse across completed workspace generations.
 type SessionStats struct {
-	ConcreteHits   uint64
+	ConcreteHits uint64
 	ConcreteMisses uint64
-	Analysis       semantic.SessionStats
+	Analysis semantic.SessionStats
 }
 
 // Session executes a fixed check registry and option set across immutable
@@ -37,33 +37,26 @@ type Session struct {
 	mu sync.Mutex
 
 	registry *Registry
-	options  RunOptions
+	options RunOptions
 	analyzer *semantic.Session
 
 	hasConcrete bool
 	concreteKey [sha256.Size]byte
-	concrete    Result
-	hits        uint64
-	misses      uint64
+	concrete Result
+	hits uint64
+	misses uint64
 }
 
 // NewSession constructs a bounded incremental check session. The registry and
 // run options are immutable for the lifetime of the session.
-func NewSession(registry *Registry, options RunOptions, sessionOptions SessionOptions) (
-	*Session,
-	error,
-) {
+func NewSession(registry *Registry, options RunOptions, sessionOptions SessionOptions) (*Session, error) {
 	if registry == nil {
 		return nil, fmt.Errorf("check session registry is nil")
 	}
 	if options.Formatter.PrintWidth == 0 {
 		options.Formatter = formatter.DefaultOptions()
 	}
-	return &Session{
-		registry: registry,
-		options:  options,
-		analyzer: semantic.NewSession(sessionOptions.Analysis),
-	}, nil
+	return &Session{registry: registry, options: options, analyzer: semantic.NewSession(sessionOptions.Analysis)}, nil
 }
 
 // Run checks one immutable workspace generation and returns an owned result.
@@ -89,12 +82,7 @@ func (session *Session) Run(shared *workspace.Workspace) (Result, error) {
 		result = cloneResult(session.concrete)
 	} else {
 		session.misses++
-		result, err = runConcreteChecks(
-			shared.Files(),
-			session.registry,
-			session.options.Formatter,
-			session.options.CollectCandidates,
-		)
+		result, err = runConcreteChecks(shared.Files(), session.registry, session.options.Formatter, session.options.CollectCandidates)
 		if err != nil {
 			return Result{}, err
 		}
@@ -102,13 +90,7 @@ func (session *Session) Run(shared *workspace.Workspace) (Result, error) {
 		session.concrete = cloneResult(result)
 		session.hasConcrete = true
 	}
-	if err := appendAnalysis(
-		&result,
-		shared,
-		session.registry,
-		session.options,
-		session.analyzer.Run,
-	); err != nil {
+	if err := appendAnalysis(&result, shared, session.registry, session.options, session.analyzer.Run); err != nil {
 		return Result{}, err
 	}
 	sortDiagnostics(result.Diagnostics)
@@ -125,11 +107,7 @@ func (session *Session) Stats() SessionStats {
 	}
 	session.mu.Lock()
 	defer session.mu.Unlock()
-	return SessionStats{
-		ConcreteHits:   session.hits,
-		ConcreteMisses: session.misses,
-		Analysis:       session.analyzer.Stats(),
-	}
+	return SessionStats{ConcreteHits: session.hits, ConcreteMisses: session.misses, Analysis: session.analyzer.Stats()}
 }
 
 // Invalidate drops all results retained for future generations.
@@ -145,10 +123,7 @@ func (session *Session) Invalidate() {
 	session.analyzer.Invalidate()
 }
 
-func concreteFingerprint(shared *workspace.Workspace, includeFormatterContext bool) (
-	[sha256.Size]byte,
-	error,
-) {
+func concreteFingerprint(shared *workspace.Workspace, includeFormatterContext bool) ([sha256.Size]byte, error) {
 	digest := sha256.New()
 	files := shared.Files()
 	writeUint64(digest, uint64(len(files)))
@@ -156,7 +131,7 @@ func concreteFingerprint(shared *workspace.Workspace, includeFormatterContext bo
 		writeBytes(digest, []byte(file.Path()))
 		identity, err := file.Identity()
 		if err != nil {
-			return [sha256.Size]byte{}, err
+			return[sha256.Size]byte{}, err
 		}
 		_, _ = digest.Write(identity[:])
 	}
@@ -169,7 +144,7 @@ func concreteFingerprint(shared *workspace.Workspace, includeFormatterContext bo
 }
 
 type moduleFileState struct {
-	exists   bool
+	exists bool
 	contents []byte
 }
 
@@ -247,10 +222,7 @@ func cloneDiagnostics(original []diagnostic.Diagnostic) []diagnostic.Diagnostic 
 		result[index].Notes = append([]diagnostic.Note(nil), original[index].Notes...)
 		result[index].Fixes = append([]diagnostic.Fix(nil), original[index].Fixes...)
 		for fixIndex := range result[index].Fixes {
-			result[index].Fixes[fixIndex].Edits = append(
-				[]diagnostic.TextEdit(nil),
-				original[index].Fixes[fixIndex].Edits...,
-			)
+			result[index].Fixes[fixIndex].Edits = append([]diagnostic.TextEdit(nil), original[index].Fixes[fixIndex].Edits...)
 		}
 	}
 	return result

@@ -13,50 +13,50 @@ import (
 var cgoPointerIdentifier = regexp.MustCompile(`^_C(func|var)_.+$`)
 
 var builtinIdentifiers = map[string]bool{
-	"any":        true,
-	"append":     true,
-	"bool":       true,
-	"byte":       true,
-	"cap":        true,
-	"clear":      true,
-	"close":      true,
+	"any": true,
+	"append": true,
+	"bool": true,
+	"byte": true,
+	"cap": true,
+	"clear": true,
+	"close": true,
 	"comparable": true,
-	"complex":    true,
+	"complex": true,
 	"complex128": true,
-	"complex64":  true,
-	"copy":       true,
-	"delete":     true,
-	"error":      true,
-	"false":      true,
-	"float32":    true,
-	"float64":    true,
-	"imag":       true,
-	"int":        true,
-	"int16":      true,
-	"int32":      true,
-	"int64":      true,
-	"int8":       true,
-	"iota":       true,
-	"len":        true,
-	"make":       true,
-	"max":        true,
-	"min":        true,
-	"new":        true,
-	"nil":        true,
-	"panic":      true,
-	"print":      true,
-	"println":    true,
-	"real":       true,
-	"recover":    true,
-	"rune":       true,
-	"string":     true,
-	"true":       true,
-	"uint":       true,
-	"uint16":     true,
-	"uint32":     true,
-	"uint64":     true,
-	"uint8":      true,
-	"uintptr":    true,
+	"complex64": true,
+	"copy": true,
+	"delete": true,
+	"error": true,
+	"false": true,
+	"float32": true,
+	"float64": true,
+	"imag": true,
+	"int": true,
+	"int16": true,
+	"int32": true,
+	"int64": true,
+	"int8": true,
+	"iota": true,
+	"len": true,
+	"make": true,
+	"max": true,
+	"min": true,
+	"new": true,
+	"nil": true,
+	"panic": true,
+	"print": true,
+	"println": true,
+	"real": true,
+	"recover": true,
+	"rune": true,
+	"string": true,
+	"true": true,
+	"uint": true,
+	"uint16": true,
+	"uint32": true,
+	"uint64": true,
+	"uint8": true,
+	"uintptr": true,
 }
 
 func utf8Decode(value string) (rune, int) {
@@ -64,23 +64,17 @@ func utf8Decode(value string) (rune, int) {
 }
 
 func isDeepExit(name string) bool {
-	return name == "os.Exit" || strings.HasPrefix(name, "log.Fatal") || strings.HasPrefix(
-		name,
-		"log.Panic",
-	)
+	return name == "os.Exit" || strings.HasPrefix(name, "log.Fatal") || strings.HasPrefix(name, "log.Panic")
 }
 
 func isErrorConstructor(name string) bool {
-	return name == "errors.New" || name == "fmt.Errorf" || strings.HasSuffix(name, ".Errorf") || strings.HasSuffix(
-		name,
-		".Wrap",
-	) || strings.HasSuffix(name, ".Wrapf")
+	return name == "errors.New" || name == "fmt.Errorf" || strings.HasSuffix(name, ".Errorf") || strings.HasSuffix(name, ".Wrap") || strings.HasSuffix(name, ".Wrapf")
 }
 
 func likelyReturnsError(name string) bool {
 	base := name
 	if dot := strings.LastIndex(base, "."); dot >= 0 {
-		base = base[dot+1:]
+		base = base[dot + 1:]
 	}
 	return base == "Close" || base == "Flush" || base == "Write" || base == "Remove" || base == "Rename" || base == "Chdir" || base == "Setenv" || base == "Unmarshal" || base == "Encode" || strings.HasPrefix(
 		base,
@@ -111,21 +105,7 @@ func validEpochName(name, unit string) bool {
 
 func hasTimeUnitSuffix(name string) bool {
 	lower := strings.ToLower(name)
-	for _, suffix := range []string{
-		"ns",
-		"us",
-		"ms",
-		"sec",
-		"secs",
-		"second",
-		"seconds",
-		"min",
-		"mins",
-		"minute",
-		"minutes",
-		"hour",
-		"hours",
-	} {
+	for _, suffix := range[]string{"ns", "us", "ms", "sec", "secs", "second", "seconds", "min", "mins", "minute", "minutes", "hour", "hours"} {
 		if strings.HasSuffix(lower, suffix) {
 			return true
 		}
@@ -150,10 +130,7 @@ func builtinType(value string) bool {
 }
 
 func marshalMethod(name string) bool {
-	return strings.HasPrefix(name, "Marshal") || strings.HasPrefix(name, "Unmarshal") || strings.HasPrefix(
-		name,
-		"Encode",
-	) || strings.HasPrefix(name, "Decode")
+	return strings.HasPrefix(name, "Marshal") || strings.HasPrefix(name, "Unmarshal") || strings.HasPrefix(name, "Encode") || strings.HasPrefix(name, "Decode")
 }
 
 func pathContains(path, element string) bool {
@@ -181,16 +158,10 @@ func legacyBuildTerms(text string) []string {
 }
 
 func commentDirective(text string) bool {
-	return strings.HasPrefix(text, "go:") || strings.HasPrefix(text, "line ") || strings.HasPrefix(
+	return strings.HasPrefix(text, "go:") || strings.HasPrefix(text, "line ") || strings.HasPrefix(text, "+build") || strings.HasPrefix(text, "nolint") || strings.HasPrefix(
 		text,
-		"+build",
-	) || strings.HasPrefix(text, "nolint") || strings.HasPrefix(text, "strider:") || strings.HasPrefix(
-		text,
-		"Code generated",
-	) || strings.HasPrefix(text, "TODO") || strings.HasPrefix(text, "FIXME") || strings.HasPrefix(
-		text,
-		"#",
-	)
+		"strider:",
+	) || strings.HasPrefix(text, "Code generated") || strings.HasPrefix(text, "TODO") || strings.HasPrefix(text, "FIXME") || strings.HasPrefix(text, "#")
 }
 
 func parseStructTagValues(value string) (map[string][]string, bool) {
@@ -210,7 +181,7 @@ func parseStructTagValues(value string) (map[string][]string, bool) {
 			}
 		}
 		key := value[:colon]
-		value = value[colon+1:]
+		value = value[colon + 1:]
 		if len(value) == 0 || value[0] != '"' {
 			return nil, false
 		}
@@ -235,7 +206,7 @@ func consumeQuoted(value string) (string, string, bool) {
 			continue
 		}
 		if value[index] == '"' {
-			return value[:index+1], value[index+1:], true
+			return value[:index + 1], value[index + 1:], true
 		}
 	}
 	return "", value, false

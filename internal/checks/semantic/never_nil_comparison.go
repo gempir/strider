@@ -10,15 +10,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type neverNilComparisonRule struct{}
+type neverNilComparisonRule struct {}
 
 func (neverNilComparisonRule) Meta() Meta {
 	return Meta{
-		Code:            "never-nil-comparison",
-		Summary:         "detect nil checks on values proven to be non-nil",
-		Explanation:     "Fresh allocations, make results, functions, closures, and values flowing exclusively from those sources cannot be nil. Comparing them with nil has a fixed result and often means the wrong value was checked.",
-		GoodExample:     "var values []int; if values == nil { initialize() }",
-		BadExample:      "values := make([]int, 0); if values == nil { unreachable() }",
+		Code: "never-nil-comparison",
+		Summary: "detect nil checks on values proven to be non-nil",
+		Explanation: "Fresh allocations, make results, functions, closures, and values flowing exclusively from those sources cannot be nil. Comparing them with nil has a fixed result and often means the wrong value was checked.",
+		GoodExample: "var values []int; if values == nil { initialize() }",
+		BadExample: "values := make([]int, 0); if values == nil { unreachable() }",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -32,26 +32,26 @@ func (neverNilComparisonRule) Run(pass *Pass) {
 			function.Syntax(),
 			func(node ast.Node) bool {
 				ifStatement,
-					ok := node.(*ast.IfStmt)
+				ok := node.(*ast.IfStmt)
 				if !ok {
 					return true
 				}
 				binary,
-					ok := ast.Unparen(ifStatement.Cond).(*ast.BinaryExpr)
+				ok := ast.Unparen(ifStatement.Cond).(*ast.BinaryExpr)
 				if !ok || binary.Op != token.EQL && binary.Op != token.NEQ {
 					return true
 				}
 				checked,
-					ok := nilCheckedExpression(pass, binary.X, binary.Y)
+				ok := nilCheckedExpression(pass, binary.X, binary.Y)
 				if !ok {
 					checked,
-						ok = nilCheckedExpression(pass, binary.Y, binary.X)
+					ok = nilCheckedExpression(pass, binary.Y, binary.X)
 				}
 				if !ok {
 					return true
 				}
 				value,
-					isAddress := function.ValueForExpr(checked)
+				isAddress := function.ValueForExpr(checked)
 				if value == nil || isAddress || !ssaValueNeverNil(value, make(map[ssa.Value]bool)) {
 					return true
 				}
@@ -61,7 +61,7 @@ func (neverNilComparisonRule) Run(pass *Pass) {
 				}
 				message := "this nil comparison is " + truth + " true"
 				if _,
-					functionValue := flattenEquivalentPhi(value).(*ssa.Function); functionValue {
+				functionValue := flattenEquivalentPhi(value).(*ssa.Function); functionValue {
 					message = "function values are never nil; did you mean to call the function?"
 				}
 				pass.Report(binary, message)

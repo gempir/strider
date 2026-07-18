@@ -32,14 +32,7 @@ func TestResearchCorrectnessRuleMetadata(t *testing.T) {
 	for _, test := range tests {
 		meta := test.rule.Meta()
 		if meta.Code != test.code || meta.DefaultSeverity != test.severity {
-			t.Errorf(
-				"%T metadata = (%q, %q), want (%q, %q)",
-				test.rule,
-				meta.Code,
-				meta.DefaultSeverity,
-				test.code,
-				test.severity,
-			)
+			t.Errorf("%T metadata = (%q, %q), want (%q, %q)", test.rule, meta.Code, meta.DefaultSeverity, test.code, test.severity)
 		}
 		if meta.Summary == "" || meta.Explanation == "" || meta.GoodExample == "" || meta.BadExample == "" {
 			t.Errorf("%s has incomplete metadata: %#v", test.code, meta)
@@ -258,15 +251,7 @@ func pathDependent(useNew bool) {
 `
 	reports := runResearchCorrectnessRule(t, unclosedHTTPResponseBodyRule{}, source)
 	assertResearchReportCount(t, reports, 4)
-	assertResearchReportNeedles(
-		t,
-		reports,
-		source,
-		"http.Get(\"body-second\")",
-		"http.Get(\"response-second\")",
-		"http.Get(\"path-first\")",
-		"http.Get(\"path-second\")",
-	)
+	assertResearchReportNeedles(t, reports, source, "http.Get(\"body-second\")", "http.Get(\"response-second\")", "http.Get(\"path-first\")", "http.Get(\"path-second\")")
 }
 
 func TestUnclosedHTTPResponseBodyTracksBodyReplacementAndAliasTransfer(t *testing.T) {
@@ -301,13 +286,7 @@ func conditionalDeferred(skip bool) {
 `
 	reports := runResearchCorrectnessRule(t, unclosedHTTPResponseBodyRule{}, source)
 	assertResearchReportCount(t, reports, 2)
-	assertResearchReportNeedles(
-		t,
-		reports,
-		source,
-		"http.Get(\"replaced\")",
-		"http.Get(\"conditional-deferred\")",
-	)
+	assertResearchReportNeedles(t, reports, source, "http.Get(\"replaced\")", "http.Get(\"conditional-deferred\")")
 }
 
 func TestUnclosedHTTPResponseBodyTreatsNamedResultsAsTransfers(t *testing.T) {
@@ -617,10 +596,7 @@ func runResearchCorrectnessRule(t *testing.T, rule Rule, source string) []resear
 		Functions: collectPackageFunctions(ssaPackage.Prog, []*ssa.Package{ssaPackage})[ssaPackage],
 	}
 	pass.report = func(node ast.Node, message string) {
-		reports = append(
-			reports,
-			researchCorrectnessReport{position: fileSet.Position(node.Pos()), message: message},
-		)
+		reports = append(reports, researchCorrectnessReport{position: fileSet.Position(node.Pos()), message: message})
 	}
 	rule.Run(pass)
 	return reports
@@ -634,30 +610,16 @@ func assertResearchReportCount(t *testing.T, reports []researchCorrectnessReport
 	t.Fatalf("got %d reports, want %d: %#v", len(reports), want, reports)
 }
 
-func assertResearchMessagesContain(
-	t *testing.T,
-	reports []researchCorrectnessReport,
-	fragment string,
-) {
+func assertResearchMessagesContain(t *testing.T, reports []researchCorrectnessReport, fragment string) {
 	t.Helper()
 	for _, report := range reports {
 		if !strings.Contains(report.message, fragment) {
-			t.Errorf(
-				"report at %s has message %q; want fragment %q",
-				report.position,
-				report.message,
-				fragment,
-			)
+			t.Errorf("report at %s has message %q; want fragment %q", report.position, report.message, fragment)
 		}
 	}
 }
 
-func assertResearchReportNeedles(
-	t *testing.T,
-	reports []researchCorrectnessReport,
-	source string,
-	needles... string,
-) {
+func assertResearchReportNeedles(t *testing.T, reports []researchCorrectnessReport, source string, needles... string) {
 	t.Helper()
 	want := make(map[int]bool, len(needles))
 	for _, needle := range needles {

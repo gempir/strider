@@ -9,15 +9,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type copyLockValueRule struct{}
+type copyLockValueRule struct {}
 
 func (copyLockValueRule) Meta() Meta {
 	return Meta{
-		Code:            "copy-lock-value",
-		Summary:         "detect copying values that contain sync.Mutex or sync.RWMutex",
-		Explanation:     "Copying a struct after one of its locks has been used creates an independent copy of the lock state and breaks synchronization. Pass lock-containing values by pointer and avoid assigning, ranging over, or returning existing instances by value.",
-		GoodExample:     "func update(state *State) { state.mu.Lock(); defer state.mu.Unlock() }",
-		BadExample:      "func update(state State) { state.mu.Lock(); defer state.mu.Unlock() }",
+		Code: "copy-lock-value",
+		Summary: "detect copying values that contain sync.Mutex or sync.RWMutex",
+		Explanation: "Copying a struct after one of its locks has been used creates an independent copy of the lock state and breaks synchronization. Pass lock-containing values by pointer and avoid assigning, ranging over, or returning existing instances by value.",
+		GoodExample: "func update(state *State) { state.mu.Lock(); defer state.mu.Unlock() }",
+		BadExample: "func update(state State) { state.mu.Lock(); defer state.mu.Unlock() }",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -37,7 +37,8 @@ func (copyLockValueRule) Run(pass *Pass) {
 					reportLockAssignments(pass, node.Lhs, node.Rhs, node)
 				case *ast.ValueSpec:
 					left := make([]ast.Expr, 0, len(node.Names))
-					for _, name := range node.Names {
+					for _,
+					name := range node.Names {
 						left = append(left, name)
 					}
 					reportLockAssignments(pass, left, node.Values, node)
@@ -60,17 +61,13 @@ func (copyLockValueRule) Run(pass *Pass) {
 			if body == nil || signature == nil {
 				return
 			}
-			inspectFunctionBody(
-				body,
-				func(node ast.Node) bool {
-					statement,
-						ok := node.(*ast.ReturnStmt)
-					if ok {
-						reportLockReturn(pass, statement, signature)
-					}
-					return true
-				},
-			)
+			inspectFunctionBody(body, func(node ast.Node) bool {
+				statement, ok := node.(*ast.ReturnStmt)
+				if ok {
+					reportLockReturn(pass, statement, signature)
+				}
+				return true
+			})
 		},
 	)
 }
@@ -97,15 +94,7 @@ func reportLockCopyExpression(pass *Pass, expression ast.Expr, node ast.Node, ro
 	if lock == "" || freshLockValue(pass, expression) {
 		return
 	}
-	pass.Report(
-		node,
-		fmt.Sprintf(
-			"%s copies %s by value; it contains %s",
-			role,
-			analysisTypeName(pass.TypesInfo.TypeOf(expression)),
-			lock,
-		),
-	)
+	pass.Report(node, fmt.Sprintf("%s copies %s by value; it contains %s", role, analysisTypeName(pass.TypesInfo.TypeOf(expression)), lock))
 }
 
 func reportLockParameters(pass *Pass, fields *ast.FieldList, role string) {
@@ -122,15 +111,7 @@ func reportLockParameters(pass *Pass, fields *ast.FieldList, role string) {
 		if len(field.Names) != 0 {
 			node = field.Names[0]
 		}
-		pass.Report(
-			node,
-			fmt.Sprintf(
-				"%s copies %s by value; it contains %s",
-				role,
-				analysisTypeName(valueType),
-				lock,
-			),
-		)
+		pass.Report(node, fmt.Sprintf("%s copies %s by value; it contains %s", role, analysisTypeName(valueType), lock))
 	}
 }
 
@@ -143,21 +124,10 @@ func reportLockAssignments(pass *Pass, left, right []ast.Expr, node ast.Node) {
 			continue
 		}
 		lock := containedLockName(pass.TypesInfo.TypeOf(expression))
-		if lock == "" || freshLockValue(pass, expression) || sameCopiedObject(
-			pass,
-			left[index],
-			expression,
-		) {
+		if lock == "" || freshLockValue(pass, expression) || sameCopiedObject(pass, left[index], expression) {
 			continue
 		}
-		pass.Report(
-			node,
-			fmt.Sprintf(
-				"assignment copies %s by value; it contains %s",
-				analysisTypeName(pass.TypesInfo.TypeOf(expression)),
-				lock,
-			),
-		)
+		pass.Report(node, fmt.Sprintf("assignment copies %s by value; it contains %s", analysisTypeName(pass.TypesInfo.TypeOf(expression)), lock))
 	}
 }
 
@@ -176,14 +146,7 @@ func reportLockRange(pass *Pass, statement *ast.RangeStmt) {
 	if lock == "" {
 		return
 	}
-	pass.Report(
-		statement.Value,
-		fmt.Sprintf(
-			"range variable copies %s on each iteration; it contains %s",
-			analysisTypeName(valueType),
-			lock,
-		),
-	)
+	pass.Report(statement.Value, fmt.Sprintf("range variable copies %s on each iteration; it contains %s", analysisTypeName(valueType), lock))
 }
 
 func reportLockCall(pass *Pass, call *ast.CallExpr) {
@@ -209,14 +172,7 @@ func reportLockCall(pass *Pass, call *ast.CallExpr) {
 		if lock == "" || freshLockValue(pass, argument) {
 			continue
 		}
-		pass.Report(
-			argument,
-			fmt.Sprintf(
-				"call copies %s by value; it contains %s",
-				analysisTypeName(pass.TypesInfo.TypeOf(argument)),
-				lock,
-			),
-		)
+		pass.Report(argument, fmt.Sprintf("call copies %s by value; it contains %s", analysisTypeName(pass.TypesInfo.TypeOf(argument)), lock))
 	}
 	selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
 	if !ok {
@@ -238,14 +194,7 @@ func reportLockCall(pass *Pass, call *ast.CallExpr) {
 	if lock == "" {
 		return
 	}
-	pass.Report(
-		selector,
-		fmt.Sprintf(
-			"method call copies %s receiver by value; it contains %s",
-			analysisTypeName(signature.Recv().Type()),
-			lock,
-		),
-	)
+	pass.Report(selector, fmt.Sprintf("method call copies %s receiver by value; it contains %s", analysisTypeName(signature.Recv().Type()), lock))
 }
 
 func reportLockReturn(pass *Pass, statement *ast.ReturnStmt, signature *types.Signature) {
@@ -261,14 +210,7 @@ func reportLockReturn(pass *Pass, statement *ast.ReturnStmt, signature *types.Si
 		if lock == "" || freshLockValue(pass, expression) {
 			continue
 		}
-		pass.Report(
-			statement,
-			fmt.Sprintf(
-				"return copies %s by value; it contains %s",
-				analysisTypeName(resultType),
-				lock,
-			),
-		)
+		pass.Report(statement, fmt.Sprintf("return copies %s by value; it contains %s", analysisTypeName(resultType), lock))
 	}
 }
 
@@ -337,9 +279,7 @@ func freshLockValue(pass *Pass, expression ast.Expr) bool {
 func sameCopiedObject(pass *Pass, left, right ast.Expr) bool {
 	leftIdentifier, leftOK := ast.Unparen(left).(*ast.Ident)
 	rightIdentifier, rightOK := ast.Unparen(right).(*ast.Ident)
-	return leftOK && rightOK && pass.TypesInfo.ObjectOf(leftIdentifier) == pass.TypesInfo.ObjectOf(
-		rightIdentifier,
-	)
+	return leftOK && rightOK && pass.TypesInfo.ObjectOf(leftIdentifier) == pass.TypesInfo.ObjectOf(rightIdentifier)
 }
 
 func rangeValueType(valueType types.Type) types.Type {
@@ -364,13 +304,10 @@ func analysisTypeName(valueType types.Type) string {
 	if valueType == nil {
 		return "lock-containing value"
 	}
-	return types.TypeString(
-		valueType,
-		func(pkg *types.Package) string {
-			if pkg == nil {
-				return ""
-			}
-			return pkg.Name()
-		},
-	)
+	return types.TypeString(valueType, func(pkg *types.Package) string {
+		if pkg == nil {
+			return ""
+		}
+		return pkg.Name()
+	})
 }

@@ -8,15 +8,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type contradictoryInterfaceAssertionRule struct{}
+type contradictoryInterfaceAssertionRule struct {}
 
 func (contradictoryInterfaceAssertionRule) Meta() Meta {
 	return Meta{
-		Code:            "contradictory-interface-assertion",
-		Summary:         "detect interface assertions with conflicting method signatures",
-		Explanation:     "An assertion from one interface to another can compile even when the two method sets contain a same-named method with incompatible signatures. No dynamic type can implement both contracts, so the assertion can never succeed.",
-		GoodExample:     "value, ok := source.(interface { Write([]byte) error })",
-		BadExample:      "value, ok := source.(interface { Read() string }) // source requires Read() int",
+		Code: "contradictory-interface-assertion",
+		Summary: "detect interface assertions with conflicting method signatures",
+		Explanation: "An assertion from one interface to another can compile even when the two method sets contain a same-named method with incompatible signatures. No dynamic type can implement both contracts, so the assertion can never succeed.",
+		GoodExample: "value, ok := source.(interface { Write([]byte) error })",
+		BadExample: "value, ok := source.(interface { Read() string }) // source requires Read() int",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -27,14 +27,14 @@ func (contradictoryInterfaceAssertionRule) Run(pass *Pass) {
 			file,
 			func(node ast.Node) bool {
 				assertion,
-					ok := node.(*ast.TypeAssertExpr)
+				ok := node.(*ast.TypeAssertExpr)
 				if !ok || assertion.Type == nil {
 					return true
 				}
 				left := pass.TypesInfo.TypeOf(assertion.X)
 				right := pass.TypesInfo.TypeOf(assertion.Type)
 				rightInterface,
-					ok := right.Underlying().(*types.Interface)
+				ok := right.Underlying().(*types.Interface)
 				if !ok {
 					return true
 				}
@@ -45,7 +45,7 @@ func (contradictoryInterfaceAssertionRule) Run(pass *Pass) {
 						continue
 					}
 					leftMethod,
-						ok := selection.Obj().(*types.Func)
+					ok := selection.Obj().(*types.Func)
 					if !ok || leftMethod.Origin() != leftMethod || method.Origin() != method {
 						return true
 					}

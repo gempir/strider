@@ -10,15 +10,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type impossibleIntegerComparisonRule struct{}
+type impossibleIntegerComparisonRule struct {}
 
 func (impossibleIntegerComparisonRule) Meta() Meta {
 	return Meta{
-		Code:            "impossible-integer-comparison",
-		Summary:         "detect integer comparisons that are fixed by the type's range",
-		Explanation:     "An integer type's minimum and maximum values make some comparisons always true or false, such as checking whether an unsigned value is below zero or above its maximum.",
-		GoodExample:     "if value == 0 { use() }",
-		BadExample:      "if value < 0 { use() } // value is unsigned",
+		Code: "impossible-integer-comparison",
+		Summary: "detect integer comparisons that are fixed by the type's range",
+		Explanation: "An integer type's minimum and maximum values make some comparisons always true or false, such as checking whether an unsigned value is below zero or above its maximum.",
+		GoodExample: "if value == 0 { use() }",
+		BadExample: "if value < 0 { use() } // value is unsigned",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -29,34 +29,27 @@ func (impossibleIntegerComparisonRule) Run(pass *Pass) {
 			file,
 			func(node ast.Node) bool {
 				binary,
-					ok := node.(*ast.BinaryExpr)
+				ok := node.(*ast.BinaryExpr)
 				if !ok || !relationalOperator(binary.Op) {
 					return true
 				}
 				value,
-					bound,
-					operator,
-					ok := integerComparisonParts(pass, binary)
+				bound,
+				operator,
+				ok := integerComparisonParts(pass, binary)
 				if !ok {
 					return true
 				}
 				minimum,
-					maximum,
-					ok := integerTypeBounds(pass.TypesInfo.TypeOf(value), pass.TypesSizes)
+				maximum,
+				ok := integerTypeBounds(pass.TypesInfo.TypeOf(value), pass.TypesSizes)
 				if !ok {
 					return true
 				}
 				fixed,
-					truth := comparisonFixedByBounds(operator, bound, minimum, maximum)
+				truth := comparisonFixedByBounds(operator, bound, minimum, maximum)
 				if fixed {
-					pass.Report(
-						binary,
-						fmt.Sprintf(
-							"comparison is always %t for type %s",
-							truth,
-							pass.TypesInfo.TypeOf(value),
-						),
-					)
+					pass.Report(binary, fmt.Sprintf("comparison is always %t for type %s", truth, pass.TypesInfo.TypeOf(value)))
 				}
 				return true
 			},
@@ -73,12 +66,7 @@ func relationalOperator(operator token.Token) bool {
 	}
 }
 
-func integerComparisonParts(pass *Pass, binary *ast.BinaryExpr) (
-	ast.Expr,
-	constant.Value,
-	token.Token,
-	bool,
-) {
+func integerComparisonParts(pass *Pass, binary *ast.BinaryExpr) (ast.Expr, constant.Value, token.Token, bool) {
 	if bound := pass.TypesInfo.Types[binary.Y].Value; bound != nil && bound.Kind() == constant.Int {
 		return binary.X, bound, binary.Op, true
 	}
@@ -103,20 +91,16 @@ func reverseComparison(operator token.Token) token.Token {
 	}
 }
 
-func integerTypeBounds(valueType types.Type, sizes types.Sizes) (
-	constant.Value,
-	constant.Value,
-	bool,
-) {
+func integerTypeBounds(valueType types.Type, sizes types.Sizes) (constant.Value, constant.Value, bool) {
 	if valueType == nil {
 		return nil, nil, false
 	}
 	basic, ok := types.Unalias(valueType).Underlying().(*types.Basic)
-	if !ok || basic.Info()&types.IsInteger == 0 {
+	if !ok || basic.Info() & types.IsInteger == 0 {
 		return nil, nil, false
 	}
 	bits := int64(0)
-	signed := basic.Info()&types.IsUnsigned == 0
+	signed := basic.Info() & types.IsUnsigned == 0
 	switch basic.Kind() {
 	case types.Int8, types.Uint8:
 		bits = 8
@@ -139,16 +123,13 @@ func integerTypeBounds(valueType types.Type, sizes types.Sizes) (
 		maximum := constant.BinaryOp(constant.Shift(one, token.SHL, uint(bits)), token.SUB, one)
 		return constant.MakeInt64(0), maximum, true
 	}
-	limit := constant.Shift(one, token.SHL, uint(bits-1))
+	limit := constant.Shift(one, token.SHL, uint(bits - 1))
 	minimum := constant.UnaryOp(token.SUB, limit, 0)
 	maximum := constant.BinaryOp(limit, token.SUB, one)
 	return minimum, maximum, true
 }
 
-func comparisonFixedByBounds(operator token.Token, bound, minimum, maximum constant.Value) (
-	bool,
-	bool,
-) {
+func comparisonFixedByBounds(operator token.Token, bound, minimum, maximum constant.Value) (bool, bool) {
 	comparedToMinimum := constant.Sign(constant.BinaryOp(bound, token.SUB, minimum))
 	comparedToMaximum := constant.Sign(constant.BinaryOp(bound, token.SUB, maximum))
 	switch operator {

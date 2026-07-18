@@ -52,15 +52,7 @@ func closeThing() {}
 	for _, item := range diagnostics {
 		codes = append(codes, item.Code)
 	}
-	for _, wanted := range[]string{
-		"cyclomatic-complexity",
-		"max-parameters",
-		"no-defer-in-loop",
-		"no-else-after-return",
-		"no-init",
-		"no-naked-return",
-		"no-package-var",
-	} {
+	for _, wanted := range[]string{"cyclomatic-complexity", "max-parameters", "no-defer-in-loop", "no-else-after-return", "no-init", "no-naked-return", "no-package-var"} {
 		if !slices.Contains(codes, wanted) {
 			t.Errorf("missing %s in %v", wanted, codes)
 		}
@@ -103,16 +95,10 @@ func closeThing() {}
 		t.Errorf("grouped parameter count produced %d findings; want 1", counts["max-parameters"])
 	}
 	if counts["no-defer-in-loop"] != 1 {
-		t.Errorf(
-			"nested function boundary produced %d defer findings; want 1",
-			counts["no-defer-in-loop"],
-		)
+		t.Errorf("nested function boundary produced %d defer findings; want 1", counts["no-defer-in-loop"])
 	}
 	if counts["no-naked-return"] != 1 {
-		t.Errorf(
-			"named generic result produced %d naked-return findings; want 1",
-			counts["no-naked-return"],
-		)
+		t.Errorf("named generic result produced %d naked-return findings; want 1", counts["no-naked-return"])
 	}
 }
 
@@ -159,10 +145,7 @@ func TestOnlyAndUnknownRule(t *testing.T) {
 }
 
 func TestIneffectivePointerCopyReportsPointerRoundTrips(t *testing.T) {
-	fixture := writeFixture(
-		t,
-		"package sample\nfunc copy(pointer *int, value int) { _ = &*pointer; _ = *&value }\n",
-	)
+	fixture := writeFixture(t, "package sample\nfunc copy(pointer *int, value int) { _ = &*pointer; _ = *&value }\n")
 	registry, err := NewRegistry([]string{"ineffective-pointer-copy"})
 	if err != nil {
 		t.Fatal(err)
@@ -248,15 +231,12 @@ package sample
 }
 
 func TestZeroIntegerDivisionReportsLiteralTruncation(t *testing.T) {
-	fixture := writeFixture(
-		t,
-		`package sample
+	fixture := writeFixture(t, `package sample
 
 func ratio() int { return 2 / 3 }
 func useful() int { return 4 / 3 }
 func floating() float64 { return 2 / 3.0 }
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"zero-integer-division"})
 	if err != nil {
 		t.Fatal(err)
@@ -271,14 +251,11 @@ func floating() float64 { return 2 / 3.0 }
 }
 
 func TestModuloOneReportsConstantZeroRemainder(t *testing.T) {
-	fixture := writeFixture(
-		t,
-		`package sample
+	fixture := writeFixture(t, `package sample
 
 func remainder(value int) int { return value % 1 }
 func useful(value int) int { return value % 2 }
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"modulo-one"})
 	if err != nil {
 		t.Fatal(err)
@@ -293,9 +270,7 @@ func useful(value int) int { return value % 2 }
 }
 
 func TestSpinningSelectDefaultReportsEmptyDefault(t *testing.T) {
-	fixture := writeFixture(
-		t,
-		`package sample
+	fixture := writeFixture(t, `package sample
 
 func spin(messages <-chan string) {
 	for {
@@ -305,8 +280,7 @@ func spin(messages <-chan string) {
 		}
 	}
 }
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"spinning-select-default"})
 	if err != nil {
 		t.Fatal(err)
@@ -405,9 +379,7 @@ func branches(value bool) {
 }
 
 func TestSpacedCompilerDirectiveReportsIgnoredDirective(t *testing.T) {
-	fixture := writeFixture(
-		t,
-		`package sample
+	fixture := writeFixture(t, `package sample
 
 // go:noinline
 func ignored() {}
@@ -417,8 +389,7 @@ func active() {}
 
 func local() { // go:noinline
 }
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"spaced-compiler-directive"})
 	if err != nil {
 		t.Fatal(err)
@@ -433,14 +404,11 @@ func local() { // go:noinline
 }
 
 func TestDeferAllowsReturnedFunctionInvocation(t *testing.T) {
-	fixture := writeFixture(
-		t,
-		`package sample
+	fixture := writeFixture(t, `package sample
 
 func setup() func() { return func() {} }
 func run() { defer setup()() }
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"defer"})
 	if err != nil {
 		t.Fatal(err)
@@ -455,10 +423,7 @@ func run() { defer setup()() }
 }
 
 func TestBidirectionalControlCharacterReportsInvisibleSourceControl(t *testing.T) {
-	fixture := writeFixture(
-		t,
-		"package sample\n\n// visible text \u202e hidden ordering\nfunc safe() {}\n",
-	)
+	fixture := writeFixture(t, "package sample\n\n// visible text \u202e hidden ordering\nfunc safe() {}\n")
 	registry, err := NewRegistry([]string{"bidirectional-control-character"})
 	if err != nil {
 		t.Fatal(err)
@@ -484,13 +449,7 @@ type record struct { Name int; name int }
 func use(fmt int, len int, bad_name int) { _, _, _ = fmt, len, bad_name }
 `,
 	)
-	codes := []string{
-		"confusing-naming",
-		"import-shadowing",
-		"redefines-builtin-id",
-		"unexported-naming",
-		"var-naming",
-	}
+	codes := []string{"confusing-naming", "import-shadowing", "redefines-builtin-id", "unexported-naming", "var-naming"}
 	registry, err := NewRegistry(codes)
 	if err != nil {
 		t.Fatal(err)
@@ -588,18 +547,7 @@ func helper() {
 }
 `,
 	)
-	registry, err := NewRegistry(
-		[]string{
-			"call-to-gc",
-			"deep-exit",
-			"error-strings",
-			"errorf",
-			"unnecessary-format",
-			"use-errors-new",
-			"use-fmt-print",
-			"use-slices-sort",
-		},
-	)
+	registry, err := NewRegistry([]string{"call-to-gc", "deep-exit", "error-strings", "errorf", "unnecessary-format", "use-errors-new", "use-fmt-print", "use-slices-sort"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -611,33 +559,16 @@ func helper() {
 	for _, item := range diagnostics {
 		counts[item.Code]++
 	}
-	wanted := map[string]int{
-		"call-to-gc": 1,
-		"deep-exit": 1,
-		"error-strings": 2,
-		"errorf": 1,
-		"unnecessary-format": 1,
-		"use-errors-new": 1,
-		"use-fmt-print": 1,
-		"use-slices-sort": 1,
-	}
+	wanted := map[string]int{"call-to-gc": 1, "deep-exit": 1, "error-strings": 2, "errorf": 1, "unnecessary-format": 1, "use-errors-new": 1, "use-fmt-print": 1, "use-slices-sort": 1}
 	for code, count := range wanted {
 		if counts[code] != count {
-			t.Errorf(
-				"%s produced %d findings; want %d: %#v",
-				code,
-				counts[code],
-				count,
-				diagnostics,
-			)
+			t.Errorf("%s produced %d findings; want %d: %#v", code, counts[code], count, diagnostics)
 		}
 	}
 }
 
 func TestConcreteImportRules(t *testing.T) {
-	fixture := writeFixture(
-		t,
-		`package sample
+	fixture := writeFixture(t, `package sample
 
 import (
 	. "fmt"
@@ -645,17 +576,8 @@ import (
 	Bad_Alias "strings"
 	strings "strings"
 )
-`,
-	)
-	registry, err := NewRegistry(
-		[]string{
-			"blank-imports",
-			"dot-imports",
-			"duplicated-imports",
-			"import-alias-naming",
-			"redundant-import-alias",
-		},
-	)
+`)
+	registry, err := NewRegistry([]string{"blank-imports", "dot-imports", "duplicated-imports", "import-alias-naming", "redundant-import-alias"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -667,13 +589,7 @@ import (
 	for _, item := range diagnostics {
 		counts[item.Code]++
 	}
-	for _, code := range[]string{
-		"blank-imports",
-		"dot-imports",
-		"duplicated-imports",
-		"import-alias-naming",
-		"redundant-import-alias",
-	} {
+	for _, code := range[]string{"blank-imports", "dot-imports", "duplicated-imports", "import-alias-naming", "redundant-import-alias"} {
 		if counts[code] != 1 {
 			t.Errorf("%s produced %d findings; want 1: %#v", code, counts[code], diagnostics)
 		}
@@ -694,17 +610,7 @@ func TestCatalogIsCompleteDocumentedAndRunnable(t *testing.T) {
 	names := make([]string, 0, len(rules))
 	seen := map[string]bool{}
 	_, testFile, _, _ := runtime.Caller(0)
-	docsDirectory := filepath.Join(
-		filepath.Dir(testFile),
-		"..",
-		"..",
-		"..",
-		"docs",
-		"src",
-		"content",
-		"docs",
-		"lints",
-	)
+	docsDirectory := filepath.Join(filepath.Dir(testFile), "..", "..", "..", "docs", "src", "content", "docs", "lints")
 	fixture := writeFixture(t, "// Package p is a fixture.\npackage p\n")
 	for _, rule := range rules {
 		meta := rule.Meta()
@@ -716,10 +622,7 @@ func TestCatalogIsCompleteDocumentedAndRunnable(t *testing.T) {
 		if strings.TrimSpace(meta.GoodExample) == "" || strings.TrimSpace(meta.BadExample) == "" {
 			t.Errorf("rule %s has incomplete examples", meta.Code)
 		}
-		if strings.HasPrefix(meta.GoodExample, "See the rule reference") || strings.HasPrefix(
-			meta.BadExample,
-			"See the rule reference",
-		) {
+		if strings.HasPrefix(meta.GoodExample, "See the rule reference") || strings.HasPrefix(meta.BadExample, "See the rule reference") {
 			t.Errorf("rule %s still has placeholder examples", meta.Code)
 		}
 		if _, err := os.Stat(filepath.Join(docsDirectory, meta.Code + ".md")); err != nil {
@@ -770,16 +673,8 @@ func TestEveryLintRuleAcceptsCommonConfiguration(t *testing.T) {
 
 func TestLintRegistryFiltersByEffectiveSeverityBeforeExecution(t *testing.T) {
 	for name, options := range map[string]RegistryOptions{
-		"only": {
-			Only: []string{"no-init"},
-			Settings: map[string]config.RuleConfig{"no-init": {Severity: "warning"}},
-			MinimumSeverity: diagnostic.SeverityError,
-		},
-		"all": {
-			EnableAll: true,
-			Settings: map[string]config.RuleConfig{"no-init": {Severity: "warning"}},
-			MinimumSeverity: diagnostic.SeverityError,
-		},
+		"only": {Only: []string{"no-init"}, Settings: map[string]config.RuleConfig{"no-init": {Severity: "warning"}}, MinimumSeverity: diagnostic.SeverityError},
+		"all": {EnableAll: true, Settings: map[string]config.RuleConfig{"no-init": {Severity: "warning"}}, MinimumSeverity: diagnostic.SeverityError},
 	} {
 		t.Run(
 			name,
@@ -810,11 +705,7 @@ func TestLintRegistryFiltersByEffectiveSeverityBeforeExecution(t *testing.T) {
 	}
 
 	registry, err := NewRegistryWithOptions(
-		RegistryOptions{
-			Only: []string{"no-init"},
-			Settings: map[string]config.RuleConfig{"no-init": {Severity: "error"}},
-			MinimumSeverity: diagnostic.SeverityError,
-		},
+		RegistryOptions{Only: []string{"no-init"}, Settings: map[string]config.RuleConfig{"no-init": {Severity: "error"}}, MinimumSeverity: diagnostic.SeverityError},
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -832,9 +723,7 @@ func TestLintRegistryRejectsInvalidMinimumSeverity(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "minimum severity") {
 		t.Fatalf("got %v, want minimum severity error", err)
 	}
-	_, err = NewRegistryWithOptions(
-		RegistryOptions{Settings: map[string]config.RuleConfig{"no-init": {Severity: "fatal"}}},
-	)
+	_, err = NewRegistryWithOptions(RegistryOptions{Settings: map[string]config.RuleConfig{"no-init": {Severity: "fatal"}}})
 	if err == nil || !strings.Contains(err.Error(), "severity must be") {
 		t.Fatalf("got %v, want rule severity error", err)
 	}
@@ -843,12 +732,7 @@ func TestLintRegistryRejectsInvalidMinimumSeverity(t *testing.T) {
 func TestLintRuleConfigurationCanExcludePaths(t *testing.T) {
 	fixture := writeFixture(t, "package p\nfunc init() {}\n")
 	enabled := true
-	registry, err := NewRegistryConfigured(
-		nil,
-		false,
-		map[string]config.RuleConfig{"no-init": {Enabled: &enabled, Excludes: []string{"**/*.go"}}},
-		filepath.Dir(fixture),
-	)
+	registry, err := NewRegistryConfigured(nil, false, map[string]config.RuleConfig{"no-init": {Enabled: &enabled, Excludes: []string{"**/*.go"}}}, filepath.Dir(fixture))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -960,16 +844,7 @@ func (current item) mutate(value int, group sync.WaitGroup, closer interface{ Cl
 `,
 	)
 	registry, err := NewRegistry(
-		[]string{
-			"atomic",
-			"epoch-naming",
-			"forbidden-call-in-wg-go",
-			"inefficient-map-lookup",
-			"modifies-parameter",
-			"modifies-value-receiver",
-			"time-equal",
-			"unhandled-error",
-		},
+		[]string{"atomic", "epoch-naming", "forbidden-call-in-wg-go", "inefficient-map-lookup", "modifies-parameter", "modifies-value-receiver", "time-equal", "unhandled-error"},
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -999,16 +874,13 @@ func (current item) mutate(value int, group sync.WaitGroup, closer interface{ Cl
 }
 
 func TestExtendedRuleOrderingIsDeterministic(t *testing.T) {
-	filename := writeFixture(
-		t,
-		`package p
+	filename := writeFixture(t, `package p
 func f(values map[string]int) {
 	for key, value := range values {
 		_ = func() any { return []any{key, value} }
 	}
 }
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"datarace", "range-val-in-closure"})
 	if err != nil {
 		t.Fatal(err)
@@ -1040,11 +912,7 @@ func writeFixture(t *testing.T, source string) string {
 
 func BenchmarkLint(b *testing.B) {
 	filename := filepath.Join(b.TempDir(), "fixture.go")
-	if err := os.WriteFile(
-		filename,
-		[]byte("package p\nfunc F(a int) int { if a > 0 { return a }; return -a }\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(filename, []byte("package p\nfunc F(a int) int { if a > 0 { return a }; return -a }\n"), 0o600); err != nil {
 		b.Fatal(err)
 	}
 	registry, err := NewRegistry(nil)
@@ -1085,20 +953,8 @@ func TestAnalyzeTreeMatchesFileRun(t *testing.T) {
 
 func TestSortDiagnosticsUsesEndOffsetAsTieBreaker(t *testing.T) {
 	diagnostics := []diagnostic.Diagnostic{
-		{
-			File: "main.go",
-			Code: "example",
-			Message: "same",
-			Start: token.Position{Offset: 10},
-			End: token.Position{Offset: 30},
-		},
-		{
-			File: "main.go",
-			Code: "example",
-			Message: "same",
-			Start: token.Position{Offset: 10},
-			End: token.Position{Offset: 20},
-		},
+		{File: "main.go", Code: "example", Message: "same", Start: token.Position{Offset: 10}, End: token.Position{Offset: 30}},
+		{File: "main.go", Code: "example", Message: "same", Start: token.Position{Offset: 10}, End: token.Position{Offset: 20}},
 	}
 	sortDiagnostics(diagnostics)
 	if diagnostics[0].End.Offset != 20 || diagnostics[1].End.Offset != 30 {

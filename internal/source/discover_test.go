@@ -30,10 +30,7 @@ func TestDiscoverSkipsGeneratedAndVendor(t *testing.T) {
 	write(".cache/cached.go", "package cache\n")
 	write("_scratch/scratch.go", "package scratch\n")
 	write("notes.txt", "not go")
-	files, err := Discover(
-		[]string{root + string(filepath.Separator) + "..."},
-		Options{SkipGenerated: true},
-	)
+	files, err := Discover([]string{root + string(filepath.Separator) + "..."}, Options{SkipGenerated: true})
 	if err != nil {
 		t.Fatal(err)
 	}

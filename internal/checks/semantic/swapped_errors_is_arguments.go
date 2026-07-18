@@ -8,15 +8,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type swappedErrorsIsArgumentsRule struct{}
+type swappedErrorsIsArgumentsRule struct {}
 
 func (swappedErrorsIsArgumentsRule) Meta() Meta {
 	return Meta{
-		Code:            "swapped-errors-is-arguments",
-		Summary:         "detect likely reversed errors.Is arguments",
-		Explanation:     "errors.Is expects the error being inspected first and the target sentinel second. A package-level sentinel from another package in the first position, followed by a local error value, usually means the arguments were reversed.",
-		GoodExample:     "errors.Is(err, io.EOF)",
-		BadExample:      "errors.Is(io.EOF, err)",
+		Code: "swapped-errors-is-arguments",
+		Summary: "detect likely reversed errors.Is arguments",
+		Explanation: "errors.Is expects the error being inspected first and the target sentinel second. A package-level sentinel from another package in the first position, followed by a local error value, usually means the arguments were reversed.",
+		GoodExample: "errors.Is(err, io.EOF)",
+		BadExample: "errors.Is(io.EOF, err)",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }

@@ -7,15 +7,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type uncheckedRowsErrorRule struct{}
+type uncheckedRowsErrorRule struct {}
 
 func (uncheckedRowsErrorRule) Meta() Meta {
 	return Meta{
-		Code:            "unchecked-rows-error",
-		Summary:         "detect sql.Rows iteration without an Err check",
-		Explanation:     "Rows.Next returns false both at the end of a result set and when iteration fails. Check Rows.Err after iteration to distinguish successful completion from a driver, network, or decoding failure.",
-		GoodExample:     "for rows.Next() { scan(rows) }; if err := rows.Err(); err != nil { return err }",
-		BadExample:      "for rows.Next() { scan(rows) }",
+		Code: "unchecked-rows-error",
+		Summary: "detect sql.Rows iteration without an Err check",
+		Explanation: "Rows.Next returns false both at the end of a result set and when iteration fails. Check Rows.Err after iteration to distinguish successful completion from a driver, network, or decoding failure.",
+		GoodExample: "for rows.Next() { scan(rows) }; if err := rows.Err(); err != nil { return err }",
+		BadExample: "for rows.Next() { scan(rows) }",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -50,21 +50,21 @@ func reportUncheckedRowsErrors(pass *Pass, body *ast.BlockStmt) {
 		body,
 		func(node ast.Node) bool {
 			if _,
-				nested := node.(*ast.FuncLit); nested {
+			nested := node.(*ast.FuncLit); nested {
 				return false
 			}
 			call,
-				ok := node.(*ast.CallExpr)
+			ok := node.(*ast.CallExpr)
 			if !ok {
 				return true
 			}
 			selector,
-				ok := call.Fun.(*ast.SelectorExpr)
+			ok := call.Fun.(*ast.SelectorExpr)
 			if !ok || !isSQLRowsType(pass.TypesInfo.TypeOf(selector.X)) {
 				return true
 			}
 			receiver,
-				ok := unparenExpression(selector.X).(*ast.Ident)
+			ok := unparenExpression(selector.X).(*ast.Ident)
 			if !ok {
 				return true
 			}
@@ -88,10 +88,7 @@ func reportUncheckedRowsErrors(pass *Pass, body *ast.BlockStmt) {
 		if checked[object] {
 			continue
 		}
-		pass.Report(
-			node,
-			"sql.Rows iteration does not check Rows.Err; iteration failures are indistinguishable from successful completion",
-		)
+		pass.Report(node, "sql.Rows iteration does not check Rows.Err; iteration failures are indistinguishable from successful completion")
 	}
 }
 

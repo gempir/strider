@@ -10,15 +10,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type nonCanonicalHeaderRule struct{}
+type nonCanonicalHeaderRule struct {}
 
 func (nonCanonicalHeaderRule) Meta() Meta {
 	return Meta{
-		Code:            "non-canonical-header",
-		Summary:         "detect non-canonical keys in http.Header reads",
-		Explanation:     "Direct reads from http.Header must use canonical constant keys. Header methods canonicalize their arguments, but direct map access does not.",
-		GoodExample:     `value := header["Content-Type"]`,
-		BadExample:      `value := header["content-type"]`,
+		Code: "non-canonical-header",
+		Summary: "detect non-canonical keys in http.Header reads",
+		Explanation: "Direct reads from http.Header must use canonical constant keys. Header methods canonicalize their arguments, but direct map access does not.",
+		GoodExample: `value := header["Content-Type"]`,
+		BadExample: `value := header["content-type"]`,
 		DefaultSeverity: diagnostic.SeverityNote,
 	}
 }
@@ -29,10 +29,11 @@ func (nonCanonicalHeaderRule) Run(pass *Pass) {
 			file,
 			func(node ast.Node) bool {
 				if assignment,
-					ok := node.(*ast.AssignStmt); ok {
-					for _, expression := range assignment.Lhs {
+				ok := node.(*ast.AssignStmt); ok {
+					for _,
+					expression := range assignment.Lhs {
 						index,
-							ok := expression.(*ast.IndexExpr)
+						ok := expression.(*ast.IndexExpr)
 						if ok && isHTTPHeader(pass.TypesInfo.TypeOf(index.X)) {
 							return false
 						}
@@ -40,7 +41,7 @@ func (nonCanonicalHeaderRule) Run(pass *Pass) {
 					return true
 				}
 				index,
-					ok := node.(*ast.IndexExpr)
+				ok := node.(*ast.IndexExpr)
 				if !ok || !isHTTPHeader(pass.TypesInfo.TypeOf(index.X)) {
 					return true
 				}
@@ -52,13 +53,7 @@ func (nonCanonicalHeaderRule) Run(pass *Pass) {
 				if key == http.CanonicalHeaderKey(key) {
 					return true
 				}
-				pass.Report(
-					index,
-					fmt.Sprintf(
-						"keys in http.Header are canonicalized, %q is not canonical; fix the constant or use http.CanonicalHeaderKey",
-						key,
-					),
-				)
+				pass.Report(index, fmt.Sprintf("keys in http.Header are canonicalized, %q is not canonical; fix the constant or use http.CanonicalHeaderKey", key))
 				return true
 			},
 		)

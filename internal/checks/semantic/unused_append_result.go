@@ -6,15 +6,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type unusedAppendResultRule struct{}
+type unusedAppendResultRule struct {}
 
 func (unusedAppendResultRule) Meta() Meta {
 	return Meta{
-		Code:            "unused-append-result",
-		Summary:         "detect append results that can never be observed",
-		Explanation:     "append returns the updated slice header. Discarding that result loses any new length or reallocated backing array. The analyzer reports only function-local slices whose backing storage has not escaped or been observably aliased.",
-		GoodExample:     "values = append(values, item)",
-		BadExample:      "values := make([]int, 0); values = append(values, item) // values is never read again",
+		Code: "unused-append-result",
+		Summary: "detect append results that can never be observed",
+		Explanation: "append returns the updated slice header. Discarding that result loses any new length or reallocated backing array. The analyzer reports only function-local slices whose backing storage has not escaped or been observably aliased.",
+		GoodExample: "values = append(values, item)",
+		BadExample: "values := make([]int, 0); values = append(values, item) // values is never read again",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -24,22 +24,14 @@ func (unusedAppendResultRule) Run(pass *Pass) {
 		for _, block := range function.Blocks {
 			for _, instruction := range block.Instrs {
 				call, ok := appendCall(instruction)
-				if !ok || call.Referrers() == nil || appendResultUsed(call) || len(
-					call.Common().Args,
-				) == 0 {
+				if !ok || call.Referrers() == nil || appendResultUsed(call) || len(call.Common().Args) == 0 {
 					continue
 				}
 				origins := make(map[ssa.Value]bool)
-				if !validAppendOrigin(call.Common().Args[0], origins) || appendOriginEscapes(
-					call,
-					origins,
-				) {
+				if !validAppendOrigin(call.Common().Args[0], origins) || appendOriginEscapes(call, origins) {
 					continue
 				}
-				pass.Report(
-					positionNode{position: call.Pos()},
-					"result of append is never used or observed",
-				)
+				pass.Report(positionNode{position: call.Pos()}, "result of append is never used or observed")
 			}
 		}
 	}
@@ -130,11 +122,7 @@ func appendOriginEscapes(target *ssa.Call, origins map[ssa.Value]bool) bool {
 	return false
 }
 
-func appendValueEscapes(
-	value ssa.Value,
-	allowed map[ssa.Instruction]bool,
-	visited map[ssa.Instruction]bool,
-) bool {
+func appendValueEscapes(value ssa.Value, allowed map[ssa.Instruction]bool, visited map[ssa.Instruction]bool) bool {
 	references := value.Referrers()
 	if references == nil {
 		return false

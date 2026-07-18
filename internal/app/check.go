@@ -18,13 +18,7 @@ import (
 	"github.com/gempir/strider/internal/workspace"
 )
 
-func runCheck(
-	args []string,
-	configuration config.Config,
-	colorMode ui.ColorMode,
-	stdout,
-	stderr io.Writer,
-) int {
+func runCheck(args []string, configuration config.Config, colorMode ui.ColorMode, stdout, stderr io.Writer) int {
 	flags := flag.NewFlagSet("check", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	aliases := map[string]string{
@@ -47,20 +41,8 @@ func runCheck(
 		"help": "h",
 	}
 	reportFormat := stringOption(flags, "format", "f", "text", "report format: text, json, or html")
-	minimumSeverityFlag := stringOption(
-		flags,
-		"minimum-severity",
-		"s",
-		"",
-		"minimum effective severity: note, warning, or error",
-	)
-	summaryOnly := boolOption(
-		flags,
-		"summary-only",
-		"q",
-		false,
-		"only print per-check counts and the aggregate issue summary",
-	)
+	minimumSeverityFlag := stringOption(flags, "minimum-severity", "s", "", "minimum effective severity: note, warning, or error")
+	summaryOnly := boolOption(flags, "summary-only", "q", false, "only print per-check counts and the aggregate issue summary")
 	watch := boolOption(flags, "watch", "w", false, "rerun checks when source changes")
 	listChecks := boolOption(flags, "list-checks", "l", false, "list enabled checks")
 	flags.BoolVar(listChecks, "list-rules", false, "alias for --list-checks")
@@ -68,49 +50,13 @@ func runCheck(
 	flags.BoolVar(allChecks, "all-rules", false, "alias for --all")
 	explain := stringOption(flags, "explain", "e", "", "explain a check")
 	baselinePath := stringOption(flags, "baseline", "b", "", "path to the check baseline")
-	baselineVariant := stringOption(
-		flags,
-		"baseline-variant",
-		"v",
-		"",
-		"generated baseline variant: loose or strict",
-	)
-	generateBaseline := boolOption(
-		flags,
-		"generate-baseline",
-		"g",
-		false,
-		"replace the baseline with all current findings",
-	)
-	removeOutdated := boolOption(
-		flags,
-		"remove-outdated-baseline-entries",
-		"r",
-		false,
-		"remove baseline entries that no longer match",
-	)
-	ignoreBaseline := boolOption(
-		flags,
-		"ignore-baseline",
-		"i",
-		false,
-		"report findings without applying a baseline",
-	)
-	backupBaseline := boolOption(
-		flags,
-		"backup-baseline",
-		"B",
-		false,
-		"back up a baseline before replacing it",
-	)
+	baselineVariant := stringOption(flags, "baseline-variant", "v", "", "generated baseline variant: loose or strict")
+	generateBaseline := boolOption(flags, "generate-baseline", "g", false, "replace the baseline with all current findings")
+	removeOutdated := boolOption(flags, "remove-outdated-baseline-entries", "r", false, "remove baseline entries that no longer match")
+	ignoreBaseline := boolOption(flags, "ignore-baseline", "i", false, "report findings without applying a baseline")
+	backupBaseline := boolOption(flags, "backup-baseline", "B", false, "back up a baseline before replacing it")
 	var only stringList
-	varOption(
-		flags,
-		&only,
-		"only",
-		"o",
-		"run only these check codes (repeatable or comma-separated)",
-	)
+	varOption(flags, &only, "only", "o", "run only these check codes (repeatable or comma-separated)")
 	flags.Usage = func() {
 		palette := ui.NewPalette(stderr, colorMode)
 		fmt.Fprintln(stderr, palette.Accent("Usage:") + " strider check [OPTIONS] [FILE|DIR]...")
@@ -120,13 +66,7 @@ func runCheck(
 		return exitError
 	}
 	if *reportFormat != "text" && *reportFormat != "json" && *reportFormat != "html" {
-		printCommandError(
-			stderr,
-			colorMode,
-			"strider check",
-			"unsupported report format %q",
-			*reportFormat,
-		)
+		printCommandError(stderr, colorMode, "strider check", "unsupported report format %q", *reportFormat)
 		return exitError
 	}
 	if *watch && *reportFormat != "text" {
@@ -134,33 +74,16 @@ func runCheck(
 		return exitError
 	}
 	if *summaryOnly && *reportFormat != "text" {
-		printCommandError(
-			stderr,
-			colorMode,
-			"strider check",
-			"--summary-only requires text report format",
-		)
+		printCommandError(stderr, colorMode, "strider check", "--summary-only requires text report format")
 		return exitError
 	}
 	if *watch && (*generateBaseline || *removeOutdated || *backupBaseline) {
-		printCommandError(
-			stderr,
-			colorMode,
-			"strider check",
-			"--watch cannot update or back up a baseline",
-		)
+		printCommandError(stderr, colorMode, "strider check", "--watch cannot update or back up a baseline")
 		return exitError
 	}
 
 	checkConfig := configuration.Checks
-	minimumSeverity, ok := resolveMinimumSeverity(
-		flags,
-		*minimumSeverityFlag,
-		checkConfig.MinimumSeverity,
-		"check",
-		colorMode,
-		stderr,
-	)
+	minimumSeverity, ok := resolveMinimumSeverity(flags, *minimumSeverityFlag, checkConfig.MinimumSeverity, "check", colorMode, stderr)
 	if !ok {
 		return exitError
 	}
@@ -207,11 +130,7 @@ func runCheck(
 		baselineConfig.selectedCodes[rule.Meta().Code] = true
 	}
 	baselineConfig.knownCodes = registry.KnownCodes()
-	workspaceOptions := workspace.Options{
-		SkipGenerated: true,
-		Root: configuration.Root,
-		Excludes: checkConfig.Excludes,
-	}
+	workspaceOptions := workspace.Options{SkipGenerated: true, Root: configuration.Root, Excludes: checkConfig.Excludes}
 	runOptions := checkengine.RunOptions{
 		Formatter: formatter.Options{
 			PrintWidth: configuration.Formatter.PrintWidth,
@@ -223,17 +142,7 @@ func runCheck(
 		Excludes: checkConfig.Excludes,
 	}
 	if *watch {
-		if err := runCheckWatch(
-			flags.Args(),
-			workspaceOptions,
-			registry,
-			runOptions,
-			baselineConfig,
-			*summaryOnly,
-			colorMode,
-			stdout,
-			stderr,
-		); err != nil {
+		if err := runCheckWatch(flags.Args(), workspaceOptions, registry, runOptions, baselineConfig, *summaryOnly, colorMode, stdout, stderr); err != nil {
 			printCommandError(stderr, colorMode, "strider check", "%v", err)
 			return exitError
 		}
@@ -249,12 +158,7 @@ func runCheck(
 		printCommandError(stderr, colorMode, "strider check", "%v", err)
 		return exitError
 	}
-	diagnostics, handled, err := prepareCheckDiagnostics(
-		result.Diagnostics,
-		baselineConfig,
-		colorMode,
-		stderr,
-	)
+	diagnostics, handled, err := prepareCheckDiagnostics(result.Diagnostics, baselineConfig, colorMode, stderr)
 	if err != nil {
 		printCommandError(stderr, colorMode, "strider check", "%v", err)
 		return exitError
@@ -353,12 +257,7 @@ func (watcher *checkWatcher) run() error {
 	if watcher.iteration != 0 && !concreteChanged && !packageChanged {
 		return nil
 	}
-	diagnostics, handled, err := prepareCheckDiagnostics(
-		result.Diagnostics,
-		watcher.baseline,
-		watcher.colorMode,
-		watcher.stderr,
-	)
+	diagnostics, handled, err := prepareCheckDiagnostics(result.Diagnostics, watcher.baseline, watcher.colorMode, watcher.stderr)
 	if err != nil {
 		return err
 	}
@@ -367,13 +266,7 @@ func (watcher *checkWatcher) run() error {
 	}
 	watcher.iteration++
 	fmt.Fprintf(watcher.stdout, "== strider check #%d ==\n", watcher.iteration)
-	if err := reportCheckDiagnostics(
-		watcher.stdout,
-		diagnostics,
-		"text",
-		watcher.summaryOnly,
-		watcher.colorMode,
-	); err != nil {
+	if err := reportCheckDiagnostics(watcher.stdout, diagnostics, "text", watcher.summaryOnly, watcher.colorMode); err != nil {
 		return err
 	}
 	if len(diagnostics) == 0 && !watcher.summaryOnly {
@@ -382,25 +275,14 @@ func (watcher *checkWatcher) run() error {
 	return nil
 }
 
-func prepareCheckDiagnostics(
-	diagnostics []diagnostic.Diagnostic,
-	baselineConfig baselineOptions,
-	colorMode ui.ColorMode,
-	stderr io.Writer,
-) ([]diagnostic.Diagnostic, bool, error) {
+func prepareCheckDiagnostics(diagnostics []diagnostic.Diagnostic, baselineConfig baselineOptions, colorMode ui.ColorMode, stderr io.Writer) ([]diagnostic.Diagnostic, bool, error) {
 	if baselineConfig.generate {
 		diagnostics = withoutFormatDiagnostics(diagnostics)
 	}
 	return applyBaseline("check", diagnostics, baselineConfig, colorMode, stderr)
 }
 
-func reportCheckDiagnostics(
-	stdout io.Writer,
-	diagnostics []diagnostic.Diagnostic,
-	reportFormat string,
-	summaryOnly bool,
-	colorMode ui.ColorMode,
-) error {
+func reportCheckDiagnostics(stdout io.Writer, diagnostics []diagnostic.Diagnostic, reportFormat string, summaryOnly bool, colorMode ui.ColorMode) error {
 	if reportFormat == "json" {
 		return checkengine.ReportJSON(stdout, diagnostics)
 	}
@@ -418,26 +300,13 @@ func listChecksInRegistry(registry *checkengine.Registry, colorMode ui.ColorMode
 	entries := make([]ruleListEntry, 0, len(registry.Rules()))
 	for _, rule := range registry.Rules() {
 		meta := rule.Meta()
-		entries = append(
-			entries,
-			ruleListEntry{
-				code: meta.Code,
-				severity: registry.Severity(meta.Code),
-				summary: meta.Summary,
-			},
-		)
+		entries = append(entries, ruleListEntry{code: meta.Code, severity: registry.Severity(meta.Code), summary: meta.Summary})
 	}
 	writeRuleList(stdout, palette, entries)
 	return exitSuccess
 }
 
-func explainCheck(
-	registry *checkengine.Registry,
-	code string,
-	colorMode ui.ColorMode,
-	stdout,
-	stderr io.Writer,
-) int {
+func explainCheck(registry *checkengine.Registry, code string, colorMode ui.ColorMode, stdout, stderr io.Writer) int {
 	palette := ui.NewPalette(stdout, colorMode)
 	for _, rule := range registry.Rules() {
 		meta := rule.Meta()

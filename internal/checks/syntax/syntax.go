@@ -53,21 +53,8 @@ func newRegistry(only []string, enableAll bool) (*Registry, error) {
 
 // NewRegistryConfigured applies project rule settings. Explicit CLI selection
 // takes precedence over configured enabled states.
-func NewRegistryConfigured(
-	only []string,
-	enableAll bool,
-	settings map[string]config.RuleConfig,
-	root string,
-) (*Registry, error) {
-	return NewRegistryWithOptions(
-		RegistryOptions{
-			Only: only,
-			EnableAll: enableAll,
-			Settings: settings,
-			Root: root,
-			MinimumSeverity: diagnostic.SeverityNote,
-		},
-	)
+func NewRegistryConfigured(only []string, enableAll bool, settings map[string]config.RuleConfig, root string) (*Registry, error) {
+	return NewRegistryWithOptions(RegistryOptions{Only: only, EnableAll: enableAll, Settings: settings, Root: root, MinimumSeverity: diagnostic.SeverityNote})
 }
 
 // NewRegistryWithOptions applies project settings and a minimum effective
@@ -109,11 +96,7 @@ func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
 	for _, code := range options.Only {
 		wanted[code] = true
 	}
-	registry := &Registry{
-		settings: make(map[string]configuredRule, len(all)),
-		knownCodes: make(map[string]bool, len(all)),
-		root: options.Root,
-	}
+	registry := &Registry{settings: make(map[string]configuredRule, len(all)), knownCodes: make(map[string]bool, len(all)), root: options.Root}
 	for _, rule := range all {
 		meta := rule.Meta()
 		registry.knownCodes[meta.Code] = true
@@ -138,27 +121,18 @@ func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
 			continue
 		}
 		registry.rules = append(registry.rules, rule)
-		registry.settings[meta.Code] = configuredRule{
-			severity: severity,
-			excludes: ruleConfig.Excludes,
-		}
+		registry.settings[meta.Code] = configuredRule{severity: severity, excludes: ruleConfig.Excludes}
 	}
 	return registry, nil
 }
 
-func validateConfiguredRules(
-	tool string,
-	settings map[string]config.RuleConfig,
-	available map[string]builtinrules.Rule,
-) error {
+func validateConfiguredRules(tool string, settings map[string]config.RuleConfig, available map[string]builtinrules.Rule) error {
 	unknown := make([]string, 0)
 	for code, setting := range settings {
 		if available[code] == nil {
 			unknown = append(unknown, code)
 		}
-		if setting.Severity != "" && !diagnostic.ValidSeverity(
-			diagnostic.Severity(setting.Severity),
-		) {
+		if setting.Severity != "" && !diagnostic.ValidSeverity(diagnostic.Severity(setting.Severity)) {
 			return fmt.Errorf("%s rule %q severity must be note, warning, or error", tool, code)
 		}
 	}
@@ -282,17 +256,10 @@ func Run(files []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
 		allDiagnostics = append(allDiagnostics, result.diagnostics...)
 	}
 	if len(errorsByFile) != 0 {
-		sort.Slice(
-			errorsByFile,
-			func(i, j int) bool {
-				return errorsByFile[i].filename < errorsByFile[j].filename
-			},
-		)
-		return nil, fmt.Errorf(
-			"%s: %w",
-			source.DisplayPath(errorsByFile[0].filename),
-			errorsByFile[0].err,
-		)
+		sort.Slice(errorsByFile, func(i, j int) bool {
+			return errorsByFile[i].filename < errorsByFile[j].filename
+		})
+		return nil, fmt.Errorf("%s: %w", source.DisplayPath(errorsByFile[0].filename), errorsByFile[0].err)
 	}
 	sortDiagnostics(allDiagnostics)
 	return allDiagnostics, nil
@@ -350,22 +317,12 @@ func AnalyzeTree(filename string, concreteTree *cst.Tree, registry *Registry) []
 	return analyzeTree(filename, concreteTree, activeRules, registry)
 }
 
-func analyzeTree(
-	filename string,
-	concreteTree *cst.Tree,
-	activeRules []builtinrules.Rule,
-	registry *Registry,
-) []diagnostic.Diagnostic {
+func analyzeTree(filename string, concreteTree *cst.Tree, activeRules []builtinrules.Rule, registry *Registry) []diagnostic.Diagnostic {
 	if len(activeRules) == 0 {
 		return nil
 	}
 	concreteIgnores, concreteNodes := concreteSuppressions(concreteTree)
-	context := &Context{
-		filename: filename,
-		displayFilename: source.DisplayPath(filename),
-		concreteIgnores: concreteIgnores,
-		concreteNodes: concreteNodes,
-	}
+	context := &Context{filename: filename, displayFilename: source.DisplayPath(filename), concreteIgnores: concreteIgnores, concreteNodes: concreteNodes}
 	builtinrules.AnalyzeCST(
 		builtinrules.CSTInput{
 			Filename: filename,
@@ -379,11 +336,7 @@ func analyzeTree(
 	return context.diagnostics
 }
 
-func (c *Context) reportConcrete(
-	tree *cst.Tree,
-	finding builtinrules.Finding,
-	severity diagnostic.Severity,
-) {
+func (c *Context) reportConcrete(tree *cst.Tree, finding builtinrules.Finding, severity diagnostic.Severity) {
 	startOffset, endOffset := cst.Range(finding.ConcreteNode)
 	if finding.HasConcreteRange {
 		startOffset, endOffset = finding.ConcreteStart, finding.ConcreteEnd
@@ -396,17 +349,7 @@ func (c *Context) reportConcrete(
 	display := c.displayFilename
 	start.Filename = display
 	end.Filename = display
-	c.diagnostics = append(
-		c.diagnostics,
-		diagnostic.Diagnostic{
-			Code: finding.Code,
-			Message: finding.Message,
-			Severity: severity,
-			File: display,
-			Start: start,
-			End: end,
-		},
-	)
+	c.diagnostics = append(c.diagnostics, diagnostic.Diagnostic{Code: finding.Code, Message: finding.Message, Severity: severity, File: display, Start: start, End: end})
 }
 
 func (c *Context) suppressedRange(code string, start, end int) bool {
@@ -414,9 +357,7 @@ func (c *Context) suppressedRange(code string, start, end int) bool {
 		return true
 	}
 	for _, ignored := range c.concreteNodes {
-		if ignored.start <= start && ignored.end >= end && (ignored.codes["all"] || ignored.codes[
-			code,
-		]) {
+		if ignored.start <= start && ignored.end >= end && (ignored.codes["all"] || ignored.codes[code]) {
 			return true
 		}
 	}
@@ -444,20 +385,13 @@ func concreteSuppressions(tree *cst.Tree) (map[string]bool, []concreteSuppressio
 		if !ok {
 			continue
 		}
-		index := sort.Search(
-			len(candidates),
-			func(index int) bool {
-				return candidates[index].start > end
-			},
-		)
+		index := sort.Search(len(candidates), func(index int) bool {
+			return candidates[index].start > end
+		})
 		if index == len(candidates) {
 			continue
 		}
-		ignored := concreteSuppression{
-			start: candidates[index].start,
-			end: candidates[index].end,
-			codes: make(map[string]bool, len(codes)),
-		}
+		ignored := concreteSuppression{start: candidates[index].start, end: candidates[index].end, codes: make(map[string]bool, len(codes))}
 		for _, code := range codes {
 			ignored.codes[code] = true
 		}
@@ -483,15 +417,12 @@ func concreteSuppressionCandidates(tree *cst.Tree) []concreteSuppression {
 			return true
 		},
 	)
-	sort.SliceStable(
-		result,
-		func(i, j int) bool {
-			if result[i].start != result[j].start {
-				return result[i].start < result[j].start
-			}
-			return result[i].end > result[j].end
-		},
-	)
+	sort.SliceStable(result, func(i, j int) bool {
+		if result[i].start != result[j].start {
+			return result[i].start < result[j].start
+		}
+		return result[i].end > result[j].end
+	})
 	return result
 }
 

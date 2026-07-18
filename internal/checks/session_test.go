@@ -64,11 +64,7 @@ func TestSessionOwnsFormattingCandidates(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	session, err := NewSession(
-		registry,
-		RunOptions{Formatter: formatter.DefaultOptions(), CollectCandidates: true},
-		SessionOptions{},
-	)
+	session, err := NewSession(registry, RunOptions{Formatter: formatter.DefaultOptions(), CollectCandidates: true}, SessionOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,11 +85,7 @@ func TestSessionOwnsFormattingCandidates(t *testing.T) {
 func TestSessionInvalidatesFormattingWhenModulePathChanges(t *testing.T) {
 	directory := t.TempDir()
 	filename := filepath.Join(directory, "sample.go")
-	if err := os.WriteFile(
-		filename,
-		[]byte("package sample\nimport (\n\t\"fmt\"\n\t\"example.com/one/pkg\"\n)\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(filename, []byte("package sample\nimport (\n\t\"fmt\"\n\t\"example.com/one/pkg\"\n)\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	module := filepath.Join(directory, "go.mod")
@@ -142,11 +134,7 @@ func runCachedSession(t testingTB, cache *workspace.Cache, session *Session, fil
 func BenchmarkSessionUnchangedConcreteGeneration(b *testing.B) {
 	directory := b.TempDir()
 	filename := filepath.Join(directory, "sample.go")
-	if err := os.WriteFile(
-		filename,
-		[]byte("package sample\nfunc init() { println(\"x\") }\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(filename, []byte("package sample\nfunc init() { println(\"x\") }\n"), 0o600); err != nil {
 		b.Fatal(err)
 	}
 	registry, err := NewRegistry(RegistryOptions{Only: []string{"no-init"}})

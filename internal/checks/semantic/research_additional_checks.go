@@ -104,12 +104,12 @@ func discardedErrorResultIndexes(pass *Pass, call *ast.CallExpr) []int {
 }
 
 func discardedErrorResultIsInfallible(pass *Pass, call *ast.CallExpr) bool {
-	if isPackageFunction(pass.TypesInfo, call.Fun, "fmt", "Fprint") || isPackageFunction(
+	if isPackageFunction(pass.TypesInfo, call.Fun, "fmt", "Fprint") || isPackageFunction(pass.TypesInfo, call.Fun, "fmt", "Fprintf") || isPackageFunction(
 		pass.TypesInfo,
 		call.Fun,
 		"fmt",
-		"Fprintf",
-	) || isPackageFunction(pass.TypesInfo, call.Fun, "fmt", "Fprintln") {
+		"Fprintln",
+	) {
 		return true
 	}
 	if isPackageFunction(pass.TypesInfo, call.Fun, "io", "WriteString") {
@@ -217,10 +217,7 @@ func (inlineErrorDeclarationRule) Run(pass *Pass) {
 					variable,
 					_ := pass.TypesInfo.Defs[identifier].(*types.Var)
 					if variable != nil && builtinErrorType(variable.Type()) {
-						pass.Report(
-							identifier,
-							"declare the error before the control statement instead of in its initializer",
-						)
+						pass.Report(identifier, "declare the error before the control statement instead of in its initializer")
 						break
 					}
 				}
@@ -262,11 +259,7 @@ func (testParallelismRule) Run(pass *Pass) {
 				continue
 			}
 			parameter := testingTParameter(pass, function.Type)
-			if parameter == nil || function.Body == nil || hasTestingParallelCall(
-				pass,
-				function.Body,
-				parameter,
-			) || hasUnsafeParallelTestState(pass, function.Body) {
+			if parameter == nil || function.Body == nil || hasTestingParallelCall(pass, function.Body, parameter) || hasUnsafeParallelTestState(pass, function.Body) {
 				continue
 			}
 			pass.Report(function.Name, "consider calling t.Parallel() when this test begins")
@@ -285,11 +278,7 @@ func (testParallelismRule) Run(pass *Pass) {
 					return true
 				}
 				parameter := testingTParameter(pass, literal.Type)
-				if parameter == nil || literal.Body == nil || hasTestingParallelCall(
-					pass,
-					literal.Body,
-					parameter,
-				) || hasUnsafeParallelTestState(pass, literal.Body) {
+				if parameter == nil || literal.Body == nil || hasTestingParallelCall(pass, literal.Body, parameter) || hasUnsafeParallelTestState(pass, literal.Body) {
 					return true
 				}
 				pass.Report(literal, "consider calling t.Parallel() when this subtest begins")
@@ -312,9 +301,9 @@ func testFunctionName(name string) bool {
 }
 
 func testingTParameter(pass *Pass, function *ast.FuncType) *types.Var {
-	if function == nil || function.Params == nil || len(function.Params.List) != 1 || len(
-		function.Params.List[0].Names,
-	) != 1 || !isTestingTType(pass.TypesInfo.TypeOf(function.Params.List[0].Type)) {
+	if function == nil || function.Params == nil || len(function.Params.List) != 1 || len(function.Params.List[0].Names) != 1 || !isTestingTType(
+		pass.TypesInfo.TypeOf(function.Params.List[0].Type),
+	) {
 		return nil
 	}
 	parameter, _ := pass.TypesInfo.Defs[function.Params.List[0].Names[0]].(*types.Var)
@@ -361,20 +350,16 @@ func hasTestingParallelCall(pass *Pass, body *ast.BlockStmt, parameter *types.Va
 
 func inspectParallelTestBody(body *ast.BlockStmt, visit func(ast.Node) bool) {
 	first := true
-	ast.Inspect(
-		body,
-		func(node ast.Node) bool {
-			if node == nil {
-				return true
-			}
-			if _,
-			nested := node.(*ast.FuncLit); nested && !first {
-				return false
-			}
-			first = false
-			return visit(node)
-		},
-	)
+	ast.Inspect(body, func(node ast.Node) bool {
+		if node == nil {
+			return true
+		}
+		if _, nested := node.(*ast.FuncLit); nested && !first {
+			return false
+		}
+		first = false
+		return visit(node)
+	})
 }
 
 func hasUnsafeParallelTestState(pass *Pass, body *ast.BlockStmt) bool {
@@ -387,11 +372,7 @@ func hasUnsafeParallelTestState(pass *Pass, body *ast.BlockStmt) bool {
 			}
 			switch node := node.(type) {
 			case *ast.CallExpr:
-				if isTestingMethod(pass, node.Fun, "Setenv") || isTestingMethod(
-					pass,
-					node.Fun,
-					"Chdir",
-				) || isUnsafeOSStateCall(pass, node.Fun) {
+				if isTestingMethod(pass, node.Fun, "Setenv") || isTestingMethod(pass, node.Fun, "Chdir") || isUnsafeOSStateCall(pass, node.Fun) {
 					unsafe = true
 				}
 			case *ast.AssignStmt:
@@ -483,10 +464,7 @@ func (declarationOrderRule) Run(pass *Pass) {
 				continue
 			}
 			if rank < highest {
-				pass.Report(
-					declaration,
-					"top-level declarations should be ordered as type, const, var, then func",
-				)
+				pass.Report(declaration, "top-level declarations should be ordered as type, const, var, then func")
 				break
 			}
 			if rank > highest {

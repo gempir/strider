@@ -10,15 +10,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type contextCancelInLoopRule struct{}
+type contextCancelInLoopRule struct {}
 
 func (contextCancelInLoopRule) Meta() Meta {
 	return Meta{
-		Code:            "context-cancel-in-loop",
-		Summary:         "detect derived contexts whose cancellation is retained across loop iterations",
-		Explanation:     "Calling context.WithCancel, WithTimeout, or WithDeadline in a loop retains parent and timer resources until its cancellation function runs. A defer in the surrounding function runs too late; cancel explicitly during each iteration or move the iteration body into a helper function.",
-		GoodExample:     "for _, item := range items { if err := handleItem(ctx, item); err != nil { return err } } // handleItem defers its own cancel",
-		BadExample:      "for _, item := range items { _, cancel := context.WithCancel(ctx); defer cancel() }",
+		Code: "context-cancel-in-loop",
+		Summary: "detect derived contexts whose cancellation is retained across loop iterations",
+		Explanation: "Calling context.WithCancel, WithTimeout, or WithDeadline in a loop retains parent and timer resources until its cancellation function runs. A defer in the surrounding function runs too late; cancel explicitly during each iteration or move the iteration body into a helper function.",
+		GoodExample: "for _, item := range items { if err := handleItem(ctx, item); err != nil { return err } } // handleItem defers its own cancel",
+		BadExample: "for _, item := range items { _, cancel := context.WithCancel(ctx); defer cancel() }",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -41,9 +41,9 @@ func (contextCancelInLoopRule) Run(pass *Pass) {
 }
 
 type contextCancelAcquisition struct {
-	call   *ast.CallExpr
+	call *ast.CallExpr
 	cancel types.Object
-	name   string
+	name string
 }
 
 type contextCancelUse struct {
@@ -75,29 +75,24 @@ func reportLoopContextCancellations(pass *Pass, body *ast.BlockStmt) {
 			first = false
 			switch node := node.(type) {
 			case *ast.AssignStmt:
-				acquisitions = append(
-					acquisitions,
-					contextAcquisitionsFromAssignment(pass, node.Lhs, node.Rhs)...,
-				)
+				acquisitions = append(acquisitions, contextAcquisitionsFromAssignment(pass, node.Lhs, node.Rhs)...)
 			case *ast.ValueSpec:
 				left := make([]ast.Expr, 0, len(node.Names))
-				for _, name := range node.Names {
+				for _,
+				name := range node.Names {
 					left = append(left, name)
 				}
-				acquisitions = append(
-					acquisitions,
-					contextAcquisitionsFromAssignment(pass, left, node.Values)...,
-				)
+				acquisitions = append(acquisitions, contextAcquisitionsFromAssignment(pass, left, node.Values)...)
 			case *ast.ExprStmt:
 				if object := calledCancelObject(pass, node.X); object != nil {
-					uses[object] = append(uses[object], contextCancelUse{position: node.Pos()})
+					uses[object] = append(uses[object], contextCancelUse{position:
+					node.Pos()})
 				}
 			case *ast.DeferStmt:
 				if object := calledCancelObject(pass, node.Call); object != nil {
-					uses[object] = append(
-						uses[object],
-						contextCancelUse{position: node.Pos(), deferred: true},
-					)
+					uses[object] = append(uses[object], contextCancelUse{position:
+					node.Pos(), deferred:
+					true})
 				}
 			}
 			return true
@@ -105,10 +100,7 @@ func reportLoopContextCancellations(pass *Pass, body *ast.BlockStmt) {
 	)
 	for _, acquisition := range acquisitions {
 		if acquisition.cancel == nil {
-			pass.Report(
-				acquisition.call,
-				acquisition.name+" is created in a loop without retaining and calling its cancellation function during the iteration",
-			)
+			pass.Report(acquisition.call, acquisition.name + " is created in a loop without retaining and calling its cancellation function during the iteration")
 			continue
 		}
 		end := token.NoPos
@@ -139,25 +131,17 @@ func reportLoopContextCancellations(pass *Pass, body *ast.BlockStmt) {
 			)
 			continue
 		}
-		pass.Report(
-			acquisition.call,
-			acquisition.name+" is created in a loop but its cancellation function is not called during the iteration",
-		)
+		pass.Report(acquisition.call, acquisition.name + " is created in a loop but its cancellation function is not called during the iteration")
 	}
 }
 
 type contextCancelPathState struct {
-	block  *cfg.Block
-	next   int
+	block *cfg.Block
+	next int
 	active bool
 }
 
-func contextCancelledOnEveryLoopPath(
-	body *ast.BlockStmt,
-	acquisition contextCancelAcquisition,
-	end token.Pos,
-	uses []contextCancelUse,
-) bool {
+func contextCancelledOnEveryLoopPath(body *ast.BlockStmt, acquisition contextCancelAcquisition, end token.Pos, uses []contextCancelUse) bool {
 	graph := cfg.New(body, func(*ast.CallExpr) bool {
 		return true
 	})
@@ -175,10 +159,7 @@ func contextCancelledOnEveryLoopPath(
 				return false
 			}
 			for _, successor := range state.block.Succs {
-				queue = append(
-					queue,
-					contextCancelPathState{block: successor, active: state.active},
-				)
+				queue = append(queue, contextCancelPathState{block: successor, active: state.active})
 			}
 			continue
 		}
@@ -192,10 +173,7 @@ func contextCancelledOnEveryLoopPath(
 		}
 		if active {
 			for _, use := range uses {
-				if use.deferred || use.position <= acquisition.call.Pos() || end != token.NoPos && use.position >= end || !nodeContainsPosition(
-					node,
-					use.position,
-				) {
+				if use.deferred || use.position <= acquisition.call.Pos() || end != token.NoPos && use.position >= end || !nodeContainsPosition(node, use.position) {
 					continue
 				}
 				active = false
@@ -205,10 +183,7 @@ func contextCancelledOnEveryLoopPath(
 		if active && end != token.NoPos && nodeContainsPosition(node, end) {
 			return false
 		}
-		queue = append(
-			queue,
-			contextCancelPathState{block: state.block, next: state.next + 1, active: active},
-		)
+		queue = append(queue, contextCancelPathState{block: state.block, next: state.next + 1, active: active})
 	}
 	return true
 }
@@ -227,15 +202,13 @@ func contextAcquisitionsFromAssignment(pass *Pass, left, right []ast.Expr) []con
 	}
 	identifier, ok := ast.Unparen(left[1]).(*ast.Ident)
 	if !ok || identifier.Name == "_" {
-		return []contextCancelAcquisition{{call: call, name: name}}
+		return[]contextCancelAcquisition{{call: call, name: name}}
 	}
-	return []contextCancelAcquisition{
-		{call: call, cancel: pass.TypesInfo.ObjectOf(identifier), name: name},
-	}
+	return[]contextCancelAcquisition{{call: call, cancel: pass.TypesInfo.ObjectOf(identifier), name: name}}
 }
 
 func contextDerivationName(pass *Pass, call *ast.CallExpr) string {
-	for _, name := range []string{"WithCancel", "WithTimeout", "WithDeadline"} {
+	for _, name := range[]string{"WithCancel", "WithTimeout", "WithDeadline"} {
 		if isPackageFunction(pass.TypesInfo, call.Fun, "context", name) {
 			return "context." + name
 		}

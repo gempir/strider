@@ -9,15 +9,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type failedAssertionShadowReadRule struct{}
+type failedAssertionShadowReadRule struct {}
 
 func (failedAssertionShadowReadRule) Meta() Meta {
 	return Meta{
-		Code:            "failed-assertion-shadow-read",
-		Summary:         "detect reads of a shadowing failed type assertion result",
-		Explanation:     "In an if initializer such as `if value, ok := value.(T); ok`, the new value variable is also in scope in the else branch. When the assertion fails it contains T's zero value, so reading it there usually means the original interface value was intended.",
-		GoodExample:     "if typed, ok := value.(T); ok { use(typed) } else { logType(value) }",
-		BadExample:      "if value, ok := value.(T); ok { use(value) } else { logType(value) }",
+		Code: "failed-assertion-shadow-read",
+		Summary: "detect reads of a shadowing failed type assertion result",
+		Explanation: "In an if initializer such as `if value, ok := value.(T); ok`, the new value variable is also in scope in the else branch. When the assertion fails it contains T's zero value, so reading it there usually means the original interface value was intended.",
+		GoodExample: "if typed, ok := value.(T); ok { use(typed) } else { logType(value) }",
+		BadExample: "if value, ok := value.(T); ok { use(value) } else { logType(value) }",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -28,12 +28,12 @@ func (failedAssertionShadowReadRule) Run(pass *Pass) {
 			file,
 			func(node ast.Node) bool {
 				statement,
-					ok := node.(*ast.IfStmt)
+				ok := node.(*ast.IfStmt)
 				if !ok || statement.Else == nil {
 					return true
 				}
 				shadow,
-					ok := failedAssertionShadow(pass, statement)
+				ok := failedAssertionShadow(pass, statement)
 				if !ok {
 					return true
 				}
@@ -89,12 +89,7 @@ func unparenExpression(expression ast.Expr) ast.Expr {
 // scanFailedAssertionStatement returns whether the failed assertion's zero
 // value may still reach the end of statement. Direct assignments suppress
 // diagnostics for later reads on paths where they definitely execute.
-func scanFailedAssertionStatement(
-	pass *Pass,
-	statement ast.Stmt,
-	shadow types.Object,
-	active bool,
-) bool {
+func scanFailedAssertionStatement(pass *Pass, statement ast.Stmt, shadow types.Object, active bool) bool {
 	if statement == nil {
 		return active
 	}
@@ -110,12 +105,7 @@ func scanFailedAssertionStatement(
 				reportFailedAssertionReads(pass, expression, shadow)
 			}
 			for _, expression := range statement.Lhs {
-				reportFailedAssertionLHSReads(
-					pass,
-					expression,
-					shadow,
-					statement.Tok != token.ASSIGN,
-				)
+				reportFailedAssertionLHSReads(pass, expression, shadow, statement.Tok != token.ASSIGN)
 			}
 		}
 		return active && !assignsObject(pass, statement.Lhs, shadow)
@@ -153,11 +143,11 @@ func scanFailedAssertionStatement(
 				statement.Decl,
 				func(node ast.Node) bool {
 					if literal,
-						ok := node.(*ast.FuncLit); ok && literal != nil {
+					ok := node.(*ast.FuncLit); ok && literal != nil {
 						return false
 					}
 					identifier,
-						ok := node.(*ast.Ident)
+					ok := node.(*ast.Ident)
 					if ok && pass.TypesInfo.ObjectOf(identifier) == shadow {
 						pass.Report(identifier, failedAssertionMessage(identifier.Name))
 					}
@@ -206,12 +196,7 @@ func scanFailedAssertionStatement(
 	return active
 }
 
-func reportFailedAssertionLHSReads(
-	pass *Pass,
-	expression ast.Expr,
-	shadow types.Object,
-	compound bool,
-) {
+func reportFailedAssertionLHSReads(pass *Pass, expression ast.Expr, shadow types.Object, compound bool) {
 	if identifier, ok := unparenExpression(expression).(*ast.Ident); ok {
 		if compound && pass.TypesInfo.ObjectOf(identifier) == shadow {
 			pass.Report(identifier, failedAssertionMessage(identifier.Name))
@@ -226,11 +211,11 @@ func reportFailedAssertionReads(pass *Pass, node ast.Node, shadow types.Object) 
 		node,
 		func(node ast.Node) bool {
 			if _,
-				ok := node.(*ast.FuncLit); ok {
+			ok := node.(*ast.FuncLit); ok {
 				return false
 			}
 			identifier,
-				ok := node.(*ast.Ident)
+			ok := node.(*ast.Ident)
 			if ok && pass.TypesInfo.ObjectOf(identifier) == shadow {
 				pass.Report(identifier, failedAssertionMessage(identifier.Name))
 			}
@@ -240,10 +225,7 @@ func reportFailedAssertionReads(pass *Pass, node ast.Node, shadow types.Object) 
 }
 
 func failedAssertionMessage(name string) string {
-	return fmt.Sprintf(
-		"%s is the zero value produced by the failed type assertion, not the original interface value",
-		name,
-	)
+	return fmt.Sprintf("%s is the zero value produced by the failed type assertion, not the original interface value", name)
 }
 
 func assignsObject(pass *Pass, expressions []ast.Expr, object types.Object) bool {

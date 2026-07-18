@@ -128,13 +128,7 @@ func newSession(options SessionOptions, fingerprint sessionFingerprintFunc, runn
 	if maxBytes <= 0 {
 		maxBytes = defaultSessionBytes
 	}
-	return &Session{
-		maxEntries: maxEntries,
-		maxBytes: maxBytes,
-		entries: make(map[analysisCacheKey]*analysisCacheEntry),
-		fingerprint: fingerprint,
-		runner: runner,
-	}
+	return &Session{maxEntries: maxEntries, maxBytes: maxBytes, entries: make(map[analysisCacheKey]*analysisCacheEntry), fingerprint: fingerprint, runner: runner}
 }
 
 // Run analyzes paths or returns a deep copy of a proven-equivalent cached
@@ -194,21 +188,14 @@ func (session *Session) Run(paths []string, registry *Registry) ([]diagnostic.Di
 		session.publishGenerationLocked(key)
 		if weight <= session.maxBytes {
 			session.clock++
-			session.entries[key] = &analysisCacheEntry{
-				diagnostics: owned,
-				bytes: weight,
-				lastUsed: session.clock,
-			}
+			session.entries[key] = &analysisCacheEntry{diagnostics: owned, bytes: weight, lastUsed: session.clock}
 			session.bytes += weight
 			session.evictLocked()
 		}
 		session.mu.Unlock()
 		return cloneDiagnostics(diagnostics), nil
 	}
-	return nil, fmt.Errorf(
-		"analyze inputs changed during %d consecutive attempts",
-		maxGenerationAttempts,
-	)
+	return nil, fmt.Errorf("analyze inputs changed during %d consecutive attempts", maxGenerationAttempts)
 }
 
 // Stats returns cache counters and current retained result payload.
@@ -218,14 +205,7 @@ func (session *Session) Stats() SessionStats {
 	}
 	session.mu.Lock()
 	defer session.mu.Unlock()
-	return SessionStats{
-		Generation: session.generation,
-		Hits: session.hits,
-		Misses: session.misses,
-		Evictions: session.evictions,
-		Entries: len(session.entries),
-		Bytes: session.bytes,
-	}
+	return SessionStats{Generation: session.generation, Hits: session.hits, Misses: session.misses, Evictions: session.evictions, Entries: len(session.entries), Bytes: session.bytes}
 }
 
 // Invalidate drops all completed results. An in-flight Run finishes before
@@ -299,10 +279,7 @@ func analysisFingerprint(paths []string, registry *Registry) (analysisCacheKey, 
 	if err != nil {
 		return analysisCacheKey{}, err
 	}
-	loaded, err := packages.Load(
-		&packages.Config{Mode: fingerprintLoadMode, Tests: true},
-		patterns...,
-	)
+	loaded, err := packages.Load(&packages.Config{Mode: fingerprintLoadMode, Tests: true}, patterns...)
 	if err != nil {
 		return analysisCacheKey{}, err
 	}
@@ -341,10 +318,7 @@ func analysisEnvironment(cwd string) ([]string, []byte, error) {
 	resolved, err := command.Output()
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
-			return nil, nil, fmt.Errorf(
-				"resolve Go build environment: %s",
-				strings.TrimSpace(string(exitErr.Stderr)),
-			)
+			return nil, nil, fmt.Errorf("resolve Go build environment: %s", strings.TrimSpace(string(exitErr.Stderr)))
 		}
 		return nil, nil, fmt.Errorf("resolve Go build environment: %w", err)
 	}
@@ -363,17 +337,11 @@ func addRegistryFingerprint(writer *fingerprintWriter, registry *Registry) {
 		setting := registry.settings[code]
 		excludes := append([]string(nil), setting.excludes...)
 		sort.Strings(excludes)
-		rules = append(
-			rules,
-			ruleFingerprint{code: code, severity: string(setting.severity), excludes: excludes},
-		)
+		rules = append(rules, ruleFingerprint{code: code, severity: string(setting.severity), excludes: excludes})
 	}
-	sort.Slice(
-		rules,
-		func(leftIndex, rightIndex int) bool {
-			return rules[leftIndex].code < rules[rightIndex].code
-		},
-	)
+	sort.Slice(rules, func(leftIndex, rightIndex int) bool {
+		return rules[leftIndex].code < rules[rightIndex].code
+	})
 	writer.addString(registry.root)
 	for _, rule := range rules {
 		writer.addString(rule.code)
@@ -464,11 +432,7 @@ func addPackageGraphFingerprint(writer *fingerprintWriter, roots []*packages.Pac
 	return nil
 }
 
-func addModuleFingerprint(
-	writer *fingerprintWriter,
-	module *packages.Module,
-	files map[string]bool,
-) {
+func addModuleFingerprint(writer *fingerprintWriter, module *packages.Module, files map[string]bool) {
 	for module != nil {
 		writer.addString(module.Path)
 		writer.addString(module.Version)

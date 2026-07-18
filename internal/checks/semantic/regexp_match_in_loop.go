@@ -9,15 +9,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type regexpMatchInLoopRule struct{}
+type regexpMatchInLoopRule struct {}
 
 func (regexpMatchInLoopRule) Meta() Meta {
 	return Meta{
-		Code:            "regexp-match-in-loop",
-		Summary:         "detect repeated regexp compilation inside loops",
-		Explanation:     "The package-level regexp matching helpers compile their pattern on every call. Calling them with a constant pattern inside a loop repeats the same compilation; compile the expression once before the loop and reuse it.",
-		GoodExample:     "pattern := regexp.MustCompile(`^[a-z]+$`); for _, value := range values { pattern.MatchString(value) }",
-		BadExample:      "for _, value := range values { regexp.MatchString(`^[a-z]+$`, value) }",
+		Code: "regexp-match-in-loop",
+		Summary: "detect repeated regexp compilation inside loops",
+		Explanation: "The package-level regexp matching helpers compile their pattern on every call. Calling them with a constant pattern inside a loop repeats the same compilation; compile the expression once before the loop and reuse it.",
+		GoodExample: "pattern := regexp.MustCompile(`^[a-z]+$`); for _, value := range values { pattern.MatchString(value) }",
+		BadExample: "for _, value := range values { regexp.MatchString(`^[a-z]+$`, value) }",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -39,10 +39,7 @@ func (regexpMatchInLoopRule) Run(pass *Pass) {
 				}
 				pass.Report(
 					positionNode{position: call.Pos()},
-					fmt.Sprintf(
-						"regexp.%s recompiles a constant pattern on every loop iteration; compile it once before the loop",
-						name,
-					),
+					fmt.Sprintf("regexp.%s recompiles a constant pattern on every loop iteration; compile it once before the loop", name),
 				)
 			}
 		}
@@ -74,8 +71,8 @@ func ssaBlockInCycle(start *ssa.BasicBlock) bool {
 	seen := make(map[*ssa.BasicBlock]bool)
 	stack := append([]*ssa.BasicBlock(nil), start.Succs...)
 	for len(stack) != 0 {
-		block := stack[len(stack)-1]
-		stack = stack[:len(stack)-1]
+		block := stack[len(stack) - 1]
+		stack = stack[:len(stack) - 1]
 		if block == start {
 			return true
 		}

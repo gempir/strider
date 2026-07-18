@@ -18,13 +18,13 @@ const (
 
 // Meta describes one user-facing check.
 type Meta struct {
-	Code            string              `json:"code"`
-	Summary         string              `json:"summary"`
-	Explanation     string              `json:"explanation"`
-	GoodExample     string              `json:"good_example"`
-	BadExample      string              `json:"bad_example"`
+	Code string `json:"code"`
+	Summary string `json:"summary"`
+	Explanation string `json:"explanation"`
+	GoodExample string `json:"good_example"`
+	BadExample string `json:"bad_example"`
 	DefaultSeverity diagnostic.Severity `json:"default_severity"`
-	Capabilities    Capability          `json:"capabilities"`
+	Capabilities Capability `json:"capabilities"`
 }
 
 // Rule is a selected check and its metadata.
@@ -37,11 +37,11 @@ func (rule Rule) Meta() Meta {
 }
 
 var formatMeta = Meta{
-	Code:            "format",
-	Summary:         "require canonical Strider formatting",
-	Explanation:     "Canonical formatting keeps Go source deterministic and removes style-only review noise.",
-	GoodExample:     "Run `strider fmt` before committing.",
-	BadExample:      "Commit source for which `strider check --only format` reports a finding.",
+	Code: "format",
+	Summary: "require canonical Strider formatting",
+	Explanation: "Canonical formatting keeps Go source deterministic and removes style-only review noise.",
+	GoodExample: "Run `strider fmt` before committing.",
+	BadExample: "Commit source for which `strider check --only format` reports a finding.",
 	DefaultSeverity: diagnostic.SeverityWarning,
-	Capabilities:    CapabilityCST,
+	Capabilities: CapabilityCST,
 }

@@ -7,15 +7,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type slogArgumentShapeRule struct{}
+type slogArgumentShapeRule struct {}
 
 func (slogArgumentShapeRule) Meta() Meta {
 	return Meta{
-		Code:            "slog-argument-shape",
-		Summary:         "detect malformed or inconsistent log/slog arguments",
-		Explanation:     "The loose arguments accepted by log/slog alternate string keys and values, while slog.Attr values form a separate typed style. Odd tails, keys whose dynamic type is not exactly string, and calls that mix Attr values with loose pairs produce malformed or needlessly inconsistent records.",
-		GoodExample:     `slog.Info("request", "method", method, "status", status)`,
-		BadExample:      `slog.Info("request", 42, method, "status")`,
+		Code: "slog-argument-shape",
+		Summary: "detect malformed or inconsistent log/slog arguments",
+		Explanation: "The loose arguments accepted by log/slog alternate string keys and values, while slog.Attr values form a separate typed style. Odd tails, keys whose dynamic type is not exactly string, and calls that mix Attr values with loose pairs produce malformed or needlessly inconsistent records.",
+		GoodExample: `slog.Info("request", "method", method, "status", status)`,
+		BadExample: `slog.Info("request", 42, method, "status")`,
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -26,13 +26,13 @@ func (slogArgumentShapeRule) Run(pass *Pass) {
 			file,
 			func(node ast.Node) bool {
 				call,
-					ok := node.(*ast.CallExpr)
+				ok := node.(*ast.CallExpr)
 				if !ok || call.Ellipsis.IsValid() {
 					return true
 				}
 				function := calledFunction(pass.TypesInfo, call.Fun)
 				start,
-					ok := slogLooseArgumentStart(function)
+				ok := slogLooseArgumentStart(function)
 				if !ok || start > len(call.Args) {
 					return true
 				}
@@ -42,26 +42,21 @@ func (slogArgumentShapeRule) Run(pass *Pass) {
 				}
 
 				attrs := 0
-				for _, argument := range tail {
+				for _,
+				argument := range tail {
 					if isSlogAttr(pass.TypesInfo.TypeOf(argument)) {
 						attrs++
 					}
 				}
 				if attrs != 0 && attrs != len(tail) {
-					pass.Report(
-						call,
-						"do not mix slog.Attr values with loose key/value arguments in one slog call",
-					)
+					pass.Report(call, "do not mix slog.Attr values with loose key/value arguments in one slog call")
 					return true
 				}
 				if attrs == len(tail) {
 					return true
 				}
-				if len(tail)%2 != 0 {
-					pass.Report(
-						tail[len(tail)-1],
-						"slog key/value arguments must contain an even number of elements",
-					)
+				if len(tail) % 2 != 0 {
+					pass.Report(tail[len(tail) - 1], "slog key/value arguments must contain an even number of elements")
 					return true
 				}
 				for index := 0; index < len(tail); index += 2 {
@@ -109,5 +104,5 @@ func exactSlogStringKey(valueType types.Type) bool {
 		return false
 	}
 	basic, ok := types.Unalias(valueType).(*types.Basic)
-	return ok && basic.Info()&types.IsString != 0
+	return ok && basic.Info() & types.IsString != 0
 }

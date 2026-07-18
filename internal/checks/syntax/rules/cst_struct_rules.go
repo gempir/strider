@@ -15,12 +15,8 @@ func (a *cstAnalyzer) checkConcreteStruct(structure *cst.StructType) {
 	if len(a.ancestors) == 0 {
 		return
 	}
-	if _, named := a.ancestors[len(a.ancestors)-1].(*cst.TypeDef); !named {
-		a.report(
-			"nested-structs",
-			structure,
-			"move nested anonymous struct types to named declarations",
-		)
+	if _, named := a.ancestors[len(a.ancestors) - 1].(*cst.TypeDef); !named {
+		a.report("nested-structs", structure, "move nested anonymous struct types to named declarations")
 	}
 }
 
@@ -39,13 +35,9 @@ func (a *cstAnalyzer) checkConcreteStringLiteral(literal *cst.BasicLit) {
 		return
 	}
 	lower := strings.ToLower(value)
-	for _, scheme := range []string{"http://", "ws://", "ftp://"} {
+	for _, scheme := range[]string{"http://", "ws://", "ftp://"} {
 		if strings.HasPrefix(lower, scheme) {
-			a.report(
-				"unsecure-url-scheme",
-				literal,
-				fmt.Sprintf("URL uses insecure %s scheme", strings.TrimSuffix(scheme, "://")),
-			)
+			a.report("unsecure-url-scheme", literal, fmt.Sprintf("URL uses insecure %s scheme", strings.TrimSuffix(scheme, "://")))
 			return
 		}
 	}
@@ -74,18 +66,14 @@ func (a *cstAnalyzer) checkConcreteStructTag(literal cst.Token) {
 		}
 	}
 	tag := reflect.StructTag(value)
-	for _, key := range []string{"json", "xml", "yaml", "toml", "form", "validate"} {
+	for _, key := range[]string{"json", "xml", "yaml", "toml", "form", "validate"} {
 		raw, ok := tag.Lookup(key)
 		if !ok {
 			continue
 		}
 		name := strings.Split(raw, ",")[0]
 		if strings.ContainsAny(name, " \t\n\r\"") {
-			a.report(
-				"struct-tag",
-				literal,
-				fmt.Sprintf("%s tag contains invalid whitespace or quoting", key),
-			)
+			a.report("struct-tag", literal, fmt.Sprintf("%s tag contains invalid whitespace or quoting", key))
 		}
 		switch key {
 		case "json":
@@ -105,7 +93,7 @@ func (a *cstAnalyzer) checkConcreteJSONTagOptions(literal cst.Token, tag string)
 	seen := make(map[string]bool)
 	for index, option := range parts[1:] {
 		if option == "" {
-			if index == len(parts[1:])-1 {
+			if index == len(parts[1:]) - 1 {
 				a.report("struct-tag", literal, "json tag has an empty trailing option")
 			}
 			continue

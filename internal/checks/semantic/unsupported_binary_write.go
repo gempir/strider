@@ -11,15 +11,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type unsupportedBinaryWriteRule struct{}
+type unsupportedBinaryWriteRule struct {}
 
 func (unsupportedBinaryWriteRule) Meta() Meta {
 	return Meta{
-		Code:            "unsupported-binary-write",
-		Summary:         "detect unsupported encoding/binary.Write values",
-		Explanation:     "encoding/binary can only serialize fixed-size values; architecture-sized integers, strings, maps, channels, functions, pointers in aggregates, and other variable-size values are unsupported.",
-		GoodExample:     "binary.Write(writer, binary.LittleEndian, uint32(value))",
-		BadExample:      "binary.Write(writer, binary.LittleEndian, value) // value is int",
+		Code: "unsupported-binary-write",
+		Summary: "detect unsupported encoding/binary.Write values",
+		Explanation: "encoding/binary can only serialize fixed-size values; architecture-sized integers, strings, maps, channels, functions, pointers in aggregates, and other variable-size values are unsupported.",
+		GoodExample: "binary.Write(writer, binary.LittleEndian, uint32(value))",
+		BadExample: "binary.Write(writer, binary.LittleEndian, value) // value is int",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -35,10 +35,7 @@ func (unsupportedBinaryWriteRule) Run(pass *Pass) {
 			continue
 		}
 		node := binaryWriteDataNode(calls[call.Pos()], call.Pos())
-		pass.Report(
-			node,
-			fmt.Sprintf("value of type %s cannot be used with binary.Write", value.Type()),
-		)
+		pass.Report(node, fmt.Sprintf("value of type %s cannot be used with binary.Write", value.Type()))
 	}
 }
 

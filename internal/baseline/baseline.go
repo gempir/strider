@@ -96,11 +96,7 @@ func Load(path string) (File, error) {
 		return File{}, fmt.Errorf("unknown baseline key(s): %s", strings.Join(keys, ", "))
 	}
 	if baseline.Version != Version {
-		return File{}, fmt.Errorf(
-			"unsupported baseline version %d; expected %d",
-			baseline.Version,
-			Version,
-		)
+		return File{}, fmt.Errorf("unsupported baseline version %d; expected %d", baseline.Version, Version)
 	}
 	if err := validateVariant(baseline.Variant); err != nil {
 		return File{}, err
@@ -110,10 +106,7 @@ func Load(path string) (File, error) {
 			return File{}, fmt.Errorf("issue %d requires file and code", index + 1)
 		}
 		if baseline.Variant == Loose && (issue.Message == "" || issue.Count < 1) {
-			return File{}, fmt.Errorf(
-				"loose issue %d requires message and a positive count",
-				index + 1,
-			)
+			return File{}, fmt.Errorf("loose issue %d requires message and a positive count", index + 1)
 		}
 		if baseline.Variant == Strict && (issue.StartLine < 1 || issue.EndLine < issue.StartLine) {
 			return File{}, fmt.Errorf("strict issue %d has an invalid line range", index + 1)
@@ -133,12 +126,7 @@ func Apply(path string, baseline File, diagnostics []diagnostic.Diagnostic) (Res
 // checks that were not selected for this run. An omitted check was not
 // evaluated, so its baseline debt is neither matched nor stale and must survive
 // pruning unchanged. A nil selectedCodes map means every code is active.
-func ApplySelected(
-	path string,
-	baseline File,
-	diagnostics []diagnostic.Diagnostic,
-	selectedCodes map[string]bool,
-) (Result, error) {
+func ApplySelected(path string, baseline File, diagnostics []diagnostic.Diagnostic, selectedCodes map[string]bool) (Result, error) {
 	return applySelection(path, baseline, diagnostics, selectedCodes, nil)
 }
 
@@ -146,31 +134,17 @@ func ApplySelected(
 // run while treating codes outside the current catalog as stale. This keeps a
 // severity-filtered baseline intact without retaining entries for rules that
 // were removed or renamed.
-func ApplyCatalogSelection(
-	path string,
-	baseline File,
-	diagnostics []diagnostic.Diagnostic,
-	selectedCodes,
-	knownCodes map[string]bool,
-) (Result, error) {
+func ApplyCatalogSelection(path string, baseline File, diagnostics []diagnostic.Diagnostic, selectedCodes, knownCodes map[string]bool) (Result, error) {
 	return applySelection(path, baseline, diagnostics, selectedCodes, knownCodes)
 }
 
-func applySelection(
-	path string,
-	baseline File,
-	diagnostics []diagnostic.Diagnostic,
-	selectedCodes,
-	knownCodes map[string]bool,
-) (Result, error) {
+func applySelection(path string, baseline File, diagnostics []diagnostic.Diagnostic, selectedCodes, knownCodes map[string]bool) (Result, error) {
 	directory := filepath.Dir(path)
 	result := Result{Matched: File{Version: Version, Variant: baseline.Variant}}
 	remaining := make(map[string]int, len(baseline.Issues))
 	templates := make(map[string]Issue, len(baseline.Issues))
 	for _, issue := range baseline.Issues {
-		if selectedCodes != nil && !selectedCodes[issue.Code] && (knownCodes == nil || knownCodes[
-			issue.Code,
-		]) {
+		if selectedCodes != nil && !selectedCodes[issue.Code] && (knownCodes == nil || knownCodes[issue.Code]) {
 			result.Matched.Issues = append(result.Matched.Issues, issue)
 			continue
 		}
@@ -259,10 +233,7 @@ func Write(path string, baseline File, backup bool) (err error) {
 	return nil
 }
 
-func issueFromDiagnostic(directory string, variant Variant, item diagnostic.Diagnostic) (
-	Issue,
-	error,
-) {
+func issueFromDiagnostic(directory string, variant Variant, item diagnostic.Diagnostic) (Issue, error) {
 	if variant == Loose {
 		return looseIssue(directory, item)
 	}
@@ -312,13 +283,7 @@ func issueKey(issue Issue, variant Variant) string {
 	if variant == Loose {
 		return looseKey(issue)
 	}
-	return fmt.Sprintf(
-		"%s\x00%s\x00%d\x00%d",
-		issue.File,
-		issue.Code,
-		issue.StartLine,
-		issue.EndLine,
-	)
+	return fmt.Sprintf("%s\x00%s\x00%d\x00%d", issue.File, issue.Code, issue.StartLine, issue.EndLine)
 }
 
 func looseKey(issue Issue) string {
@@ -326,10 +291,7 @@ func looseKey(issue Issue) string {
 }
 
 func sortIssues(issues []Issue, variant Variant) {
-	sort.Slice(
-		issues,
-		func(i, j int) bool {
-			return issueKey(issues[i], variant) < issueKey(issues[j], variant)
-		},
-	)
+	sort.Slice(issues, func(i, j int) bool {
+		return issueKey(issues[i], variant) < issueKey(issues[j], variant)
+	})
 }

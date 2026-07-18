@@ -120,12 +120,7 @@ func NewCache(options CacheOptions) *Cache {
 	if maxTreeBytes <= 0 {
 		maxTreeBytes = defaultCacheTreeBytes
 	}
-	return &Cache{
-		maxEntries: maxEntries,
-		maxBytes: maxBytes,
-		maxTreeBytes: maxTreeBytes,
-		entries: make(map[cacheKey]*cacheEntry),
-	}
+	return &Cache{maxEntries: maxEntries, maxBytes: maxBytes, maxTreeBytes: maxTreeBytes, entries: make(map[cacheKey]*cacheEntry)}
 }
 
 // Open captures a complete immutable workspace generation. Each discovered
@@ -164,10 +159,7 @@ func (cache *Cache) Open(paths []string, options Options) (*Workspace, error) {
 		if options.SkipGenerated && generatedSource(contents) {
 			continue
 		}
-		captured = append(
-			captured,
-			capturedFile{path: filename, contents: contents, identity: sha256.Sum256(contents)},
-		)
+		captured = append(captured, capturedFile{path: filename, contents: contents, identity: sha256.Sum256(contents)})
 	}
 
 	cache.mu.Lock()
@@ -179,11 +171,7 @@ func (cache *Cache) Open(paths []string, options Options) (*Workspace, error) {
 		entry := cache.entries[key]
 		if entry == nil {
 			cache.misses++
-			snapshot := &fileSnapshot{
-				path: item.path,
-				identity: item.identity,
-				source: item.contents,
-			}
+			snapshot := &fileSnapshot{path: item.path, identity: item.identity, source: item.contents}
 			snapshot.onTree = func(treeBytes int64) {
 				cache.recordTree(key, snapshot, treeBytes)
 			}
@@ -296,10 +284,7 @@ func generatedSource(contents []byte) bool {
 	scanner := bufio.NewScanner(bytes.NewReader(limited))
 	for scanner.Scan() {
 		line := bytes.TrimSpace(scanner.Bytes())
-		if bytes.HasPrefix(line, []byte("// Code generated ")) && bytes.HasSuffix(
-			line,
-			[]byte(" DO NOT EDIT."),
-		) {
+		if bytes.HasPrefix(line, []byte("// Code generated ")) && bytes.HasSuffix(line, []byte(" DO NOT EDIT.")) {
 			return true
 		}
 	}

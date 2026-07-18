@@ -75,23 +75,15 @@ func (nilValueWithNilErrorRule) Run(pass *Pass) {
 				func(node ast.Node) bool {
 					statement,
 					ok := node.(*ast.ReturnStmt)
-					if !ok || len(statement.Results) != signature.Results().Len() || !isExplicitNil(
-						pass,
-						statement.Results[errorIndex],
-					) {
+					if !ok || len(statement.Results) != signature.Results().Len() || !isExplicitNil(pass, statement.Results[errorIndex]) {
 						return true
 					}
 					for index,
 					expression := range statement.Results {
-						if index == errorIndex || !ambiguousNilPayloadType(
-							signature.Results().At(index).Type(),
-						) || !isExplicitNil(pass, expression) {
+						if index == errorIndex || !ambiguousNilPayloadType(signature.Results().At(index).Type()) || !isExplicitNil(pass, expression) {
 							continue
 						}
-						pass.Report(
-							statement,
-							"nil payload is returned with a nil error; return a meaningful value or a descriptive error",
-						)
+						pass.Report(statement, "nil payload is returned with a nil error; return a meaningful value or a descriptive error")
 						break
 					}
 					return true
@@ -149,20 +141,16 @@ func forEachAnalysisFunction(pass *Pass, visit func(*ast.BlockStmt, *types.Signa
 
 func inspectFunctionBody(body *ast.BlockStmt, visit func(ast.Node) bool) {
 	first := true
-	ast.Inspect(
-		body,
-		func(node ast.Node) bool {
-			if node == nil {
-				return true
-			}
-			if _,
-			nested := node.(*ast.FuncLit); nested && !first {
-				return false
-			}
-			first = false
-			return visit(node)
-		},
-	)
+	ast.Inspect(body, func(node ast.Node) bool {
+		if node == nil {
+			return true
+		}
+		if _, nested := node.(*ast.FuncLit); nested && !first {
+			return false
+		}
+		first = false
+		return visit(node)
+	})
 }
 
 func nonNilErrorComparison(pass *Pass, expression ast.Expr, operator token.Token) types.Object {
@@ -186,12 +174,7 @@ func nonNilErrorComparison(pass *Pass, expression ast.Expr, operator token.Token
 	return pass.TypesInfo.ObjectOf(identifier)
 }
 
-func reportNilErrorsInProvenBranch(
-	pass *Pass,
-	branch ast.Node,
-	signature *types.Signature,
-	provenError types.Object,
-) {
+func reportNilErrorsInProvenBranch(pass *Pass, branch ast.Node, signature *types.Signature, provenError types.Object) {
 	if branch == nil {
 		return
 	}
@@ -207,16 +190,10 @@ func reportNilErrorsInProvenBranch(
 				return true
 			}
 			for index := range signature.Results().Len() {
-				if !isErrorType(signature.Results().At(index).Type()) || !isExplicitNil(
-					pass,
-					statement.Results[index],
-				) {
+				if !isErrorType(signature.Results().At(index).Type()) || !isExplicitNil(pass, statement.Results[index]) {
 					continue
 				}
-				pass.Report(
-					statement,
-					"this branch proves an error is non-nil but returns nil in an error result",
-				)
+				pass.Report(statement, "this branch proves an error is non-nil but returns nil in an error result")
 				break
 			}
 			return true
@@ -226,28 +203,19 @@ func reportNilErrorsInProvenBranch(
 
 func inspectFunctionBodyNode(root ast.Node, visit func(ast.Node) bool) {
 	first := true
-	ast.Inspect(
-		root,
-		func(node ast.Node) bool {
-			if node == nil {
-				return true
-			}
-			if _,
-			nested := node.(*ast.FuncLit); nested && !first {
-				return false
-			}
-			first = false
-			return visit(node)
-		},
-	)
+	ast.Inspect(root, func(node ast.Node) bool {
+		if node == nil {
+			return true
+		}
+		if _, nested := node.(*ast.FuncLit); nested && !first {
+			return false
+		}
+		first = false
+		return visit(node)
+	})
 }
 
-func branchAssignsObjectBeforeReturn(
-	pass *Pass,
-	branch ast.Node,
-	object types.Object,
-	returning *ast.ReturnStmt,
-) bool {
+func branchAssignsObjectBeforeReturn(pass *Pass, branch ast.Node, object types.Object, returning *ast.ReturnStmt) bool {
 	block, ok := branch.(*ast.BlockStmt)
 	if !ok {
 		if statement, statementOK := branch.(ast.Stmt); statementOK {
@@ -258,33 +226,19 @@ func branchAssignsObjectBeforeReturn(
 	return blockAssignsObjectBeforeReturn(pass, block, object, returning)
 }
 
-func blockAssignsObjectBeforeReturn(
-	pass *Pass,
-	block *ast.BlockStmt,
-	object types.Object,
-	returning *ast.ReturnStmt,
-) bool {
+func blockAssignsObjectBeforeReturn(pass *Pass, block *ast.BlockStmt, object types.Object, returning *ast.ReturnStmt) bool {
 	for _, statement := range block.List {
 		if statement.Pos() <= returning.Pos() && returning.End() <= statement.End() {
 			return statementAssignsObjectBeforeReturn(pass, statement, object, returning)
 		}
-		if statement.End() <= returning.Pos() && directStatementAssignsObject(
-			pass,
-			statement,
-			object,
-		) {
+		if statement.End() <= returning.Pos() && directStatementAssignsObject(pass, statement, object) {
 			return true
 		}
 	}
 	return false
 }
 
-func statementAssignsObjectBeforeReturn(
-	pass *Pass,
-	statement ast.Stmt,
-	object types.Object,
-	returning *ast.ReturnStmt,
-) bool {
+func statementAssignsObjectBeforeReturn(pass *Pass, statement ast.Stmt, object types.Object, returning *ast.ReturnStmt) bool {
 	switch statement := statement.(type) {
 	case *ast.BlockStmt:
 		return blockAssignsObjectBeforeReturn(pass, statement, object, returning)

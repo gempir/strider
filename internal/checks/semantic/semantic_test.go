@@ -54,18 +54,14 @@ func check(pattern string) {
 		if item.Code != "invalid-regexp" || !strings.Contains(item.Message, "error parsing regexp") {
 			t.Fatalf("unexpected diagnostic: %#v", item)
 		}
-		if item.Start.Filename != "main.go" && !(runtime.GOOS == "windows" && filepath.Base(
-			filepath.FromSlash(item.Start.Filename),
-		) == "main.go") {
+		if item.Start.Filename != "main.go" && !(runtime.GOOS == "windows" && filepath.Base(filepath.FromSlash(item.Start.Filename)) == "main.go") {
 			t.Fatalf("unexpected display path: %q", item.Start.Filename)
 		}
 	}
 }
 
 func TestInvalidRegexpAcceptsValidAndDynamicRegexps(t *testing.T) {
-	root := analysisModule(
-		t,
-		`package sample
+	root := analysisModule(t, `package sample
 
 import "regexp"
 
@@ -73,8 +69,7 @@ func check(pattern string) {
 	regexp.MustCompile("[a-z]+")
 	regexp.Compile(pattern)
 }
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"invalid-regexp"})
 	if err != nil {
 		t.Fatal(err)
@@ -122,10 +117,7 @@ func check() {
 		t.Fatalf("got %d diagnostics, want 2: %#v", len(diagnostics), diagnostics)
 	}
 	for _, item := range diagnostics {
-		validMessage := strings.Contains(item.Message, "unexpected") || strings.Contains(
-			item.Message,
-			"bad character",
-		)
+		validMessage := strings.Contains(item.Message, "unexpected") || strings.Contains(item.Message, "bad character")
 		if item.Code != "invalid-template" || !validMessage {
 			t.Fatalf("unexpected diagnostic: %#v", item)
 		}
@@ -209,10 +201,7 @@ func check() {
 		t.Fatalf("got %d diagnostics, want 3: %#v", len(diagnostics), diagnostics)
 	}
 	for _, item := range diagnostics {
-		if item.Code != "unsupported-binary-write" || !strings.Contains(
-			item.Message,
-			"binary.Write",
-		) {
+		if item.Code != "unsupported-binary-write" || !strings.Contains(item.Message, "binary.Write") {
 			t.Fatalf("unexpected diagnostic: %#v", item)
 		}
 	}
@@ -575,17 +564,14 @@ func endless() {
 }
 
 func TestLeakyTimeTickAllowsModernGoVersions(t *testing.T) {
-	root := analysisModule(
-		t,
-		`package sample
+	root := analysisModule(t, `package sample
 
 import "time"
 
 func returning() <-chan time.Time {
 	return time.Tick(time.Second)
 }
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"leaky-time-tick"})
 	if err != nil {
 		t.Fatal(err)
@@ -703,9 +689,7 @@ func replace(value string, raw []byte) {
 }
 
 func TestDeprecatedAPIUsageReportsDependencyMarkers(t *testing.T) {
-	root := analysisModule(
-		t,
-		`package sample
+	root := analysisModule(t, `package sample
 
 import "example.com/analysis/legacy"
 
@@ -713,8 +697,7 @@ func use() int {
 	legacy.Old()
 	return legacy.Value{OldField: 1}.OldField
 }
-`,
-	)
+`)
 	legacy := filepath.Join(root, "legacy")
 	if err := os.MkdirAll(legacy, 0o700); err != nil {
 		t.Fatal(err)
@@ -803,32 +786,25 @@ type Contract interface {
 }
 
 func TestDeprecatedAPIUsageReportsImportedGenericFields(t *testing.T) {
-	root := analysisModule(
-		t,
-		`package sample
+	root := analysisModule(t, `package sample
 
 import "example.com/analysis/legacy"
 
 func use(value legacy.Generic[int]) int {
 	return value.OldField
 }
-`,
-	)
+`)
 	legacy := filepath.Join(root, "legacy")
 	if err := os.MkdirAll(legacy, 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(
-		filepath.Join(legacy, "legacy.go"),
-		[]byte(`package legacy
+	if err := os.WriteFile(filepath.Join(legacy, "legacy.go"), []byte(`package legacy
 
 type Generic[T any] struct {
 	// Deprecated: use NewField instead.
 	OldField T
 }
-`),
-		0o600,
-	); err != nil {
+`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	registry, err := NewRegistry([]string{"deprecated-api-usage"})
@@ -845,31 +821,24 @@ type Generic[T any] struct {
 }
 
 func TestDeprecatedAPIUsageFollowsPhysicalFilesForLineDirectives(t *testing.T) {
-	root := analysisModule(
-		t,
-		`package sample
+	root := analysisModule(t, `package sample
 
 import "example.com/analysis/legacy"
 
 func use() {
 	legacy.Old()
 }
-`,
-	)
+`)
 	legacy := filepath.Join(root, "legacy")
 	if err := os.MkdirAll(legacy, 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(
-		filepath.Join(legacy, "legacy.go"),
-		[]byte(`package legacy
+	if err := os.WriteFile(filepath.Join(legacy, "legacy.go"), []byte(`package legacy
 
 // Deprecated: use New instead.
 //line legacy.schema:400
 func Old() {}
-`),
-		0o600,
-	); err != nil {
+`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	registry, err := NewRegistry([]string{"deprecated-api-usage"})
@@ -886,17 +855,14 @@ func Old() {}
 }
 
 func TestDeprecatedAPIUsageReadsStandardLibraryMarkers(t *testing.T) {
-	root := analysisModule(
-		t,
-		`package sample
+	root := analysisModule(t, `package sample
 
 import "io/ioutil"
 
 func read() {
 	_, _ = ioutil.ReadAll(nil)
 }
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"deprecated-api-usage"})
 	if err != nil {
 		t.Fatal(err)
@@ -1341,9 +1307,7 @@ func use() {}
 }
 
 func TestTestingFatalInGoroutineReportsChildTermination(t *testing.T) {
-	root := analysisModule(
-		t,
-		`package sample
+	root := analysisModule(t, `package sample
 
 import "testing"
 
@@ -1351,8 +1315,7 @@ func TestWork(t *testing.T) {
 	go func() { t.Fatal("failed") }()
 	t.Log("running")
 }
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"testing-fatal-in-goroutine"})
 	if err != nil {
 		t.Fatal(err)
@@ -1395,18 +1358,14 @@ func lock(mutex *sync.Mutex, rw *sync.RWMutex) {
 }
 
 func TestTestMainMissingExitReportsLegacyModules(t *testing.T) {
-	root := analysisModuleVersion(
-		t,
-		"1.14",
-		`package sample
+	root := analysisModuleVersion(t, "1.14", `package sample
 
 import "testing"
 
 func TestMain(m *testing.M) {
 	m.Run()
 }
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"testmain-missing-exit"})
 	if err != nil {
 		t.Fatal(err)
@@ -1421,17 +1380,14 @@ func TestMain(m *testing.M) {
 }
 
 func TestBenchmarkIterationMutationReportsAssignment(t *testing.T) {
-	root := analysisModule(
-		t,
-		`package sample
+	root := analysisModule(t, `package sample
 
 import "testing"
 
 func BenchmarkWork(b *testing.B) {
 	b.N = 1000
 }
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"benchmark-iteration-mutation"})
 	if err != nil {
 		t.Fatal(err)
@@ -1471,18 +1427,11 @@ func compare(value int, floating float64) bool {
 }
 
 func TestCommandModuleEndingDotTestIsAnalyzed(t *testing.T) {
-	root := analysisModule(
-		t,
-		`package main
+	root := analysisModule(t, `package main
 
 func compare(value int) bool { return value == value }
-`,
-	)
-	if err := os.WriteFile(
-		filepath.Join(root, "go.mod"),
-		[]byte("module example.com/analysis.test\n\ngo 1.26\n"),
-		0o600,
-	); err != nil {
+`)
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/analysis.test\n\ngo 1.26\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	registry, err := NewRegistry([]string{"identical-binary-operands"})
@@ -1592,9 +1541,7 @@ func (value *item) renameInPlace(name string) {
 }
 
 func TestOverwrittenBeforeUseReportsDeadAssignedValue(t *testing.T) {
-	root := analysisModule(
-		t,
-		`package sample
+	root := analysisModule(t, `package sample
 
 func calculate() int { return 1 }
 
@@ -1603,8 +1550,7 @@ func result() int {
 	value = calculate()
 	return value
 }
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"overwritten-before-use"})
 	if err != nil {
 		t.Fatal(err)
@@ -1619,9 +1565,7 @@ func result() int {
 }
 
 func TestUnchangedLoopConditionReportsWrongCounter(t *testing.T) {
-	root := analysisModule(
-		t,
-		`package sample
+	root := analysisModule(t, `package sample
 
 func loop(limit int) {
 	other := 0
@@ -1631,8 +1575,7 @@ func loop(limit int) {
 		}
 	}
 }
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"unchanged-loop-condition"})
 	if err != nil {
 		t.Fatal(err)
@@ -1767,9 +1710,7 @@ func roundedMeasurement(value float64) float64 {
 }
 
 func TestIneffectiveBitwiseZeroReportsFixedResults(t *testing.T) {
-	root := analysisModule(
-		t,
-		`package sample
+	root := analysisModule(t, `package sample
 
 const missingFlag = iota
 
@@ -1778,8 +1719,7 @@ func bits(value uint) uint {
 	right := value ^ missingFlag
 	return left | right
 }
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"ineffective-bitwise-zero"})
 	if err != nil {
 		t.Fatal(err)
@@ -1794,9 +1734,7 @@ func bits(value uint) uint {
 }
 
 func TestDiscardedPureResultReportsIgnoredCall(t *testing.T) {
-	root := analysisModule(
-		t,
-		`package sample
+	root := analysisModule(t, `package sample
 
 func square(value int) int { return value * value }
 
@@ -1807,8 +1745,7 @@ func ignored() {
 func observed() int {
 	return square(2)
 }
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"discarded-pure-result"})
 	if err != nil {
 		t.Fatal(err)
@@ -1823,16 +1760,13 @@ func observed() int {
 }
 
 func TestSelfAssignmentReportsSideEffectFreeIdentity(t *testing.T) {
-	root := analysisModule(
-		t,
-		`package sample
+	root := analysisModule(t, `package sample
 
 func assign(value int, values []int, next func() int) {
 	value = value
 	values[next()] = values[next()]
 }
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"self-assignment"})
 	if err != nil {
 		t.Fatal(err)
@@ -1879,15 +1813,12 @@ func classify(value any) {
 }
 
 func TestSingleArgumentAppendReportsBuiltinCall(t *testing.T) {
-	root := analysisModule(
-		t,
-		`package sample
+	root := analysisModule(t, `package sample
 
 func unchanged(source []int) []int {
 	return append(source)
 }
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"single-argument-append"})
 	if err != nil {
 		t.Fatal(err)
@@ -1902,17 +1833,14 @@ func unchanged(source []int) []int {
 }
 
 func TestAddressNilComparisonReportsFixedResult(t *testing.T) {
-	root := analysisModule(
-		t,
-		`package sample
+	root := analysisModule(t, `package sample
 
 func impossible(value int, pointer *int) bool {
 	bad := &value == nil
 	allowed := &*pointer == nil
 	return bad || allowed
 }
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"address-nil-comparison"})
 	if err != nil {
 		t.Fatal(err)
@@ -1958,15 +1886,12 @@ func impossible() bool {
 }
 
 func TestNegativeLengthCapacityComparisonReportsImpossibleCheck(t *testing.T) {
-	root := analysisModule(
-		t,
-		`package sample
+	root := analysisModule(t, `package sample
 
 func impossible(values []int) bool {
 	return len(values) < 0 || 0 > cap(values)
 }
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"negative-length-capacity-comparison"})
 	if err != nil {
 		t.Fatal(err)
@@ -1981,15 +1906,12 @@ func impossible(values []int) bool {
 }
 
 func TestConstantNegativeZeroReportsNormalizedLiterals(t *testing.T) {
-	root := analysisModule(
-		t,
-		`package sample
+	root := analysisModule(t, `package sample
 
 var direct = -0.0
 var converted = -float64(0)
 var convertedAfter = float32(-0)
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"constant-negative-zero"})
 	if err != nil {
 		t.Fatal(err)
@@ -2004,17 +1926,14 @@ var convertedAfter = float32(-0)
 }
 
 func TestURLQueryCopyMutationReportsTemporaryMapChange(t *testing.T) {
-	root := analysisModule(
-		t,
-		`package sample
+	root := analysisModule(t, `package sample
 
 import "net/url"
 
 func update(address *url.URL) {
 	address.Query().Set("mode", "fast")
 }
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"url-query-copy-mutation"})
 	if err != nil {
 		t.Fatal(err)
@@ -2029,17 +1948,14 @@ func update(address *url.URL) {
 }
 
 func TestSortConversionWithoutSortReportsIneffectiveAssignment(t *testing.T) {
-	root := analysisModule(
-		t,
-		`package sample
+	root := analysisModule(t, `package sample
 
 import "sort"
 
 func order(values []int) {
 	values = sort.IntSlice(values)
 }
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"sort-conversion-without-sort"})
 	if err != nil {
 		t.Fatal(err)
@@ -2054,17 +1970,14 @@ func order(values []int) {
 }
 
 func TestRandomBoundOneReportsConstantZeroRange(t *testing.T) {
-	root := analysisModule(
-		t,
-		`package sample
+	root := analysisModule(t, `package sample
 
 import "math/rand"
 
 func choice() int {
 	return rand.Intn(1)
 }
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"random-bound-one"})
 	if err != nil {
 		t.Fatal(err)
@@ -2115,10 +2028,7 @@ func TestImpossiblePlatformComparisonReportsExcludedTarget(t *testing.T) {
 	if runtime.GOOS == excluded {
 		excluded = "linux"
 	}
-	root := analysisModule(
-		t,
-		fmt.Sprintf(
-			`//go:build %s
+	root := analysisModule(t, fmt.Sprintf(`//go:build %s
 
 package sample
 
@@ -2127,11 +2037,7 @@ import "runtime"
 func impossible() bool {
 	return runtime.GOOS == %q
 }
-`,
-			runtime.GOOS,
-			excluded,
-		),
-	)
+`, runtime.GOOS, excluded))
 	registry, err := NewRegistry([]string{"impossible-platform-comparison"})
 	if err != nil {
 		t.Fatal(err)
@@ -2146,16 +2052,13 @@ func impossible() bool {
 }
 
 func TestNilMapAssignmentReportsPanickingWrite(t *testing.T) {
-	root := analysisModule(
-		t,
-		`package sample
+	root := analysisModule(t, `package sample
 
 func write() {
 	var values map[string]int
 	values["answer"] = 42
 }
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"nil-map-assignment"})
 	if err != nil {
 		t.Fatal(err)
@@ -2567,9 +2470,7 @@ func efficient(left, right string) bool {
 }
 
 func TestByteStringWriteReportsAllocatingConversion(t *testing.T) {
-	root := analysisModule(
-		t,
-		`package sample
+	root := analysisModule(t, `package sample
 
 import (
 	"io"
@@ -2580,8 +2481,7 @@ func write(bytes []byte) {
 	io.WriteString(os.Stdout, string(bytes))
 	os.Stdout.Write(bytes)
 }
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"byte-string-write"})
 	if err != nil {
 		t.Fatal(err)
@@ -2790,9 +2690,7 @@ func inspect(value any) {
 }
 
 func TestDeferredReturnFunctionNotCalledReportsMissingInvocation(t *testing.T) {
-	root := analysisModule(
-		t,
-		`package sample
+	root := analysisModule(t, `package sample
 
 func setup() func() { return func() {} }
 
@@ -2800,8 +2698,7 @@ func run() {
 	defer setup()
 	defer setup()()
 }
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"deferred-return-function-not-called"})
 	if err != nil {
 		t.Fatal(err)
@@ -2940,10 +2837,7 @@ func good(rows *sql.Rows) error {
 }
 
 func TestRegistryRejectsUnknownRule(t *testing.T) {
-	if _, err := NewRegistry([]string{"missing-analyzer"}); err == nil || !strings.Contains(
-		err.Error(),
-		"missing-analyzer",
-	) {
+	if _, err := NewRegistry([]string{"missing-analyzer"}); err == nil || !strings.Contains(err.Error(), "missing-analyzer") {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
@@ -2972,10 +2866,7 @@ func TestAnalyzerRegistryFiltersByEffectiveSeverityBeforePlanning(t *testing.T) 
 	registry, err := NewRegistryWithOptions(
 		RegistryOptions{
 			Only: []string{"regexp-match-in-loop", "invalid-template"},
-			Settings: map[string]config.RuleConfig{
-				"regexp-match-in-loop": {Severity: "warning"},
-				"invalid-template": {Severity: "error"},
-			},
+			Settings: map[string]config.RuleConfig{"regexp-match-in-loop": {Severity: "warning"}, "invalid-template": {Severity: "error"}},
 			MinimumSeverity: diagnostic.SeverityError,
 		},
 	)
@@ -2992,10 +2883,7 @@ func TestAnalyzerRegistryFiltersByEffectiveSeverityBeforePlanning(t *testing.T) 
 	registry, err = NewRegistryWithOptions(
 		RegistryOptions{
 			Only: []string{"regexp-match-in-loop", "invalid-template"},
-			Settings: map[string]config.RuleConfig{
-				"regexp-match-in-loop": {Severity: "error"},
-				"invalid-template": {Severity: "warning"},
-			},
+			Settings: map[string]config.RuleConfig{"regexp-match-in-loop": {Severity: "error"}, "invalid-template": {Severity: "warning"}},
 			MinimumSeverity: diagnostic.SeverityError,
 		},
 	)
@@ -3015,11 +2903,7 @@ func TestAnalyzerRegistryRejectsInvalidMinimumSeverity(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "minimum severity") {
 		t.Fatalf("got %v, want minimum severity error", err)
 	}
-	_, err = NewRegistryWithOptions(
-		RegistryOptions{
-			Settings: map[string]config.RuleConfig{"invalid-template": {Severity: "fatal"}},
-		},
-	)
+	_, err = NewRegistryWithOptions(RegistryOptions{Settings: map[string]config.RuleConfig{"invalid-template": {Severity: "fatal"}}})
 	if err == nil || !strings.Contains(err.Error(), "severity must be") {
 		t.Fatalf("got %v, want rule severity error", err)
 	}
@@ -3056,11 +2940,7 @@ func analysisModule(t *testing.T, source string) string {
 func analysisModuleVersion(t *testing.T, goVersion, source string) string {
 	t.Helper()
 	root := t.TempDir()
-	if err := os.WriteFile(
-		filepath.Join(root, "go.mod"),
-		[]byte("module example.com/analysis\n\ngo " + goVersion + "\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/analysis\n\ngo " + goVersion + "\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(root, "main.go"), []byte(source), 0o600); err != nil {

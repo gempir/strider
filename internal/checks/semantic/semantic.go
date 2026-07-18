@@ -62,10 +62,7 @@ func Run(paths []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
 	return run(paths, registry, buildSSA)
 }
 
-func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) (
-	[]diagnostic.Diagnostic,
-	error,
-) {
+func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnostic.Diagnostic, error) {
 	if registry == nil {
 		return nil, fmt.Errorf("analysis registry is nil")
 	}
@@ -147,11 +144,7 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) (
 					generated,
 					generatedErr := source.IsGenerated(canonical)
 					if generatedErr == nil && !generated {
-						entry.info = analysisFileInfo{
-							filename: canonical,
-							display: source.DisplayPath(canonical),
-							eligible: true,
-						}
+						entry.info = analysisFileInfo{filename: canonical, display: source.DisplayPath(canonical), eligible: true}
 					}
 				}
 			},
@@ -207,10 +200,7 @@ func (plan executionPlan) ssaBuilderMode() ssa.BuilderMode {
 
 func prepareSSA(initial []*packages.Package, plan executionPlan, build ssaBuildFunc) ssaBuildResult {
 	if !plan.needsSSA() {
-		return ssaBuildResult{
-			packages: make([]*ssa.Package, len(initial)),
-			functionsByPackage: make(map[*ssa.Package][]*ssa.Function),
-		}
+		return ssaBuildResult{packages: make([]*ssa.Package, len(initial)), functionsByPackage: make(map[*ssa.Package][]*ssa.Function)}
 	}
 	return build(initial, plan.ssaBuilderMode())
 }
@@ -231,11 +221,7 @@ func buildSSA(initial []*packages.Package, mode ssa.BuilderMode) ssaBuildResult 
 			functionsByPackage[function.Pkg] = append(functionsByPackage[function.Pkg], function)
 		}
 	}
-	return ssaBuildResult{
-		program: program,
-		packages: packages,
-		functionsByPackage: functionsByPackage,
-	}
+	return ssaBuildResult{program: program, packages: packages, functionsByPackage: functionsByPackage}
 }
 
 // selectInitialPackages avoids analyzing production syntax twice when
@@ -247,9 +233,7 @@ func buildSSA(initial []*packages.Package, mode ssa.BuilderMode) ssaBuildResult 
 func selectInitialPackages(loaded []*packages.Package) []*packages.Package {
 	bestByPath := make(map[string]*packages.Package)
 	for _, pkg := range loaded {
-		if current := bestByPath[pkg.PkgPath]; current == nil || len(pkg.Syntax) > len(
-			current.Syntax,
-		) {
+		if current := bestByPath[pkg.PkgPath]; current == nil || len(pkg.Syntax) > len(current.Syntax) {
 			bestByPath[pkg.PkgPath] = pkg
 		}
 	}
@@ -263,11 +247,7 @@ func selectInitialPackages(loaded []*packages.Package) []*packages.Package {
 	return result
 }
 
-func runAnalysisTask(
-	task analysisTask,
-	registry *Registry,
-	fileInfoFor func(string) analysisFileInfo,
-) []analysisFinding {
+func runAnalysisTask(task analysisTask, registry *Registry, fileInfoFor func(string) analysisFileInfo) []analysisFinding {
 	meta := task.rule.Meta()
 	severity := registry.Severity(meta.Code)
 	pass := *task.pass
@@ -284,22 +264,8 @@ func runAnalysisTask(
 		findings = append(
 			findings,
 			analysisFinding{
-				key: fmt.Sprintf(
-					"%s:%d:%d:%s:%s",
-					info.filename,
-					position.Offset,
-					end.Offset,
-					meta.Code,
-					message,
-				),
-				diagnostic: diagnostic.Diagnostic{
-					Code: meta.Code,
-					Message: message,
-					Severity: severity,
-					File: info.display,
-					Start: position,
-					End: end,
-				},
+				key: fmt.Sprintf("%s:%d:%d:%s:%s", info.filename, position.Offset, end.Offset, meta.Code, message),
+				diagnostic: diagnostic.Diagnostic{Code: meta.Code, Message: message, Severity: severity, File: info.display, Start: position, End: end},
 			},
 		)
 	}
@@ -409,10 +375,7 @@ func canonicalPath(path string) (string, error) {
 
 func recursivePackagePattern(cwd, directory string) string {
 	relative, err := filepath.Rel(cwd, directory)
-	if err == nil && relative != ".." && !strings.HasPrefix(
-		relative,
-		".." + string(filepath.Separator),
-	) {
+	if err == nil && relative != ".." && !strings.HasPrefix(relative, ".." + string(filepath.Separator)) {
 		if relative == "." {
 			return "./..."
 		}

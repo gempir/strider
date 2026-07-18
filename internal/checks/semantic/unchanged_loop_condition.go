@@ -9,15 +9,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type unchangedLoopConditionRule struct{}
+type unchangedLoopConditionRule struct {}
 
 func (unchangedLoopConditionRule) Meta() Meta {
 	return Meta{
-		Code:            "unchanged-loop-condition",
-		Summary:         "detect counted loops whose condition variable never changes",
-		Explanation:     "A conventional three-part loop that initializes and tests one variable but never changes that variable cannot progress as intended. This often means the post statement increments the wrong counter or is unreachable.",
-		GoodExample:     "for index := 0; index < limit; index++ { use(index) }",
-		BadExample:      "for index := 0; index < limit; other++ { use(index) }",
+		Code: "unchanged-loop-condition",
+		Summary: "detect counted loops whose condition variable never changes",
+		Explanation: "A conventional three-part loop that initializes and tests one variable but never changes that variable cannot progress as intended. This often means the post statement increments the wrong counter or is unreachable.",
+		GoodExample: "for index := 0; index < limit; index++ { use(index) }",
+		BadExample: "for index := 0; index < limit; other++ { use(index) }",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -31,17 +31,17 @@ func (unchangedLoopConditionRule) Run(pass *Pass) {
 			function.Syntax(),
 			func(node ast.Node) bool {
 				loop,
-					ok := node.(*ast.ForStmt)
+				ok := node.(*ast.ForStmt)
 				if !ok {
 					return true
 				}
 				condition,
-					ok := unchangedConditionCandidate(pass, loop)
+				ok := unchangedConditionCandidate(pass, loop)
 				if !ok {
 					return true
 				}
 				value,
-					isAddress := function.ValueForExpr(condition.X)
+				isAddress := function.ValueForExpr(condition.X)
 				if value == nil || isAddress {
 					return true
 				}
@@ -77,9 +77,7 @@ func unchangedConditionCandidate(pass *Pass, loop *ast.ForStmt) (*ast.BinaryExpr
 		return nil, false
 	}
 	initializedVariable, ok := initialization.Lhs[0].(*ast.Ident)
-	if !ok || pass.TypesInfo.ObjectOf(conditionVariable) != pass.TypesInfo.ObjectOf(
-		initializedVariable,
-	) {
+	if !ok || pass.TypesInfo.ObjectOf(conditionVariable) != pass.TypesInfo.ObjectOf(initializedVariable) {
 		return nil, false
 	}
 	if _, ok := loop.Post.(*ast.IncDecStmt); !ok {

@@ -29,14 +29,7 @@ func Exported() {
 func results() (int, int, int, int) { return 0, 0, 0, 0 }
 `,
 	)
-	codes := []string{
-		"excessive-blank-identifiers",
-		"task-comment",
-		"doc-comment-period",
-		"error-type-naming",
-		"standard-http-method-constant",
-		"weak-cryptography",
-	}
+	codes := []string{"excessive-blank-identifiers", "task-comment", "doc-comment-period", "error-type-naming", "standard-http-method-constant", "weak-cryptography"}
 	registry, err := NewRegistry(codes)
 	if err != nil {
 		t.Fatal(err)
@@ -88,14 +81,7 @@ func results() (int, int, int, int) { return 0, 0, 0, 0 }
 func use(...int) {}
 `,
 	)
-	codes := []string{
-		"excessive-blank-identifiers",
-		"task-comment",
-		"doc-comment-period",
-		"error-type-naming",
-		"standard-http-method-constant",
-		"weak-cryptography",
-	}
+	codes := []string{"excessive-blank-identifiers", "task-comment", "doc-comment-period", "error-type-naming", "standard-http-method-constant", "weak-cryptography"}
 	registry, err := NewRegistry(codes)
 	if err != nil {
 		t.Fatal(err)
@@ -110,9 +96,7 @@ func use(...int) {}
 }
 
 func TestDocCommentPeriodDeduplicatesGroupedDeclarationDocs(t *testing.T) {
-	root := analysisModule(
-		t,
-		`// Package sample demonstrates grouped declarations.
+	root := analysisModule(t, `// Package sample demonstrates grouped declarations.
 package sample
 
 // Values are exported constants
@@ -120,8 +104,7 @@ const (
 	First = 1
 	Second = 2
 )
-`,
-	)
+`)
 	registry, err := NewRegistry([]string{"doc-comment-period"})
 	if err != nil {
 		t.Fatal(err)
@@ -131,10 +114,6 @@ const (
 		t.Fatal(err)
 	}
 	if len(diagnostics) != 1 {
-		t.Fatalf(
-			"got %d diagnostics, want one for the shared comment: %#v",
-			len(diagnostics),
-			diagnostics,
-		)
+		t.Fatalf("got %d diagnostics, want one for the shared comment: %#v", len(diagnostics), diagnostics)
 	}
 }

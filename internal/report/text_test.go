@@ -21,13 +21,13 @@ func TestTextRendersSourceAnnotationAndSummary(t *testing.T) {
 	}
 	diagnostics := []diagnostic.Diagnostic{
 		{
-			Code:     "no-init",
-			Message:  "avoid package initialization",
+			Code: "no-init",
+			Message: "avoid package initialization",
 			Severity: diagnostic.SeverityWarning,
-			File:     filename,
-			Start:    token.Position{Filename: filename, Line: 2, Column: 1},
-			End:      token.Position{Filename: filename, Line: 2, Column: 15},
-			Notes:    []diagnostic.Note{{Message: "move initialization into an explicit function"}},
+			File: filename,
+			Start: token.Position{Filename: filename, Line: 2, Column: 1},
+			End: token.Position{Filename: filename, Line: 2, Column: 15},
+			Notes: []diagnostic.Note{{Message: "move initialization into an explicit function"}},
 		},
 	}
 
@@ -35,7 +35,7 @@ func TestTextRendersSourceAnnotationAndSummary(t *testing.T) {
 	if err := Text(&output, diagnostics, ui.ColorAlways); err != nil {
 		t.Fatal(err)
 	}
-	for _, wanted := range []string{
+	for _, wanted := range[]string{
 		"\x1b[",
 		"warning",
 		"\x1b[1;33m[no-init]\x1b[0m",
@@ -94,10 +94,7 @@ func TestTextSummarizesFindingsByCheck(t *testing.T) {
 	text := output.String()
 	first := strings.Index(text, "\nfirst   2")
 	second := strings.Index(text, "\nsecond  1")
-	if first < 0 || second < 0 || first >= second || strings.Contains(text, "Check summary") || strings.Contains(
-		text,
-		"checks broken",
-	) {
+	if first < 0 || second < 0 || first >= second || strings.Contains(text, "Check summary") || strings.Contains(text, "checks broken") {
 		t.Fatalf("unexpected check summary:\n%s", text)
 	}
 	if !strings.HasSuffix(text, "found 3 issues: 2 errors, 1 warning\n") {
@@ -109,11 +106,7 @@ func TestSummaryColorsEachSeveritySegment(t *testing.T) {
 	t.Setenv("FORCE_COLOR", "")
 	t.Setenv("NO_COLOR", "")
 	palette := ui.NewPalette(&bytes.Buffer{}, ui.ColorAlways)
-	got := summary(
-		make([]diagnostic.Diagnostic, 221),
-		map[diagnostic.Severity]int{diagnostic.SeverityError: 214, diagnostic.SeverityWarning: 7},
-		palette,
-	)
+	got := summary(make([]diagnostic.Diagnostic, 221), map[diagnostic.Severity]int{diagnostic.SeverityError: 214, diagnostic.SeverityWarning: 7}, palette)
 	want := "\x1b[1;37mfound 221 issues: \x1b[0m" + "\x1b[1;31m214 errors\x1b[0m" + "\x1b[1;37m, \x1b[0m" + "\x1b[1;33m7 warnings\x1b[0m"
 	if got != want {
 		t.Fatalf("colored summary = %q, want %q", got, want)
@@ -126,15 +119,7 @@ func TestTextNeverDoesNotEmitANSI(t *testing.T) {
 	var output bytes.Buffer
 	if err := Text(
 		&output,
-		[]diagnostic.Diagnostic{
-			{
-				Code:     "example",
-				Message:  "plain",
-				Severity: diagnostic.SeverityNote,
-				File:     "missing.go",
-				Start:    token.Position{Line: 3, Column: 2},
-			},
-		},
+		[]diagnostic.Diagnostic{{Code: "example", Message: "plain", Severity: diagnostic.SeverityNote, File: "missing.go", Start: token.Position{Line: 3, Column: 2}}},
 		ui.ColorNever,
 	); err != nil {
 		t.Fatal(err)
@@ -145,10 +130,7 @@ func TestTextNeverDoesNotEmitANSI(t *testing.T) {
 }
 
 func TestMarkerWidthUsesRuneColumnsFromBytePositions(t *testing.T) {
-	item := diagnostic.Diagnostic{
-		Start: token.Position{Line: 1, Column: 4},
-		End:   token.Position{Line: 1, Column: 7},
-	}
+	item := diagnostic.Diagnostic{Start: token.Position{Line: 1, Column: 4}, End: token.Position{Line: 1, Column: 7}}
 	if got := markerWidth(item, "é abc", item.Start.Column); got != 3 {
 		t.Fatalf("marker width %d; want 3", got)
 	}

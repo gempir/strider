@@ -11,27 +11,17 @@ import (
 func (a *cstAnalyzer) finishConcreteRepeatedLiterals() {
 	for literal, nodes := range a.repeatedLiterals {
 		if len(nodes) > 2 {
-			a.report(
-				"add-constant",
-				nodes[2],
-				fmt.Sprintf("string literal %s appears more than twice; define a constant", literal),
-			)
+			a.report("add-constant", nodes[2], fmt.Sprintf("string literal %s appears more than twice; define a constant", literal))
 		}
 	}
 }
 
 func (a *cstAnalyzer) checkConcreteTypeDefinition(definition *cst.TypeDef) {
 	a.checkConcreteExportedDeclaration(definition.IDENT, definition)
-	if _, ok := definition.TypeNode.(*cst.StructType); ok && token.IsExported(
-		definition.IDENT.Src(),
-	) {
+	if _, ok := definition.TypeNode.(*cst.StructType); ok && token.IsExported(definition.IDENT.Src()) {
 		a.publicStructs++
 		if a.publicStructs > 5 {
-			a.report(
-				"max-public-structs",
-				definition.IDENT,
-				"file declares more than 5 exported structs",
-			)
+			a.report("max-public-structs", definition.IDENT, "file declares more than 5 exported structs")
 		}
 	}
 }
@@ -40,10 +30,7 @@ func (a *cstAnalyzer) checkConcreteExportedFunction(name cst.Token, node cst.Nod
 	if !token.IsExported(name.Src()) || a.packageName == "main" {
 		return
 	}
-	if strings.HasSuffix(a.filename, "_test.go") && (strings.HasPrefix(name.Src(), "Test") || strings.HasPrefix(
-		name.Src(),
-		"Benchmark",
-	) || strings.HasPrefix(name.Src(), "Example")) {
+	if strings.HasSuffix(a.filename, "_test.go") && (strings.HasPrefix(name.Src(), "Test") || strings.HasPrefix(name.Src(), "Benchmark") || strings.HasPrefix(name.Src(), "Example")) {
 		return
 	}
 	if method {
@@ -53,11 +40,7 @@ func (a *cstAnalyzer) checkConcreteExportedFunction(name cst.Token, node cst.Nod
 		}
 	}
 	if !a.concreteHasDocumentation(name.Src(), node) {
-		a.report(
-			"exported",
-			name,
-			"exported function or method should have a comment beginning with its name",
-		)
+		a.report("exported", name, "exported function or method should have a comment beginning with its name")
 	}
 }
 
@@ -97,36 +80,21 @@ func (a *cstAnalyzer) concreteHasDocumentation(name string, node cst.Node) bool 
 	return false
 }
 
-func (a *cstAnalyzer) checkConcreteVarSpec(
-	name cst.Token,
-	typeNode cst.Node,
-	values *cst.ExpressionList,
-) {
+func (a *cstAnalyzer) checkConcreteVarSpec(name cst.Token, typeNode cst.Node, values *cst.ExpressionList) {
 	a.checkConcreteExportedDeclaration(name, name)
 	typeName := cst.Spelling(typeNode)
-	if a.concretePackageDeclaration() && concreteValueIsError(typeName, values) && !strings.HasPrefix(
-		name.Src(),
-		"err",
-	) && !strings.HasPrefix(name.Src(), "Err") {
+	if a.concretePackageDeclaration() && concreteValueIsError(typeName, values) && !strings.HasPrefix(name.Src(), "err") && !strings.HasPrefix(name.Src(), "Err") {
 		a.report("error-naming", name, "package error variable should be named errFoo or ErrFoo")
 	}
 	if typeNode != nil && values != nil && values.Len() == 1 && concreteZeroValue(values.Expression) {
-		a.report(
-			"var-declaration",
-			values.Expression,
-			"omit the explicit zero value from the variable declaration",
-		)
+		a.report("var-declaration", values.Expression, "omit the explicit zero value from the variable declaration")
 	}
 	if typeName == "time.Duration" && hasTimeUnitSuffix(name.Src()) {
 		a.report("time-naming", name, "time.Duration name should not include a unit suffix")
 	}
 }
 
-func (a *cstAnalyzer) checkConcreteVarSpecList(
-	names *cst.IdentifierList,
-	typeNode cst.Node,
-	values *cst.ExpressionList,
-) {
+func (a *cstAnalyzer) checkConcreteVarSpecList(names *cst.IdentifierList, typeNode cst.Node, values *cst.ExpressionList) {
 	for _, name := range concreteIdentifierTokens(names) {
 		a.checkConcreteVarSpec(name, typeNode, values)
 	}

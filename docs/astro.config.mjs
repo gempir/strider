@@ -34,35 +34,42 @@ export default defineConfig({
       sidebar: [
         {
           label: 'Start here',
-          items: ['getting-started', 'configuration', 'baselines'],
+          items: [
+            { slug: 'getting-started', label: 'Getting started' },
+            { slug: 'configuration', label: 'Configuration' },
+            { slug: 'baselines', label: 'Baselines' },
+          ],
         },
         {
           label: 'Guides',
-          items: ['formatter', 'checks'],
+          items: [
+            { slug: 'formatter', label: 'The formatter' },
+            { slug: 'checks', label: 'Running checks' },
+          ],
         },
         {
-          label: 'Benchmarks',
+          label: 'Check catalog',
+          items: [
+            {
+              label: 'Style and maintainability',
+              collapsed: true,
+              items: [{ autogenerate: { directory: 'lints' } }],
+            },
+            {
+              label: 'Correctness and safety',
+              collapsed: true,
+              items: [{ autogenerate: { directory: 'analyzers' } }],
+            },
+          ],
+        },
+        {
+          label: 'In the wild',
           collapsed: true,
           items: [{ autogenerate: { directory: 'benchmarks' } }],
         },
         {
           label: 'Reference',
-          items: [
-            'reference/cli',
-            {
-              label: 'Checks',
-              items: [
-                {
-                  label: 'Style and maintainability',
-                  items: [{ autogenerate: { directory: 'lints' } }],
-                },
-                {
-                  label: 'Correctness and safety',
-                  items: [{ autogenerate: { directory: 'analyzers' } }],
-                },
-              ],
-            },
-          ],
+          items: [{ slug: 'reference/cli', label: 'CLI reference' }],
         },
       ],
     }),

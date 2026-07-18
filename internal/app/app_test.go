@@ -23,6 +23,108 @@ func TestVersion(t *testing.T) {
 	}
 }
 
+func TestShortOptionAliases(t *testing.T) {
+	for _, arguments := range[][]string{
+		{"-n", "check", "-s", "error", "-l"},
+		{"-n", "lint", "-s", "error", "-l"},
+		{"-n", "analyze", "-s", "error", "-l"},
+	} {
+		t.Run(
+			arguments[1],
+			func(t *testing.T) {
+				var stdout,
+				stderr bytes.Buffer
+				if code := Run(arguments, strings.NewReader(""), &stdout, &stderr); code != exitSuccess {
+					t.Fatalf(
+						"exit %d, stdout %q, stderr %q",
+						code,
+						stdout.String(),
+						stderr.String(),
+					)
+				}
+				if stderr.Len() != 0 {
+					t.Fatalf("stdout %q, stderr %q", stdout.String(), stderr.String())
+				}
+			},
+		)
+	}
+
+	var stdout, stderr bytes.Buffer
+	code := Run(
+		[]string{"-n", "fmt", "-s", "-f", "alias.go"},
+		strings.NewReader("package p\nfunc F( ){return}\n"),
+		&stdout,
+		&stderr,
+	)
+	if code != exitSuccess || !strings.Contains(stdout.String(), "func F()") || stderr.Len() != 0 {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run([]string{"-n", "check", "-w", "-f", "json"}, strings.NewReader(""), &stdout, &stderr)
+	if code != exitError || !strings.Contains(stderr.String(), "--watch requires text") {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+}
+
+func TestLongOptionsRequireTwoDashes(t *testing.T) {
+	for name, arguments := range map[string][]string{
+		"global": {"-config", "missing.toml", "check"},
+		"check": {"-n", "check", "-minimum-severity", "error"},
+		"fmt": {"-n", "fmt", "-stdin"},
+		"lint": {"-n", "lint", "-minimum-severity", "error"},
+		"analyze": {"-n", "analyze", "-minimum-severity", "error"},
+	} {
+		t.Run(
+			name,
+			func(t *testing.T) {
+				var stdout,
+				stderr bytes.Buffer
+				code := Run(arguments, strings.NewReader(""), &stdout, &stderr)
+				if code != exitError || !strings.Contains(stderr.String(), "must use two dashes") {
+					t.Fatalf(
+						"exit %d, stdout %q, stderr %q",
+						code,
+						stdout.String(),
+						stderr.String(),
+					)
+				}
+				if strings.Contains(stderr.String(), "Usage:") {
+					t.Fatalf("unexpected usage noise: %q", stderr.String())
+				}
+			},
+		)
+	}
+}
+
+func TestCommandUsageShowsShortAndLongOptions(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run([]string{"-n", "fmt", "--unknown"}, strings.NewReader(""), &stdout, &stderr)
+	if code != exitError {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	for _, wanted := range[]string{"-s, --stdin", "-f, --stdin-filename"} {
+		if !strings.Contains(stderr.String(), wanted) {
+			t.Fatalf("usage missing %q: %q", wanted, stderr.String())
+		}
+	}
+	if strings.Contains(stderr.String(), "  -stdin") {
+		t.Fatalf("usage contains a single-dash long option: %q", stderr.String())
+	}
+}
+
+func TestDoubleDashAllowsDashPrefixedPaths(t *testing.T) {
+	options, ok := parseFormatOptions(
+		[]string{"--", "-generated.go"},
+		ui.ColorNever,
+		&bytes.Buffer{},
+	)
+	if !ok || len(options.paths) != 1 || options.paths[0] != "-generated.go" {
+		t.Fatalf("options %#v, ok %v", options, ok)
+	}
+}
+
 func TestFormatStdin(t *testing.T) {
 	stdin := strings.NewReader("package p\nfunc F( ){return}\n")
 	var stdout, stderr bytes.Buffer
@@ -1015,7 +1117,7 @@ enabled = false
 	stdout.Reset()
 	stderr.Reset()
 	code = Run([]string{"analyze", filename}, strings.NewReader(""), &stdout, &stderr)
-	if code != exitSuccess || stdout.Len() != 0 {
+	if code != exitSuccess || stdout.String() != "found 0 issues\n" {
 		t.Fatalf("analyze exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 	stdout.Reset()
@@ -1076,7 +1178,7 @@ func TestLintBaselineGenerateApplyIgnoreAndPrune(t *testing.T) {
 	if code, stdout, stderr := run("--generate-baseline"); code != exitSuccess || stdout != "" || stderr != "" {
 		t.Fatalf("generate exit %d, stdout %q, stderr %q", code, stdout, stderr)
 	}
-	if code, stdout, stderr := run(); code != exitSuccess || stdout != "" || stderr != "" {
+	if code, stdout, stderr := run(); code != exitSuccess || stdout != "found 0 issues\n" || stderr != "" {
 		t.Fatalf("apply exit %d, stdout %q, stderr %q", code, stdout, stderr)
 	}
 	write("package p\nfunc init() {}\nfunc init() {}\n")
@@ -1090,13 +1192,13 @@ func TestLintBaselineGenerateApplyIgnoreAndPrune(t *testing.T) {
 		t.Fatalf("ignore exit %d, stdout %q, stderr %q", code, stdout, stderr)
 	}
 	write("package p\n")
-	if code, stdout, stderr := run(); code != exitSuccess || stdout != "" || !strings.Contains(
+	if code, stdout, stderr := run(); code != exitSuccess || stdout != "found 0 issues\n" || !strings.Contains(
 		stderr,
 		"1 outdated issue",
 	) {
 		t.Fatalf("stale exit %d, stdout %q, stderr %q", code, stdout, stderr)
 	}
-	if code, stdout, stderr := run("--remove-outdated-baseline-entries"); code != exitSuccess || stdout != "" || stderr != "" {
+	if code, stdout, stderr := run("--remove-outdated-baseline-entries"); code != exitSuccess || stdout != "found 0 issues\n" || stderr != "" {
 		t.Fatalf("prune exit %d, stdout %q, stderr %q", code, stdout, stderr)
 	}
 	loaded, err := baseline.Load(baselinePath)
@@ -1147,7 +1249,7 @@ func TestSeverityFilteredBaselinePrunePreservesKnownAndRemovesUnknownCodes(t *te
 		&stdout,
 		&stderr,
 	)
-	if code != exitSuccess || stdout.Len() != 0 || stderr.Len() != 0 {
+	if code != exitSuccess || stdout.String() != "found 0 issues\n" || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 	loaded, err := baseline.Load(baselinePath)
@@ -1211,7 +1313,7 @@ func TestConfiguredAnalyzerBaseline(t *testing.T) {
 		&stdout,
 		&stderr,
 	)
-	if code != exitSuccess || stdout.Len() != 0 || stderr.Len() != 0 {
+	if code != exitSuccess || stdout.String() != "found 0 issues\n" || stderr.Len() != 0 {
 		t.Fatalf("apply exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 }

@@ -35,6 +35,10 @@ strider check --list-checks
 strider check --explain invalid-regexp
 ```
 
+Long options always require two dashes. Every option also has a scoped
+one-character alias, such as `-s warning` for `--minimum-severity warning` and
+`-w` for `--watch`.
+
 The built-in profile selects 118 checks. With the default warning severity
 floor, 96 warning and error checks run; use `--minimum-severity note` to include
 the profile's notes. `strider check --all --minimum-severity note` enables the

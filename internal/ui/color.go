@@ -70,6 +70,10 @@ func (palette Palette) Bold(text string) string {
 	return palette.paint("1", text)
 }
 
+func (palette Palette) White(text string) string {
+	return palette.paint("1;37", text)
+}
+
 func (palette Palette) Muted(text string) string {
 	return palette.paint("2", text)
 }

@@ -124,7 +124,7 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	case "help", "-h", "--help":
 		usage(stdout, colorMode)
 		return exitSuccess
-	case "version", "--version":
+	case "version", "-v", "--version":
 		palette := ui.NewPalette(stdout, colorMode)
 		fmt.Fprintf(stdout, "%s %s\n", palette.Bold("strider"), palette.Accent(version))
 		return exitSuccess
@@ -147,7 +147,7 @@ func parseGlobalOptions(args []string, stderr io.Writer) ([]string, globalOption
 	options := globalOptions{}
 	for len(args) != 0 {
 		switch {
-		case args[0] == "--config":
+		case args[0] == "--config" || args[0] == "-c":
 			if len(args) < 2 || args[1] == "" {
 				printCommandError(
 					stderr,
@@ -173,11 +173,24 @@ func parseGlobalOptions(args []string, stderr io.Writer) ([]string, globalOption
 			}
 			args = args[1:
 			]
-		case args[0] == "--no-config":
+		case strings.HasPrefix(args[0], "-c="):
+			options.configPath = strings.TrimPrefix(args[0], "-c=")
+			if options.configPath == "" {
+				printCommandError(
+					stderr,
+					globalColor(options),
+					"strider",
+					"--config requires a path",
+				)
+				return nil, globalOptions{}, false
+			}
+			args = args[1:
+			]
+		case args[0] == "--no-config" || args[0] == "-n":
 			options.noConfig = true
 			args = args[1:
 			]
-		case args[0] == "--color" || args[0] == "--colors":
+		case args[0] == "--color" || args[0] == "--colors" || args[0] == "-C":
 			if len(args) < 2 || !ui.ValidColorMode(args[1]) {
 				printCommandError(
 					stderr,
@@ -206,6 +219,50 @@ func parseGlobalOptions(args []string, stderr io.Writer) ([]string, globalOption
 			options.colorSet = true
 			args = args[1:
 			]
+		case strings.HasPrefix(args[0], "-C="):
+			value := strings.TrimPrefix(args[0], "-C=")
+			if !ui.ValidColorMode(value) {
+				printCommandError(
+					stderr,
+					globalColor(options),
+					"strider",
+					"--color must be auto, always, or never",
+				)
+				return nil, globalOptions{}, false
+			}
+			options.color = value
+			options.colorSet = true
+			args = args[1:
+			]
+		case strings.HasPrefix(args[0], "-") && !strings.HasPrefix(args[0], "--") && len(args[0]) > 2:
+			name := strings.TrimPrefix(strings.SplitN(args[0], "=", 2)[0], "-")
+			aliases := map[string]string{
+				"config":
+				"c",
+				"no-config":
+				"n",
+				"color":
+				"C",
+				"colors":
+				"C",
+				"help":
+				"h",
+				"version":
+				"v",
+			}
+			replacement := "--" + name
+			if short := aliases[name]; short != "" {
+				replacement += " or -" + short
+			}
+			printCommandError(
+				stderr,
+				globalColor(options),
+				"strider",
+				"long option %q must use two dashes; use %s",
+				args[0],
+				replacement,
+			)
+			return nil, globalOptions{}, false
 		default:
 			if options.configPath != "" && options.noConfig {
 				printCommandError(
@@ -235,7 +292,7 @@ func usage(writer io.Writer, colorMode ui.ColorMode) {
 	fmt.Fprintf(writer, "\n%s\n", palette.Accent("Usage:"))
 	fmt.Fprintf(
 		writer,
-		"  %s [--config PATH|--no-config] [--color auto|always|never] COMMAND [OPTIONS]\n",
+		"  %s [-c PATH|--config PATH|-n|--no-config] [-C MODE|--color MODE] COMMAND [OPTIONS]\n",
 		palette.Bold("strider"),
 	)
 	fmt.Fprintf(writer, "\n%s\n", palette.Accent("Commands:"))
@@ -304,23 +361,49 @@ func parseFormatOptions(args []string, colorMode ui.ColorMode, stderr io.Writer)
 ) {
 	flags := flag.NewFlagSet("fmt", flag.ContinueOnError)
 	flags.SetOutput(stderr)
-	check := flags.Bool("check", false, "report files that would change without writing")
-	diffMode := flags.Bool("diff", false, "print full unified diffs without writing")
-	write := flags.Bool("write", false, "write formatted source in place")
-	stdinMode := flags.Bool("stdin", false, "read source from stdin and write it to stdout")
-	stdinFilename := flags.String("stdin-filename", "<stdin>", "logical filename for stdin")
+	aliases := map[string]string{
+		"check": "c",
+		"diff": "d",
+		"write": "w",
+		"stdin": "s",
+		"stdin-filename": "f",
+		"help": "h",
+	}
+	check := boolOption(
+		flags,
+		"check",
+		"c",
+		false,
+		"report files that would change without writing",
+	)
+	diffMode := boolOption(flags, "diff", "d", false, "print full unified diffs without writing")
+	write := boolOption(flags, "write", "w", false, "write formatted source in place")
+	stdinMode := boolOption(
+		flags,
+		"stdin",
+		"s",
+		false,
+		"read source from stdin and write it to stdout",
+	)
+	stdinFilename := stringOption(
+		flags,
+		"stdin-filename",
+		"f",
+		"<stdin>",
+		"logical filename for stdin",
+	)
 	flags.Usage = func() {
 		palette := ui.NewPalette(stderr, colorMode)
 		fmt.Fprintln(
 			stderr,
 			palette.Accent("Usage:") + " strider fmt [--check|--diff|--write|--stdin] [FILE|DIR]...",
 		)
-		flags.PrintDefaults()
+		printFlagDefaults(stderr, flags, aliases)
 	}
-	if err := flags.Parse(args); err != nil {
+	if !parseCommandFlags(flags, args, aliases, "fmt", colorMode, stderr) {
 		return formatOptions{}, false
 	}
-	stdinFilenameSet := flagWasSet(flags, "stdin-filename")
+	stdinFilenameSet := flagWasSetAny(flags, "stdin-filename", "f")
 	if stdinFilenameSet && !*stdinMode {
 		printCommandError(stderr, colorMode, "strider fmt", "--stdin-filename requires --stdin")
 		return formatOptions{}, false
@@ -380,6 +463,131 @@ func flagWasSet(flags *flag.FlagSet, name string) bool {
 		}
 	})
 	return found
+}
+
+func flagWasSetAny(flags *flag.FlagSet, names... string) bool {
+	for _, name := range names {
+		if flagWasSet(flags, name) {
+			return true
+		}
+	}
+	return false
+}
+
+func stringOption(flags *flag.FlagSet, long, short, fallback, usage string) *string {
+	value := fallback
+	flags.StringVar(&value, long, fallback, usage)
+	flags.StringVar(&value, short, fallback, "alias for --" + long)
+	return &value
+}
+
+func boolOption(flags *flag.FlagSet, long, short string, fallback bool, usage string) *bool {
+	value := fallback
+	flags.BoolVar(&value, long, fallback, usage)
+	flags.BoolVar(&value, short, fallback, "alias for --" + long)
+	return &value
+}
+
+func varOption(flags *flag.FlagSet, value flag.Value, long, short, usage string) {
+	flags.Var(value, long, usage)
+	flags.Var(value, short, "alias for --" + long)
+}
+
+func checkCommandAliases(includeAll bool) map[string]string {
+	aliases := map[string]string{
+		"format": "f",
+		"minimum-severity": "s",
+		"list-rules": "l",
+		"explain": "e",
+		"baseline": "b",
+		"baseline-variant": "v",
+		"generate-baseline": "g",
+		"remove-outdated-baseline-entries": "r",
+		"ignore-baseline": "i",
+		"backup-baseline": "B",
+		"only": "o",
+		"help": "h",
+	}
+	if includeAll {
+		aliases["all-rules"] = "a"
+	}
+	return aliases
+}
+
+func parseCommandFlags(
+	flags *flag.FlagSet,
+	args []string,
+	aliases map[string]string,
+	command string,
+	colorMode ui.ColorMode,
+	stderr io.Writer,
+) bool {
+	for _, argument := range args {
+		if argument == "--" {
+			break
+		}
+		if !strings.HasPrefix(argument, "-") || strings.HasPrefix(argument, "--") || len(argument) <= 2 || isShortOptionAssignment(
+			argument,
+			aliases,
+		) {
+			continue
+		}
+		name := strings.TrimPrefix(strings.SplitN(argument, "=", 2)[0], "-")
+		short := aliases[name]
+		replacement := "--" + name
+		if short != "" {
+			replacement += " or -" + short
+		}
+		printCommandError(
+			stderr,
+			colorMode,
+			"strider " + command,
+			"long option %q must use two dashes; use %s",
+			argument,
+			replacement,
+		)
+		return false
+	}
+	return flags.Parse(args) == nil
+}
+
+func isShortOptionAssignment(argument string, aliases map[string]string) bool {
+	if len(argument) < 4 || argument[0] != '-' || argument[2] != '=' {
+		return false
+	}
+	short := argument[1:2]
+	for _, alias := range aliases {
+		if alias == short {
+			return true
+		}
+	}
+	return false
+}
+
+func printFlagDefaults(writer io.Writer, flags *flag.FlagSet, aliases map[string]string) {
+	flags.VisitAll(
+		func(option *flag.Flag) {
+			if len(option.Name) == 1 {
+				return
+			}
+			value := " VALUE"
+			if boolean,
+			ok := option.Value.(interface {
+				IsBoolFlag() bool
+			}); ok && boolean.IsBoolFlag() {
+				value = ""
+			}
+			short := "    "
+			if alias := aliases[option.Name]; alias != "" {
+				short = "-" + alias + ", "
+			}
+			usage := option.Usage
+			if option.DefValue != "" && option.DefValue != "false" {
+				usage += fmt.Sprintf(" (default %q)", option.DefValue)
+			}
+			fmt.Fprintf(writer, "  %s--%s%s\n      %s\n", short, option.Name, value, usage)
+		},
+	)
 }
 
 func formatStdin(
@@ -662,45 +870,68 @@ func runLint(
 ) int {
 	flags := flag.NewFlagSet("lint", flag.ContinueOnError)
 	flags.SetOutput(stderr)
-	format := flags.String("format", "text", "report format: text, json, or html")
-	minimumSeverityFlag := flags.String(
+	aliases := checkCommandAliases(true)
+	format := stringOption(flags, "format", "f", "text", "report format: text, json, or html")
+	minimumSeverityFlag := stringOption(
+		flags,
 		"minimum-severity",
+		"s",
 		"",
 		"minimum effective severity: note, warning, or error",
 	)
-	listRules := flags.Bool("list-rules", false, "list enabled lint rules")
-	allRules := flags.Bool("all-rules", false, "run every built-in rule")
-	explain := flags.String("explain", "", "explain a lint rule")
-	baselinePath := flags.String("baseline", "", "path to the lint baseline")
-	baselineVariant := flags.String(
+	listRules := boolOption(flags, "list-rules", "l", false, "list enabled lint rules")
+	allRules := boolOption(flags, "all-rules", "a", false, "run every built-in rule")
+	explain := stringOption(flags, "explain", "e", "", "explain a lint rule")
+	baselinePath := stringOption(flags, "baseline", "b", "", "path to the lint baseline")
+	baselineVariant := stringOption(
+		flags,
 		"baseline-variant",
+		"v",
 		"",
 		"generated baseline variant: loose or strict",
 	)
-	generateBaseline := flags.Bool(
+	generateBaseline := boolOption(
+		flags,
 		"generate-baseline",
+		"g",
 		false,
 		"replace the baseline with all current findings",
 	)
-	removeOutdated := flags.Bool(
+	removeOutdated := boolOption(
+		flags,
 		"remove-outdated-baseline-entries",
+		"r",
 		false,
 		"remove baseline entries that no longer match",
 	)
-	ignoreBaseline := flags.Bool(
+	ignoreBaseline := boolOption(
+		flags,
 		"ignore-baseline",
+		"i",
 		false,
 		"report findings without applying a baseline",
 	)
-	backupBaseline := flags.Bool("backup-baseline", false, "back up a baseline before replacing it")
+	backupBaseline := boolOption(
+		flags,
+		"backup-baseline",
+		"B",
+		false,
+		"back up a baseline before replacing it",
+	)
 	var only stringList
-	flags.Var(&only, "only", "run only these rule codes (repeatable or comma-separated)")
+	varOption(
+		flags,
+		&only,
+		"only",
+		"o",
+		"run only these rule codes (repeatable or comma-separated)",
+	)
 	flags.Usage = func() {
 		palette := ui.NewPalette(stderr, colorMode)
 		fmt.Fprintln(stderr, palette.Accent("Usage:") + " strider lint [OPTIONS] [FILE|DIR]...")
-		flags.PrintDefaults()
+		printFlagDefaults(stderr, flags, aliases)
 	}
-	if err := flags.Parse(args); err != nil {
+	if !parseCommandFlags(flags, args, aliases, "lint", colorMode, stderr) {
 		return exitError
 	}
 	if *allRules && len(only) != 0 {
@@ -913,44 +1144,67 @@ func runAnalyze(
 ) int {
 	flags := flag.NewFlagSet("analyze", flag.ContinueOnError)
 	flags.SetOutput(stderr)
-	format := flags.String("format", "text", "report format: text, json, or html")
-	minimumSeverityFlag := flags.String(
+	aliases := checkCommandAliases(false)
+	format := stringOption(flags, "format", "f", "text", "report format: text, json, or html")
+	minimumSeverityFlag := stringOption(
+		flags,
 		"minimum-severity",
+		"s",
 		"",
 		"minimum effective severity: note, warning, or error",
 	)
-	listRules := flags.Bool("list-rules", false, "list enabled analysis rules")
-	explain := flags.String("explain", "", "explain an analysis rule")
-	baselinePath := flags.String("baseline", "", "path to the analysis baseline")
-	baselineVariant := flags.String(
+	listRules := boolOption(flags, "list-rules", "l", false, "list enabled analysis rules")
+	explain := stringOption(flags, "explain", "e", "", "explain an analysis rule")
+	baselinePath := stringOption(flags, "baseline", "b", "", "path to the analysis baseline")
+	baselineVariant := stringOption(
+		flags,
 		"baseline-variant",
+		"v",
 		"",
 		"generated baseline variant: loose or strict",
 	)
-	generateBaseline := flags.Bool(
+	generateBaseline := boolOption(
+		flags,
 		"generate-baseline",
+		"g",
 		false,
 		"replace the baseline with all current findings",
 	)
-	removeOutdated := flags.Bool(
+	removeOutdated := boolOption(
+		flags,
 		"remove-outdated-baseline-entries",
+		"r",
 		false,
 		"remove baseline entries that no longer match",
 	)
-	ignoreBaseline := flags.Bool(
+	ignoreBaseline := boolOption(
+		flags,
 		"ignore-baseline",
+		"i",
 		false,
 		"report findings without applying a baseline",
 	)
-	backupBaseline := flags.Bool("backup-baseline", false, "back up a baseline before replacing it")
+	backupBaseline := boolOption(
+		flags,
+		"backup-baseline",
+		"B",
+		false,
+		"back up a baseline before replacing it",
+	)
 	var only stringList
-	flags.Var(&only, "only", "run only these rule codes (repeatable or comma-separated)")
+	varOption(
+		flags,
+		&only,
+		"only",
+		"o",
+		"run only these rule codes (repeatable or comma-separated)",
+	)
 	flags.Usage = func() {
 		palette := ui.NewPalette(stderr, colorMode)
 		fmt.Fprintln(stderr, palette.Accent("Usage:") + " strider analyze [OPTIONS] [FILE|DIR]...")
-		flags.PrintDefaults()
+		printFlagDefaults(stderr, flags, aliases)
 	}
-	if err := flags.Parse(args); err != nil {
+	if !parseCommandFlags(flags, args, aliases, "analyze", colorMode, stderr) {
 		return exitError
 	}
 	analyzeConfig := configuration.Checks
@@ -1157,7 +1411,7 @@ func resolveMinimumSeverity(
 	stderr io.Writer,
 ) (diagnostic.Severity, bool) {
 	value := configured
-	if flagWasSet(flags, "minimum-severity") {
+	if flagWasSetAny(flags, "minimum-severity", "s") {
 		value = flagValue
 	}
 	severity := diagnostic.Severity(value)
@@ -1216,10 +1470,10 @@ func resolveBaselineOptions(
 	command string,
 	colorMode ui.ColorMode,
 ) (baselineOptions, bool) {
-	if !flagWasSet(flags, "baseline") {
+	if !flagWasSetAny(flags, "baseline", "b") {
 		path = configuration.Resolve(tool.Baseline)
 	}
-	if !flagWasSet(flags, "baseline-variant") {
+	if !flagWasSetAny(flags, "baseline-variant", "v") {
 		variant = tool.BaselineVariant
 	}
 	if variant != "loose" && variant != "strict" {

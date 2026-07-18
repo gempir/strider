@@ -33,12 +33,14 @@ func Text(writer io.Writer, diagnostics []diagnostic.Diagnostic, colorMode ui.Co
 		}
 	}
 	if len(diagnostics) == 0 {
-		return nil
-	}
-	if _, err := fmt.Fprintf(writer, "\n%s\n", summary(diagnostics, counts, palette)); err != nil {
+		_, err := fmt.Fprintln(writer, summary(diagnostics, counts, palette))
 		return err
 	}
-	return writeCheckCounts(writer, diagnostics, palette)
+	if err := writeCheckCounts(writer, diagnostics, palette); err != nil {
+		return err
+	}
+	_, err := fmt.Fprintln(writer, summary(diagnostics, counts, palette))
+	return err
 }
 
 type checkCount struct {
@@ -217,6 +219,14 @@ func summary(
 	counts map[diagnostic.Severity]int,
 	palette ui.Palette,
 ) string {
+	label := "issues"
+	if len(diagnostics) == 1 {
+		label = "issue"
+	}
+	prefix := fmt.Sprintf("found %d %s", len(diagnostics), label)
+	if len(diagnostics) == 0 {
+		return palette.Success(prefix)
+	}
 	parts := make([]string, 0, 3)
 	for _, severity := range[]diagnostic.Severity{
 		diagnostic.SeverityError,
@@ -224,28 +234,11 @@ func summary(
 		diagnostic.SeverityNote,
 	} {
 		if count := counts[severity]; count != 0 {
-			parts = append(parts, fmt.Sprintf("%d %s", count, plural(string(severity), count)))
+			part := fmt.Sprintf("%d %s", count, plural(string(severity), count))
+			parts = append(parts, styledSeverity(severity, part, palette))
 		}
 	}
-	label := "issues"
-	if len(diagnostics) == 1 {
-		label = "issue"
-	}
-	return styledSeverity(
-		highestSeverity(counts),
-		fmt.Sprintf("found %d %s: %s", len(diagnostics), label, strings.Join(parts, ", ")),
-		palette,
-	)
-}
-
-func highestSeverity(counts map[diagnostic.Severity]int) diagnostic.Severity {
-	if counts[diagnostic.SeverityError] != 0 {
-		return diagnostic.SeverityError
-	}
-	if counts[diagnostic.SeverityWarning] != 0 {
-		return diagnostic.SeverityWarning
-	}
-	return diagnostic.SeverityNote
+	return palette.White(prefix + ": ") + strings.Join(parts, palette.White(", "))
 }
 
 func plural(word string, count int) string {

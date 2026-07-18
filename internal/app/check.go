@@ -27,50 +27,88 @@ func runCheck(
 ) int {
 	flags := flag.NewFlagSet("check", flag.ContinueOnError)
 	flags.SetOutput(stderr)
-	reportFormat := flags.String("format", "text", "report format: text, json, or html")
-	minimumSeverityFlag := flags.String(
+	aliases := map[string]string{
+		"format": "f",
+		"minimum-severity": "s",
+		"watch": "w",
+		"list-checks": "l",
+		"list-rules": "l",
+		"all": "a",
+		"all-rules": "a",
+		"explain": "e",
+		"baseline": "b",
+		"baseline-variant": "v",
+		"generate-baseline": "g",
+		"remove-outdated-baseline-entries": "r",
+		"ignore-baseline": "i",
+		"backup-baseline": "B",
+		"only": "o",
+		"help": "h",
+	}
+	reportFormat := stringOption(flags, "format", "f", "text", "report format: text, json, or html")
+	minimumSeverityFlag := stringOption(
+		flags,
 		"minimum-severity",
+		"s",
 		"",
 		"minimum effective severity: note, warning, or error",
 	)
-	watch := flags.Bool("watch", false, "rerun checks when source changes")
-	listChecks := false
-	flags.BoolVar(&listChecks, "list-checks", false, "list enabled checks")
-	flags.BoolVar(&listChecks, "list-rules", false, "alias for --list-checks")
-	allChecks := false
-	flags.BoolVar(&allChecks, "all", false, "run every built-in check")
-	flags.BoolVar(&allChecks, "all-rules", false, "alias for --all")
-	explain := flags.String("explain", "", "explain a check")
-	baselinePath := flags.String("baseline", "", "path to the check baseline")
-	baselineVariant := flags.String(
+	watch := boolOption(flags, "watch", "w", false, "rerun checks when source changes")
+	listChecks := boolOption(flags, "list-checks", "l", false, "list enabled checks")
+	flags.BoolVar(listChecks, "list-rules", false, "alias for --list-checks")
+	allChecks := boolOption(flags, "all", "a", false, "run every built-in check")
+	flags.BoolVar(allChecks, "all-rules", false, "alias for --all")
+	explain := stringOption(flags, "explain", "e", "", "explain a check")
+	baselinePath := stringOption(flags, "baseline", "b", "", "path to the check baseline")
+	baselineVariant := stringOption(
+		flags,
 		"baseline-variant",
+		"v",
 		"",
 		"generated baseline variant: loose or strict",
 	)
-	generateBaseline := flags.Bool(
+	generateBaseline := boolOption(
+		flags,
 		"generate-baseline",
+		"g",
 		false,
 		"replace the baseline with all current findings",
 	)
-	removeOutdated := flags.Bool(
+	removeOutdated := boolOption(
+		flags,
 		"remove-outdated-baseline-entries",
+		"r",
 		false,
 		"remove baseline entries that no longer match",
 	)
-	ignoreBaseline := flags.Bool(
+	ignoreBaseline := boolOption(
+		flags,
 		"ignore-baseline",
+		"i",
 		false,
 		"report findings without applying a baseline",
 	)
-	backupBaseline := flags.Bool("backup-baseline", false, "back up a baseline before replacing it")
+	backupBaseline := boolOption(
+		flags,
+		"backup-baseline",
+		"B",
+		false,
+		"back up a baseline before replacing it",
+	)
 	var only stringList
-	flags.Var(&only, "only", "run only these check codes (repeatable or comma-separated)")
+	varOption(
+		flags,
+		&only,
+		"only",
+		"o",
+		"run only these check codes (repeatable or comma-separated)",
+	)
 	flags.Usage = func() {
 		palette := ui.NewPalette(stderr, colorMode)
 		fmt.Fprintln(stderr, palette.Accent("Usage:") + " strider check [OPTIONS] [FILE|DIR]...")
-		flags.PrintDefaults()
+		printFlagDefaults(stderr, flags, aliases)
 	}
-	if err := flags.Parse(args); err != nil {
+	if !parseCommandFlags(flags, args, aliases, "check", colorMode, stderr) {
 		return exitError
 	}
 	if *reportFormat != "text" && *reportFormat != "json" && *reportFormat != "html" {
@@ -112,7 +150,7 @@ func runCheck(
 	registry, err := checkengine.NewRegistry(
 		checkengine.RegistryOptions{
 			Only: only,
-			All: allChecks,
+			All: *allChecks,
 			Settings: checkConfig.Rules,
 			MinimumSeverity: minimumSeverity,
 			FormatExcludes: configuration.Formatter.Excludes,
@@ -123,7 +161,7 @@ func runCheck(
 		printCommandError(stderr, colorMode, "strider check", "%v", err)
 		return exitError
 	}
-	if listChecks {
+	if *listChecks {
 		return listChecksInRegistry(registry, colorMode, stdout)
 	}
 	if *explain != "" {

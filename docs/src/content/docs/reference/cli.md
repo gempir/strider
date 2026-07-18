@@ -12,7 +12,7 @@ strider [--config PATH|--no-config] [--color auto|always|never] COMMAND [OPTIONS
 | Command | Description |
 | --- | --- |
 | `strider help` | Print top-level usage. `-h` and `--help` are aliases. |
-| `strider version` | Print the current version string. `--version` is an alias. |
+| `strider version` | Print the current version string. `-v` and `--version` are aliases. |
 | `strider check` | Run formatting, maintainability, and correctness checks without writing source. |
 | `strider fmt` | Format Go source in place. `format` is an alias. |
 
@@ -23,13 +23,16 @@ the current directory when no path is provided.
 
 Global options must precede the command.
 
+Long options always use two dashes. Every option also has a one-character alias
+with one dash; aliases are scoped to their command.
+
 | Flag | Description |
 | --- | --- |
-| `--config PATH` | Use this `strider.toml` instead of automatic discovery. |
+| `-c, --config PATH` | Use this `strider.toml` instead of automatic discovery. |
 | `--config=PATH` | Equivalent inline form. |
-| `--no-config` | Disable discovery and use built-in defaults. |
-| `--color auto\|always\|never` | Control ANSI color. Default: configured value or `auto`. |
-| `--colors auto\|always\|never` | Alias for `--color`. |
+| `-n, --no-config` | Disable discovery and use built-in defaults. |
+| `-C, --color auto\|always\|never` | Control ANSI color. Default: configured value or `auto`. |
+| `-C, --colors auto\|always\|never` | Alias for `--color`. |
 
 `--config` and `--no-config` are mutually exclusive. Normally Strider searches
 from the current directory through its parents and uses the nearest
@@ -54,13 +57,13 @@ warning floor runs 96. `--all --minimum-severity note` enables the complete
 
 | Flag | Description |
 | --- | --- |
-| `--format text\|json\|html` | Select text, JSON, or a self-contained HTML report. Default: `text`. |
-| `--only CODE` | Run exactly these check codes. Repeatable, comma-separated, and case-insensitive. |
-| `--all` | Enable every built-in check. Mutually exclusive with `--only`. |
-| `--minimum-severity note\|warning\|error` | Run only checks at or above this effective severity; overrides configuration. |
-| `--list-checks` | List the effective selected registry and severity, then exit. |
-| `--explain CODE` | Explain one selected check and show its effective severity, then exit. |
-| `--watch` | Keep a text-mode incremental session open and rerun changed generations. |
+| `-f, --format text\|json\|html` | Select text, JSON, or a self-contained HTML report. Default: `text`. |
+| `-o, --only CODE` | Run exactly these check codes. Repeatable, comma-separated, and case-insensitive. |
+| `-a, --all` | Enable every built-in check. Mutually exclusive with `--only`. |
+| `-s, --minimum-severity note\|warning\|error` | Run only checks at or above this effective severity; overrides configuration. |
+| `-l, --list-checks` | List the effective selected registry and severity, then exit. |
+| `-e, --explain CODE` | Explain one selected check and show its effective severity, then exit. |
+| `-w, --watch` | Keep a text-mode incremental session open and rerun changed generations. |
 
 An unknown code supplied by configuration, `--only`, or `--explain` is an
 exit-code `2` error. Explicit CLI selection overrides configured `enabled`
@@ -79,12 +82,12 @@ be combined with baseline generation, pruning, or backup.
 
 | Flag | Description |
 | --- | --- |
-| `--baseline PATH` | Apply or update this baseline; overrides `[checks].baseline`. |
-| `--baseline-variant loose\|strict` | Choose the shape used by the next generation; overrides configuration. |
-| `--generate-baseline` | Replace the selected baseline with all current non-format findings and exit `0`. |
-| `--ignore-baseline` | Run without applying the configured or explicit baseline. |
-| `--remove-outdated-baseline-entries` | Remove baseline entries that no longer match; never add new findings. |
-| `--backup-baseline` | Before generation or pruning, copy an existing file to `<path>.bkp`. |
+| `-b, --baseline PATH` | Apply or update this baseline; overrides `[checks].baseline`. |
+| `-v, --baseline-variant loose\|strict` | Choose the shape used by the next generation; overrides configuration. |
+| `-g, --generate-baseline` | Replace the selected baseline with all current non-format findings and exit `0`. |
+| `-i, --ignore-baseline` | Run without applying the configured or explicit baseline. |
+| `-r, --remove-outdated-baseline-entries` | Remove baseline entries that no longer match; never add new findings. |
+| `-B, --backup-baseline` | Before generation or pruning, copy an existing file to `<path>.bkp`. |
 
 Generation and pruning require either `--baseline PATH` or
 `[checks].baseline`. They are mutually exclusive. `--backup-baseline` requires
@@ -94,15 +97,16 @@ an update. Code `format` is never stored in a baseline.
 ## `strider fmt`
 
 ```text
-strider fmt [--diff|--write|--stdin] [FILE|DIR]...
+strider fmt [--check|--diff|--write|--stdin] [FILE|DIR]...
 ```
 
 | Flag | Description |
 | --- | --- |
-| `--diff` | Print full unified diffs without writing. |
-| `--write` | Write files in place. Writing is already the default filesystem mode. |
-| `--stdin` | Read one source file from standard input and write it to standard output. |
-| `--stdin-filename PATH` | Set the logical standard-input filename; default `<stdin>`. |
+| `-c, --check` | Report files that would change without writing. |
+| `-d, --diff` | Print full unified diffs without writing. |
+| `-w, --write` | Write files in place. Writing is already the default filesystem mode. |
+| `-s, --stdin` | Read one source file from standard input and write it to standard output. |
+| `-f, --stdin-filename PATH` | Set the logical standard-input filename; default `<stdin>`. |
 
 `--stdin-filename` requires `--stdin`, and standard-input mode cannot be
 combined with paths or filesystem mode flags. Formatter width, indentation,

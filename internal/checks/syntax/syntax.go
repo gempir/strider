@@ -97,7 +97,10 @@ func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
 			return nil, err
 		}
 	}
-	defaults, _ := builtinrules.Select(nil, false)
+	defaults, err := builtinrules.Select(nil, false)
+	if err != nil {
+		return nil, err
+	}
 	enabledByDefault := make(map[string]bool, len(defaults))
 	for _, rule := range defaults {
 		enabledByDefault[rule.Meta().Code] = true
@@ -427,8 +430,9 @@ func concreteSuppressions(tree *cst.Tree) (map[string]bool, []concreteSuppressio
 	fileIgnores := make(map[string]bool)
 	candidates := concreteSuppressionCandidates(tree)
 	packageStart, _ := cst.Range(tree.Root())
-	result := []concreteSuppression{}
-	for _, comment := range tree.Comments() {
+	comments := tree.Comments()
+	result := make([]concreteSuppression, 0, len(comments))
+	for _, comment := range comments {
 		literal := comment.Text
 		end := comment.End
 		if codes, ok := directiveCodes(literal, "strider:ignore-file"); ok && end < packageStart {

@@ -12,6 +12,13 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
+func restoreSemanticWorkingDirectory(testingObject testing.TB, directory string) {
+	testingObject.Helper()
+	if err := os.Chdir(directory); err != nil {
+		testingObject.Errorf("restore working directory: %v", err)
+	}
+}
+
 func TestInvalidRegexpReportsConstantInvalidRegexps(t *testing.T) {
 	root := analysisModule(
 		t,
@@ -259,7 +266,7 @@ func check(dynamic string) {
 	exec.Command("ls -la")
 	exec.Command("ls", "-la")
 	exec.Command("/Applications/My Program/tool")
-	exec.Command(`+"`C:\\Program Files\\tool.exe`"+`)
+	exec.Command(` + "`C:\\Program Files\\tool.exe`" + `)
 	exec.Command(dynamic)
 }
 `,
@@ -1062,7 +1069,7 @@ import (
 
 type payload struct {
 	Callback func()
-	Ignored chan int `+"`json:\"-\" xml:\"-\"`"+`
+	Ignored chan int ` + "`json:\"-\" xml:\"-\"`" + `
 }
 
 type custom chan int
@@ -2967,7 +2974,7 @@ func TestAnalyzerRegistryFiltersByEffectiveSeverityBeforePlanning(t *testing.T) 
 			Only: []string{"regexp-match-in-loop", "invalid-template"},
 			Settings: map[string]config.RuleConfig{
 				"regexp-match-in-loop": {Severity: "warning"},
-				"invalid-template":     {Severity: "error"},
+				"invalid-template": {Severity: "error"},
 			},
 			MinimumSeverity: diagnostic.SeverityError,
 		},
@@ -2987,7 +2994,7 @@ func TestAnalyzerRegistryFiltersByEffectiveSeverityBeforePlanning(t *testing.T) 
 			Only: []string{"regexp-match-in-loop", "invalid-template"},
 			Settings: map[string]config.RuleConfig{
 				"regexp-match-in-loop": {Severity: "error"},
-				"invalid-template":     {Severity: "warning"},
+				"invalid-template": {Severity: "warning"},
 			},
 			MinimumSeverity: diagnostic.SeverityError,
 		},
@@ -3021,8 +3028,8 @@ func TestAnalyzerRegistryRejectsInvalidMinimumSeverity(t *testing.T) {
 func TestAnalyzerRegistrySkipsLoadingWhenSeverityFilterIsEmpty(t *testing.T) {
 	registry, err := NewRegistryWithOptions(
 		RegistryOptions{
-			Only:            []string{"suspicious-sleep"},
-			Settings:        map[string]config.RuleConfig{"suspicious-sleep": {Severity: "warning"}},
+			Only: []string{"suspicious-sleep"},
+			Settings: map[string]config.RuleConfig{"suspicious-sleep": {Severity: "warning"}},
 			MinimumSeverity: diagnostic.SeverityError,
 		},
 	)
@@ -3051,7 +3058,7 @@ func analysisModuleVersion(t *testing.T, goVersion, source string) string {
 	root := t.TempDir()
 	if err := os.WriteFile(
 		filepath.Join(root, "go.mod"),
-		[]byte("module example.com/analysis\n\ngo "+goVersion+"\n"),
+		[]byte("module example.com/analysis\n\ngo " + goVersion + "\n"),
 		0o600,
 	); err != nil {
 		t.Fatal(err)
@@ -3067,7 +3074,7 @@ func analysisModuleVersion(t *testing.T, goVersion, source string) string {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		_ = os.Chdir(previous)
+		restoreSemanticWorkingDirectory(t, previous)
 	})
 	return root
 }

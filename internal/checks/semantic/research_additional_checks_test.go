@@ -48,6 +48,32 @@ func check(w writer) {
 	}
 }
 
+func TestDiscardedErrorResultAllowsInfallibleWriters(t *testing.T) {
+	root := analysisModule(
+		t,
+		`package sample
+
+import (
+	"bytes"
+	"fmt"
+	"strings"
+)
+
+func check() {
+	var buffer bytes.Buffer
+	var builder strings.Builder
+	fmt.Fprintln(&buffer, "safe")
+	buffer.WriteString("safe")
+	builder.WriteString("safe")
+}
+`,
+	)
+	diagnostics := runStandaloneAnalysisRule(t, root, discardedErrorResultRule{})
+	if len(diagnostics) != 0 {
+		t.Fatalf("infallible writes reported: %#v", diagnostics)
+	}
+}
+
 func TestInlineErrorDeclarationOnlyReportsBuiltinErrors(t *testing.T) {
 	root := analysisModule(
 		t,
@@ -214,7 +240,7 @@ func use() item { return current }
 
 func TestAdditionalResearchRuleSeverities(t *testing.T) {
 	tests := []struct {
-		rule     Rule
+		rule Rule
 		severity diagnostic.Severity
 	}{
 		{discardedErrorResultRule{}, diagnostic.SeverityError},
@@ -242,8 +268,8 @@ func runStandaloneAnalysisRule(t *testing.T, root string, rule Rule) []diagnosti
 		}
 	}()
 	registry := &Registry{
-		rules:      []Rule{rule},
-		settings:   map[string]configuredRule{meta.Code: {severity: meta.DefaultSeverity}},
+		rules: []Rule{rule},
+		settings: map[string]configuredRule{meta.Code: {severity: meta.DefaultSeverity}},
 		knownCodes: map[string]bool{meta.Code: true},
 	}
 	diagnostics, err := Run([]string{root}, registry)

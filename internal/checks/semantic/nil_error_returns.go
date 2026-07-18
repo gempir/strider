@@ -8,15 +8,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type nilErrorReturnRule struct{}
+type nilErrorReturnRule struct {}
 
 func (nilErrorReturnRule) Meta() Meta {
 	return Meta{
-		Code:            "nil-error-return",
-		Summary:         "detect nil errors returned from branches that prove an error is non-nil",
-		Explanation:     "A branch entered because an error is non-nil should not return nil in the function's error result. Doing so discards the failure and makes the caller observe success.",
-		GoodExample:     "if err != nil { return nil, err }",
-		BadExample:      "if err != nil { return nil, nil }",
+		Code: "nil-error-return",
+		Summary: "detect nil errors returned from branches that prove an error is non-nil",
+		Explanation: "A branch entered because an error is non-nil should not return nil in the function's error result. Doing so discards the failure and makes the caller observe success.",
+		GoodExample: "if err != nil { return nil, err }",
+		BadExample: "if err != nil { return nil, nil }",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -32,7 +32,7 @@ func (nilErrorReturnRule) Run(pass *Pass) {
 				body,
 				func(node ast.Node) bool {
 					statement,
-						ok := node.(*ast.IfStmt)
+					ok := node.(*ast.IfStmt)
 					if !ok {
 						return true
 					}
@@ -49,15 +49,15 @@ func (nilErrorReturnRule) Run(pass *Pass) {
 	)
 }
 
-type nilValueWithNilErrorRule struct{}
+type nilValueWithNilErrorRule struct {}
 
 func (nilValueWithNilErrorRule) Meta() Meta {
 	return Meta{
-		Code:            "nil-value-with-nil-error",
-		Summary:         "detect nil payloads returned together with a nil error",
-		Explanation:     "Returning an explicit nil payload and nil error leaves callers unable to distinguish a missing value from success. Return a descriptive error or a meaningful payload instead.",
-		GoodExample:     "if value == nil { return nil, ErrNotFound }; return value, nil",
-		BadExample:      "if value == nil { return nil, nil }",
+		Code: "nil-value-with-nil-error",
+		Summary: "detect nil payloads returned together with a nil error",
+		Explanation: "Returning an explicit nil payload and nil error leaves callers unable to distinguish a missing value from success. Return a descriptive error or a meaningful payload instead.",
+		GoodExample: "if value == nil { return nil, ErrNotFound }; return value, nil",
+		BadExample: "if value == nil { return nil, nil }",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -67,22 +67,23 @@ func (nilValueWithNilErrorRule) Run(pass *Pass) {
 		pass,
 		func(body *ast.BlockStmt, signature *types.Signature) {
 			errorIndex := lastErrorResult(signature)
-			if body == nil || errorIndex < 0 || signature.Results().Len() < 2 {
+			if body == nil || errorIndex < 0 || signature.Results().Len() != 2 {
 				return
 			}
 			inspectFunctionBody(
 				body,
 				func(node ast.Node) bool {
 					statement,
-						ok := node.(*ast.ReturnStmt)
+					ok := node.(*ast.ReturnStmt)
 					if !ok || len(statement.Results) != signature.Results().Len() || !isExplicitNil(
 						pass,
 						statement.Results[errorIndex],
 					) {
 						return true
 					}
-					for index, expression := range statement.Results {
-						if index == errorIndex || !isNilableType(
+					for index,
+					expression := range statement.Results {
+						if index == errorIndex || !ambiguousNilPayloadType(
 							signature.Results().At(index).Type(),
 						) || !isExplicitNil(pass, expression) {
 							continue
@@ -100,6 +101,18 @@ func (nilValueWithNilErrorRule) Run(pass *Pass) {
 	)
 }
 
+func ambiguousNilPayloadType(valueType types.Type) bool {
+	if valueType == nil {
+		return false
+	}
+	switch types.Unalias(valueType).Underlying().(type) {
+	case *types.Pointer, *types.Interface:
+		return true
+	default:
+		return false
+	}
+}
+
 func forEachAnalysisFunction(pass *Pass, visit func(*ast.BlockStmt, *types.Signature)) {
 	for _, file := range pass.Files {
 		ast.Inspect(
@@ -108,21 +121,21 @@ func forEachAnalysisFunction(pass *Pass, visit func(*ast.BlockStmt, *types.Signa
 				switch function := node.(type) {
 				case *ast.FuncDecl:
 					object,
-						_ := pass.TypesInfo.Defs[function.Name].(*types.Func)
+					_ := pass.TypesInfo.Defs[function.Name].(*types.Func)
 					if object == nil {
 						return true
 					}
 					signature,
-						_ := object.Type().(*types.Signature)
+					_ := object.Type().(*types.Signature)
 					if signature != nil {
 						visit(function.Body, signature)
 					}
 				case *ast.FuncLit:
 					signature,
-						_ := pass.TypesInfo.TypeOf(function.Type).(*types.Signature)
+					_ := pass.TypesInfo.TypeOf(function.Type).(*types.Signature)
 					if signature == nil {
 						signature,
-							_ = pass.TypesInfo.TypeOf(function).(*types.Signature)
+						_ = pass.TypesInfo.TypeOf(function).(*types.Signature)
 					}
 					if signature != nil {
 						visit(function.Body, signature)
@@ -143,7 +156,7 @@ func inspectFunctionBody(body *ast.BlockStmt, visit func(ast.Node) bool) {
 				return true
 			}
 			if _,
-				nested := node.(*ast.FuncLit); nested && !first {
+			nested := node.(*ast.FuncLit); nested && !first {
 				return false
 			}
 			first = false
@@ -186,7 +199,7 @@ func reportNilErrorsInProvenBranch(
 		branch,
 		func(node ast.Node) bool {
 			statement,
-				ok := node.(*ast.ReturnStmt)
+			ok := node.(*ast.ReturnStmt)
 			if !ok || len(statement.Results) != signature.Results().Len() {
 				return true
 			}
@@ -220,7 +233,7 @@ func inspectFunctionBodyNode(root ast.Node, visit func(ast.Node) bool) {
 				return true
 			}
 			if _,
-				nested := node.(*ast.FuncLit); nested && !first {
+			nested := node.(*ast.FuncLit); nested && !first {
 				return false
 			}
 			first = false

@@ -18,7 +18,10 @@ func TestDiscoverSkipsGeneratedAndVendor(t *testing.T) {
 		if err := os.WriteFile(filename, []byte(content), 0o600); err != nil {
 			t.Fatal(err)
 		}
-		absolute, _ := filepath.Abs(filename)
+		absolute, err := filepath.Abs(filename)
+		if err != nil {
+			t.Fatal(err)
+		}
 		return absolute
 	}
 	wanted := write("main.go", "package main\n")
@@ -53,7 +56,10 @@ func TestDiscoverAllowsExplicitHiddenDirectory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	absolute, _ := filepath.Abs(filename)
+	absolute, err := filepath.Abs(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !slices.Equal(files, []string{absolute}) {
 		t.Fatalf("got %v, want explicit hidden source %s", files, absolute)
 	}

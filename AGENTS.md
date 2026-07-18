@@ -2,6 +2,14 @@
 
 Our own codebase must pass `strider check` without any errors or warnings.
 
+## Required validation
+
+Always run all of the following before completing work:
+
+- `make check`
+- `make test`
+- `make corpus-check`
+
 ## JavaScript tooling
 
 - Use Bun exclusively for JavaScript and TypeScript dependencies and scripts.

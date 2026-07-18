@@ -15,7 +15,7 @@ import (
 
 var (
 	validFilenamePattern = regexp.MustCompile(`^[_A-Za-z0-9][_A-Za-z0-9-]*\.go$`)
-	validPackagePattern  = regexp.MustCompile(`^[a-z][a-z0-9]*$`)
+	validPackagePattern = regexp.MustCompile(`^[a-z][a-z0-9]*$`)
 )
 
 func (a *cstAnalyzer) checkFilenameAndPackage() {
@@ -56,7 +56,10 @@ func (a *cstAnalyzer) checkFilenameAndPackage() {
 }
 
 func (a *cstAnalyzer) checkConcreteImport(spec *cst.ImportSpec) {
-	path, _ := strconv.Unquote(spec.ImportPath.Src())
+	path, err := strconv.Unquote(spec.ImportPath.Src())
+	if err != nil {
+		return
+	}
 	a.importPaths[path] = true
 	if a.importSeen[path] {
 		if a.enabled["duplicated-imports"] {
@@ -122,7 +125,7 @@ func concreteImportHasComment(tree *cst.Tree, spec *cst.ImportSpec) bool {
 		if comment.Line == endPosition.Line || (comment.End <= start && strings.Count(
 			string(source[comment.End:start]),
 			"\n",
-		) <= 1 && comment.Line+1 >= startPosition.Line) {
+		) <= 1 && comment.Line + 1 >= startPosition.Line) {
 			return true
 		}
 	}
@@ -141,7 +144,7 @@ func (a *cstAnalyzer) checkLinesAndComments() {
 				a.reportRange(
 					"bidirectional-control-character",
 					offset,
-					offset+width,
+					offset + width,
 					fmt.Sprintf(
 						"source contains invisible bidirectional control character U+%04X",
 						character,
@@ -159,7 +162,7 @@ func (a *cstAnalyzer) checkLinesAndComments() {
 				a.reportRange(
 					"line-length-limit",
 					offset,
-					offset+len(line),
+					offset + len(line),
 					fmt.Sprintf("line has %d runes; maximum is 80", count),
 				)
 			}
@@ -218,7 +221,7 @@ func (a *cstAnalyzer) checkPackageComment(comments []cst.Comment) {
 		}
 		text := strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(comment.Text, "//"), "/*"))
 		text = strings.TrimSpace(strings.TrimSuffix(text, "*/"))
-		if strings.HasPrefix(text, "Package "+nameToken.Src()) || strings.HasPrefix(
+		if strings.HasPrefix(text, "Package " + nameToken.Src()) || strings.HasPrefix(
 			strings.TrimPrefix(text, "Package "),
 			nameToken.Src(),
 		) {

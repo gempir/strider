@@ -118,7 +118,11 @@ func chdir(t *testing.T, directory string) {
 	if err := os.Chdir(directory); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() {
-		_ = os.Chdir(previous)
-	})
+	t.Cleanup(
+		func() {
+			if err := os.Chdir(previous); err != nil {
+				t.Errorf("restore working directory: %v", err)
+			}
+		},
+	)
 }

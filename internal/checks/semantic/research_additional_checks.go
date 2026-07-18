@@ -12,15 +12,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type discardedErrorResultRule struct{}
+type discardedErrorResultRule struct {}
 
 func (discardedErrorResultRule) Meta() Meta {
 	return Meta{
-		Code:            "discarded-error-result",
-		Summary:         "detect discarded error results from typed calls",
-		Explanation:     "Ignoring an error result hides a failed operation from callers and can let execution continue with incomplete state. Handle, return, or deliberately annotate the error instead of assigning it to the blank identifier.",
-		GoodExample:     "value, err := load(); if err != nil { return err }",
-		BadExample:      "value, _ := load()",
+		Code: "discarded-error-result",
+		Summary: "detect discarded error results from typed calls",
+		Explanation: "Ignoring an error result hides a failed operation from callers and can let execution continue with incomplete state. Handle or return actionable errors; conventional fmt output calls and writers whose contracts cannot return errors are excluded.",
+		GoodExample: "value, err := load(); if err != nil { return err }",
+		BadExample: "value, _ := load()",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -33,7 +33,7 @@ func (discardedErrorResultRule) Run(pass *Pass) {
 				switch node := node.(type) {
 				case *ast.ExprStmt:
 					call,
-						ok := ast.Unparen(node.X).(*ast.CallExpr)
+					ok := ast.Unparen(node.X).(*ast.CallExpr)
 					if !ok || len(discardedErrorResultIndexes(pass, call)) == 0 {
 						return true
 					}
@@ -42,7 +42,8 @@ func (discardedErrorResultRule) Run(pass *Pass) {
 					reportBlankErrorResults(pass, node.Lhs, node.Rhs)
 				case *ast.ValueSpec:
 					left := make([]ast.Expr, len(node.Names))
-					for index, name := range node.Names {
+					for index,
+					name := range node.Names {
 						left[index] = name
 					}
 					reportBlankErrorResults(pass, left, node.Values)
@@ -86,6 +87,9 @@ func reportBlankErrorResults(pass *Pass, left, right []ast.Expr) {
 }
 
 func discardedErrorResultIndexes(pass *Pass, call *ast.CallExpr) []int {
+	if discardedErrorResultIsInfallible(pass, call) {
+		return nil
+	}
 	signature := callSignature(pass, call)
 	if signature == nil {
 		return nil
@@ -97,6 +101,39 @@ func discardedErrorResultIndexes(pass *Pass, call *ast.CallExpr) []int {
 		}
 	}
 	return indexes
+}
+
+func discardedErrorResultIsInfallible(pass *Pass, call *ast.CallExpr) bool {
+	if isPackageFunction(pass.TypesInfo, call.Fun, "fmt", "Fprint") || isPackageFunction(
+		pass.TypesInfo,
+		call.Fun,
+		"fmt",
+		"Fprintf",
+	) || isPackageFunction(pass.TypesInfo, call.Fun, "fmt", "Fprintln") {
+		return true
+	}
+	if isPackageFunction(pass.TypesInfo, call.Fun, "io", "WriteString") {
+		return len(call.Args) != 0 && infallibleWriterType(pass.TypesInfo.TypeOf(call.Args[0]))
+	}
+	selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
+	return ok && infallibleWriterType(pass.TypesInfo.TypeOf(selector.X))
+}
+
+func infallibleWriterType(valueType types.Type) bool {
+	if valueType == nil {
+		return false
+	}
+	valueType = types.Unalias(valueType)
+	if pointer, ok := valueType.(*types.Pointer); ok {
+		valueType = types.Unalias(pointer.Elem())
+	}
+	named, ok := valueType.(*types.Named)
+	if !ok || named.Obj() == nil || named.Obj().Pkg() == nil {
+		return false
+	}
+	packagePath := named.Obj().Pkg().Path()
+	name := named.Obj().Name()
+	return packagePath == "bytes" && name == "Buffer" || packagePath == "strings" && name == "Builder" || packagePath == "hash" && (name == "Hash" || name == "Hash32" || name == "Hash64")
 }
 
 func discardedResultIsError(valueType types.Type) bool {
@@ -136,15 +173,15 @@ func reportDiscardedErrorResult(pass *Pass, call *ast.CallExpr) {
 	pass.Report(call, fmt.Sprintf("error result returned by %s is discarded", name))
 }
 
-type inlineErrorDeclarationRule struct{}
+type inlineErrorDeclarationRule struct {}
 
 func (inlineErrorDeclarationRule) Meta() Meta {
 	return Meta{
-		Code:            "inline-error-declaration",
-		Summary:         "detect error variables declared in if and switch initializers",
-		Explanation:     "Declaring an error in a control-statement initializer limits its scope and can encourage dense error handling. Declare the error immediately before the control statement when a longer-lived, easier-to-debug value is preferable.",
-		GoodExample:     "value, err := load(); if err != nil { return err }",
-		BadExample:      "if value, err := load(); err != nil { return err }",
+		Code: "inline-error-declaration",
+		Summary: "detect error variables declared in if and switch initializers",
+		Explanation: "Declaring an error in a control-statement initializer limits its scope and can encourage dense error handling. Declare the error immediately before the control statement when a longer-lived, easier-to-debug value is preferable.",
+		GoodExample: "value, err := load(); if err != nil { return err }",
+		BadExample: "if value, err := load(); err != nil { return err }",
 		DefaultSeverity: diagnostic.SeverityNote,
 	}
 }
@@ -166,18 +203,19 @@ func (inlineErrorDeclarationRule) Run(pass *Pass) {
 					return true
 				}
 				assignment,
-					ok := initializer.(*ast.AssignStmt)
+				ok := initializer.(*ast.AssignStmt)
 				if !ok || assignment.Tok != token.DEFINE {
 					return true
 				}
-				for _, expression := range assignment.Lhs {
+				for _,
+				expression := range assignment.Lhs {
 					identifier,
-						ok := ast.Unparen(expression).(*ast.Ident)
+					ok := ast.Unparen(expression).(*ast.Ident)
 					if !ok || identifier.Name == "_" {
 						continue
 					}
 					variable,
-						_ := pass.TypesInfo.Defs[identifier].(*types.Var)
+					_ := pass.TypesInfo.Defs[identifier].(*types.Var)
 					if variable != nil && builtinErrorType(variable.Type()) {
 						pass.Report(
 							identifier,
@@ -199,15 +237,15 @@ func builtinErrorType(valueType types.Type) bool {
 	return types.Identical(types.Unalias(valueType), types.Universe.Lookup("error").Type())
 }
 
-type testParallelismRule struct{}
+type testParallelismRule struct {}
 
 func (testParallelismRule) Meta() Meta {
 	return Meta{
-		Code:            "test-parallelism",
-		Summary:         "identify tests and direct subtests that can opt into parallel execution",
-		Explanation:     "Independent tests can call t.Parallel to reduce suite latency. This advisory check skips tests that already opt in or visibly mutate process-global state, including environment and working-directory changes.",
-		GoodExample:     "func TestLoad(t *testing.T) { t.Parallel(); checkLoad(t) }",
-		BadExample:      "func TestLoad(t *testing.T) { checkLoad(t) }",
+		Code: "test-parallelism",
+		Summary: "identify tests and direct subtests that can opt into parallel execution",
+		Explanation: "Independent tests can call t.Parallel to reduce suite latency. This advisory check skips tests that already opt in or visibly mutate process-global state, including environment and working-directory changes.",
+		GoodExample: "func TestLoad(t *testing.T) { t.Parallel(); checkLoad(t) }",
+		BadExample: "func TestLoad(t *testing.T) { checkLoad(t) }",
 		DefaultSeverity: diagnostic.SeverityNote,
 	}
 }
@@ -237,12 +275,12 @@ func (testParallelismRule) Run(pass *Pass) {
 			file,
 			func(node ast.Node) bool {
 				call,
-					ok := node.(*ast.CallExpr)
+				ok := node.(*ast.CallExpr)
 				if !ok || !isTestingMethod(pass, call.Fun, "Run") || len(call.Args) != 2 {
 					return true
 				}
 				literal,
-					ok := ast.Unparen(call.Args[1]).(*ast.FuncLit)
+				ok := ast.Unparen(call.Args[1]).(*ast.FuncLit)
 				if !ok {
 					return true
 				}
@@ -301,17 +339,17 @@ func hasTestingParallelCall(pass *Pass, body *ast.BlockStmt, parameter *types.Va
 		body,
 		func(node ast.Node) bool {
 			call,
-				ok := node.(*ast.CallExpr)
+			ok := node.(*ast.CallExpr)
 			if !ok || !isTestingMethod(pass, call.Fun, "Parallel") {
 				return true
 			}
 			selector,
-				ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
+			ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
 			if !ok {
 				return true
 			}
 			identifier,
-				ok := ast.Unparen(selector.X).(*ast.Ident)
+			ok := ast.Unparen(selector.X).(*ast.Ident)
 			if ok && pass.TypesInfo.ObjectOf(identifier) == parameter {
 				found = true
 			}
@@ -330,7 +368,7 @@ func inspectParallelTestBody(body *ast.BlockStmt, visit func(ast.Node) bool) {
 				return true
 			}
 			if _,
-				nested := node.(*ast.FuncLit); nested && !first {
+			nested := node.(*ast.FuncLit); nested && !first {
 				return false
 			}
 			first = false
@@ -357,7 +395,8 @@ func hasUnsafeParallelTestState(pass *Pass, body *ast.BlockStmt) bool {
 					unsafe = true
 				}
 			case *ast.AssignStmt:
-				for _, left := range node.Lhs {
+				for _,
+				left := range node.Lhs {
 					if expressionMutatesPackageVariable(pass, left) {
 						unsafe = true
 						break
@@ -422,15 +461,15 @@ func rootExpressionObject(pass *Pass, expression ast.Expr) types.Object {
 	}
 }
 
-type declarationOrderRule struct{}
+type declarationOrderRule struct {}
 
 func (declarationOrderRule) Meta() Meta {
 	return Meta{
-		Code:            "declaration-order",
-		Summary:         "keep top-level declarations in type, const, var, and func order",
-		Explanation:     "A consistent top-level declaration order makes files easier to scan. Group types first, then constants, variables, and functions; imports are ignored and init remains in the function group.",
-		GoodExample:     "type Client struct{}; const timeout = 1; var defaultClient Client; func New() Client { return Client{} }",
-		BadExample:      "var defaultClient Client; type Client struct{}",
+		Code: "declaration-order",
+		Summary: "keep top-level declarations in type, const, var, and func order",
+		Explanation: "A consistent top-level declaration order makes files easier to scan. Group types first, then constants, variables, and functions; imports are ignored and init remains in the function group.",
+		GoodExample: "type Client struct{}; const timeout = 1; var defaultClient Client; func New() Client { return Client{} }",
+		BadExample: "var defaultClient Client; type Client struct{}",
 		DefaultSeverity: diagnostic.SeverityNote,
 	}
 }

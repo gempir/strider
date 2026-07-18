@@ -30,6 +30,13 @@ func stripTerminalStyles(output string) string {
 	return output
 }
 
+func restoreWorkingDirectory(t *testing.T, directory string) {
+	t.Helper()
+	if err := os.Chdir(directory); err != nil {
+		t.Errorf("restore working directory: %v", err)
+	}
+}
+
 func TestVersion(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	if code := Run([]string{"version"}, strings.NewReader(""), &stdout, &stderr); code != exitSuccess {
@@ -167,7 +174,7 @@ func TestFormatWithoutPathsScansCurrentDirectory(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		_ = os.Chdir(previous)
+		restoreWorkingDirectory(t, previous)
 	})
 	var stdout, stderr bytes.Buffer
 	if code := Run([]string{"fmt", "--check"}, strings.NewReader("ignored stdin"), &stdout, &stderr); code != exitFindings {
@@ -320,7 +327,7 @@ func TestCheckCombinesFormattingSyntaxAndPackageChecks(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		_ = os.Chdir(previous)
+		restoreWorkingDirectory(t, previous)
 	})
 
 	var stdout, stderr bytes.Buffer
@@ -1069,7 +1076,7 @@ func TestLintWithoutPathsScansCurrentDirectory(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		_ = os.Chdir(previous)
+		restoreWorkingDirectory(t, previous)
 	})
 	var stdout, stderr bytes.Buffer
 	code := Run(
@@ -1141,7 +1148,7 @@ func TestAnalyzeInvalidRegexpJSONAndExitCode(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		_ = os.Chdir(previous)
+		restoreWorkingDirectory(t, previous)
 	})
 
 	var stdout, stderr bytes.Buffer
@@ -1205,7 +1212,7 @@ enabled = false
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		_ = os.Chdir(previous)
+		restoreWorkingDirectory(t, previous)
 	})
 
 	var stdout, stderr bytes.Buffer
@@ -1259,7 +1266,7 @@ func TestLintBaselineGenerateApplyIgnoreAndPrune(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		_ = os.Chdir(previous)
+		restoreWorkingDirectory(t, previous)
 	})
 
 	run := func(extra... string) (int, string, string) {
@@ -1397,7 +1404,7 @@ func TestConfiguredAnalyzerBaseline(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		_ = os.Chdir(previous)
+		restoreWorkingDirectory(t, previous)
 	})
 	var stdout, stderr bytes.Buffer
 	code := Run(

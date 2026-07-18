@@ -9,20 +9,20 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type possibleNilDereferenceRule struct{}
+type possibleNilDereferenceRule struct {}
 
 type nilCheck struct {
-	value      ssa.Value
+	value ssa.Value
 	nonNilPath *ssa.BasicBlock
 }
 
 func (possibleNilDereferenceRule) Meta() Meta {
 	return Meta{
-		Code:            "possible-nil-dereference",
-		Summary:         "detect pointer dereferences not protected by their nil checks",
-		Explanation:     "Checking a pointer against nil is evidence that nil is a possible value. A dereference that is not dominated by the check's non-nil path may panic, commonly because it occurs before the check or because the nil branch reports an error but continues.",
-		GoodExample:     "if value == nil { return }; use(*value)",
-		BadExample:      "if value == nil { logError() }; use(*value)",
+		Code: "possible-nil-dereference",
+		Summary: "detect pointer dereferences not protected by their nil checks",
+		Explanation: "Checking a pointer against nil is evidence that nil is a possible value. A dereference that is not dominated by the check's non-nil path may panic, commonly because it occurs before the check or because the nil branch reports an error but continues.",
+		GoodExample: "if value == nil { return }; use(*value)",
+		BadExample: "if value == nil { logError() }; use(*value)",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -69,12 +69,12 @@ func (possibleNilDereferenceRule) Run(pass *Pass) {
 }
 
 func collectNilChecks(function *ssa.Function) []nilCheck {
-	checks := make([]nilCheck, 0)
+	checks := make([]nilCheck, 0, len(function.Blocks))
 	for _, block := range function.Blocks {
 		if len(block.Instrs) == 0 || len(block.Succs) < 2 {
 			continue
 		}
-		branch, ok := block.Instrs[len(block.Instrs)-1].(*ssa.If)
+		branch, ok := block.Instrs[len(block.Instrs) - 1].(*ssa.If)
 		if !ok {
 			continue
 		}

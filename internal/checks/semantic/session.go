@@ -21,8 +21,8 @@ import (
 
 const (
 	defaultSessionEntries = 8
-	defaultSessionBytes   = 16 << 20
-	fingerprintVersion    = "strider-analyze-session-v1"
+	defaultSessionBytes = 16 << 20
+	fingerprintVersion = "strider-analyze-session-v1"
 	maxGenerationAttempts = 3
 )
 
@@ -60,7 +60,7 @@ var resolvedGoEnvironment = []string{
 // owned by the cache. Non-positive values select conservative defaults.
 type SessionOptions struct {
 	MaxEntries int
-	MaxBytes   int64
+	MaxBytes int64
 }
 
 // SessionStats is a point-in-time view of whole-target result reuse.
@@ -68,11 +68,11 @@ type SessionOptions struct {
 // even if its diagnostic payload is too large to retain in the result cache.
 type SessionStats struct {
 	Generation uint64
-	Hits       uint64
-	Misses     uint64
-	Evictions  uint64
-	Entries    int
-	Bytes      int64
+	Hits uint64
+	Misses uint64
+	Evictions uint64
+	Entries int
+	Bytes int64
 }
 
 // Session safely reuses completed analysis results only when a fresh metadata
@@ -81,30 +81,30 @@ type SessionStats struct {
 // has one logical sequence of package generations and this also coalesces
 // concurrent requests for an identical generation.
 type Session struct {
-	runMu            sync.Mutex
-	mu               sync.Mutex
-	maxEntries       int
-	maxBytes         int64
-	clock            uint64
-	entries          map[analysisCacheKey]*analysisCacheEntry
-	bytes            int64
-	hits             uint64
-	misses           uint64
-	evictions        uint64
-	generation       uint64
-	stableKey        analysisCacheKey
-	hasStableKey     bool
-	fingerprint      sessionFingerprintFunc
+	runMu sync.Mutex
+	mu sync.Mutex
+	maxEntries int
+	maxBytes int64
+	clock uint64
+	entries map[analysisCacheKey]*analysisCacheEntry
+	bytes int64
+	hits uint64
+	misses uint64
+	evictions uint64
+	generation uint64
+	stableKey analysisCacheKey
+	hasStableKey bool
+	fingerprint sessionFingerprintFunc
 	resetFingerprint func()
-	runner           sessionRunFunc
+	runner sessionRunFunc
 }
 
 type analysisCacheKey [sha256.Size]byte
 
 type analysisCacheEntry struct {
 	diagnostics []diagnostic.Diagnostic
-	bytes       int64
-	lastUsed    uint64
+	bytes int64
+	lastUsed uint64
 }
 
 type sessionFingerprintFunc func([]string, *Registry) (analysisCacheKey, error)
@@ -129,11 +129,11 @@ func newSession(options SessionOptions, fingerprint sessionFingerprintFunc, runn
 		maxBytes = defaultSessionBytes
 	}
 	return &Session{
-		maxEntries:  maxEntries,
-		maxBytes:    maxBytes,
-		entries:     make(map[analysisCacheKey]*analysisCacheEntry),
+		maxEntries: maxEntries,
+		maxBytes: maxBytes,
+		entries: make(map[analysisCacheKey]*analysisCacheEntry),
 		fingerprint: fingerprint,
-		runner:      runner,
+		runner: runner,
 	}
 }
 
@@ -196,8 +196,8 @@ func (session *Session) Run(paths []string, registry *Registry) ([]diagnostic.Di
 			session.clock++
 			session.entries[key] = &analysisCacheEntry{
 				diagnostics: owned,
-				bytes:       weight,
-				lastUsed:    session.clock,
+				bytes: weight,
+				lastUsed: session.clock,
 			}
 			session.bytes += weight
 			session.evictLocked()
@@ -220,11 +220,11 @@ func (session *Session) Stats() SessionStats {
 	defer session.mu.Unlock()
 	return SessionStats{
 		Generation: session.generation,
-		Hits:       session.hits,
-		Misses:     session.misses,
-		Evictions:  session.evictions,
-		Entries:    len(session.entries),
-		Bytes:      session.bytes,
+		Hits: session.hits,
+		Misses: session.misses,
+		Evictions: session.evictions,
+		Entries: len(session.entries),
+		Bytes: session.bytes,
 	}
 }
 
@@ -353,7 +353,7 @@ func analysisEnvironment(cwd string) ([]string, []byte, error) {
 
 func addRegistryFingerprint(writer *fingerprintWriter, registry *Registry) {
 	type ruleFingerprint struct {
-		code     string
+		code string
 		severity string
 		excludes []string
 	}
@@ -410,8 +410,8 @@ func addPackageGraphFingerprint(writer *fingerprintWriter, roots []*packages.Pac
 		all,
 		func(leftIndex, rightIndex int) bool {
 			left,
-				right := all[leftIndex],
-				all[rightIndex]
+			right := all[leftIndex],
+			all[rightIndex]
 			if left.ID != right.ID {
 				return left.ID < right.ID
 			}
@@ -505,7 +505,7 @@ func addGoConfigurationFiles(writer *fingerprintWriter, resolved []byte) error {
 		return fmt.Errorf("decode Go build environment: %w", err)
 	}
 	files := make(map[string]bool)
-	for _, variable := range []string{"GOENV", "GOMOD", "GOWORK"} {
+	for _, variable := range[]string{"GOENV", "GOMOD", "GOWORK"} {
 		value := values[variable]
 		if value != "" && value != "off" && value != os.DevNull {
 			files[value] = true
@@ -573,15 +573,19 @@ func (writer *fingerprintWriter) addFile(filename string) error {
 func (writer *fingerprintWriter) addOptionalFile(filename string) error {
 	contents, err := os.ReadFile(filename)
 	if err != nil {
-		if os.IsNotExist(err) {
-			writer.addString(filename)
-			writer.addString("missing")
-			return nil
-		}
-		return fmt.Errorf("fingerprint %s: %w", filename, err)
+		return writer.addOptionalFileError(filename, err)
 	}
 	writer.addString(filename)
 	writer.addBytes(contents)
+	return nil
+}
+
+func (writer *fingerprintWriter) addOptionalFileError(filename string, readErr error) error {
+	if !os.IsNotExist(readErr) {
+		return fmt.Errorf("fingerprint %s: %w", filename, readErr)
+	}
+	writer.addString(filename)
+	writer.addString("missing")
 	return nil
 }
 
@@ -619,7 +623,7 @@ func diagnosticPayloadBytes(diagnostics []diagnostic.Diagnostic) int64 {
 			total += int64(len(note.Message) + len(note.Start.Filename) + len(note.End.Filename))
 		}
 		for _, fix := range item.Fixes {
-			total += 64 + int64(len(fix.Message)+len(fix.Safety))
+			total += 64 + int64(len(fix.Message) + len(fix.Safety))
 			for _, edit := range fix.Edits {
 				total += 32 + int64(len(edit.NewText))
 			}

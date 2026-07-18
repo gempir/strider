@@ -52,7 +52,7 @@ func closeThing() {}
 	for _, item := range diagnostics {
 		codes = append(codes, item.Code)
 	}
-	for _, wanted := range []string{
+	for _, wanted := range[]string{
 		"cyclomatic-complexity",
 		"max-parameters",
 		"no-defer-in-loop",
@@ -132,7 +132,10 @@ func loop() {
 func closeThing() {}
 `
 	filename := writeFixture(t, source)
-	registry, _ := NewRegistry(nil)
+	registry, err := NewRegistry(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	diagnostics, err := Run([]string{filename}, registry)
 	if err != nil {
 		t.Fatal(err)
@@ -322,10 +325,10 @@ func TestStructTagReportsDuplicateKeysAndInvalidOptions(t *testing.T) {
 		t,
 		`package sample
 type tagged struct {
-	A string `+"`json:\"a\" json:\"b\"`"+`
-	B string `+"`xml:\"b,attr,attr\"`"+`
-	C string `+"`xml:\"c,mystery\"`"+`
-	D string `+"`json:\"d,omitEmpty\"`"+`
+	A string ` + "`json:\"a\" json:\"b\"`" + `
+	B string ` + "`xml:\"b,attr,attr\"`" + `
+	C string ` + "`xml:\"c,mystery\"`" + `
+	D string ` + "`json:\"d,omitEmpty\"`" + `
 }
 `,
 	)
@@ -609,14 +612,14 @@ func helper() {
 		counts[item.Code]++
 	}
 	wanted := map[string]int{
-		"call-to-gc":         1,
-		"deep-exit":          1,
-		"error-strings":      2,
-		"errorf":             1,
+		"call-to-gc": 1,
+		"deep-exit": 1,
+		"error-strings": 2,
+		"errorf": 1,
 		"unnecessary-format": 1,
-		"use-errors-new":     1,
-		"use-fmt-print":      1,
-		"use-slices-sort":    1,
+		"use-errors-new": 1,
+		"use-fmt-print": 1,
+		"use-slices-sort": 1,
 	}
 	for code, count := range wanted {
 		if counts[code] != count {
@@ -664,7 +667,7 @@ import (
 	for _, item := range diagnostics {
 		counts[item.Code]++
 	}
-	for _, code := range []string{
+	for _, code := range[]string{
 		"blank-imports",
 		"dot-imports",
 		"duplicated-imports",
@@ -719,7 +722,7 @@ func TestCatalogIsCompleteDocumentedAndRunnable(t *testing.T) {
 		) {
 			t.Errorf("rule %s still has placeholder examples", meta.Code)
 		}
-		if _, err := os.Stat(filepath.Join(docsDirectory, meta.Code+".md")); err != nil {
+		if _, err := os.Stat(filepath.Join(docsDirectory, meta.Code + ".md")); err != nil {
 			t.Errorf("rule %s has no documentation: %v", meta.Code, err)
 		}
 		registry, err := NewRegistry([]string{meta.Code})
@@ -768,13 +771,13 @@ func TestEveryLintRuleAcceptsCommonConfiguration(t *testing.T) {
 func TestLintRegistryFiltersByEffectiveSeverityBeforeExecution(t *testing.T) {
 	for name, options := range map[string]RegistryOptions{
 		"only": {
-			Only:            []string{"no-init"},
-			Settings:        map[string]config.RuleConfig{"no-init": {Severity: "warning"}},
+			Only: []string{"no-init"},
+			Settings: map[string]config.RuleConfig{"no-init": {Severity: "warning"}},
 			MinimumSeverity: diagnostic.SeverityError,
 		},
 		"all": {
-			EnableAll:       true,
-			Settings:        map[string]config.RuleConfig{"no-init": {Severity: "warning"}},
+			EnableAll: true,
+			Settings: map[string]config.RuleConfig{"no-init": {Severity: "warning"}},
 			MinimumSeverity: diagnostic.SeverityError,
 		},
 	} {
@@ -782,18 +785,19 @@ func TestLintRegistryFiltersByEffectiveSeverityBeforeExecution(t *testing.T) {
 			name,
 			func(t *testing.T) {
 				registry,
-					err := NewRegistryWithOptions(options)
+				err := NewRegistryWithOptions(options)
 				if err != nil {
 					t.Fatal(err)
 				}
-				for _, rule := range registry.Rules() {
+				for _,
+				rule := range registry.Rules() {
 					if rule.Meta().Code == "no-init" {
 						t.Fatal("selection bypassed the minimum severity")
 					}
 				}
 				if name == "only" {
 					diagnostics,
-						runErr := Run([]string{filepath.Join(t.TempDir(), "missing.go")}, registry)
+					runErr := Run([]string{filepath.Join(t.TempDir(), "missing.go")}, registry)
 					if runErr != nil {
 						t.Fatalf("empty registry attempted CST execution: %v", runErr)
 					}
@@ -807,8 +811,8 @@ func TestLintRegistryFiltersByEffectiveSeverityBeforeExecution(t *testing.T) {
 
 	registry, err := NewRegistryWithOptions(
 		RegistryOptions{
-			Only:            []string{"no-init"},
-			Settings:        map[string]config.RuleConfig{"no-init": {Severity: "error"}},
+			Only: []string{"no-init"},
+			Settings: map[string]config.RuleConfig{"no-init": {Severity: "error"}},
 			MinimumSeverity: diagnostic.SeverityError,
 		},
 	)
@@ -907,7 +911,7 @@ func Assert(v interface{}) { _ = v.(string) }
 	for _, item := range diagnostics {
 		codes[item.Code] = true
 	}
-	for _, code := range []string{
+	for _, code := range[]string{
 		"argument-limit",
 		"bare-return",
 		"bool-literal-in-expr",
@@ -978,7 +982,7 @@ func (current item) mutate(value int, group sync.WaitGroup, closer interface{ Cl
 	for _, item := range diagnostics {
 		codes[item.Code] = true
 	}
-	for _, code := range []string{
+	for _, code := range[]string{
 		"atomic",
 		"epoch-naming",
 		"forbidden-call-in-wg-go",
@@ -1043,7 +1047,10 @@ func BenchmarkLint(b *testing.B) {
 	); err != nil {
 		b.Fatal(err)
 	}
-	registry, _ := NewRegistry(nil)
+	registry, err := NewRegistry(nil)
+	if err != nil {
+		b.Fatal(err)
+	}
 	b.ReportAllocs()
 	for range b.N {
 		if _, err := Run([]string{filename}, registry); err != nil {
@@ -1079,18 +1086,18 @@ func TestAnalyzeTreeMatchesFileRun(t *testing.T) {
 func TestSortDiagnosticsUsesEndOffsetAsTieBreaker(t *testing.T) {
 	diagnostics := []diagnostic.Diagnostic{
 		{
-			File:    "main.go",
-			Code:    "example",
+			File: "main.go",
+			Code: "example",
 			Message: "same",
-			Start:   token.Position{Offset: 10},
-			End:     token.Position{Offset: 30},
+			Start: token.Position{Offset: 10},
+			End: token.Position{Offset: 30},
 		},
 		{
-			File:    "main.go",
-			Code:    "example",
+			File: "main.go",
+			Code: "example",
 			Message: "same",
-			Start:   token.Position{Offset: 10},
-			End:     token.Position{Offset: 20},
+			Start: token.Position{Offset: 10},
+			End: token.Position{Offset: 20},
 		},
 	}
 	sortDiagnostics(diagnostics)

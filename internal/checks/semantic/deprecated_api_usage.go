@@ -17,15 +17,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type deprecatedAPIUsageRule struct{}
+type deprecatedAPIUsageRule struct {}
 
 func (deprecatedAPIUsageRule) Meta() Meta {
 	return Meta{
-		Code:            "deprecated-api-usage",
-		Summary:         "detect uses of deprecated packages and APIs",
-		Explanation:     "Go documentation marks packages, functions, methods, fields, variables, constants, and types with Deprecated paragraphs. Uses from other packages should migrate to the documented replacement.",
-		GoodExample:     "value, err := io.ReadAll(reader)",
-		BadExample:      "value, err := ioutil.ReadAll(reader)",
+		Code: "deprecated-api-usage",
+		Summary: "detect uses of deprecated packages and APIs",
+		Explanation: "Go documentation marks packages, functions, methods, fields, variables, constants, and types with Deprecated paragraphs. Uses from other packages should migrate to the documented replacement.",
+		GoodExample: "value, err := io.ReadAll(reader)",
+		BadExample: "value, err := ioutil.ReadAll(reader)",
 		DefaultSeverity: diagnostic.SeverityNote,
 	}
 }
@@ -37,7 +37,7 @@ func (deprecatedAPIUsageRule) Run(pass *Pass) {
 			file,
 			func(node ast.Node) bool {
 				selector,
-					ok := node.(*ast.SelectorExpr)
+				ok := node.(*ast.SelectorExpr)
 				if !ok {
 					return true
 				}
@@ -144,26 +144,26 @@ func languageGoVersion(value string) string {
 }
 
 type deprecationSourceKey struct {
-	line  int
-	name  string
+	line int
+	name string
 	owner string
 }
 
 type parsedDeprecationFile struct {
-	declarations   map[deprecationSourceKey]string
+	declarations map[deprecationSourceKey]string
 	packageMessage string
 }
 
 type deprecationIndex struct {
-	objects                map[types.Object]string
-	packages               map[*types.Package]string
-	seenObjects            map[types.Object]bool
-	declarationFiles       map[string]parsedDeprecationFile
-	packageClauseFiles     map[string]string
+	objects map[types.Object]string
+	packages map[*types.Package]string
+	seenObjects map[types.Object]bool
+	declarationFiles map[string]parsedDeprecationFile
+	packageClauseFiles map[string]string
 	packageClauseFilesSeen map[string]bool
-	packageDirectories     map[string]string
+	packageDirectories map[string]string
 	packageDirectoriesSeen map[string]bool
-	physicalFiles          map[*types.Package][]string
+	physicalFiles map[*types.Package][]string
 }
 
 func collectDeprecations(roots []*packages.Package) (
@@ -171,15 +171,15 @@ func collectDeprecations(roots []*packages.Package) (
 	map[*types.Package]string,
 ) {
 	index := deprecationIndex{
-		objects:                make(map[types.Object]string),
-		packages:               make(map[*types.Package]string),
-		seenObjects:            make(map[types.Object]bool),
-		declarationFiles:       make(map[string]parsedDeprecationFile),
-		packageClauseFiles:     make(map[string]string),
+		objects: make(map[types.Object]string),
+		packages: make(map[*types.Package]string),
+		seenObjects: make(map[types.Object]bool),
+		declarationFiles: make(map[string]parsedDeprecationFile),
+		packageClauseFiles: make(map[string]string),
 		packageClauseFilesSeen: make(map[string]bool),
-		packageDirectories:     make(map[string]string),
+		packageDirectories: make(map[string]string),
 		packageDirectoriesSeen: make(map[string]bool),
-		physicalFiles:          make(map[*types.Package][]string),
+		physicalFiles: make(map[*types.Package][]string),
 	}
 	packages.Visit(
 		roots,
@@ -192,7 +192,8 @@ func collectDeprecations(roots []*packages.Package) (
 			if len(files) == 0 {
 				files = pkg.GoFiles
 			}
-			for _, filename := range files {
+			for _,
+			filename := range files {
 				index.physicalFiles[pkg.Types] = append(
 					index.physicalFiles[pkg.Types],
 					expandGoRoot(filename),
@@ -297,7 +298,7 @@ func deprecationObjectOwners(object types.Object) []string {
 		signature, _ := object.Type().(*types.Signature)
 		if signature != nil && signature.Recv() != nil {
 			if name := deprecationReceiverTypeName(signature.Recv().Type()); name != "" {
-				return []string{name}
+				return[]string{name}
 			}
 			return nil
 		}
@@ -309,7 +310,7 @@ func deprecationObjectOwners(object types.Object) []string {
 			return objectTypeOwners(object)
 		}
 	}
-	return []string{""}
+	return[]string{""}
 }
 
 func deprecationReceiverTypeName(value types.Type) string {
@@ -369,12 +370,16 @@ func (index *deprecationIndex) declarationFile(filename string) parsedDeprecatio
 	}
 	parsed := parsedDeprecationFile{declarations: make(map[deprecationSourceKey]string)}
 	fileSet := token.NewFileSet()
-	file, _ := parser.ParseFile(
+	file, err := parser.ParseFile(
 		fileSet,
 		filename,
 		nil,
-		parser.ParseComments|parser.SkipObjectResolution,
+		parser.ParseComments | parser.SkipObjectResolution,
 	)
+	if err != nil {
+		index.declarationFiles[filename] = parsed
+		return parsed
+	}
 	if file != nil {
 		parsed.packageMessage = deprecationMessage(file.Doc)
 		collectFileDeprecations(fileSet, file, parsed.declarations)
@@ -449,8 +454,8 @@ func addDeprecatedDeclaration(
 ) {
 	if name != nil && message != "" {
 		declarations[deprecationSourceKey{
-			line:  fileSet.Position(name.Pos()).Line,
-			name:  name.Name,
+			line: fileSet.Position(name.Pos()).Line,
+			name: name.Name,
 			owner: owner,
 		}] = message
 	}
@@ -518,14 +523,14 @@ func (index *deprecationIndex) packageClauseMessage(filename string) string {
 		return index.packageClauseFiles[filename]
 	}
 	fileSet := token.NewFileSet()
-	file, _ := parser.ParseFile(
+	file, err := parser.ParseFile(
 		fileSet,
 		filename,
 		nil,
-		parser.PackageClauseOnly|parser.ParseComments|parser.SkipObjectResolution,
+		parser.PackageClauseOnly | parser.ParseComments | parser.SkipObjectResolution,
 	)
 	message := ""
-	if file != nil {
+	if err == nil && file != nil {
 		message = deprecationMessage(file.Doc)
 	}
 	index.packageClauseFiles[filename] = message
@@ -538,7 +543,7 @@ func expandGoRoot(filename string) string {
 	if filename == marker {
 		return runtime.GOROOT()
 	}
-	if strings.HasPrefix(filename, marker+"/") || strings.HasPrefix(filename, marker+"\\") {
+	if strings.HasPrefix(filename, marker + "/") || strings.HasPrefix(filename, marker + "\\") {
 		return filepath.Join(
 			runtime.GOROOT(),
 			filepath.FromSlash(strings.TrimLeft(filename[len(marker):], "/\\")),
@@ -547,7 +552,7 @@ func expandGoRoot(filename string) string {
 	return filename
 }
 
-func firstDeprecation(groups ...*ast.CommentGroup) string {
+func firstDeprecation(groups... *ast.CommentGroup) string {
 	for _, group := range groups {
 		if message := deprecationMessage(group); message != "" {
 			return message

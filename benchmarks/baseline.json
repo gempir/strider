@@ -7,8 +7,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "904b8f91b5175f8b71a440f3af964c5e8793e122b63020e3a4ef6af56ca08995",
-          "findings": 1841,
+          "digest": "c86340232498a4d9339ab78eb786e0f628393a619741065860d5d3925f571fc2",
+          "findings": 1830,
           "by_code": {
             "add-constant": 175,
             "bare-return": 1,
@@ -22,7 +22,7 @@
             "cyclomatic-complexity": 14,
             "datarace": 21,
             "declaration-order": 15,
-            "discarded-error-result": 187,
+            "discarded-error-result": 177,
             "doc-comment-period": 22,
             "early-return": 1,
             "empty-lines": 56,
@@ -45,7 +45,6 @@
             "modifies-value-receiver": 8,
             "multiline-if-init": 1,
             "nested-structs": 41,
-            "nil-value-with-nil-error": 1,
             "no-defer-in-loop": 1,
             "no-init": 4,
             "no-naked-return": 1,
@@ -86,8 +85,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "24c98e959001c0406ff04d0e2ec144dac5cb9bb289941d6c0d269f37bfa8ae36",
-          "findings": 4145,
+          "digest": "c77f6b03f51ee7acd60da57aca877eea1fc9e4aaa5863a0cf2655b0c2b1e107c",
+          "findings": 4107,
           "by_code": {
             "add-constant": 503,
             "bare-return": 31,
@@ -100,7 +99,7 @@
             "datarace": 28,
             "declaration-order": 37,
             "deprecated-api-usage": 3,
-            "discarded-error-result": 265,
+            "discarded-error-result": 230,
             "doc-comment-period": 102,
             "empty-lines": 89,
             "epoch-naming": 4,
@@ -127,7 +126,6 @@
             "multiline-if-init": 4,
             "nested-structs": 158,
             "nil-context": 1,
-            "nil-value-with-nil-error": 3,
             "no-else-after-return": 4,
             "no-init": 14,
             "no-naked-return": 31,
@@ -167,8 +165,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "61bff3eb6f0b152ba830f566247d6c6db583be4837a178236ba4d8ebca0dcc56",
-          "findings": 1245,
+          "digest": "35df743f03904afdabaa1d5e7dbc763acf1cd4735261d3b86c949debae9e3e86",
+          "findings": 1234,
           "by_code": {
             "add-constant": 42,
             "byte-string-write": 1,
@@ -178,7 +176,7 @@
             "datarace": 8,
             "declaration-order": 17,
             "defer-close-before-error-check": 25,
-            "discarded-error-result": 130,
+            "discarded-error-result": 120,
             "doc-comment-period": 14,
             "empty-lines": 55,
             "epoch-naming": 2,
@@ -197,7 +195,7 @@
             "max-parameters": 1,
             "modifies-parameter": 40,
             "nested-structs": 46,
-            "nil-value-with-nil-error": 2,
+            "nil-value-with-nil-error": 1,
             "no-package-var": 61,
             "optimize-operands-order": 17,
             "overwritten-before-use": 1,
@@ -238,8 +236,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "e86b0a26ade844eddcbda34c3c90444a8ab146dfc28801b011243c3aa09e56b5",
-          "findings": 422,
+          "digest": "a5cd076c46ddf8b231bfa6068932873d12293ffb365e33eaeeb5979fe0ea2bf7",
+          "findings": 419,
           "by_code": {
             "add-constant": 22,
             "cognitive-complexity": 9,
@@ -247,7 +245,7 @@
             "cyclomatic-complexity": 8,
             "datarace": 6,
             "declaration-order": 2,
-            "discarded-error-result": 16,
+            "discarded-error-result": 14,
             "doc-comment-period": 4,
             "empty-lines": 24,
             "exported": 28,
@@ -261,7 +259,6 @@
             "modifies-parameter": 5,
             "nested-structs": 7,
             "nil-error-return": 1,
-            "nil-value-with-nil-error": 1,
             "no-package-var": 11,
             "optimize-operands-order": 8,
             "package-comments": 3,
@@ -296,8 +293,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "afbbbf4de3924fd7557d9f874df694a17de9587fe31c4aee706aba9cef2a8af1",
-          "findings": 362,
+          "digest": "6ee10324f7ac786466adb6c10127377f639835e615d1df248fbf3e90749b05ce",
+          "findings": 353,
           "by_code": {
             "add-constant": 8,
             "bare-return": 14,
@@ -307,7 +304,7 @@
             "cyclomatic-complexity": 1,
             "datarace": 5,
             "declaration-order": 3,
-            "discarded-error-result": 40,
+            "discarded-error-result": 31,
             "doc-comment-period": 15,
             "empty-lines": 7,
             "epoch-naming": 1,
@@ -414,8 +411,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "1267426306ff66c7b1fa8b02dd9c9bac0cf926741ffc4346574d6d9dab37df65",
-          "findings": 770,
+          "digest": "4f5a9564ba96553b5e2c0c43124395d738baac390c8dc05c9a0e53badcb822aa",
+          "findings": 769,
           "by_code": {
             "add-constant": 38,
             "append-to-sized-slice": 1,
@@ -427,7 +424,7 @@
             "datarace": 7,
             "declaration-order": 6,
             "deep-exit": 3,
-            "discarded-error-result": 231,
+            "discarded-error-result": 230,
             "doc-comment-period": 34,
             "dynamic-printf": 1,
             "empty-lines": 22,
@@ -659,8 +656,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "864a4d4104272d4aa3deda16663fc04b80fc6f315dbc8b2c45f24e8732c3fe12",
-          "findings": 55732,
+          "digest": "434e19aaf5c4352dad5048881da57beecaa2d8e35b42fd82901ec332b56c3499",
+          "findings": 55618,
           "by_code": {
             "add-constant": 3608,
             "argument-limit": 17,
@@ -680,7 +677,7 @@
             "declaration-order": 304,
             "deep-exit": 4,
             "deprecated-api-usage": 176,
-            "discarded-error-result": 352,
+            "discarded-error-result": 321,
             "doc-comment-period": 465,
             "early-return": 15,
             "empty-block": 5,
@@ -714,7 +711,7 @@
             "multiline-if-init": 58,
             "nested-structs": 935,
             "nil-error-return": 47,
-            "nil-value-with-nil-error": 112,
+            "nil-value-with-nil-error": 29,
             "no-defer-in-loop": 8,
             "no-else-after-return": 79,
             "no-init": 19,

@@ -3,6 +3,7 @@ package app
 
 import (
 	"bytes"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -770,11 +771,13 @@ type stagedFile struct {
 }
 
 func atomicWriteBatch(files []formattedFile) error {
-	staged := []stagedFile{}
-	cleanup := func() {
+	staged := make([]stagedFile, 0, len(files))
+	cleanup := func() error {
+		var cleanupErr error
 		for _, file := range staged {
-			_ = os.Remove(file.temporary)
+			cleanupErr = errors.Join(cleanupErr, os.Remove(file.temporary))
 		}
+		return cleanupErr
 	}
 	for _, file := range files {
 		if !file.result.Changed {
@@ -782,17 +785,17 @@ func atomicWriteBatch(files []formattedFile) error {
 		}
 		stagedFile, err := stageFile(file)
 		if err != nil {
-			cleanup()
-			return err
+			return errors.Join(err, cleanup())
 		}
 		staged = append(staged, stagedFile)
 	}
 	for index, file := range staged {
 		if err := os.Rename(file.temporary, file.target); err != nil {
+			var cleanupErr error
 			for _, remaining := range staged[index:] {
-				_ = os.Remove(remaining.temporary)
+				cleanupErr = errors.Join(cleanupErr, os.Remove(remaining.temporary))
 			}
-			return err
+			return errors.Join(err, cleanupErr)
 		}
 	}
 	return nil
@@ -815,8 +818,7 @@ func stageFile(file formattedFile) (stagedFile, error) {
 		err = closeErr
 	}
 	if err != nil {
-		_ = os.Remove(name)
-		return stagedFile{}, err
+		return stagedFile{}, errors.Join(err, os.Remove(name))
 	}
 	return stagedFile{temporary: name, target: file.filename}, nil
 }

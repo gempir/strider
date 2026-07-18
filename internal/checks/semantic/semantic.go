@@ -22,7 +22,7 @@ import (
 const loadMode = packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles | packages.NeedImports | packages.NeedTypes | packages.NeedTypesSizes | packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedModule
 
 type target struct {
-	path      string
+	path string
 	recursive bool
 }
 
@@ -32,21 +32,21 @@ type analysisTask struct {
 }
 
 type ssaBuildResult struct {
-	program            *ssa.Program
-	packages           []*ssa.Package
+	program *ssa.Program
+	packages []*ssa.Package
 	functionsByPackage map[*ssa.Package][]*ssa.Function
 }
 
 type ssaBuildFunc func([]*packages.Package, ssa.BuilderMode) ssaBuildResult
 
 type analysisFinding struct {
-	key        string
+	key string
 	diagnostic diagnostic.Diagnostic
 }
 
 type analysisFileInfo struct {
 	filename string
-	display  string
+	display string
 	eligible bool
 }
 
@@ -74,7 +74,7 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) (
 		return nil, err
 	}
 	if len(registry.rules) == 0 {
-		return []diagnostic.Diagnostic{}, nil
+		return[]diagnostic.Diagnostic{}, nil
 	}
 	plan := registry.executionPlan()
 	loaded, err := packages.Load(&packages.Config{Mode: loadMode, Tests: true}, patterns...)
@@ -115,18 +115,18 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) (
 			passes,
 			&Pass{
 				PackagePath: pkg.PkgPath,
-				GoVersion:   goVersion,
-				Files:       pkg.Syntax,
-				FileSet:     pkg.Fset,
-				Types:       pkg.Types,
-				TypesSizes:  pkg.TypesSizes,
-				TypesInfo:   pkg.TypesInfo,
-				SSAProgram:  ssaProgram,
-				SSAPackage:  ssaPackage,
-				Functions:   functionsByPackage[ssaPackage],
-				facts:       newPackageFacts(plan.requirements.Facts, plan.staticCallPackages),
+				GoVersion: goVersion,
+				Files: pkg.Syntax,
+				FileSet: pkg.Fset,
+				Types: pkg.Types,
+				TypesSizes: pkg.TypesSizes,
+				TypesInfo: pkg.TypesInfo,
+				SSAProgram: ssaProgram,
+				SSAPackage: ssaPackage,
+				Functions: functionsByPackage[ssaPackage],
+				facts: newPackageFacts(plan.requirements.Facts, plan.staticCallPackages),
 
-				deprecatedObjects:  deprecatedObjects,
+				deprecatedObjects: deprecatedObjects,
 				deprecatedPackages: deprecatedPackages,
 			},
 		)
@@ -142,14 +142,14 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) (
 		entry.once.Do(
 			func() {
 				canonical,
-					pathErr := canonicalPath(filename)
+				pathErr := canonicalPath(filename)
 				if pathErr == nil && matchesTarget(canonical, targets) {
 					generated,
-						_ := source.IsGenerated(canonical)
-					if !generated {
+					generatedErr := source.IsGenerated(canonical)
+					if generatedErr == nil && !generated {
 						entry.info = analysisFileInfo{
 							filename: canonical,
-							display:  source.DisplayPath(canonical),
+							display: source.DisplayPath(canonical),
 							eligible: true,
 						}
 					}
@@ -161,7 +161,7 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) (
 
 	taskCount := len(passes) * len(registry.rules)
 	jobs := make(chan analysisTask, taskCount)
-	results := make(chan []analysisFinding, taskCount)
+	results := make(chan[]analysisFinding, taskCount)
 	workers := min(runtime.GOMAXPROCS(0), max(1, taskCount))
 	var group sync.WaitGroup
 	for range workers {
@@ -183,7 +183,7 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) (
 	diagnostics := make([]diagnostic.Diagnostic, 0)
 	seenDiagnostics := make(map[string]bool)
 	for range taskCount {
-		for _, finding := range <-results {
+		for _, finding := range <- results {
 			if seenDiagnostics[finding.key] {
 				continue
 			}
@@ -199,7 +199,7 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) (
 
 func (plan executionPlan) ssaBuilderMode() ssa.BuilderMode {
 	mode := ssa.InstantiateGenerics
-	if plan.requirements.SSAFeatures&SSAFeatureGlobalDebug != 0 {
+	if plan.requirements.SSAFeatures & SSAFeatureGlobalDebug != 0 {
 		mode |= ssa.GlobalDebug
 	}
 	return mode
@@ -208,7 +208,7 @@ func (plan executionPlan) ssaBuilderMode() ssa.BuilderMode {
 func prepareSSA(initial []*packages.Package, plan executionPlan, build ssaBuildFunc) ssaBuildResult {
 	if !plan.needsSSA() {
 		return ssaBuildResult{
-			packages:           make([]*ssa.Package, len(initial)),
+			packages: make([]*ssa.Package, len(initial)),
 			functionsByPackage: make(map[*ssa.Package][]*ssa.Function),
 		}
 	}
@@ -232,8 +232,8 @@ func buildSSA(initial []*packages.Package, mode ssa.BuilderMode) ssaBuildResult 
 		}
 	}
 	return ssaBuildResult{
-		program:            program,
-		packages:           packages,
+		program: program,
+		packages: packages,
 		functionsByPackage: functionsByPackage,
 	}
 }
@@ -293,12 +293,12 @@ func runAnalysisTask(
 					message,
 				),
 				diagnostic: diagnostic.Diagnostic{
-					Code:     meta.Code,
-					Message:  message,
+					Code: meta.Code,
+					Message: message,
 					Severity: severity,
-					File:     info.display,
-					Start:    position,
-					End:      end,
+					File: info.display,
+					Start: position,
+					End: end,
 				},
 			},
 		)
@@ -339,7 +339,7 @@ func collectPackageFunctions(program *ssa.Program, ssaPackages []*ssa.Package) m
 			if !ok {
 				continue
 			}
-			for _, receiver := range []types.Type{named, types.NewPointer(named)} {
+			for _, receiver := range[]types.Type{named, types.NewPointer(named)} {
 				methodSet := types.NewMethodSet(receiver)
 				for index := range methodSet.Len() {
 					add(program.MethodValue(methodSet.At(index)))
@@ -389,7 +389,7 @@ func loadInputs(paths []string) ([]string, []target, error) {
 		if filepath.Ext(absolute) != ".go" {
 			return nil, nil, fmt.Errorf("%q is not a Go source file", input)
 		}
-		patterns = append(patterns, "file="+filepath.ToSlash(absolute))
+		patterns = append(patterns, "file=" + filepath.ToSlash(absolute))
 		targets = append(targets, target{path: absolute})
 	}
 	return patterns, targets, nil
@@ -411,7 +411,7 @@ func recursivePackagePattern(cwd, directory string) string {
 	relative, err := filepath.Rel(cwd, directory)
 	if err == nil && relative != ".." && !strings.HasPrefix(
 		relative,
-		".."+string(filepath.Separator),
+		".." + string(filepath.Separator),
 	) {
 		if relative == "." {
 			return "./..."
@@ -426,7 +426,7 @@ func matchesTarget(filename string, targets []target) bool {
 		if filename == item.path {
 			return true
 		}
-		if item.recursive && strings.HasPrefix(filename, item.path+string(filepath.Separator)) {
+		if item.recursive && strings.HasPrefix(filename, item.path + string(filepath.Separator)) {
 			return true
 		}
 	}
@@ -452,8 +452,8 @@ func sortDiagnostics(diagnostics []diagnostic.Diagnostic) {
 		diagnostics,
 		func(i, j int) bool {
 			left,
-				right := diagnostics[i],
-				diagnostics[j]
+			right := diagnostics[i],
+			diagnostics[j]
 			if left.File != right.File {
 				return left.File < right.File
 			}

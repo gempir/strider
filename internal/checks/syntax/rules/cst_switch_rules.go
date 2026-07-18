@@ -8,10 +8,10 @@ import (
 )
 
 type concreteCase struct {
-	node       cst.Node
+	node cst.Node
 	conditions []cst.Node
-	body       *cst.StatementList
-	isDefault  bool
+	body *cst.StatementList
+	isDefault bool
 }
 
 func (a *cstAnalyzer) checkConcreteSwitch(node cst.Node) {
@@ -50,18 +50,18 @@ func (a *cstAnalyzer) checkConcreteSwitch(node cst.Node) {
 				branches[body] = true
 			}
 		}
-		if index == len(cases)-1 {
+		if index == len(cases) - 1 {
 			statements := concreteStatementsFromList(clause.body)
-			if len(statements) != 0 && cst.Kind(statements[len(statements)-1]) == "FallthroughStmt" {
+			if len(statements) != 0 && cst.Kind(statements[len(statements) - 1]) == "FallthroughStmt" {
 				a.report(
 					"useless-fallthrough",
-					statements[len(statements)-1],
+					statements[len(statements) - 1],
 					"fallthrough in the final switch case has no effect",
 				)
 			}
 		}
 	}
-	if defaultIndex >= 0 && defaultIndex != len(cases)-1 {
+	if defaultIndex >= 0 && defaultIndex != len(cases) - 1 {
 		a.report(
 			"enforce-switch-style",
 			cases[defaultIndex].node,
@@ -77,7 +77,9 @@ func concreteSwitchCases(node cst.Node) []concreteCase {
 		func(child cst.Node) bool {
 			switch clause := child.(type) {
 			case *cst.ExprCaseClause:
-				item := concreteCase{node: clause, body: clause.StatementList}
+				item := concreteCase{node:
+				clause, body:
+				clause.StatementList}
 				if clause.ExprSwitchCase != nil {
 					item.isDefault = strings.HasPrefix(
 						cst.Spelling(clause.ExprSwitchCase),
@@ -99,7 +101,9 @@ func concreteSwitchCases(node cst.Node) []concreteCase {
 				result = append(result, item)
 				return false
 			case *cst.TypeCaseClause:
-				item := concreteCase{node: clause, body: clause.StatementList}
+				item := concreteCase{node:
+				clause, body:
+				clause.StatementList}
 				if clause.TypeSwitchCase != nil {
 					item.isDefault = clause.TypeSwitchCase.DEFAULT.IsValid()
 					if clause.TypeSwitchCase.TypeList != nil {
@@ -116,9 +120,9 @@ func concreteSwitchCases(node cst.Node) []concreteCase {
 		result,
 		func(i, j int) bool {
 			left,
-				_ := cst.Range(result[i].node)
+			_ := cst.Range(result[i].node)
 			right,
-				_ := cst.Range(result[j].node)
+			_ := cst.Range(result[j].node)
 			return left < right
 		},
 	)
@@ -126,8 +130,9 @@ func concreteSwitchCases(node cst.Node) []concreteCase {
 }
 
 func concreteStatementListSpelling(list *cst.StatementList) string {
-	parts := []string{}
-	for _, statement := range concreteStatementsFromList(list) {
+	statements := concreteStatementsFromList(list)
+	parts := make([]string, 0, len(statements))
+	for _, statement := range statements {
 		parts = append(parts, cst.Spelling(statement))
 	}
 	return strings.Join(parts, "\n")
@@ -135,7 +140,7 @@ func concreteStatementListSpelling(list *cst.StatementList) string {
 
 func concreteStatementsFromList(list *cst.StatementList) []cst.Node {
 	result := []cst.Node{}
-	for ; list != nil; list = list.List {
+	for; list != nil; list = list.List {
 		if list.Statement != nil {
 			result = append(result, list.Statement)
 		}

@@ -2,6 +2,7 @@
 package baseline
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -220,7 +221,7 @@ func countForVariant(count int, variant Variant) int {
 
 // Write atomically serializes a baseline. With backup enabled, an existing
 // baseline is copied to path + ".bkp" first.
-func Write(path string, baseline File, backup bool) error {
+func Write(path string, baseline File, backup bool) (err error) {
 	if backup {
 		if content, err := os.ReadFile(path); err == nil {
 			if err := os.WriteFile(path + ".bkp", content, 0o600); err != nil {
@@ -238,7 +239,7 @@ func Write(path string, baseline File, backup bool) error {
 	remove := true
 	defer func() {
 		if remove {
-			_ = os.Remove(temporaryPath)
+			err = errors.Join(err, os.Remove(temporaryPath))
 		}
 	}()
 	if err = temporary.Chmod(0o600); err == nil {

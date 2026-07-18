@@ -12,6 +12,9 @@ install: build
 test:
 	go test ./...
 
+check:
+	go run cmd/strider/main.go check
+
 corpus-check: build
 	go run ./scripts/corpus --mode check --strider "$(STRIDER)" $(CORPUS_FLAGS)
 

@@ -8,43 +8,43 @@ import (
 )
 
 type cstExecutionPlan struct {
-	filename             bool
-	comments             bool
-	imports              bool
-	repeatedLiterals     bool
-	functions            bool
-	functionTraversal    bool
-	functionComplexity   bool
-	functionCognitive    bool
-	functionStatements   bool
-	functionFinal        bool
-	returns              bool
-	defers               bool
-	conditionals         bool
-	packageVars          bool
-	binaryExpressions    bool
-	unaryExpressions     bool
-	interfaces           bool
+	filename bool
+	comments bool
+	imports bool
+	repeatedLiterals bool
+	functions bool
+	functionTraversal bool
+	functionComplexity bool
+	functionCognitive bool
+	functionStatements bool
+	functionFinal bool
+	returns bool
+	defers bool
+	conditionals bool
+	packageVars bool
+	binaryExpressions bool
+	unaryExpressions bool
+	interfaces bool
 	incrementAssignments bool
-	assignmentPolicies   bool
-	identifiers          bool
-	calls                bool
-	structs              bool
-	fields               bool
-	stringLiterals       bool
-	blocks               bool
-	loops                bool
-	controlNesting       bool
-	switches             bool
-	typeAssertions       bool
-	varSpecs             bool
-	constSpecs           bool
-	typeDefinitions      bool
-	breaks               bool
+	assignmentPolicies bool
+	identifiers bool
+	calls bool
+	structs bool
+	fields bool
+	stringLiterals bool
+	blocks bool
+	loops bool
+	controlNesting bool
+	switches bool
+	typeAssertions bool
+	varSpecs bool
+	constSpecs bool
+	typeDefinitions bool
+	breaks bool
 }
 
 func compileCSTExecutionPlan(enabled map[string]bool) cstExecutionPlan {
-	any := func(codes ...string) bool {
+	any := func(codes... string) bool {
 		for _, code := range codes {
 			if enabled[code] {
 				return true
@@ -109,13 +109,13 @@ func compileCSTExecutionPlan(enabled map[string]bool) cstExecutionPlan {
 			"unused-receiver",
 			"waitgroup-by-value",
 		),
-		functionTraversal:  functionComplexity || functionCognitive || functionStatements || functionFinal,
+		functionTraversal: functionComplexity || functionCognitive || functionStatements || functionFinal,
 		functionComplexity: functionComplexity,
-		functionCognitive:  functionCognitive,
+		functionCognitive: functionCognitive,
 		functionStatements: functionStatements,
-		functionFinal:      functionFinal,
-		returns:            any("bare-return", "no-naked-return"),
-		defers:             any("defer", "no-defer-in-loop"),
+		functionFinal: functionFinal,
+		returns: any("bare-return", "no-naked-return"),
+		defers: any("defer", "no-defer-in-loop"),
 		conditionals: any(
 			"early-return",
 			"identical-branches",
@@ -136,11 +136,11 @@ func compileCSTExecutionPlan(enabled map[string]bool) cstExecutionPlan {
 			"time-equal",
 			"zero-integer-division",
 		),
-		unaryExpressions:     any("double-negation", "ineffective-pointer-copy"),
-		interfaces:           enabled["use-any"],
+		unaryExpressions: any("double-negation", "ineffective-pointer-copy"),
+		interfaces: enabled["use-any"],
 		incrementAssignments: enabled["increment-decrement"],
-		assignmentPolicies:   any("atomic", "epoch-naming"),
-		identifiers:          identifiers,
+		assignmentPolicies: any("atomic", "epoch-naming"),
+		identifiers: identifiers,
 		calls: any(
 			"call-to-gc",
 			"deep-exit",
@@ -155,8 +155,8 @@ func compileCSTExecutionPlan(enabled map[string]bool) cstExecutionPlan {
 			"use-fmt-print",
 			"use-slices-sort",
 		),
-		structs:        enabled["nested-structs"],
-		fields:         enabled["struct-tag"],
+		structs: enabled["nested-structs"],
+		fields: enabled["struct-tag"],
 		stringLiterals: enabled["unsecure-url-scheme"],
 		blocks: any(
 			"empty-block",
@@ -180,24 +180,24 @@ func compileCSTExecutionPlan(enabled map[string]bool) cstExecutionPlan {
 			"unnecessary-stmt",
 			"useless-fallthrough",
 		),
-		typeAssertions:  enabled["unchecked-type-assertion"],
-		varSpecs:        any("error-naming", "exported", "time-naming", "var-declaration"),
-		constSpecs:      enabled["exported"],
+		typeAssertions: enabled["unchecked-type-assertion"],
+		varSpecs: any("error-naming", "exported", "time-naming", "var-declaration"),
+		constSpecs: enabled["exported"],
 		typeDefinitions: any("exported", "max-public-structs"),
-		breaks:          any("unnecessary-stmt", "useless-break"),
+		breaks: any("unnecessary-stmt", "useless-break"),
 	}
 }
 
 type cstFunctionFacts struct {
-	node                cst.Node
-	name                cst.Token
-	signature           *cst.Signature
-	body                cst.Node
-	receiver            *cst.Parameters
-	complexity          int
+	node cst.Node
+	name cst.Token
+	signature *cst.Signature
+	body cst.Node
+	receiver *cst.Parameters
+	complexity int
 	cognitiveComplexity int
-	statements          int
-	finalStatement      cst.Node
+	statements int
+	finalStatement cst.Node
 }
 
 func (a *cstAnalyzer) observe(node cst.Node, ancestors []cst.Node) {
@@ -246,11 +246,11 @@ func (a *cstAnalyzer) addFunctionFacts(
 	receiver *cst.Parameters,
 ) *cstFunctionFacts {
 	facts := &cstFunctionFacts{
-		node:      node,
-		name:      name,
+		node: node,
+		name: name,
 		signature: signature,
-		body:      body,
-		receiver:  receiver,
+		body: body,
+		receiver: receiver,
 	}
 	if a.plan.functionFinal {
 		facts.finalStatement = concreteDirectFinalStatement(body)
@@ -274,7 +274,9 @@ func (a *cstAnalyzer) observeFunctionNode(node cst.Node, ancestors []cst.Node) {
 	if node == facts.body {
 		a.functionBodyDepth = len(ancestors)
 	}
-	if a.functionBodyDepth < 0 || (node != facts.body && (len(ancestors) <= a.functionBodyDepth || ancestors[a.functionBodyDepth] != facts.body)) {
+	if a.functionBodyDepth < 0 || (node != facts.body && (len(ancestors) <= a.functionBodyDepth || ancestors[
+		a.functionBodyDepth,
+	] != facts.body)) {
 		return
 	}
 	if a.plan.functionStatements {
@@ -313,7 +315,7 @@ func (a *cstAnalyzer) observeFunctionNode(node cst.Node, ancestors []cst.Node) {
 	}
 	if concreteCognitiveControl(node) {
 		nesting := 0
-		for _, ancestor := range ancestors[a.functionBodyDepth+1:] {
+		for _, ancestor := range ancestors[a.functionBodyDepth + 1:] {
 			if concreteCognitiveControl(ancestor) {
 				nesting++
 			}
@@ -368,7 +370,10 @@ func (a *cstAnalyzer) observeRepeatedLiteral(literal *cst.BasicLit, ancestors []
 			return
 		}
 	}
-	value, _ := strconv.Unquote(literal.Src())
+	value, err := strconv.Unquote(literal.Src())
+	if err != nil {
+		return
+	}
 	if value != "" {
 		a.repeatedLiterals[literal.Src()] = append(a.repeatedLiterals[literal.Src()], literal)
 	}

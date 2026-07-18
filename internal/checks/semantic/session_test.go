@@ -18,9 +18,9 @@ import (
 func TestSessionCachesDeepCopiedWholeTargetResult(t *testing.T) {
 	var runs atomic.Int32
 	want := diagnostic.Diagnostic{
-		Code:    "check",
+		Code: "check",
 		Message: "original",
-		Notes:   []diagnostic.Note{{Message: "note"}},
+		Notes: []diagnostic.Note{{Message: "note"}},
 		Fixes: []diagnostic.Fix{
 			{Message: "fix", Edits: []diagnostic.TextEdit{{NewText: "replacement"}}},
 		},
@@ -30,8 +30,8 @@ func TestSessionCachesDeepCopiedWholeTargetResult(t *testing.T) {
 		labelFingerprint,
 		func([]string, *Registry) ([]diagnostic.Diagnostic, error) {
 			runs.Add(1)
-			return []diagnostic.Diagnostic{want},
-				nil
+			return[]diagnostic.Diagnostic{want},
+			nil
 		},
 	)
 	registry := &Registry{}
@@ -65,8 +65,8 @@ func TestSessionConcurrentRunCoalescesWholeTarget(t *testing.T) {
 		labelFingerprint,
 		func([]string, *Registry) ([]diagnostic.Diagnostic, error) {
 			runs.Add(1)
-			return []diagnostic.Diagnostic{{Code: "check"}},
-				nil
+			return[]diagnostic.Diagnostic{{Code: "check"}},
+			nil
 		},
 	)
 	registry := &Registry{}
@@ -103,15 +103,15 @@ func TestSessionRetriesGenerationChangedDuringAnalysis(t *testing.T) {
 		SessionOptions{MaxEntries: 2, MaxBytes: 1 << 20},
 		func([]string, *Registry) (analysisCacheKey, error) {
 			return sha256.Sum256([]byte(fmt.Sprint(generation.Load()))),
-				nil
+			nil
 		},
 		func([]string, *Registry) ([]diagnostic.Diagnostic, error) {
 			current := runs.Add(1)
 			if current == 1 {
 				generation.Store(1)
 			}
-			return []diagnostic.Diagnostic{{Code: fmt.Sprint(current)}},
-				nil
+			return[]diagnostic.Diagnostic{{Code: fmt.Sprint(current)}},
+			nil
 		},
 	)
 	diagnostics, err := session.Run([]string{"target"}, &Registry{})
@@ -140,12 +140,12 @@ func TestSessionRejectsContinuallyChangingGeneration(t *testing.T) {
 		SessionOptions{MaxEntries: 2, MaxBytes: 1 << 20},
 		func([]string, *Registry) (analysisCacheKey, error) {
 			return sha256.Sum256([]byte(fmt.Sprint(fingerprints.Add(1)))),
-				nil
+			nil
 		},
 		func([]string, *Registry) ([]diagnostic.Diagnostic, error) {
 			runs.Add(1)
 			return nil,
-				nil
+			nil
 		},
 	)
 	if _, err := session.Run([]string{"target"}, &Registry{}); err == nil || !strings.Contains(
@@ -169,12 +169,12 @@ func TestSessionInvalidationAndDeterministicEviction(t *testing.T) {
 		labelFingerprint,
 		func(paths []string, _ *Registry) ([]diagnostic.Diagnostic, error) {
 			runs.Add(1)
-			return []diagnostic.Diagnostic{{Code: paths[0]}},
-				nil
+			return[]diagnostic.Diagnostic{{Code: paths[0]}},
+			nil
 		},
 	)
 	registry := &Registry{}
-	for _, target := range []string{"a", "b", "c", "b", "a"} {
+	for _, target := range[]string{"a", "b", "c", "b", "a"} {
 		if _, err := session.Run([]string{target}, registry); err != nil {
 			t.Fatal(err)
 		}
@@ -205,8 +205,8 @@ func TestSessionDoesNotRetainOversizedResult(t *testing.T) {
 		labelFingerprint,
 		func([]string, *Registry) ([]diagnostic.Diagnostic, error) {
 			runs.Add(1)
-			return []diagnostic.Diagnostic{{Code: "check", Message: "large"}},
-				nil
+			return[]diagnostic.Diagnostic{{Code: "check", Message: "large"}},
+			nil
 		},
 	)
 	for range 2 {
@@ -389,7 +389,7 @@ func TestSessionRecursiveTargetDetectsNewSiblingPackage(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		_ = os.Chdir(previousDirectory)
+		restoreSemanticWorkingDirectory(t, previousDirectory)
 	})
 	registry, err := NewRegistry([]string{"suspicious-sleep"})
 	if err != nil {
@@ -534,7 +534,7 @@ func nestedModuleBoundaryFixture(t *testing.T, withBoundary bool) (
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		_ = os.Chdir(previousDirectory)
+		restoreSemanticWorkingDirectory(t, previousDirectory)
 	})
 	registry, err := NewRegistry([]string{"suspicious-sleep"})
 	if err != nil {
@@ -709,7 +709,7 @@ func TestProbeConfigurationTracksVendorModulesMetadata(t *testing.T) {
 			name,
 			func(t *testing.T) {
 				probe := &analysisProbe{
-					scope:               analysisProbeScope{cwd: moduleRoot},
+					scope: analysisProbeScope{cwd: moduleRoot},
 					resolvedEnvironment: resolved,
 				}
 				if err := probe.collectConfigurationFiles(); err != nil {
@@ -718,7 +718,8 @@ func TestProbeConfigurationTracksVendorModulesMetadata(t *testing.T) {
 				probe.normalize()
 				metadata := filepath.Join(base, "vendor", "modules.txt")
 				found := false
-				for _, filename := range probe.optionalFiles {
+				for _,
+				filename := range probe.optionalFiles {
 					if filename == metadata {
 						found = true
 						break
@@ -728,7 +729,7 @@ func TestProbeConfigurationTracksVendorModulesMetadata(t *testing.T) {
 					t.Fatalf("vendor metadata %s is not a configuration input", metadata)
 				}
 				missing,
-					err := probe.currentKey()
+				err := probe.currentKey()
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -739,7 +740,7 @@ func TestProbeConfigurationTracksVendorModulesMetadata(t *testing.T) {
 					t.Fatal(err)
 				}
 				created,
-					err := probe.currentKey()
+				err := probe.currentKey()
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -750,7 +751,7 @@ func TestProbeConfigurationTracksVendorModulesMetadata(t *testing.T) {
 					t.Fatal(err)
 				}
 				changed,
-					err := probe.currentKey()
+				err := probe.currentKey()
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -761,7 +762,7 @@ func TestProbeConfigurationTracksVendorModulesMetadata(t *testing.T) {
 					t.Fatal(err)
 				}
 				deleted,
-					err := probe.currentKey()
+				err := probe.currentKey()
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -785,8 +786,8 @@ func BenchmarkSessionWholeTargetHit(benchmark *testing.B) {
 		SessionOptions{MaxEntries: 2, MaxBytes: 1 << 20},
 		labelFingerprint,
 		func([]string, *Registry) ([]diagnostic.Diagnostic, error) {
-			return []diagnostic.Diagnostic{{Code: "check", Message: "finding"}},
-				nil
+			return[]diagnostic.Diagnostic{{Code: "check", Message: "finding"}},
+			nil
 		},
 	)
 	registry := &Registry{}
@@ -811,7 +812,7 @@ func BenchmarkSessionWatchIteration(benchmark *testing.B) {
 		benchmark.Fatal(err)
 	}
 	benchmark.Cleanup(func() {
-		_ = os.Chdir(previousDirectory)
+		restoreSemanticWorkingDirectory(benchmark, previousDirectory)
 	})
 	registry, err := NewRegistry([]string{"possible-nil-dereference"})
 	if err != nil {
@@ -823,7 +824,7 @@ func BenchmarkSessionWatchIteration(benchmark *testing.B) {
 			benchmark.ReportAllocs()
 			for range benchmark.N {
 				if _,
-					err := Run([]string{root}, registry); err != nil {
+				err := Run([]string{root}, registry); err != nil {
 					benchmark.Fatal(err)
 				}
 			}
@@ -834,14 +835,14 @@ func BenchmarkSessionWatchIteration(benchmark *testing.B) {
 		func(benchmark *testing.B) {
 			session := NewSession(SessionOptions{MaxEntries: 8, MaxBytes: 64 << 20})
 			if _,
-				err := session.Run([]string{root}, registry); err != nil {
+			err := session.Run([]string{root}, registry); err != nil {
 				benchmark.Fatal(err)
 			}
 			benchmark.ReportAllocs()
 			benchmark.ResetTimer()
 			for range benchmark.N {
 				if _,
-					err := session.Run([]string{root}, registry); err != nil {
+				err := session.Run([]string{root}, registry); err != nil {
 					benchmark.Fatal(err)
 				}
 			}
@@ -852,7 +853,7 @@ func BenchmarkSessionWatchIteration(benchmark *testing.B) {
 		func(benchmark *testing.B) {
 			session := NewSession(SessionOptions{MaxEntries: 8, MaxBytes: 64 << 20})
 			if _,
-				err := session.Run([]string{root}, registry); err != nil {
+			err := session.Run([]string{root}, registry); err != nil {
 				benchmark.Fatal(err)
 			}
 			benchmark.ReportAllocs()
@@ -865,7 +866,7 @@ func BenchmarkSessionWatchIteration(benchmark *testing.B) {
 				}
 				benchmark.StartTimer()
 				if _,
-					err := session.Run([]string{root}, registry); err != nil {
+				err := session.Run([]string{root}, registry); err != nil {
 					benchmark.Fatal(err)
 				}
 			}

@@ -24,24 +24,19 @@ func (invalidUTF8StringArgumentRule) Meta() Meta {
 
 func (invalidUTF8StringArgumentRule) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
-	for _, function := range pass.Functions {
-		for _, block := range function.Blocks {
-			for _, instruction := range block.Instrs {
-				call, ok := instruction.(ssa.CallInstruction)
-				if !ok || !isUTF8StringsCall(call) || len(call.Common().Args) < 2 {
-					continue
-				}
-				value := ssaConstant(call.Common().Args[1])
-				if value == nil || value.Value == nil || value.Value.Kind() != constant.String {
-					continue
-				}
-				if utf8.ValidString(constant.StringVal(value.Value)) {
-					continue
-				}
-				node := explicitCallArgument(calls[call.Pos()], 1, call.Pos())
-				pass.Report(node, "argument is not a valid UTF-8 encoded string")
-			}
+	for _, call := range pass.staticCallsInPackage("strings") {
+		if !isUTF8StringsCall(call) || len(call.Common().Args) < 2 {
+			continue
 		}
+		value := ssaConstant(call.Common().Args[1])
+		if value == nil || value.Value == nil || value.Value.Kind() != constant.String {
+			continue
+		}
+		if utf8.ValidString(constant.StringVal(value.Value)) {
+			continue
+		}
+		node := explicitCallArgument(calls[call.Pos()], 1, call.Pos())
+		pass.Report(node, "argument is not a valid UTF-8 encoded string")
 	}
 }
 

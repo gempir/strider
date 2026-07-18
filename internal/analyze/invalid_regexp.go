@@ -1,7 +1,6 @@
 package analyze
 
 import (
-	"go/ast"
 	"go/constant"
 	"go/token"
 	"regexp"
@@ -26,25 +25,20 @@ func (invalidRegexpRule) Meta() Meta {
 
 func (invalidRegexpRule) Run(pass *Pass) {
 	calls := pass.firstArgumentsByCallPosition()
-	for _, function := range pass.Functions {
-		for _, block := range function.Blocks {
-			for _, instruction := range block.Instrs {
-				call, ok := instruction.(ssa.CallInstruction)
-				if !ok || !isRegexpCompileCall(call) || len(call.Common().Args) == 0 {
-					continue
-				}
-				value := ssaConstant(call.Common().Args[0])
-				if value == nil || value.Value == nil || value.Value.Kind() != constant.String {
-					continue
-				}
-				if _, err := regexp.Compile(constant.StringVal(value.Value)); err != nil {
-					node := calls[call.Pos()]
-					if node == nil {
-						node = positionNode{position: call.Pos()}
-					}
-					pass.Report(node, err.Error())
-				}
+	for _, call := range pass.staticCallsInPackage("regexp") {
+		if !isRegexpCompileCall(call) || len(call.Common().Args) == 0 {
+			continue
+		}
+		value := ssaConstant(call.Common().Args[0])
+		if value == nil || value.Value == nil || value.Value.Kind() != constant.String {
+			continue
+		}
+		if _, err := regexp.Compile(constant.StringVal(value.Value)); err != nil {
+			node := calls[call.Pos()]
+			if node == nil {
+				node = positionNode{position: call.Pos()}
 			}
+			pass.Report(node, err.Error())
 		}
 	}
 }
@@ -81,21 +75,6 @@ func ssaConstant(value ssa.Value) *ssa.Const {
 	default:
 		return nil
 	}
-}
-
-func (pass *Pass) firstArgumentsByCallPosition() map[token.Pos]ast.Node {
-	pass.facts.firstArgumentsOnce.Do(
-		func() {
-			pass.facts.firstArguments = make(map[token.Pos]ast.Node)
-			for position,
-			arguments := range pass.argumentsByCallPosition() {
-				if len(arguments) != 0 {
-					pass.facts.firstArguments[position] = arguments[0]
-				}
-			}
-		},
-	)
-	return pass.facts.firstArguments
 }
 
 type positionNode struct {

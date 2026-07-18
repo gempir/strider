@@ -1,56 +1,57 @@
 ---
-title: Analyzers
-description: Package-aware correctness and data-flow checks in Strider.
+title: Correctness and safety checks
+description: Reference for Strider's package-aware correctness and data-flow checks.
 sidebar:
   order: 0
 ---
 
-`strider analyze` complements the fast CST linter. It deliberately keeps Go's
-AST as its syntax model, loads complete packages, resolves types, and constructs
-SSA so checks can follow constants, calls, and control flow.
+These 86 checks answer correctness questions that depend on what an identifier
+or call resolves to, how values flow, or which Go and API contracts apply. They
+all belong to the same `strider check` catalog as formatting and
+[style and maintainability checks](/lints/).
 
-Use analyzers for correctness questions that depend on what an identifier or
-call resolves to, how values flow, or which Go and API contracts apply. Use
-the [linter](/linter/) for fast, file-local style and maintainability checks.
+Strider chooses and shares the program information required by the selected
+codes. Parsing, type resolution, and control-flow construction are internal
+capabilities rather than separate user-facing categories.
 
 ```sh
-strider analyze ./...
-strider analyze --only invalid-regexp ./...
-strider analyze --format json ./...
-strider analyze --format html ./... > analysis-report.html
+strider check ./...
+strider check --only invalid-regexp ./...
+strider check --format json ./...
+strider check --format html ./... > check-report.html
 ```
 
-Use `--list-rules` to see the implemented registry and `--explain CODE` for
-the built-in summary and examples. Analyzer codes are descriptive kebab-case
-names.
+Use `--list-checks` to inspect the effective registry and `--explain CODE` for
+the built-in summary and examples. Check codes are descriptive kebab-case names.
 
 ## Configuration and baselines
 
-All analyzers are enabled by default. Every analyzer can be disabled, assigned
-`note`, `warning`, or `error` severity, and excluded from selected paths:
+All 86 checks in this group are enabled by default. Every check can be disabled,
+assigned `note`, `warning`, or `error` severity, and excluded from selected
+paths:
 
 ```toml
-[analyzer]
-baseline = "analysis-baseline.toml"
+[checks]
+baseline = "strider-baseline.toml"
 
-[analyzer.rules.deprecated-api-usage]
+[checks.rules.deprecated-api-usage]
 enabled = false
 
-[analyzer.rules.possible-nil-dereference]
+[checks.rules.possible-nil-dereference]
 severity = "error"
 excludes = ["internal/legacy/**"]
 ```
 
-Generate a separate analysis baseline with:
+Generate the unified baseline with:
 
 ```sh
-strider analyze --generate-baseline --baseline analysis-baseline.toml ./...
+strider check --generate-baseline --baseline strider-baseline.toml ./...
 ```
 
-See [Configuration](/configuration/#analyzer) and
+See [Configuration](/configuration/#checks) and
 [Baselines](/baselines/) for the complete behavior.
 
-## Available analyzers
+## Available checks
 
 - [`invalid-regexp`](./invalid-regexp/)
 - [`invalid-template`](./invalid-template/)

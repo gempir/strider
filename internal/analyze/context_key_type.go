@@ -24,22 +24,17 @@ func (contextKeyTypeRule) Meta() Meta {
 
 func (contextKeyTypeRule) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
-	for _, function := range pass.Functions {
-		for _, block := range function.Blocks {
-			for _, instruction := range block.Instrs {
-				call, ok := instruction.(ssa.CallInstruction)
-				if !ok || !isStaticFunction(call, "context", "WithValue") || len(call.Common().Args) <= 1 {
-					continue
-				}
-				key := unwrapSSAValue(call.Common().Args[1])
-				message := invalidContextKeyMessage(key)
-				if message == "" {
-					continue
-				}
-				node := explicitCallArgument(calls[call.Pos()], 1, call.Pos())
-				pass.Report(node, message)
-			}
+	for _, call := range pass.staticCallsInPackage("context") {
+		if !isStaticFunction(call, "context", "WithValue") || len(call.Common().Args) <= 1 {
+			continue
 		}
+		key := unwrapSSAValue(call.Common().Args[1])
+		message := invalidContextKeyMessage(key)
+		if message == "" {
+			continue
+		}
+		node := explicitCallArgument(calls[call.Pos()], 1, call.Pos())
+		pass.Report(node, message)
 	}
 }
 

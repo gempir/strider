@@ -8,6 +8,9 @@ import (
 	"testing"
 
 	"github.com/gempir/strider/internal/baseline"
+	checkengine "github.com/gempir/strider/internal/check"
+	"github.com/gempir/strider/internal/ui"
+	"github.com/gempir/strider/internal/workspace"
 )
 
 func TestVersion(t *testing.T) {
@@ -56,7 +59,7 @@ func TestFormatWithoutPathsScansCurrentDirectory(t *testing.T) {
 	}
 }
 
-func TestFormatBatchDoesNotWriteWhenAnyFileIsUnsupported(t *testing.T) {
+func TestFormatBatchDoesNotWriteWhenAnyFileDoesNotParse(t *testing.T) {
 	root := t.TempDir()
 	good := filepath.Join(root, "good.go")
 	bad := filepath.Join(root, "bad.go")
@@ -64,7 +67,7 @@ func TestFormatBatchDoesNotWriteWhenAnyFileIsUnsupported(t *testing.T) {
 	if err := os.WriteFile(good, original, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(bad, []byte("package p\nfunc F() { goto done; done: return }\n"), 0o600); err != nil {
+	if err := os.WriteFile(bad, []byte("package p\nfunc F( {\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
@@ -83,8 +86,8 @@ func TestFormatBatchDoesNotWriteWhenAnyFileIsUnsupported(t *testing.T) {
 func TestFormatBatchReportsFirstFilenameError(t *testing.T) {
 	root := t.TempDir()
 	for name, source := range map[string]string{
-		"a.go": "package p\nfunc A(v int) { switch v { case 1: fallthrough; default: return } }\n",
-		"z.go": "package p\nfunc Z() { goto done; done: return }\n",
+		"a.go": "package p\nfunc A( {\n",
+		"z.go": "package p\nfunc Z( {\n",
 	} {
 		if err := os.WriteFile(filepath.Join(root, name), []byte(source), 0o600); err != nil {
 			t.Fatal(err)
@@ -92,16 +95,10 @@ func TestFormatBatchReportsFirstFilenameError(t *testing.T) {
 	}
 	var stdout, stderr bytes.Buffer
 	code := Run([]string{"fmt", "--check", root}, strings.NewReader(""), &stdout, &stderr)
-	if code != exitError || !strings.Contains(stderr.String(), "a.go") || !strings.Contains(
-		stderr.String(),
-		"fallthrough statements",
-	) {
+	if code != exitError || !strings.Contains(stderr.String(), "a.go") {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
-	if strings.Contains(stderr.String(), "z.go") || strings.Contains(
-		stderr.String(),
-		"goto statements",
-	) {
+	if strings.Contains(stderr.String(), "z.go") {
 		t.Fatalf("reported a later file error: %q", stderr.String())
 	}
 }
@@ -179,6 +176,241 @@ func assertFormatReadOnly(t *testing.T, filename string, original []byte, flag, 
 	}
 	if !bytes.Equal(after, original) {
 		t.Fatalf("%s changed the source", flag)
+	}
+}
+
+func TestCheckCombinesFormattingSyntaxAndPackageChecks(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(
+		filepath.Join(root, "go.mod"),
+		[]byte("module example.com/combined\n\ngo 1.26\n"),
+		0o600,
+	); err != nil {
+		t.Fatal(err)
+	}
+	filename := filepath.Join(root, "main.go")
+	original := []byte("package sample\nimport \"regexp\"\nfunc init(){regexp.MustCompile(\"[\")}\n")
+	if err := os.WriteFile(filename, original, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	previous, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = os.Chdir(previous)
+	})
+
+	var stdout, stderr bytes.Buffer
+	code := Run(
+		[]string{
+			"--no-config",
+			"check",
+			"--format",
+			"json",
+			"--only",
+			"format,no-init,invalid-regexp",
+			filename,
+		},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitFindings || stderr.Len() != 0 {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	for _, wanted := range[]string{
+		`"code": "format"`,
+		`"code": "no-init"`,
+		`"code": "invalid-regexp"`,
+	} {
+		if !strings.Contains(stdout.String(), wanted) {
+			t.Fatalf("combined report missing %q: %s", wanted, stdout.String())
+		}
+	}
+	contents, err := os.ReadFile(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(contents, original) {
+		t.Fatal("check modified its source input")
+	}
+}
+
+func TestCheckListsOneUnifiedCatalog(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(
+		[]string{"--no-config", "check", "--all", "--list-checks"},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitSuccess || stderr.Len() != 0 {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	if got := strings.Count(strings.TrimSpace(stdout.String()), "\n") + 1; got != 203 {
+		t.Fatalf("listed %d checks; want 203", got)
+	}
+	for _, wanted := range[]string{"format\t", "no-init\t", "invalid-regexp\t"} {
+		if !strings.Contains(stdout.String(), wanted) {
+			t.Fatalf("unified catalog missing %q", wanted)
+		}
+	}
+}
+
+func TestCheckWatchRejectsStructuredReports(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(
+		[]string{"--no-config", "check", "--watch", "--format", "json"},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitError || !strings.Contains(stderr.String(), "--watch requires text") {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+}
+
+func TestCheckWatcherReportsOnlyChangedGenerations(t *testing.T) {
+	directory := t.TempDir()
+	filename := filepath.Join(directory, "sample.go")
+	if err := os.WriteFile(filename, []byte("package sample\nfunc init() {}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	registry, err := checkengine.NewRegistry(
+		checkengine.RegistryOptions{Only: []string{"no-init"}},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	session, err := checkengine.NewSession(
+		registry,
+		checkengine.RunOptions{},
+		checkengine.SessionOptions{},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	watcher := &checkWatcher{
+		paths: []string{filename},
+		workspaceOptions: workspace.Options{},
+		cache: workspace.NewCache(workspace.CacheOptions{}),
+		session: session,
+		colorMode: ui.ColorNever,
+		stdout: &stdout,
+		stderr: &stderr,
+	}
+	if err := watcher.run(); err != nil {
+		t.Fatal(err)
+	}
+	firstOutput := stdout.String()
+	if !strings.Contains(firstOutput, "strider check #1") || !strings.Contains(
+		firstOutput,
+		"no-init",
+	) {
+		t.Fatalf("initial output = %q", firstOutput)
+	}
+	if err := watcher.run(); err != nil {
+		t.Fatal(err)
+	}
+	if stdout.String() != firstOutput {
+		t.Fatalf("unchanged generation emitted output: %q", stdout.String())
+	}
+
+	if err := os.WriteFile(filename, []byte("package sample\nfunc main() {}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := watcher.run(); err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Count(stdout.String(), "== strider check #"); got != 2 {
+		t.Fatalf("generation headers = %d: %q", got, stdout.String())
+	}
+	if !strings.Contains(stdout.String(), "strider check #2") || !strings.Contains(
+		stdout.String(),
+		"No findings.",
+	) {
+		t.Fatalf("changed output = %q", stdout.String())
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
+func TestVersionTwoCheckConfigurationControlsUnifiedRegistry(t *testing.T) {
+	root := t.TempDir()
+	configurationPath := filepath.Join(root, "strider.toml")
+	configuration := `version = 2
+[checks.rules.format]
+enabled = false
+[checks.rules.no-init]
+severity = "error"
+[checks.rules.invalid-regexp]
+enabled = false
+`
+	if err := os.WriteFile(configurationPath, []byte(configuration), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	code := Run(
+		[]string{"--config", configurationPath, "check", "--list-checks"},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitSuccess || stderr.Len() != 0 {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	if strings.Contains(stdout.String(), "format\t") || strings.Contains(
+		stdout.String(),
+		"invalid-regexp\t",
+	) {
+		t.Fatalf("disabled checks are still listed: %s", stdout.String())
+	}
+	if !strings.Contains(stdout.String(), "no-init\terror\t") {
+		t.Fatalf("configured severity is missing: %s", stdout.String())
+	}
+}
+
+func TestCheckBaselineDoesNotCaptureFormattingDebt(t *testing.T) {
+	root := t.TempDir()
+	filename := filepath.Join(root, "main.go")
+	baselinePath := filepath.Join(root, "strider-baseline.toml")
+	if err := os.WriteFile(filename, []byte("package sample\nfunc init(){}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	code := Run(
+		[]string{
+			"--no-config",
+			"check",
+			"--only",
+			"format,no-init",
+			"--baseline",
+			baselinePath,
+			"--generate-baseline",
+			filename,
+		},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitSuccess || stdout.Len() != 0 || stderr.Len() != 0 {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	generated, err := baseline.Load(baselinePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := len(generated.Issues), 1; got != want {
+		t.Fatalf("baseline issue count = %d, want %d: %#v", got, want, generated.Issues)
+	}
+	if generated.Issues[0].Code != "no-init" {
+		t.Fatalf("baseline captured %q, want no-init", generated.Issues[0].Code)
 	}
 }
 

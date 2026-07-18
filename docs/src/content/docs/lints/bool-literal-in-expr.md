@@ -21,4 +21,4 @@ if ready { start() }
 
 ## Enable
 
-This extended rule runs when selected with `--only bool-literal-in-expr`, enabled in `strider.toml`, or included with `--all-rules`. The default severity is `warning`.
+This optional check runs when selected with `--only bool-literal-in-expr`, enabled in `strider.toml`, or included with `--all`. The default severity is `warning`.

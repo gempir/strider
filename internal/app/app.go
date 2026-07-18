@@ -22,6 +22,7 @@ import (
 	"github.com/gempir/strider/internal/pathfilter"
 	"github.com/gempir/strider/internal/source"
 	"github.com/gempir/strider/internal/ui"
+	"github.com/gempir/strider/internal/workspace"
 )
 
 type formattedFile struct {
@@ -81,6 +82,15 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return exitError
 	}
 	switch args[0] {
+	case "check":
+		configuration, err := config.Load(globals.configPath, globals.noConfig)
+		if err != nil {
+			printError(stderr, colorMode, "strider", err)
+			return exitError
+		}
+		colorMode = configuredColor(configuration, globals)
+		return runCheck(args[1:
+		], configuration, colorMode, stdout, stderr)
 	case "fmt", "format":
 		configuration, err := config.Load(globals.configPath, globals.noConfig)
 		if err != nil {
@@ -218,10 +228,7 @@ func globalColor(options globalOptions) ui.ColorMode {
 
 func usage(writer io.Writer, colorMode ui.ColorMode) {
 	palette := ui.NewPalette(writer, colorMode)
-	fmt.Fprintln(
-		writer,
-		palette.Bold("Strider") + " formats, lints, and statically analyzes Go code.",
-	)
+	fmt.Fprintln(writer, palette.Bold("Strider") + " formats and checks Go code.")
 	fmt.Fprintf(writer, "\n%s\n", palette.Accent("Usage:"))
 	fmt.Fprintf(
 		writer,
@@ -230,8 +237,11 @@ func usage(writer io.Writer, colorMode ui.ColorMode) {
 	)
 	fmt.Fprintf(writer, "\n%s\n", palette.Accent("Commands:"))
 	fmt.Fprintf(writer, "  %s       Format Go source (alias: format)\n", palette.Code("fmt"))
-	fmt.Fprintf(writer, "  %s      Run clarity and safety rules\n", palette.Code("lint"))
-	fmt.Fprintf(writer, "  %s   Run package-aware static analysis\n", palette.Code("analyze"))
+	fmt.Fprintf(
+		writer,
+		"  %s     Run formatting, clarity, and correctness checks\n",
+		palette.Code("check"),
+	)
 	fmt.Fprintf(writer, "  %s   Print the version\n", palette.Code("version"))
 }
 
@@ -395,13 +405,19 @@ func formatStdin(
 }
 
 func formatPaths(options formatOptions, stdout, stderr io.Writer) int {
-	files, err := source.Discover(options.paths, source.Options{SkipGenerated: true})
+	shared, err := workspace.Open(
+		options.paths,
+		workspace.Options{SkipGenerated: true, Root: options.root, Excludes: options.excludes},
+	)
 	if err != nil {
 		printCommandError(stderr, options.colorMode, "strider fmt", "%v", err)
 		return exitError
 	}
-	files = filterFiles(files, options.root, options.excludes)
-	formatted, formatErrors := formatFiles(files, options.formatter)
+	formatted, formatErrors := formatFiles(
+		shared.Files(),
+		options.formatter,
+		options.write || options.diff,
+	)
 	for _, formatErr := range formatErrors {
 		if formatErr != nil {
 			printCommandError(stderr, options.colorMode, "strider fmt", "%v", formatErr)
@@ -422,7 +438,10 @@ func formatPaths(options formatOptions, stdout, stderr io.Writer) int {
 	return exitSuccess
 }
 
-func formatFiles(files []string, options formatter.Options) ([]formattedFile, []error) {
+func formatFiles(files []*workspace.File, options formatter.Options, verify bool) (
+	[]formattedFile,
+	[]error,
+) {
 	formatted := make([]formattedFile, len(files))
 	errorsByFile := make([]error, len(files))
 	if len(files) == 0 {
@@ -438,22 +457,55 @@ func formatFiles(files []string, options formatter.Options) ([]formattedFile, []
 		go func() {
 			defer group.Done()
 			for index := range jobs {
-				filename := files[index]
-				original, err := os.ReadFile(filename)
-				if err != nil {
-					errorsByFile[index] = fmt.Errorf("%s: %w", source.DisplayPath(filename), err)
-					continue
-				}
-				result, err := session.FormatWithOptions(filename, original, options)
-				if err != nil {
-					errorsByFile[index] = err
-					continue
-				}
-				formatted[index] = formattedFile{
-					filename: filename,
-					original: original,
-					result: result,
-				}
+				file := files[index]
+				func() {
+					defer file.Release()
+					filename := file.Path()
+					original, err := file.Bytes()
+					if err != nil {
+						errorsByFile[index] = fmt.Errorf(
+							"%s: %w",
+							source.DisplayPath(filename),
+							err,
+						)
+						return
+					}
+					if formatter.IsIgnored(original) {
+						formatted[index] = formattedFile{
+							filename: filename,
+							original: original,
+							result: formatter.Result{
+								Source: append([]byte(nil), original...),
+								Ignored: true,
+							},
+						}
+						return
+					}
+					tree, err := file.CST()
+					if err != nil {
+						errorsByFile[index] = fmt.Errorf(
+							"%s: %w",
+							source.DisplayPath(filename),
+							err,
+						)
+						return
+					}
+					var result formatter.Result
+					if verify {
+						result, err = session.FormatTree(filename, tree, options)
+					} else {
+						result, err = session.PreviewTree(filename, tree, options)
+					}
+					if err != nil {
+						errorsByFile[index] = err
+						return
+					}
+					formatted[index] = formattedFile{
+						filename: filename,
+						original: original,
+						result: result,
+					}
+				}()
 			}
 		}()
 	}

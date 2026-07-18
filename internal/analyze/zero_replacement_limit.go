@@ -24,27 +24,24 @@ func (zeroReplacementLimitRule) Meta() Meta {
 
 func (zeroReplacementLimitRule) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
-	for _, function := range pass.Functions {
-		for _, block := range function.Blocks {
-			for _, instruction := range block.Instrs {
-				call, ok := instruction.(ssa.CallInstruction)
-				if !ok || len(call.Common().Args) <= 3 || !isReplacementCall(call) {
-					continue
-				}
-				limit := ssaConstant(call.Common().Args[3])
-				if limit == nil || limit.Value == nil || limit.Value.Kind() != constant.Int || !constant.Compare(
-					limit.Value,
-					token.EQL,
-					constant.MakeInt64(0),
-				) {
-					continue
-				}
-				node := explicitCallArgument(calls[call.Pos()], 3, call.Pos())
-				pass.Report(
-					node,
-					"a replacement limit of zero replaces nothing; use -1 or ReplaceAll to replace every occurrence",
-				)
+	for _, packagePath := range[]string{"bytes", "strings"} {
+		for _, call := range pass.staticCallsInPackage(packagePath) {
+			if len(call.Common().Args) <= 3 || !isReplacementCall(call) {
+				continue
 			}
+			limit := ssaConstant(call.Common().Args[3])
+			if limit == nil || limit.Value == nil || limit.Value.Kind() != constant.Int || !constant.Compare(
+				limit.Value,
+				token.EQL,
+				constant.MakeInt64(0),
+			) {
+				continue
+			}
+			node := explicitCallArgument(calls[call.Pos()], 3, call.Pos())
+			pass.Report(
+				node,
+				"a replacement limit of zero replaces nothing; use -1 or ReplaceAll to replace every occurrence",
+			)
 		}
 	}
 }

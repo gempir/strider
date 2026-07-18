@@ -21,4 +21,4 @@ time.Date(2026, time.July, 16, 12, 0, 0, 0, time.UTC)
 
 ## Enable
 
-This extended rule runs when selected with `--only time-date`, enabled in `strider.toml`, or included with `--all-rules`. The default severity is `warning`.
+This optional check runs when selected with `--only time-date`, enabled in `strider.toml`, or included with `--all`. The default severity is `warning`.

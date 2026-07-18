@@ -2,43 +2,94 @@
 
 # Strider
 
-Strider is an experimental Go 1.26 toolchain with a lossless CST formatter and
-linter, plus package-aware static analysis built on Go's AST, type information,
-and SSA.
+Strider is an experimental Go 1.26 formatter and code checker. One read-only
+`strider check` run reports formatting drift, style and maintainability issues,
+and package-aware correctness problems in one deterministic diagnostic stream.
+`strider fmt` remains the focused command for writing formatted source.
 
 # Slopclaimer
 
-This is slop, written heavily with LLMs. I don't have the time next to a full time job to 
-build this level of product without LLMs. The good thing though, none of this code ever runs in production.
-You run it in CI or locally and get useful output or not. 
+This is slop, written heavily with LLMs. I don't have the time next to a full
+time job to build this level of product without LLMs. The good thing though,
+none of this code ever runs in production. You run it in CI or locally and get
+useful output or not.
 
 ## Inspiration
 
 Strider is hugely inspired by
 [carthage-software/mago](https://github.com/carthage-software/mago), particularly
-its speed, configuration design, and clear separation between formatting,
-linting, analysis, and reporting.
+its speed, configuration design, and reporting.
+
+## Check
+
+Run all checks enabled by the project configuration:
+
+```sh
+strider check ./...
+strider check --format json ./...
+strider check --format html ./... > check-report.html
+strider check --only format,no-init,invalid-regexp ./...
+strider check --watch ./...
+strider check --list-checks
+strider check --explain invalid-regexp
+```
+
+The default profile contains 94 checks: formatting, seven style and
+maintainability checks, and 86 correctness and data-flow checks. Use
+`strider check --all` to enable the complete 203-check catalog. `--only` selects
+exactly the named codes and avoids building program information that those
+checks do not need.
+
+Formatting is the `format` check. It reports an unformatted file without
+modifying it and suggests `strider fmt` as the remedy. Strider internally
+schedules only the source representations required by the selected checks;
+those implementation capabilities are not separate user-facing tools.
+
+`--watch` keeps a text-mode check session alive. Unchanged concrete syntax and
+proven-equivalent package results are reused between generations; edits emit a
+fresh complete report without modifying source.
+
+## Format
+
+```sh
+strider fmt ./...
+strider fmt --diff ./...
+strider fmt --stdin --stdin-filename file.go < file.go
+```
+
+With file or directory arguments, `fmt` writes in place. With no path, it
+recursively formats the current directory. `--diff` is read-only, while
+`--stdin` reads one file and writes formatted source to standard output. A file
+containing `//strider:format-ignore` is passed through unchanged.
+
+The formatter supports ordinary application code, including generics, type
+switches, `select`, channel sends, `goto`, `fallthrough`, and labeled
+statements. Some comments embedded deeply inside expressions remain outside the
+current syntax boundary.
 
 ## Configuration
 
 Strider discovers the nearest `strider.toml` from the current directory upward.
-Every lint rule and analyzer supports `enabled`, `severity`, and path
-`excludes`; the formatter exposes print width, visual indentation width, line
-endings, and filesystem exclusions.
+Version 2 uses one `[checks]` namespace. Every check supports `enabled`,
+`severity`, and path `excludes`; the formatter exposes print width, visual
+indentation width, line endings, and filesystem exclusions.
 
 ```toml
-version = 1
+version = 2
 color = "auto"
 
 [formatter]
 print-width = 100
 max-empty-lines = 1
 
-[linter.rules.line-length-limit]
+[checks]
+baseline = "strider-baseline.toml"
+
+[checks.rules.line-length-limit]
 enabled = true
 severity = "warning"
 
-[analyzer.rules.possible-nil-dereference]
+[checks.rules.possible-nil-dereference]
 severity = "error"
 excludes = ["internal/legacy/**"]
 ```
@@ -47,116 +98,41 @@ Use `strider --config PATH COMMAND` to select a file explicitly or
 `strider --no-config COMMAND` to run with built-in defaults. Rich terminal
 output uses color automatically; set `color = "always"` or `"never"`, or
 override it with `strider --color always|never COMMAND`. `NO_COLOR` and
-`FORCE_COLOR` are also honored. The schema is strict: unknown keys and rule
+`FORCE_COLOR` are also honored. The schema is strict: unknown keys and check
 codes are errors.
-
-## Format
-
-```sh
-strider fmt --check ./...
-strider fmt --diff ./...
-strider fmt --write ./...
-strider fmt --stdin < file.go
-```
-
-With file or directory arguments, formatting writes in place unless `--check`
-or `--diff` is used. With no path, Strider recursively scans the current
-directory. Use `--stdin` to read source from stdin and write it to stdout. A
-file containing `//strider:format-ignore` is passed through unchanged.
-
-The formatter spike supports ordinary application code, including generics,
-type switches, `select`, channel sends, and labeled statements. It currently
-rejects `goto`, `fallthrough`, and some comments embedded inside expressions.
-
-## Lint
-
-```sh
-strider lint ./...
-strider lint --format json ./...
-strider lint --format html ./... > lint-report.html
-strider lint --only no-init,no-package-var ./...
-strider lint --list-rules
-strider lint --explain cyclomatic-complexity
-```
-
-With no path, `lint` also recursively scans the current directory.
-
-The initial rules are `cyclomatic-complexity`, `max-parameters`,
-`no-naked-return`, `no-init`, `no-package-var`, `no-defer-in-loop`, and
-`no-else-after-return`. Strider also includes 109 additional native rules. Run
-the complete 116-rule registry with:
-
-```sh
-strider lint --all-rules ./...
-```
-
-Use `--only RULE` to select any individual rule without enabling the rest.
-
-Suppress a rule on the next declaration or statement with:
-
-```go
-//strider:ignore no-package-var
-var ErrUnavailable = errors.New("unavailable")
-```
-
-Use `//strider:ignore-file code[,code]` before the package clause for a
-file-level suppression.
-
-## Analyze
-
-```sh
-strider analyze ./...
-strider analyze --format json ./...
-strider analyze --format html ./... > analysis-report.html
-strider analyze --only invalid-regexp ./...
-strider analyze --list-rules
-strider analyze --explain invalid-regexp
-```
-
-`analyze` loads complete packages, type-checks them, and builds SSA before
-running deeper correctness and data-flow checks. Analyzer names are descriptive
-kebab-case codes such as `invalid-regexp`, `nil-context`, and
-`swapped-seek-arguments`.
 
 ## Baselines
 
-Lint and analysis baselines record existing findings without hiding new ones:
+A single baseline records existing check findings without hiding new ones:
 
 ```sh
-strider lint --generate-baseline --baseline lint-baseline.toml ./...
-strider analyze --generate-baseline --baseline analysis-baseline.toml ./...
+strider check --generate-baseline --baseline strider-baseline.toml ./...
 ```
 
-Configure the paths for ordinary runs:
+Configure the path for ordinary runs:
 
 ```toml
-[linter]
-baseline = "lint-baseline.toml"
-baseline-variant = "loose"
-
-[analyzer]
-baseline = "analysis-baseline.toml"
+[checks]
+baseline = "strider-baseline.toml"
 baseline-variant = "loose"
 ```
 
-Loose baselines match file, code, message, and count while surviving line
-movement. Strict baselines match exact line ranges. Use `--ignore-baseline` to
-see the full backlog and `--remove-outdated-baseline-entries` to prune fixed
-issues without absorbing new findings.
+Formatting findings are intentionally never captured in a baseline. Loose
+baselines match file, code, message, and count while surviving line movement;
+strict baselines match exact line ranges. Use `--ignore-baseline` to see the
+full backlog and `--remove-outdated-baseline-entries` to prune fixed issues
+without absorbing new findings.
 
 ## Exit codes
 
-- `0`: success with no findings or formatting differences.
-- `1`: lint/analyze findings or files that differ in `--check`/`--diff` mode.
-- `2`: command, parsing, unsupported-syntax, or I/O error.
-
-Vet integration and staged-file workflows remain deferred while those command
-contracts are evolving.
+- `0`: success with no visible findings, or a baseline update completed.
+- `1`: one or more visible check findings, including formatting drift.
+- `2`: command, configuration, baseline, parsing, package-loading,
+  unsupported-syntax, or I/O error.
 
 ## Open-source corpus
 
-`make corpus-check` runs formatting, all lint rules, and package-aware analysis
-against 10 popular Go projects pinned to exact revisions. It rejects processing
-errors, compares deterministic output with a reviewed baseline, and enforces
-per-project timing budgets. CI publishes the timing table in its job summary and
-uploads standalone JSON and HTML reports.
+`make corpus-check` runs formatting and the check catalog against pinned popular
+Go projects. It rejects processing errors, compares deterministic output with a
+reviewed baseline, and enforces per-project timing budgets. CI publishes the
+timing table in its job summary and uploads standalone JSON and HTML reports.

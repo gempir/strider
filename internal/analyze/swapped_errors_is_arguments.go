@@ -23,28 +23,20 @@ func (swappedErrorsIsArgumentsRule) Meta() Meta {
 
 func (swappedErrorsIsArgumentsRule) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
-	for _, function := range pass.Functions {
-		for _, block := range function.Blocks {
-			for _, instruction := range block.Instrs {
-				call, ok := instruction.(ssa.CallInstruction)
-				if !ok || !isStaticFunction(call, "errors", "Is") || len(call.Common().Args) != 2 {
-					continue
-				}
-				first := loadedGlobal(call.Common().Args[0])
-				if first == nil || first.Pkg == nil || first.Pkg.Pkg == nil || first.Pkg.Pkg.Path() == pass.PackagePath {
-					continue
-				}
-				second := loadedGlobal(call.Common().Args[1])
-				if second != nil && second.Pkg != nil && second.Pkg.Pkg != nil && second.Pkg.Pkg.Path() != pass.PackagePath {
-					continue
-				}
-				node := explicitCallArgument(calls[call.Pos()], 0, call.Pos())
-				pass.Report(
-					node,
-					"errors.Is arguments appear reversed; inspect the local error first",
-				)
-			}
+	for _, call := range pass.staticCallsInPackage("errors") {
+		if !isStaticFunction(call, "errors", "Is") || len(call.Common().Args) != 2 {
+			continue
 		}
+		first := loadedGlobal(call.Common().Args[0])
+		if first == nil || first.Pkg == nil || first.Pkg.Pkg == nil || first.Pkg.Pkg.Path() == pass.PackagePath {
+			continue
+		}
+		second := loadedGlobal(call.Common().Args[1])
+		if second != nil && second.Pkg != nil && second.Pkg.Pkg != nil && second.Pkg.Pkg.Path() != pass.PackagePath {
+			continue
+		}
+		node := explicitCallArgument(calls[call.Pos()], 0, call.Pos())
+		pass.Report(node, "errors.Is arguments appear reversed; inspect the local error first")
 	}
 }
 

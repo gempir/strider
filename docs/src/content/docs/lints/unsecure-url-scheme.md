@@ -21,4 +21,4 @@ endpoint := "https://example.com"
 
 ## Enable
 
-This extended rule runs when selected with `--only unsecure-url-scheme`, enabled in `strider.toml`, or included with `--all-rules`. The default severity is `warning`.
+This optional check runs when selected with `--only unsecure-url-scheme`, enabled in `strider.toml`, or included with `--all`. The default severity is `warning`.

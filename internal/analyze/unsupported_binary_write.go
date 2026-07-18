@@ -26,26 +26,19 @@ func (unsupportedBinaryWriteRule) Meta() Meta {
 
 func (unsupportedBinaryWriteRule) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
-	for _, function := range pass.Functions {
-		for _, block := range function.Blocks {
-			for _, instruction := range block.Instrs {
-				call, ok := instruction.(ssa.CallInstruction)
-				if !ok || !isStaticFunction(call, "encoding/binary", "Write") || len(
-					call.Common().Args,
-				) < 3 {
-					continue
-				}
-				value := unwrapSSAValue(call.Common().Args[2])
-				if canBinaryMarshal(value.Type()) {
-					continue
-				}
-				node := binaryWriteDataNode(calls[call.Pos()], call.Pos())
-				pass.Report(
-					node,
-					fmt.Sprintf("value of type %s cannot be used with binary.Write", value.Type()),
-				)
-			}
+	for _, call := range pass.staticCallsInPackage("encoding/binary") {
+		if !isStaticFunction(call, "encoding/binary", "Write") || len(call.Common().Args) < 3 {
+			continue
 		}
+		value := unwrapSSAValue(call.Common().Args[2])
+		if canBinaryMarshal(value.Type()) {
+			continue
+		}
+		node := binaryWriteDataNode(calls[call.Pos()], call.Pos())
+		pass.Report(
+			node,
+			fmt.Sprintf("value of type %s cannot be used with binary.Write", value.Type()),
+		)
 	}
 }
 
@@ -98,36 +91,6 @@ func validEncodingBinaryType(valueType types.Type) bool {
 	default:
 		return false
 	}
-}
-
-func (pass *Pass) argumentsByCallPosition() map[token.Pos][]ast.Node {
-	pass.facts.argumentsOnce.Do(
-		func() {
-			pass.facts.arguments = make(map[token.Pos][]ast.Node)
-			for _,
-			file := range pass.Files {
-				ast.Inspect(
-					file,
-					func(node ast.Node) bool {
-						call,
-						ok := node.(*ast.CallExpr)
-						if !ok {
-							return true
-						}
-						arguments := make([]ast.Node, len(call.Args))
-						for index,
-						argument := range call.Args {
-							arguments[index] = argument
-						}
-						pass.facts.arguments[call.Pos()] = arguments
-						pass.facts.arguments[call.Lparen] = arguments
-						return true
-					},
-				)
-			}
-		},
-	)
-	return pass.facts.arguments
 }
 
 func binaryWriteDataNode(arguments []ast.Node, position token.Pos) ast.Node {

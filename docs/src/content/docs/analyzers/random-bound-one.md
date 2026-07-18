@@ -14,5 +14,5 @@ choice := rand.Intn(1) // reported: always zero
 choice := rand.Intn(2) // accepted: zero or one
 ```
 
-The analyzer covers package functions and `Rand` methods in both standard
+The check covers package functions and `Rand` methods in both standard
 random packages.

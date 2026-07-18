@@ -10,7 +10,7 @@ because the temporary string cannot escape the lookup. Assigning
 `string(bytes)` to a variable first prevents that optimization and allocates
 when the variable is used only as a map key.
 
-The analyzer stays silent when the string variable has any non-lookup use.
+The check stays silent when the string variable has any non-lookup use.
 
 ```go
 key := string(bytes)

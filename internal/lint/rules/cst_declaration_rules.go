@@ -3,37 +3,13 @@ package rules
 import (
 	"fmt"
 	"go/token"
-	"strconv"
 	"strings"
 
 	"github.com/gempir/strider/internal/cst"
 )
 
-func (a *cstAnalyzer) checkConcreteRepeatedLiterals() {
-	counts := map[string][]*cst.BasicLit{}
-	cst.Walk(
-		a.tree.Root(),
-		func(node cst.Node) bool {
-			switch cst.Kind(node) {
-			case "ConstDecl",
-				"VarDecl",
-				"TypeDecl":
-				return false
-			}
-			literal,
-			ok := node.(*cst.BasicLit)
-			if !ok || literal.Ch() != token.STRING {
-				return true
-			}
-			value,
-			_ := strconv.Unquote(literal.Src())
-			if value != "" {
-				counts[literal.Src()] = append(counts[literal.Src()], literal)
-			}
-			return true
-		},
-	)
-	for literal, nodes := range counts {
+func (a *cstAnalyzer) finishConcreteRepeatedLiterals() {
+	for literal, nodes := range a.repeatedLiterals {
 		if len(nodes) > 2 {
 			a.report(
 				"add-constant",
@@ -61,7 +37,7 @@ func (a *cstAnalyzer) checkConcreteTypeDefinition(definition *cst.TypeDef) {
 }
 
 func (a *cstAnalyzer) checkConcreteExportedFunction(name cst.Token, node cst.Node, method bool) {
-	if !token.IsExported(name.Src()) || a.packageNameToken().Src() == "main" {
+	if !token.IsExported(name.Src()) || a.packageName == "main" {
 		return
 	}
 	if strings.HasSuffix(a.filename, "_test.go") && (strings.HasPrefix(name.Src(), "Test") || strings.HasPrefix(

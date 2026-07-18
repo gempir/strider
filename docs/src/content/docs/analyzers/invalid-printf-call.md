@@ -6,7 +6,7 @@ description: Detect malformed printf formats and mismatched arguments.
 **Default severity:** `error`
 
 Printf-style calls interpret a small language of verbs, argument indexes,
-widths, and precisions. This analyzer validates constant formats against the
+widths, and precisions. This check validates constant formats against the
 resolved call and its variadic arguments.
 
 It reports malformed formats, unknown verbs, missing or extra arguments,

@@ -21,4 +21,4 @@ for index := range values { pointers = append(pointers, &values[index]) }
 
 ## Enable
 
-This extended rule runs when selected with `--only range-val-address`, enabled in `strider.toml`, or included with `--all-rules`. The default severity is `warning`.
+This optional check runs when selected with `--only range-val-address`, enabled in `strider.toml`, or included with `--all`. The default severity is `warning`.

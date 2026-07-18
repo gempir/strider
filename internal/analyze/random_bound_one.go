@@ -25,30 +25,27 @@ func (randomBoundOneRule) Meta() Meta {
 }
 
 func (randomBoundOneRule) Run(pass *Pass) {
-	for _, function := range pass.Functions {
-		for _, block := range function.Blocks {
-			for _, instruction := range block.Instrs {
-				call, ok := instruction.(ssa.CallInstruction)
-				if !ok || len(call.Common().Args) == 0 {
-					continue
-				}
-				name, ok := boundedRandomFunction(call)
-				if !ok {
-					continue
-				}
-				bound := ssaConstant(call.Common().Args[len(call.Common().Args) - 1])
-				if bound == nil || bound.Value == nil || bound.Value.Kind() != constant.Int || !constant.Compare(
-					bound.Value,
-					token.EQL,
-					constant.MakeInt64(1),
-				) {
-					continue
-				}
-				pass.Report(
-					positionNode{position: call.Pos()},
-					fmt.Sprintf("%s with an upper bound of one always returns zero", name),
-				)
+	for _, packagePath := range[]string{"math/rand", "math/rand/v2"} {
+		for _, call := range pass.staticCallsInPackage(packagePath) {
+			if len(call.Common().Args) == 0 {
+				continue
 			}
+			name, ok := boundedRandomFunction(call)
+			if !ok {
+				continue
+			}
+			bound := ssaConstant(call.Common().Args[len(call.Common().Args) - 1])
+			if bound == nil || bound.Value == nil || bound.Value.Kind() != constant.Int || !constant.Compare(
+				bound.Value,
+				token.EQL,
+				constant.MakeInt64(1),
+			) {
+				continue
+			}
+			pass.Report(
+				positionNode{position: call.Pos()},
+				fmt.Sprintf("%s with an upper bound of one always returns zero", name),
+			)
 		}
 	}
 }

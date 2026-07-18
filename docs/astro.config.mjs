@@ -28,7 +28,7 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'Strider',
-      description: 'Formatting, linting, and static analysis for Go.',
+      description: 'Formatting and unified code checks for Go.',
       customCss: ['./src/styles/custom.css'],
       head: [{ tag: 'script', content: benchmarkThemeBridge }],
       sidebar: [
@@ -38,7 +38,7 @@ export default defineConfig({
         },
         {
           label: 'Guides',
-          items: ['formatter', 'linter', 'analyzers'],
+          items: ['formatter', 'checks'],
         },
         {
           label: 'Benchmarks',
@@ -50,12 +50,17 @@ export default defineConfig({
           items: [
             'reference/cli',
             {
-              label: 'Lints',
-              items: [{ autogenerate: { directory: 'lints' } }],
-            },
-            {
-              label: 'Analyzers',
-              items: [{ autogenerate: { directory: 'analyzers' } }],
+              label: 'Checks',
+              items: [
+                {
+                  label: 'Style and maintainability',
+                  items: [{ autogenerate: { directory: 'lints' } }],
+                },
+                {
+                  label: 'Correctness and safety',
+                  items: [{ autogenerate: { directory: 'analyzers' } }],
+                },
+              ],
             },
           ],
         },

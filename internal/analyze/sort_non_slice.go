@@ -24,33 +24,28 @@ func (sortNonSliceRule) Meta() Meta {
 
 func (sortNonSliceRule) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
-	for _, function := range pass.Functions {
-		for _, block := range function.Blocks {
-			for _, instruction := range block.Instrs {
-				call, ok := instruction.(ssa.CallInstruction)
-				if !ok || !isSortSliceCall(call) || len(call.Common().Args) == 0 {
-					continue
-				}
-				argument := unwrapSSAValue(call.Common().Args[0])
-				if _, ok := types.Unalias(argument.Type()).Underlying().(*types.Slice); ok {
-					continue
-				}
-				if _, unknown := types.Unalias(argument.Type()).Underlying().(*types.Interface); unknown && !isNilSSAConstant(
-					argument,
-				) {
-					continue
-				}
-				node := explicitCallArgument(calls[call.Pos()], 0, call.Pos())
-				pass.Report(
-					node,
-					fmt.Sprintf(
-						"%s requires a slice, but the argument has type %s",
-						sortSliceCallName(call),
-						types.TypeString(argument.Type(), types.RelativeTo(pass.Types)),
-					),
-				)
-			}
+	for _, call := range pass.staticCallsInPackage("sort") {
+		if !isSortSliceCall(call) || len(call.Common().Args) == 0 {
+			continue
 		}
+		argument := unwrapSSAValue(call.Common().Args[0])
+		if _, ok := types.Unalias(argument.Type()).Underlying().(*types.Slice); ok {
+			continue
+		}
+		if _, unknown := types.Unalias(argument.Type()).Underlying().(*types.Interface); unknown && !isNilSSAConstant(
+			argument,
+		) {
+			continue
+		}
+		node := explicitCallArgument(calls[call.Pos()], 0, call.Pos())
+		pass.Report(
+			node,
+			fmt.Sprintf(
+				"%s requires a slice, but the argument has type %s",
+				sortSliceCallName(call),
+				types.TypeString(argument.Type(), types.RelativeTo(pass.Types)),
+			),
+		)
 	}
 }
 

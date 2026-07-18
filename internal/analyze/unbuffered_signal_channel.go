@@ -23,22 +23,17 @@ func (unbufferedSignalChannelRule) Meta() Meta {
 
 func (unbufferedSignalChannelRule) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
-	for _, function := range pass.Functions {
-		for _, block := range function.Blocks {
-			for _, instruction := range block.Instrs {
-				call, ok := instruction.(ssa.CallInstruction)
-				if !ok || !isStaticFunction(call, "os/signal", "Notify") || len(call.Common().Args) == 0 || !isUnbufferedChannel(
-					call.Common().Args[0],
-				) {
-					continue
-				}
-				node := explicitCallArgument(calls[call.Pos()], 0, call.Pos())
-				pass.Report(
-					node,
-					"the channel used with signal.Notify is unbuffered and can drop signals",
-				)
-			}
+	for _, call := range pass.staticCallsInPackage("os/signal") {
+		if !isStaticFunction(call, "os/signal", "Notify") || len(call.Common().Args) == 0 || !isUnbufferedChannel(
+			call.Common().Args[0],
+		) {
+			continue
 		}
+		node := explicitCallArgument(calls[call.Pos()], 0, call.Pos())
+		pass.Report(
+			node,
+			"the channel used with signal.Notify is unbuffered and can drop signals",
+		)
 	}
 }
 

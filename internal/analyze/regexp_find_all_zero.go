@@ -26,28 +26,23 @@ func (regexpFindAllZeroRule) Meta() Meta {
 
 func (regexpFindAllZeroRule) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
-	for _, function := range pass.Functions {
-		for _, block := range function.Blocks {
-			for _, instruction := range block.Instrs {
-				call, ok := instruction.(ssa.CallInstruction)
-				if !ok || !isRegexpFindAllCall(call) || len(call.Common().Args) < 3 {
-					continue
-				}
-				value, ok := call.Common().Args[2].(*ssa.Const)
-				if !ok || value.Value == nil || value.Value.Kind() != constant.Int {
-					continue
-				}
-				n, exact := constant.Int64Val(value.Value)
-				if !exact || n != 0 {
-					continue
-				}
-				node := explicitCallArgument(calls[call.Pos()], 1, call.Pos())
-				pass.Report(
-					node,
-					"calling a FindAll method with n == 0 will return no results, did you mean -1?",
-				)
-			}
+	for _, call := range pass.staticCallsInPackage("regexp") {
+		if !isRegexpFindAllCall(call) || len(call.Common().Args) < 3 {
+			continue
 		}
+		value, ok := call.Common().Args[2].(*ssa.Const)
+		if !ok || value.Value == nil || value.Value.Kind() != constant.Int {
+			continue
+		}
+		n, exact := constant.Int64Val(value.Value)
+		if !exact || n != 0 {
+			continue
+		}
+		node := explicitCallArgument(calls[call.Pos()], 1, call.Pos())
+		pass.Report(
+			node,
+			"calling a FindAll method with n == 0 will return no results, did you mean -1?",
+		)
 	}
 }
 

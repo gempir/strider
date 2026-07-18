@@ -1,16 +1,15 @@
 ---
-title: Lint rules
-description: Complete reference for Strider's native Go lint rules.
+title: Style and maintainability checks
+description: Reference for Strider's source-level style and maintainability checks.
 sidebar:
   order: 0
 ---
 
-Every profile rule is enabled by default at `warning` severity. Any visible
-finding causes `strider lint` to exit with code `1`. Every rule supports common
-`enabled`, `severity`, and path `excludes` configuration. Behavioral thresholds
-shown below remain fixed rule contracts.
+This group contains 116 checks covering style, naming, readability, complexity,
+and syntactic maintainability. Seven are enabled in the default `strider check`
+profile at `warning` severity:
 
-| Rule | Purpose | Behavioral default |
+| Check | Purpose | Behavioral default |
 | --- | --- | --- |
 | [`cyclomatic-complexity`](./cyclomatic-complexity/) | Limit independent control-flow paths. | Maximum `10` |
 | [`max-parameters`](./max-parameters/) | Limit function parameter count. | Maximum `5` |
@@ -20,20 +19,25 @@ shown below remain fixed rule contracts.
 | [`no-defer-in-loop`](./no-defer-in-loop/) | Avoid accumulating deferred calls. | None |
 | [`no-else-after-return`](./no-else-after-return/) | Reduce nesting after a terminal return. | None |
 
-Use `strider lint --list-rules` to inspect the executable's registry or
-`strider lint --explain CODE` for its short built-in explanation.
+Use `strider check --list-checks` to inspect the enabled registry or
+`strider check --explain CODE` for a built-in explanation.
 
-## Extended rule catalog
+## Optional catalog
 
-Strider includes 109 additional native rules alongside its seven-rule default
-profile. Each rule has a page in this section describing its behavior and
-Strider default.
+The remaining 109 checks are disabled until selected on the CLI or enabled in
+configuration. Run every check in this group together with the rest of
+Strider's catalog using:
 
 ```sh
-strider lint --all-rules ./...
+strider check --all ./...
 ```
 
-The extended rules share one lossless CST traversal per source file.
+Select one optional check without enabling the others:
 
-Enable extended rules individually in `strider.toml` or select them on the
-CLI. See [Configuration](/configuration/#configure-any-lint-rule).
+```sh
+strider check --only add-constant ./...
+```
+
+Every page in this section describes one stable check code and its behavioral
+contract. Configure codes under `[checks.rules]`; see
+[Configuration](/configuration/#checks).

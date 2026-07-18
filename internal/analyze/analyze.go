@@ -31,6 +31,14 @@ type analysisTask struct {
 	rule Rule
 }
 
+type ssaBuildResult struct {
+	program *ssa.Program
+	packages []*ssa.Package
+	functionsByPackage map[*ssa.Package][]*ssa.Function
+}
+
+type ssaBuildFunc func([]*packages.Package, ssa.BuilderMode) ssaBuildResult
+
 type analysisFinding struct {
 	key string
 	diagnostic diagnostic.Diagnostic
@@ -51,6 +59,14 @@ type analysisFileInfoCacheEntry struct {
 // deterministic diagnostics. Directories are analyzed recursively, matching
 // the path behavior of strider lint.
 func Run(paths []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
+	return run(paths, registry, buildSSA)
+}
+
+func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) (
+	[]diagnostic.Diagnostic,
+	error,
+) {
+	plan := registry.executionPlan()
 	patterns, targets, err := loadInputs(paths)
 	if err != nil {
 		return nil, err
@@ -65,39 +81,14 @@ func Run(paths []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
 	initial := selectInitialPackages(loaded)
 	var deprecatedObjects map[types.Object]string
 	var deprecatedPackages map[*types.Package]string
-	if registry.hasRule("deprecated-api-usage") {
+	if plan.requirements.Facts.Has(FactDeprecations) {
 		deprecatedObjects, deprecatedPackages = collectDeprecations(loaded)
 	}
-	var ssaProgram *ssa.Program
-	ssaPackages := make([]*ssa.Package, len(initial))
-	functionsByPackage := make(map[*ssa.Package][]*ssa.Function)
-	needsSSA := registry.needsSSA()
-	if needsSSA {
-		builderMode := ssa.InstantiateGenerics
-		if registry.hasRule("overwritten-before-use") || registry.hasRule(
-			"unchanged-loop-condition",
-		) || registry.hasRule("never-nil-comparison") {
-			builderMode |= ssa.GlobalDebug
-		}
-		ssaProgram, ssaPackages = ssautil.Packages(initial, builderMode)
-		ssaProgram.Build()
-		functionsByPackage = collectPackageFunctions(ssaProgram, ssaPackages)
-		seenFunctions := make(map[*ssa.Function]bool)
-		for _, functions := range functionsByPackage {
-			for _, function := range functions {
-				seenFunctions[function] = true
-			}
-		}
-		for function := range ssautil.AllFunctions(ssaProgram) {
-			if function.Pkg != nil && !seenFunctions[function] {
-				seenFunctions[function] = true
-				functionsByPackage[function.Pkg] = append(
-					functionsByPackage[function.Pkg],
-					function,
-				)
-			}
-		}
-	}
+	ssaResult := prepareSSA(initial, plan, ssaBuilder)
+	ssaProgram := ssaResult.program
+	ssaPackages := ssaResult.packages
+	functionsByPackage := ssaResult.functionsByPackage
+	needsSSA := plan.needsSSA()
 
 	seenPackages := make(map[string]bool)
 	passes := make([]*Pass, 0, len(initial))
@@ -127,7 +118,7 @@ func Run(paths []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
 				SSAProgram: ssaProgram,
 				SSAPackage: ssaPackage,
 				Functions: functionsByPackage[ssaPackage],
-				facts: &packageFacts{},
+				facts: newPackageFacts(plan.requirements.Facts, plan.staticCallPackages),
 
 				deprecatedObjects: deprecatedObjects,
 				deprecatedPackages: deprecatedPackages,
@@ -198,6 +189,47 @@ func Run(paths []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
 	close(results)
 	sortDiagnostics(diagnostics)
 	return diagnostics, nil
+}
+
+func (plan executionPlan) ssaBuilderMode() ssa.BuilderMode {
+	mode := ssa.InstantiateGenerics
+	if plan.requirements.SSAFeatures & SSAFeatureGlobalDebug != 0 {
+		mode |= ssa.GlobalDebug
+	}
+	return mode
+}
+
+func prepareSSA(initial []*packages.Package, plan executionPlan, build ssaBuildFunc) ssaBuildResult {
+	if !plan.needsSSA() {
+		return ssaBuildResult{
+			packages: make([]*ssa.Package, len(initial)),
+			functionsByPackage: make(map[*ssa.Package][]*ssa.Function),
+		}
+	}
+	return build(initial, plan.ssaBuilderMode())
+}
+
+func buildSSA(initial []*packages.Package, mode ssa.BuilderMode) ssaBuildResult {
+	program, packages := ssautil.Packages(initial, mode)
+	program.Build()
+	functionsByPackage := collectPackageFunctions(program, packages)
+	seenFunctions := make(map[*ssa.Function]bool)
+	for _, functions := range functionsByPackage {
+		for _, function := range functions {
+			seenFunctions[function] = true
+		}
+	}
+	for function := range ssautil.AllFunctions(program) {
+		if function.Pkg != nil && !seenFunctions[function] {
+			seenFunctions[function] = true
+			functionsByPackage[function.Pkg] = append(functionsByPackage[function.Pkg], function)
+		}
+	}
+	return ssaBuildResult{
+		program: program,
+		packages: packages,
+		functionsByPackage: functionsByPackage,
+	}
 }
 
 // selectInitialPackages avoids analyzing production syntax twice when

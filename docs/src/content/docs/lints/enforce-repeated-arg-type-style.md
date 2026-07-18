@@ -21,4 +21,4 @@ func add(left, right int) int // with short style configured
 
 ## Enable
 
-This extended rule runs when selected with `--only enforce-repeated-arg-type-style`, enabled in `strider.toml`, or included with `--all-rules`. The default severity is `warning`.
+This optional check runs when selected with `--only enforce-repeated-arg-type-style`, enabled in `strider.toml`, or included with `--all`. The default severity is `warning`.

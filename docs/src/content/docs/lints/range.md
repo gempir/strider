@@ -14,8 +14,7 @@ runes without allocating a slice. When the index is used, the conversion is
 preserved because a string range yields byte offsets while a rune-slice range
 yields rune indexes.
 
-## Default
+## Enable
 
-enabled. The rule is part of Strider's extended catalog and runs
-when selected with `--only range` or when the complete catalog is enabled
-with `--all-rules`.
+This optional check runs when selected with `--only range`, enabled in
+`strider.toml`, or included with `--all`.

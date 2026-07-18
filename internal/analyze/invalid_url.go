@@ -5,8 +5,6 @@ import (
 	"go/constant"
 	"net/url"
 
-	"golang.org/x/tools/go/ssa"
-
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
@@ -25,26 +23,21 @@ func (invalidURLRule) Meta() Meta {
 
 func (invalidURLRule) Run(pass *Pass) {
 	calls := pass.firstArgumentsByCallPosition()
-	for _, function := range pass.Functions {
-		for _, block := range function.Blocks {
-			for _, instruction := range block.Instrs {
-				call, ok := instruction.(ssa.CallInstruction)
-				if !ok || !isStaticFunction(call, "net/url", "Parse") || len(call.Common().Args) == 0 {
-					continue
-				}
-				value := ssaConstant(call.Common().Args[0])
-				if value == nil || value.Value == nil || value.Value.Kind() != constant.String {
-					continue
-				}
-				rawURL := constant.StringVal(value.Value)
-				if _, err := url.Parse(rawURL); err != nil {
-					node := calls[call.Pos()]
-					if node == nil {
-						node = positionNode{position: call.Pos()}
-					}
-					pass.Report(node, fmt.Sprintf("%q is not a valid URL: %s", rawURL, err))
-				}
+	for _, call := range pass.staticCallsInPackage("net/url") {
+		if !isStaticFunction(call, "net/url", "Parse") || len(call.Common().Args) == 0 {
+			continue
+		}
+		value := ssaConstant(call.Common().Args[0])
+		if value == nil || value.Value == nil || value.Value.Kind() != constant.String {
+			continue
+		}
+		rawURL := constant.StringVal(value.Value)
+		if _, err := url.Parse(rawURL); err != nil {
+			node := calls[call.Pos()]
+			if node == nil {
+				node = positionNode{position: call.Pos()}
 			}
+			pass.Report(node, fmt.Sprintf("%q is not a valid URL: %s", rawURL, err))
 		}
 	}
 }

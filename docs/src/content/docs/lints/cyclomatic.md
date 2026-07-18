@@ -21,4 +21,4 @@ func sign(n int) int { if n < 0 { return -1 }; return 1 }
 
 ## Enable
 
-This extended rule runs when selected with `--only cyclomatic`, enabled in `strider.toml`, or included with `--all-rules`. The default severity is `warning`.
+This optional check runs when selected with `--only cyclomatic`, enabled in `strider.toml`, or included with `--all`. The default severity is `warning`.

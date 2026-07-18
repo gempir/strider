@@ -140,6 +140,20 @@ func (r *Registry) activeRules(filename string) []builtinrules.Rule {
 	return active
 }
 
+// Applies reports whether at least one selected concrete-syntax check applies
+// to filename.
+func (r *Registry) Applies(filename string) bool {
+	if r == nil {
+		return false
+	}
+	for _, rule := range r.rules {
+		if !pathfilter.Matches(r.root, filename, r.settings[rule.Meta().Code].excludes) {
+			return true
+		}
+	}
+	return false
+}
+
 type Context struct {
 	filename string
 	displayFilename string
@@ -263,6 +277,27 @@ func lintFile(filename string, registry *Registry) ([]diagnostic.Diagnostic, err
 	if err != nil {
 		return nil, err
 	}
+	return analyzeTree(filename, concreteTree, activeRules, registry), nil
+}
+
+// AnalyzeTree runs the selected concrete-syntax checks against a shared tree.
+func AnalyzeTree(filename string, concreteTree *cst.Tree, registry *Registry) []diagnostic.Diagnostic {
+	if concreteTree == nil || registry == nil {
+		return nil
+	}
+	activeRules := registry.activeRules(filename)
+	return analyzeTree(filename, concreteTree, activeRules, registry)
+}
+
+func analyzeTree(
+	filename string,
+	concreteTree *cst.Tree,
+	activeRules []builtinrules.Rule,
+	registry *Registry,
+) []diagnostic.Diagnostic {
+	if len(activeRules) == 0 {
+		return nil
+	}
 	concreteIgnores, concreteNodes := concreteSuppressions(concreteTree)
 	context := &Context{
 		filename: filename,
@@ -280,7 +315,7 @@ func lintFile(filename string, registry *Registry) ([]diagnostic.Diagnostic, err
 			},
 		},
 	)
-	return context.diagnostics, nil
+	return context.diagnostics
 }
 
 func (c *Context) reportConcrete(

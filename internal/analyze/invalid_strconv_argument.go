@@ -29,30 +29,22 @@ func (invalidStrconvArgumentRule) Meta() Meta {
 
 func (invalidStrconvArgumentRule) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
-	for _, function := range pass.Functions {
-		for _, block := range function.Blocks {
-			for _, instruction := range block.Instrs {
-				call, ok := instruction.(ssa.CallInstruction)
-				if !ok {
-					continue
-				}
-				constraints := strconvConstraints(call)
-				for _, constraint := range constraints {
-					if len(call.Common().Args) <= constraint.index {
-						continue
-					}
-					value, ok := ssaInt64(call.Common().Args[constraint.index])
-					if !ok {
-						continue
-					}
-					message := constraint.validate(value)
-					if message == "" {
-						continue
-					}
-					node := explicitCallArgument(calls[call.Pos()], constraint.index, call.Pos())
-					pass.Report(node, message)
-				}
+	for _, call := range pass.staticCallsInPackage("strconv") {
+		constraints := strconvConstraints(call)
+		for _, constraint := range constraints {
+			if len(call.Common().Args) <= constraint.index {
+				continue
 			}
+			value, ok := ssaInt64(call.Common().Args[constraint.index])
+			if !ok {
+				continue
+			}
+			message := constraint.validate(value)
+			if message == "" {
+				continue
+			}
+			node := explicitCallArgument(calls[call.Pos()], constraint.index, call.Pos())
+			pass.Report(node, message)
 		}
 	}
 }

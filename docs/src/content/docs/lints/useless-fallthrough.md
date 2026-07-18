@@ -21,4 +21,4 @@ switch value { case 1: use() }
 
 ## Enable
 
-This extended rule runs when selected with `--only useless-fallthrough`, enabled in `strider.toml`, or included with `--all-rules`. The default severity is `warning`.
+This optional check runs when selected with `--only useless-fallthrough`, enabled in `strider.toml`, or included with `--all`. The default severity is `warning`.

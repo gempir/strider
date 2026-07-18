@@ -17,7 +17,7 @@ func (contradictoryInterfaceAssertionRule) Meta() Meta {
 		Explanation: "An assertion from one interface to another can compile even when the two method sets contain a same-named method with incompatible signatures. No dynamic type can implement both contracts, so the assertion can never succeed.",
 		GoodExample: "value, ok := source.(interface { Write([]byte) error })",
 		BadExample: "value, ok := source.(interface { Read() string }) // source requires Read() int",
-		DefaultSeverity: diagnostic.SeverityWarning,
+		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
 

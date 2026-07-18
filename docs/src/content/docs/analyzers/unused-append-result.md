@@ -3,7 +3,7 @@ title: unused-append-result
 description: Detect append results that can never be observed.
 ---
 
-**Default severity:** `warning`
+**Default severity:** `error`
 
 `append` returns the updated slice header. Discarding that result loses any new
 length or reallocated backing array. The check reports only function-local

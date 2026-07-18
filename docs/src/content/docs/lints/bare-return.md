@@ -21,4 +21,4 @@ func count() (n int) { n = 1; return n }
 
 ## Enable
 
-This optional check runs when selected with `--only bare-return`, enabled in `strider.toml`, or included with `--all`. The default severity is `warning`.
+This optional check runs when selected with `--only bare-return`, enabled in `strider.toml`, or included with `--all`. The default severity is `note`.

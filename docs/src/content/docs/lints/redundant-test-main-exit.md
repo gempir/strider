@@ -21,4 +21,4 @@ func TestMain(m *testing.M) { m.Run() }
 
 ## Enable
 
-This optional check runs when selected with `--only redundant-test-main-exit`, enabled in `strider.toml`, or included with `--all`. The default severity is `warning`.
+This optional check runs when selected with `--only redundant-test-main-exit`, enabled in `strider.toml`, or included with `--all`. The default severity is `note`.

@@ -23,7 +23,7 @@ func (possibleNilDereferenceRule) Meta() Meta {
 		Explanation: "Checking a pointer against nil is evidence that nil is a possible value. A dereference that is not dominated by the check's non-nil path may panic, commonly because it occurs before the check or because the nil branch reports an error but continues.",
 		GoodExample: "if value == nil { return }; use(*value)",
 		BadExample: "if value == nil { logError() }; use(*value)",
-		DefaultSeverity: diagnostic.SeverityWarning,
+		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
 

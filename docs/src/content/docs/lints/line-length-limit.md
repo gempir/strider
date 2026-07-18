@@ -21,4 +21,4 @@ message := "keep source lines readable"
 
 ## Enable
 
-This optional check runs when selected with `--only line-length-limit`, enabled in `strider.toml`, or included with `--all`. The default severity is `warning`.
+This optional check runs when selected with `--only line-length-limit`, enabled in `strider.toml`, or included with `--all`. The default severity is `note`.

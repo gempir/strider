@@ -19,7 +19,7 @@ func (impossibleInterfaceNilComparisonRule) Meta() Meta {
 		Explanation: "An interface is nil only when both its dynamic type and value are absent. Storing a typed nil pointer in an interface gives it a concrete dynamic type, so the interface itself is non-nil.",
 		GoodExample: "func result(ok bool) error { if !ok { return nil }; return &problem{} }",
 		BadExample: "func result() error { var problem *Problem; return problem }",
-		DefaultSeverity: diagnostic.SeverityWarning,
+		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
 

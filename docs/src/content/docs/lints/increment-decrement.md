@@ -21,4 +21,4 @@ count++
 
 ## Enable
 
-This optional check runs when selected with `--only increment-decrement`, enabled in `strider.toml`, or included with `--all`. The default severity is `warning`.
+This optional check runs when selected with `--only increment-decrement`, enabled in `strider.toml`, or included with `--all`. The default severity is `note`.

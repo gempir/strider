@@ -29,14 +29,15 @@ strider check ./...
 strider check --format json ./...
 strider check --format html ./... > check-report.html
 strider check --only format,no-init,invalid-regexp ./...
+strider check --minimum-severity warning ./...
 strider check --watch ./...
 strider check --list-checks
 strider check --explain invalid-regexp
 ```
 
-The default profile contains 94 checks: formatting, seven style and
-maintainability checks, and 86 correctness and data-flow checks. Use
-`strider check --all` to enable the complete 203-check catalog. `--only` selects
+The default profile contains 118 checks: formatting, seven style and
+maintainability checks, and 110 correctness and data-flow checks. Use
+`strider check --all` to enable the complete 227-check catalog. `--only` selects
 exactly the named codes and avoids building program information that those
 checks do not need.
 
@@ -84,6 +85,7 @@ max-empty-lines = 1
 
 [checks]
 baseline = "strider-baseline.toml"
+minimum-severity = "warning"
 
 [checks.rules.line-length-limit]
 enabled = true
@@ -93,6 +95,11 @@ severity = "warning"
 severity = "error"
 excludes = ["internal/legacy/**"]
 ```
+
+Checks resolve their built-in or configured severity before applying
+`minimum-severity`. The order is `note < warning < error`, so a rule promoted
+to `error` still runs in an error-only profile and one demoted to `note` does
+not. `--minimum-severity` overrides the configured threshold for one run.
 
 Use `strider --config PATH COMMAND` to select a file explicitly or
 `strider --no-config COMMAND` to run with built-in defaults. Rich terminal

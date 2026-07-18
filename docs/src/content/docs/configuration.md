@@ -22,6 +22,7 @@ excludes = ["internal/generated/**"]
 excludes = ["testdata/**"]
 baseline = "strider-baseline.toml"
 baseline-variant = "loose"
+minimum-severity = "warning"
 
 [checks.rules.format]
 severity = "warning"
@@ -176,12 +177,13 @@ Tool-wide settings live under `[checks]`.
 | `excludes` | string list | `[]` | Skip matching files for all checks. |
 | `baseline` | string | unset | Apply this baseline unless the CLI overrides or ignores it. Relative paths resolve from `strider.toml`. |
 | `baseline-variant` | string | `"loose"` | Shape used the next time a baseline is generated: `"loose"` or `"strict"`. |
+| `minimum-severity` | string | `"note"` | Run only checks whose effective severity is at least `"note"`, `"warning"`, or `"error"`. |
 | `rules` | table | `{}` | Common configuration keyed by any registered check code. |
 
-The default profile contains 94 checks: `format`, seven style and
-maintainability checks, and all 86 package-aware correctness checks. The other
+The default profile contains 118 checks: `format`, seven style and
+maintainability checks, and all 110 package-aware correctness checks. The other
 109 style and maintainability checks are optional. `strider check --all` enables
-all 203 checks.
+all 227 checks.
 
 Every code accepts the same three options:
 
@@ -208,6 +210,12 @@ enabled = false
 Changing the severity of an optional check does not implicitly enable it. Set
 `enabled = true` as well, or select it on the CLI. Behavioral thresholds remain
 part of each check's contract and are not yet generally configurable.
+
+Strider resolves selection and each rule's severity before applying
+`minimum-severity`, using `note < warning < error`. A note promoted to error is
+therefore included in an error-only run; an error demoted to note is excluded
+from a warning-only run. Explicit `--only` and `--all` selection still respects
+the minimum. Override it for one command with `--minimum-severity`.
 
 Strider may satisfy selected checks from source text, syntax, type information,
 or control-flow data. These capabilities are internal scheduling details: they

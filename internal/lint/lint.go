@@ -21,12 +21,22 @@ import (
 type Registry struct {
 	rules []builtinrules.Rule
 	settings map[string]configuredRule
+	knownCodes map[string]bool
 	root string
 }
 
 type configuredRule struct {
 	severity diagnostic.Severity
 	excludes []string
+}
+
+// RegistryOptions selects and configures concrete-syntax rules.
+type RegistryOptions struct {
+	Only []string
+	EnableAll bool
+	Settings map[string]config.RuleConfig
+	Root string
+	MinimumSeverity diagnostic.Severity
 }
 
 func NewRegistry(only []string) (*Registry, error) {
@@ -49,6 +59,28 @@ func NewRegistryConfigured(
 	settings map[string]config.RuleConfig,
 	root string,
 ) (*Registry, error) {
+	return NewRegistryWithOptions(
+		RegistryOptions{
+			Only: only,
+			EnableAll: enableAll,
+			Settings: settings,
+			Root: root,
+			MinimumSeverity: diagnostic.SeverityNote,
+		},
+	)
+}
+
+// NewRegistryWithOptions applies project settings and a minimum effective
+// severity. Explicit selection changes enabled state, but never bypasses the
+// severity threshold.
+func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
+	minimumSeverity := options.MinimumSeverity
+	if minimumSeverity == "" {
+		minimumSeverity = diagnostic.SeverityNote
+	}
+	if !diagnostic.ValidSeverity(minimumSeverity) {
+		return nil, fmt.Errorf("minimum severity must be note, warning, or error")
+	}
 	all, err := builtinrules.Select(nil, true)
 	if err != nil {
 		return nil, err
@@ -57,11 +89,11 @@ func NewRegistryConfigured(
 	for _, rule := range all {
 		byCode[rule.Meta().Code] = rule
 	}
-	if err := validateConfiguredRules("lint", settings, byCode); err != nil {
+	if err := validateConfiguredRules("lint", options.Settings, byCode); err != nil {
 		return nil, err
 	}
-	if len(only) != 0 {
-		if _, err := builtinrules.Select(only, false); err != nil {
+	if len(options.Only) != 0 {
+		if _, err := builtinrules.Select(options.Only, false); err != nil {
 			return nil, err
 		}
 	}
@@ -70,19 +102,24 @@ func NewRegistryConfigured(
 	for _, rule := range defaults {
 		enabledByDefault[rule.Meta().Code] = true
 	}
-	wanted := make(map[string]bool, len(only))
-	for _, code := range only {
+	wanted := make(map[string]bool, len(options.Only))
+	for _, code := range options.Only {
 		wanted[code] = true
 	}
-	registry := &Registry{settings: make(map[string]configuredRule, len(all)), root: root}
+	registry := &Registry{
+		settings: make(map[string]configuredRule, len(all)),
+		knownCodes: make(map[string]bool, len(all)),
+		root: options.Root,
+	}
 	for _, rule := range all {
 		meta := rule.Meta()
-		ruleConfig := settings[meta.Code]
+		registry.knownCodes[meta.Code] = true
+		ruleConfig := options.Settings[meta.Code]
 		enabled := enabledByDefault[meta.Code]
 		switch {
-		case len(only) != 0:
+		case len(options.Only) != 0:
 			enabled = wanted[meta.Code]
-		case enableAll:
+		case options.EnableAll:
 			enabled = true
 		case ruleConfig.Enabled != nil:
 			enabled = *ruleConfig.Enabled
@@ -93,6 +130,9 @@ func NewRegistryConfigured(
 		severity := meta.DefaultSeverity
 		if ruleConfig.Severity != "" {
 			severity = diagnostic.Severity(ruleConfig.Severity)
+		}
+		if !severity.AtLeast(minimumSeverity) {
+			continue
 		}
 		registry.rules = append(registry.rules, rule)
 		registry.settings[meta.Code] = configuredRule{
@@ -109,9 +149,14 @@ func validateConfiguredRules(
 	available map[string]builtinrules.Rule,
 ) error {
 	unknown := make([]string, 0)
-	for code := range settings {
+	for code, setting := range settings {
 		if available[code] == nil {
 			unknown = append(unknown, code)
+		}
+		if setting.Severity != "" && !diagnostic.ValidSeverity(
+			diagnostic.Severity(setting.Severity),
+		) {
+			return fmt.Errorf("%s rule %q severity must be note, warning, or error", tool, code)
 		}
 	}
 	if len(unknown) == 0 {
@@ -123,6 +168,19 @@ func validateConfiguredRules(
 
 func (r *Registry) Rules() []builtinrules.Rule {
 	return append([]builtinrules.Rule(nil), r.rules...)
+}
+
+// KnownCodes returns every concrete-syntax rule code, including rules that
+// are disabled or below the current severity threshold.
+func (r *Registry) KnownCodes() map[string]bool {
+	if r == nil {
+		return nil
+	}
+	result := make(map[string]bool, len(r.knownCodes))
+	for code := range r.knownCodes {
+		result[code] = true
+	}
+	return result
 }
 
 func (r *Registry) Severity(code string) diagnostic.Severity {

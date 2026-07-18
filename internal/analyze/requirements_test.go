@@ -38,8 +38,8 @@ func TestRuleRequirementsCoverCatalog(t *testing.T) {
 			t.Fatalf("UsesSSA(%q) disagrees with its requirements", code)
 		}
 	}
-	if typed != 44 || ssaRules != 42 {
-		t.Fatalf("got %d typed and %d SSA rules, want 44 and 42", typed, ssaRules)
+	if typed != 66 || ssaRules != 44 {
+		t.Fatalf("got %d typed and %d SSA rules, want 66 and 44", typed, ssaRules)
 	}
 }
 

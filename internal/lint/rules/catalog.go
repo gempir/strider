@@ -41,7 +41,7 @@ var defaultCatalog = []definition{
 		meta: Meta{
 			Code: "no-naked-return",
 			Summary: "require explicit return values",
-			DefaultSeverity: diagnostic.SeverityWarning,
+			DefaultSeverity: diagnostic.SeverityNote,
 			Explanation: "A bare return in a function with named results makes data flow implicit, especially in longer functions.",
 			GoodExample: "func value() (n int) { n = 1; return n }",
 			BadExample: "func value() (n int) { n = 1; return }",
@@ -52,7 +52,7 @@ var defaultCatalog = []definition{
 		meta: Meta{
 			Code: "no-init",
 			Summary: "avoid implicit package initialization",
-			DefaultSeverity: diagnostic.SeverityWarning,
+			DefaultSeverity: diagnostic.SeverityNote,
 			Explanation: "init functions hide ordering and side effects. Prefer explicit construction called from main or tests.",
 			GoodExample: "func Configure() error { return register() }",
 			BadExample: "func init() { register() }",
@@ -85,7 +85,7 @@ var defaultCatalog = []definition{
 		meta: Meta{
 			Code: "no-else-after-return",
 			Summary: "remove else after terminal return",
-			DefaultSeverity: diagnostic.SeverityWarning,
+			DefaultSeverity: diagnostic.SeverityNote,
 			Explanation: "When the if branch returns, the else branch can be unindented. This reduces nesting without changing control flow.",
 			GoodExample: "if err != nil { return err }\nuse(value)",
 			BadExample: "if err != nil { return err } else { use(value) }",
@@ -213,6 +213,68 @@ var extendedCatalog = []spec{
 	{"zero-integer-division", "detect literal integer division that truncates to zero", "enabled"},
 }
 
+// Most source-level policy checks are advisory. Keep the smaller sets whose
+// findings indicate a likely defect, security problem, or material runtime
+// cost explicit so every catalog entry receives a deliberate default.
+var extendedWarningSeverities = map[string]bool{
+	"argument-limit": true,
+	"call-to-gc": true,
+	"cognitive-complexity": true,
+	"constant-logical-expr": true,
+	"cyclomatic": true,
+	"datarace": true,
+	"deep-exit": true,
+	"empty-block": true,
+	"function-result-limit": true,
+	"identical-branches": true,
+	"identical-ifelseif-branches": true,
+	"identical-ifelseif-conditions": true,
+	"identical-switch-branches": true,
+	"identical-switch-conditions": true,
+	"ineffective-pointer-copy": true,
+	"import-shadowing": true,
+	"imports-blocklist": true,
+	"inefficient-map-lookup": true,
+	"marshal-receiver": true,
+	"max-control-nesting": true,
+	"modifies-value-receiver": true,
+	"optimize-operands-order": true,
+	"range-val-address": true,
+	"range-val-in-closure": true,
+	"redefines-builtin-id": true,
+	"spaced-compiler-directive": true,
+	"spinning-select-default": true,
+	"time-equal": true,
+	"unexported-return": true,
+	"unreachable-code": true,
+	"unsecure-url-scheme": true,
+	"useless-fallthrough": true,
+}
+
+var extendedErrorSeverities = map[string]bool{
+	"atomic": true,
+	"bidirectional-control-character": true,
+	"defer": true,
+	"forbidden-call-in-wg-go": true,
+	"modulo-one": true,
+	"string-of-int": true,
+	"struct-tag": true,
+	"unchecked-type-assertion": true,
+	"unhandled-error": true,
+	"waitgroup-by-value": true,
+	"zero-integer-division": true,
+}
+
+func extendedDefaultSeverity(code string) diagnostic.Severity {
+	if extendedErrorSeverities[code] {
+		return diagnostic.SeverityError
+	}
+	if extendedWarningSeverities[code] {
+		return diagnostic.SeverityWarning
+	}
+	return diagnostic.SeverityNote
+}
+
 // Select returns the rules requested by the CLI. With no explicit selection it
 // returns the default profile; enableAll selects the complete catalog.
 func Select(only []string, enableAll bool) ([]Rule, error) {
@@ -270,7 +332,7 @@ func allRules() []Rule {
 					Explanation: explanation,
 					GoodExample: example.Good,
 					BadExample: example.Bad,
-					DefaultSeverity: diagnostic.SeverityWarning,
+					DefaultSeverity: extendedDefaultSeverity(item.Code),
 				},
 			},
 		)

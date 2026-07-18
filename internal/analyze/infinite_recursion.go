@@ -15,7 +15,7 @@ func (infiniteRecursionRule) Meta() Meta {
 		Explanation: "A recursive call must have a path that reaches a function exit without making that call. Otherwise recursion continues until the goroutine stack exhausts available memory. Go does not optimize tail calls, so deliberate infinite recursion should be written as a loop.",
 		GoodExample: "if done { return }; visit(next)",
 		BadExample: "func visit() { visit() }",
-		DefaultSeverity: diagnostic.SeverityWarning,
+		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
 

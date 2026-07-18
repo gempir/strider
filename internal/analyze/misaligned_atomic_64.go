@@ -18,7 +18,7 @@ func (misalignedAtomic64Rule) Meta() Meta {
 		Explanation: "On 32-bit ARM, x86, and MIPS targets, callers must ensure 64-bit words passed to legacy sync/atomic functions are aligned to 8 bytes. A uint64 field after a narrow field may not satisfy that requirement.",
 		GoodExample: "type counters struct { total uint64; ready uint32 }",
 		BadExample: "type counters struct { ready uint32; total uint64 }",
-		DefaultSeverity: diagnostic.SeverityWarning,
+		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
 

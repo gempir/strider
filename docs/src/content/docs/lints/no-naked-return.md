@@ -3,7 +3,7 @@ title: no-naked-return
 description: Require explicit values when returning from named-result functions.
 ---
 
-**Default severity:** `warning`  
+**Default severity:** `note`
 **Configuration:** `enabled`, `severity`, and path `excludes`
 
 Reports a bare `return` when the nearest function declaration or function

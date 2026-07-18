@@ -16,7 +16,7 @@ func (nilContextRule) Meta() Meta {
 		Explanation: "A context.Context must not be nil. Pass context.TODO when the appropriate parent is not yet known, or context.Background for an explicit root context.",
 		GoodExample: "load(context.TODO())",
 		BadExample: "load(nil)",
-		DefaultSeverity: diagnostic.SeverityWarning,
+		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
 

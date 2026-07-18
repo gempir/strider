@@ -21,4 +21,4 @@ Require a space after line-comment markers. Strider default: directives exempt.
 
 ## Enable
 
-This optional check runs when selected with `--only comment-spacings`, enabled in `strider.toml`, or included with `--all`. The default severity is `warning`.
+This optional check runs when selected with `--only comment-spacings`, enabled in `strider.toml`, or included with `--all`. The default severity is `note`.

@@ -3,7 +3,7 @@ title: never-nil-comparison
 description: Detect nil checks on values proven to be non-nil.
 ---
 
-**Default severity:** `warning`
+**Default severity:** `error`
 
 Fresh allocations, `make` results, functions, closures, and values flowing
 exclusively from those sources cannot be nil. Comparing them with nil has a

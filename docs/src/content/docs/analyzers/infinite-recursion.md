@@ -3,7 +3,7 @@ title: infinite-recursion
 description: Detect recursive calls with no path to a function exit.
 ---
 
-**Default severity:** `warning`
+**Default severity:** `error`
 
 A recursive call must have a path that reaches a function exit without making
 that call. Otherwise recursion continues until the goroutine stack exhausts

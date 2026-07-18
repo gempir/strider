@@ -17,7 +17,7 @@ func (nanComparisonRule) Meta() Meta {
 		Explanation: "IEEE floating-point NaN is unequal to every value, including itself, and all ordered comparisons with it are false. Use math.IsNaN when testing whether a value is NaN.",
 		GoodExample: "if math.IsNaN(value) { handle() }",
 		BadExample: "if value == math.NaN() { handle() }",
-		DefaultSeverity: diagnostic.SeverityWarning,
+		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
 

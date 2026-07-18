@@ -251,8 +251,8 @@ func TestCheckListsOneUnifiedCatalog(t *testing.T) {
 	if code != exitSuccess || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
-	if got := strings.Count(strings.TrimSpace(stdout.String()), "\n") + 1; got != 203 {
-		t.Fatalf("listed %d checks; want 203", got)
+	if got := strings.Count(strings.TrimSpace(stdout.String()), "\n") + 1; got != 227 {
+		t.Fatalf("listed %d checks; want 227", got)
 	}
 	for _, wanted := range[]string{"format\t", "no-init\t", "invalid-regexp\t"} {
 		if !strings.Contains(stdout.String(), wanted) {
@@ -373,6 +373,270 @@ enabled = false
 	}
 	if !strings.Contains(stdout.String(), "no-init\terror\t") {
 		t.Fatalf("configured severity is missing: %s", stdout.String())
+	}
+}
+
+func TestVersionTwoCheckMinimumSeverityUsesEffectiveOverrides(t *testing.T) {
+	root := t.TempDir()
+	configurationPath := filepath.Join(root, "strider.toml")
+	configuration := `version = 2
+[checks]
+minimum-severity = "error"
+[checks.rules.no-init]
+severity = "error"
+[checks.rules.suspicious-sleep]
+severity = "warning"
+`
+	if err := os.WriteFile(configurationPath, []byte(configuration), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	code := Run(
+		[]string{
+			"--config",
+			configurationPath,
+			"check",
+			"--only",
+			"no-init,suspicious-sleep",
+			"--list-checks",
+		},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitSuccess || stderr.Len() != 0 {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "no-init\terror\t") || strings.Contains(
+		stdout.String(),
+		"suspicious-sleep\t",
+	) {
+		t.Fatalf("canonical minimum severity selected the wrong checks: %q", stdout.String())
+	}
+
+	stdout.Reset()
+	code = Run(
+		[]string{
+			"--config",
+			configurationPath,
+			"check",
+			"--minimum-severity",
+			"warning",
+			"--only",
+			"no-init,suspicious-sleep",
+			"--list-checks",
+		},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitSuccess || !strings.Contains(stdout.String(), "no-init\terror\t") || !strings.Contains(
+		stdout.String(),
+		"suspicious-sleep\twarning\t",
+	) {
+		t.Fatalf(
+			"CLI minimum override: exit %d, stdout %q, stderr %q",
+			code,
+			stdout.String(),
+			stderr.String(),
+		)
+	}
+}
+
+func TestVersionTwoLegacyCommandsFilterCanonicalRuleSettings(t *testing.T) {
+	root := t.TempDir()
+	configurationPath := filepath.Join(root, "strider.toml")
+	configuration := `version = 2
+[checks.rules.format]
+enabled = false
+[checks.rules.no-init]
+severity = "error"
+[checks.rules.invalid-regexp]
+severity = "warning"
+`
+	if err := os.WriteFile(configurationPath, []byte(configuration), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for name, test := range map[string]struct {
+		command string
+		included string
+		excluded string
+	}{
+		"lint": {command: "lint", included: "no-init\terror\t", excluded: "invalid-regexp\t"},
+		"analyze": {command: "analyze", included: "invalid-regexp\twarning\t", excluded: "no-init\t"},
+	} {
+		t.Run(
+			name,
+			func(t *testing.T) {
+				var stdout,
+				stderr bytes.Buffer
+				code := Run(
+					[]string{"--config", configurationPath, test.command, "--list-rules"},
+					strings.NewReader(""),
+					&stdout,
+					&stderr,
+				)
+				if code != exitSuccess || stderr.Len() != 0 {
+					t.Fatalf(
+						"exit %d, stdout %q, stderr %q",
+						code,
+						stdout.String(),
+						stderr.String(),
+					)
+				}
+				if !strings.Contains(stdout.String(), test.included) || strings.Contains(
+					stdout.String(),
+					test.excluded,
+				) {
+					t.Fatalf("canonical settings were not scoped: %q", stdout.String())
+				}
+			},
+		)
+	}
+}
+
+func TestVersionTwoLegacyCommandsStillRejectUnknownCanonicalRules(t *testing.T) {
+	root := t.TempDir()
+	configurationPath := filepath.Join(root, "strider.toml")
+	configuration := `version = 2
+[checks.rules.removed-check]
+enabled = false
+`
+	if err := os.WriteFile(configurationPath, []byte(configuration), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for _, command := range[]string{"lint", "analyze"} {
+		t.Run(
+			command,
+			func(t *testing.T) {
+				var stdout,
+				stderr bytes.Buffer
+				code := Run(
+					[]string{"--config", configurationPath, command, "--list-rules"},
+					strings.NewReader(""),
+					&stdout,
+					&stderr,
+				)
+				if code != exitError || !strings.Contains(
+					stderr.String(),
+					"unknown check(s): removed-check",
+				) {
+					t.Fatalf(
+						"exit %d, stdout %q, stderr %q",
+						code,
+						stdout.String(),
+						stderr.String(),
+					)
+				}
+			},
+		)
+	}
+}
+
+func TestVersionOneCheckUsesScopedMinimumSeverities(t *testing.T) {
+	root := t.TempDir()
+	configurationPath := filepath.Join(root, "strider.toml")
+	configuration := `version = 1
+[linter]
+minimum-severity = "error"
+[linter.rules.no-init]
+severity = "warning"
+[analyzer]
+minimum-severity = "warning"
+[analyzer.rules.suspicious-sleep]
+severity = "warning"
+`
+	if err := os.WriteFile(configurationPath, []byte(configuration), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	code := Run(
+		[]string{
+			"--config",
+			configurationPath,
+			"check",
+			"--only",
+			"no-init,suspicious-sleep",
+			"--list-checks",
+		},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitSuccess || stderr.Len() != 0 {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	if strings.Contains(stdout.String(), "no-init\t") || !strings.Contains(
+		stdout.String(),
+		"suspicious-sleep\twarning\t",
+	) {
+		t.Fatalf("legacy scoped minimum severity selected the wrong checks: %q", stdout.String())
+	}
+}
+
+func TestMinimumSeverityFlagAppliesToLegacyCommands(t *testing.T) {
+	root := t.TempDir()
+	configurationPath := filepath.Join(root, "strider.toml")
+	configuration := `version = 1
+[linter.rules.no-init]
+severity = "warning"
+[analyzer.rules.suspicious-sleep]
+severity = "warning"
+`
+	if err := os.WriteFile(configurationPath, []byte(configuration), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for name, command := range map[string][]string{
+		"lint": {"lint", "--only", "no-init", "--list-rules"},
+		"analyze": {"analyze", "--only", "suspicious-sleep", "--list-rules"},
+	} {
+		t.Run(
+			name,
+			func(t *testing.T) {
+				args := []string{"--config", configurationPath}
+				args = append(args, command[0], "--minimum-severity", "error")
+				args = append(args, command[1:]...)
+				var stdout,
+				stderr bytes.Buffer
+				if code := Run(args, strings.NewReader(""), &stdout, &stderr); code != exitSuccess || stdout.Len() != 0 || stderr.Len() != 0 {
+					t.Fatalf(
+						"exit %d, stdout %q, stderr %q",
+						code,
+						stdout.String(),
+						stderr.String(),
+					)
+				}
+			},
+		)
+	}
+}
+
+func TestCommandsRejectInvalidMinimumSeverity(t *testing.T) {
+	for name, args := range map[string][]string{
+		"check": {"check", "--minimum-severity", "fatal", "--list-checks"},
+		"lint": {"lint", "--minimum-severity", "fatal", "--list-rules"},
+		"analyze": {"analyze", "--minimum-severity", "fatal", "--list-rules"},
+	} {
+		t.Run(
+			name,
+			func(t *testing.T) {
+				var stdout,
+				stderr bytes.Buffer
+				arguments := append([]string{"--no-config"}, args...)
+				code := Run(arguments, strings.NewReader(""), &stdout, &stderr)
+				if code != exitError || !strings.Contains(
+					stderr.String(),
+					"--minimum-severity must be",
+				) {
+					t.Fatalf(
+						"exit %d, stdout %q, stderr %q",
+						code,
+						stdout.String(),
+						stderr.String(),
+					)
+				}
+			},
+		)
 	}
 }
 
@@ -786,13 +1050,13 @@ func TestLintBaselineGenerateApplyIgnoreAndPrune(t *testing.T) {
 	write("package p\nfunc init() {}\nfunc init() {}\n")
 	if code, stdout, stderr := run(); code != exitFindings || strings.Count(
 		stdout,
-		"warning[no-init]",
+		"note[no-init]",
 	) != 1 || stderr != "" {
 		t.Fatalf("new issue exit %d, stdout %q, stderr %q", code, stdout, stderr)
 	}
 	if code, stdout, stderr := run("--ignore-baseline"); code != exitFindings || strings.Count(
 		stdout,
-		"warning[no-init]",
+		"note[no-init]",
 	) != 2 || stderr != "" {
 		t.Fatalf("ignore exit %d, stdout %q, stderr %q", code, stdout, stderr)
 	}
@@ -812,6 +1076,57 @@ func TestLintBaselineGenerateApplyIgnoreAndPrune(t *testing.T) {
 	}
 	if len(loaded.Issues) != 0 {
 		t.Fatalf("pruned baseline still has issues: %#v", loaded)
+	}
+}
+
+func TestSeverityFilteredBaselinePrunePreservesKnownAndRemovesUnknownCodes(t *testing.T) {
+	root := t.TempDir()
+	filename := filepath.Join(root, "main.go")
+	baselinePath := filepath.Join(root, "strider-baseline.toml")
+	if err := os.WriteFile(filename, []byte("package sample\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := baseline.Write(
+		baselinePath,
+		baseline.File{
+			Version: baseline.Version,
+			Variant: baseline.Loose,
+			Issues: []baseline.Issue{
+				{File: "main.go", Code: "no-init", Message: "known inactive finding", Count: 1},
+				{File: "main.go", Code: "removed-check", Message: "removed finding", Count: 1},
+			},
+		},
+		false,
+	); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	code := Run(
+		[]string{
+			"--no-config",
+			"check",
+			"--only",
+			"no-init",
+			"--minimum-severity",
+			"error",
+			"--baseline",
+			baselinePath,
+			"--remove-outdated-baseline-entries",
+			filename,
+		},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitSuccess || stdout.Len() != 0 || stderr.Len() != 0 {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	loaded, err := baseline.Load(baselinePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(loaded.Issues) != 1 || loaded.Issues[0].Code != "no-init" {
+		t.Fatalf("catalog-aware prune wrote %#v, want only no-init", loaded.Issues)
 	}
 }
 

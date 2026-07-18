@@ -15,7 +15,7 @@ func (unusedAppendResultRule) Meta() Meta {
 		Explanation: "append returns the updated slice header. Discarding that result loses any new length or reallocated backing array. The analyzer reports only function-local slices whose backing storage has not escaped or been observably aliased.",
 		GoodExample: "values = append(values, item)",
 		BadExample: "values := make([]int, 0); values = append(values, item) // values is never read again",
-		DefaultSeverity: diagnostic.SeverityWarning,
+		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
 

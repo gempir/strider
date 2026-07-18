@@ -14,12 +14,21 @@ import (
 type Registry struct {
 	rules []Rule
 	settings map[string]configuredRule
+	knownCodes map[string]bool
 	root string
 }
 
 type configuredRule struct {
 	severity diagnostic.Severity
 	excludes []string
+}
+
+// RegistryOptions selects and configures package-aware rules.
+type RegistryOptions struct {
+	Only []string
+	Settings map[string]config.RuleConfig
+	Root string
+	MinimumSeverity diagnostic.Severity
 }
 
 // AnalysisStage is the most expensive program representation needed by a
@@ -126,15 +135,36 @@ func NewRegistryConfigured(only []string, settings map[string]config.RuleConfig,
 	*Registry,
 	error,
 ) {
+	return NewRegistryWithOptions(
+		RegistryOptions{
+			Only: only,
+			Settings: settings,
+			Root: root,
+			MinimumSeverity: diagnostic.SeverityNote,
+		},
+	)
+}
+
+// NewRegistryWithOptions applies project settings and a minimum effective
+// severity. Explicit selection changes enabled state, but never bypasses the
+// severity threshold.
+func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
+	minimumSeverity := options.MinimumSeverity
+	if minimumSeverity == "" {
+		minimumSeverity = diagnostic.SeverityNote
+	}
+	if !diagnostic.ValidSeverity(minimumSeverity) {
+		return nil, fmt.Errorf("minimum severity must be note, warning, or error")
+	}
 	all := allRules()
 	byCode := make(map[string]Rule, len(all))
 	for _, rule := range all {
 		byCode[strings.ToUpper(rule.Meta().Code)] = rule
 	}
 
-	wanted := make(map[string]bool, len(only))
-	original := make(map[string]string, len(only))
-	for _, code := range only {
+	wanted := make(map[string]bool, len(options.Only))
+	original := make(map[string]string, len(options.Only))
+	for _, code := range options.Only {
 		normalized := strings.ToUpper(code)
 		wanted[normalized] = true
 		original[normalized] = code
@@ -145,10 +175,18 @@ func NewRegistryConfigured(only []string, settings map[string]config.RuleConfig,
 			unknown = append(unknown, original[code])
 		}
 	}
-	for code := range settings {
+	for code, setting := range options.Settings {
 		normalized := strings.ToUpper(code)
 		if byCode[normalized] == nil {
 			unknown = append(unknown, code)
+		}
+		if setting.Severity != "" && !diagnostic.ValidSeverity(
+			diagnostic.Severity(setting.Severity),
+		) {
+			return nil, fmt.Errorf(
+				"analysis rule %q severity must be note, warning, or error",
+				code,
+			)
 		}
 	}
 	if len(unknown) != 0 {
@@ -156,13 +194,18 @@ func NewRegistryConfigured(only []string, settings map[string]config.RuleConfig,
 		return nil, fmt.Errorf("unknown analysis rule(s): %s", strings.Join(unknown, ", "))
 	}
 
-	configured := make(map[string]config.RuleConfig, len(settings))
-	for code, setting := range settings {
+	configured := make(map[string]config.RuleConfig, len(options.Settings))
+	for code, setting := range options.Settings {
 		configured[strings.ToUpper(code)] = setting
 	}
-	registry := &Registry{settings: make(map[string]configuredRule, len(all)), root: root}
+	registry := &Registry{
+		settings: make(map[string]configuredRule, len(all)),
+		knownCodes: make(map[string]bool, len(all)),
+		root: options.Root,
+	}
 	for _, rule := range all {
 		meta := rule.Meta()
+		registry.knownCodes[meta.Code] = true
 		normalized := strings.ToUpper(meta.Code)
 		setting := configured[normalized]
 		if len(wanted) != 0 && !wanted[normalized] {
@@ -174,6 +217,9 @@ func NewRegistryConfigured(only []string, settings map[string]config.RuleConfig,
 		severity := meta.DefaultSeverity
 		if setting.Severity != "" {
 			severity = diagnostic.Severity(setting.Severity)
+		}
+		if !severity.AtLeast(minimumSeverity) {
+			continue
 		}
 		registry.rules = append(registry.rules, rule)
 		registry.settings[meta.Code] = configuredRule{severity: severity, excludes: setting.Excludes}
@@ -192,6 +238,19 @@ func (registry *Registry) Excluded(code, filename string) bool {
 // Rules returns a copy of the selected rules.
 func (registry *Registry) Rules() []Rule {
 	return append([]Rule(nil), registry.rules...)
+}
+
+// KnownCodes returns every package-aware rule code, including rules that are
+// disabled or below the current severity threshold.
+func (registry *Registry) KnownCodes() map[string]bool {
+	if registry == nil {
+		return nil
+	}
+	result := make(map[string]bool, len(registry.knownCodes))
+	for code := range registry.knownCodes {
+		result[code] = true
+	}
+	return result
 }
 
 // UsesSSA reports whether code requires the SSA capability.
@@ -335,6 +394,30 @@ var ruleCatalog = []ruleDefinition{
 	typedDefinition(contextStoredInStructRule{}, 0),
 	typedDefinition(unsafeFormattedURLHostPortRule{}, 0),
 	typedDefinition(uncheckedRowsErrorRule{}, 0),
+	typedDefinition(excessiveBlankIdentifiersRule{}, 0),
+	typedDefinition(taskCommentRule{}, 0),
+	typedDefinition(docCommentPeriodRule{}, 0),
+	typedDefinition(errorTypeNamingRule{}, 0),
+	typedDefinition(standardHTTPMethodConstantRule{}, 0),
+	typedDefinition(weakCryptographyRule{}, 0),
+	ssaDefinition(appendToSizedSliceRule{}, 0, 0),
+	typedDefinition(redundantConversionRule{}, 0),
+	typedDefinition(slicePreallocationRule{}, 0),
+	typedDefinition(inefficientSprintfRule{}, 0),
+	typedDefinition(interfaceMethodLimitRule{}, 0),
+	typedDefinition(interfaceReturnRule{}, 0),
+	typedDefinition(slogArgumentShapeRule{}, 0),
+	ssaDefinition(externalCallInLoopRule{}, 0, 0),
+	typedDefinition(nilErrorReturnRule{}, 0),
+	typedDefinition(nilValueWithNilErrorRule{}, 0),
+	typedDefinition(unclosedHTTPResponseBodyRule{}, 0),
+	typedDefinition(unclosedSQLResourceRule{}, 0),
+	typedDefinition(contextCancelInLoopRule{}, 0),
+	typedDefinition(copyLockValueRule{}, 0),
+	typedDefinition(discardedErrorResultRule{}, 0),
+	typedDefinition(inlineErrorDeclarationRule{}, 0),
+	typedDefinition(testParallelismRule{}, 0),
+	typedDefinition(declarationOrderRule{}, 0),
 }
 
 var requirementsByCode = func() map[string]Requirements {

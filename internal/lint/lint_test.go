@@ -764,6 +764,78 @@ func TestEveryLintRuleAcceptsCommonConfiguration(t *testing.T) {
 	}
 }
 
+func TestLintRegistryFiltersByEffectiveSeverityBeforeExecution(t *testing.T) {
+	for name, options := range map[string]RegistryOptions{
+		"only": {
+			Only: []string{"no-init"},
+			Settings: map[string]config.RuleConfig{"no-init": {Severity: "warning"}},
+			MinimumSeverity: diagnostic.SeverityError,
+		},
+		"all": {
+			EnableAll: true,
+			Settings: map[string]config.RuleConfig{"no-init": {Severity: "warning"}},
+			MinimumSeverity: diagnostic.SeverityError,
+		},
+	} {
+		t.Run(
+			name,
+			func(t *testing.T) {
+				registry,
+				err := NewRegistryWithOptions(options)
+				if err != nil {
+					t.Fatal(err)
+				}
+				for _,
+				rule := range registry.Rules() {
+					if rule.Meta().Code == "no-init" {
+						t.Fatal("selection bypassed the minimum severity")
+					}
+				}
+				if name == "only" {
+					diagnostics,
+					runErr := Run([]string{filepath.Join(t.TempDir(), "missing.go")}, registry)
+					if runErr != nil {
+						t.Fatalf("empty registry attempted CST execution: %v", runErr)
+					}
+					if diagnostics == nil || len(diagnostics) != 0 {
+						t.Fatalf("empty registry diagnostics = %#v", diagnostics)
+					}
+				}
+			},
+		)
+	}
+
+	registry, err := NewRegistryWithOptions(
+		RegistryOptions{
+			Only: []string{"no-init"},
+			Settings: map[string]config.RuleConfig{"no-init": {Severity: "error"}},
+			MinimumSeverity: diagnostic.SeverityError,
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := len(registry.Rules()); got != 1 {
+		t.Fatalf("rules after severity override = %d, want 1", got)
+	}
+	if severity := registry.Severity("no-init"); severity != diagnostic.SeverityError {
+		t.Fatalf("effective severity = %s, want error", severity)
+	}
+}
+
+func TestLintRegistryRejectsInvalidMinimumSeverity(t *testing.T) {
+	_, err := NewRegistryWithOptions(RegistryOptions{MinimumSeverity: "fatal"})
+	if err == nil || !strings.Contains(err.Error(), "minimum severity") {
+		t.Fatalf("got %v, want minimum severity error", err)
+	}
+	_, err = NewRegistryWithOptions(
+		RegistryOptions{Settings: map[string]config.RuleConfig{"no-init": {Severity: "fatal"}}},
+	)
+	if err == nil || !strings.Contains(err.Error(), "severity must be") {
+		t.Fatalf("got %v, want rule severity error", err)
+	}
+}
+
 func TestLintRuleConfigurationCanExcludePaths(t *testing.T) {
 	fixture := writeFixture(t, "package p\nfunc init() {}\n")
 	enabled := true

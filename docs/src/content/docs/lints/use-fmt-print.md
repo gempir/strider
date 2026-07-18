@@ -21,4 +21,4 @@ fmt.Print(message)
 
 ## Enable
 
-This optional check runs when selected with `--only use-fmt-print`, enabled in `strider.toml`, or included with `--all`. The default severity is `warning`.
+This optional check runs when selected with `--only use-fmt-print`, enabled in `strider.toml`, or included with `--all`. The default severity is `note`.

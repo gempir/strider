@@ -21,4 +21,4 @@ value, ok := input.(string)
 
 ## Enable
 
-This optional check runs when selected with `--only unchecked-type-assertion`, enabled in `strider.toml`, or included with `--all`. The default severity is `warning`.
+This optional check runs when selected with `--only unchecked-type-assertion`, enabled in `strider.toml`, or included with `--all`. The default severity is `error`.

@@ -16,7 +16,7 @@ func (deferredLockAfterLockRule) Meta() Meta {
 		Explanation: "Deferring Lock or RLock immediately after acquiring the same lock is almost always a typo for deferring Unlock or RUnlock and is likely to deadlock when the function returns.",
 		GoodExample: "mutex.Lock()\ndefer mutex.Unlock()",
 		BadExample: "mutex.Lock()\ndefer mutex.Lock()",
-		DefaultSeverity: diagnostic.SeverityWarning,
+		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
 

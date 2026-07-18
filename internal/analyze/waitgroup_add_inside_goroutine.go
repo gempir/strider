@@ -16,7 +16,7 @@ func (waitGroupAddInsideGoroutineRule) Meta() Meta {
 		Explanation: "WaitGroup.Add must happen before starting the goroutine it accounts for. Calling Add inside the goroutine races with Wait, which may observe a zero counter and return too early.",
 		GoodExample: "group.Add(1)\ngo func() { defer group.Done() }()",
 		BadExample: "go func() { group.Add(1); defer group.Done() }()",
-		DefaultSeverity: diagnostic.SeverityWarning,
+		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
 

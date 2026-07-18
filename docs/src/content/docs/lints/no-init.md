@@ -3,7 +3,7 @@ title: no-init
 description: Avoid implicit package initialization.
 ---
 
-**Default severity:** `warning`  
+**Default severity:** `note`
 **Configuration:** `enabled`, `severity`, and path `excludes`
 
 Reports package `init` functions. Initialization functions hide side effects

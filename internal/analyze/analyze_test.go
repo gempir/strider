@@ -68,7 +68,7 @@ func check(pattern string) {
 }
 `,
 	)
-	registry, err := NewRegistry(nil)
+	registry, err := NewRegistry([]string{"invalid-regexp"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2882,7 +2882,9 @@ import (
 
 func urls(host string, port int) {
 	_ = fmt.Sprintf("http://%s:%d/path", host, port)
+	_, _ = net.Listen("tcp", fmt.Sprintf("%s:%d", host, port))
 	_ = fmt.Sprintf("%s:%d", host, port)
+	_ = fmt.Sprintf("%s:%d", "file.go", 42)
 	_ = "http://" + net.JoinHostPort(host, strconv.Itoa(port))
 }
 `,
@@ -2895,8 +2897,8 @@ func urls(host string, port int) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(diagnostics) != 1 {
-		t.Fatalf("got %d diagnostics, want 1: %#v", len(diagnostics), diagnostics)
+	if len(diagnostics) != 2 {
+		t.Fatalf("got %d diagnostics, want 2: %#v", len(diagnostics), diagnostics)
 	}
 }
 
@@ -2956,6 +2958,87 @@ func TestEveryAnalyzerAcceptsCommonConfiguration(t *testing.T) {
 		if severity := registry.Severity(rule.Meta().Code); severity != diagnostic.SeverityNote {
 			t.Errorf("%s severity = %s", rule.Meta().Code, severity)
 		}
+	}
+}
+
+func TestAnalyzerRegistryFiltersByEffectiveSeverityBeforePlanning(t *testing.T) {
+	registry, err := NewRegistryWithOptions(
+		RegistryOptions{
+			Only: []string{"regexp-match-in-loop", "invalid-template"},
+			Settings: map[string]config.RuleConfig{
+				"regexp-match-in-loop": {Severity: "warning"},
+				"invalid-template": {Severity: "error"},
+			},
+			MinimumSeverity: diagnostic.SeverityError,
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := len(registry.Rules()); got != 1 || registry.Rules()[0].Meta().Code != "invalid-template" {
+		t.Fatalf("filtered analyzers = %#v, want invalid-template", registry.Rules())
+	}
+	if registry.executionPlan().needsSSA() {
+		t.Fatal("filtered SSA analyzer still affected the execution plan")
+	}
+
+	registry, err = NewRegistryWithOptions(
+		RegistryOptions{
+			Only: []string{"regexp-match-in-loop", "invalid-template"},
+			Settings: map[string]config.RuleConfig{
+				"regexp-match-in-loop": {Severity: "error"},
+				"invalid-template": {Severity: "warning"},
+			},
+			MinimumSeverity: diagnostic.SeverityError,
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := len(registry.Rules()); got != 1 || registry.Rules()[0].Meta().Code != "regexp-match-in-loop" {
+		t.Fatalf("overridden analyzers = %#v, want regexp-match-in-loop", registry.Rules())
+	}
+	if !registry.executionPlan().needsSSA() {
+		t.Fatal("included SSA analyzer was omitted from the execution plan")
+	}
+}
+
+func TestAnalyzerRegistryRejectsInvalidMinimumSeverity(t *testing.T) {
+	_, err := NewRegistryWithOptions(RegistryOptions{MinimumSeverity: "fatal"})
+	if err == nil || !strings.Contains(err.Error(), "minimum severity") {
+		t.Fatalf("got %v, want minimum severity error", err)
+	}
+	_, err = NewRegistryWithOptions(
+		RegistryOptions{
+			Settings: map[string]config.RuleConfig{"invalid-template": {Severity: "fatal"}},
+		},
+	)
+	if err == nil || !strings.Contains(err.Error(), "severity must be") {
+		t.Fatalf("got %v, want rule severity error", err)
+	}
+}
+
+func TestAnalyzerRegistrySkipsLoadingWhenSeverityFilterIsEmpty(t *testing.T) {
+	registry, err := NewRegistryWithOptions(
+		RegistryOptions{
+			Only: []string{"suspicious-sleep"},
+			Settings: map[string]config.RuleConfig{"suspicious-sleep": {Severity: "warning"}},
+			MinimumSeverity: diagnostic.SeverityError,
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "main.go"), []byte("not Go source"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{root}, registry)
+	if err != nil {
+		t.Fatalf("empty registry attempted package loading: %v", err)
+	}
+	if diagnostics == nil || len(diagnostics) != 0 {
+		t.Fatalf("empty registry diagnostics = %#v, want non-nil empty slice", diagnostics)
 	}
 }
 

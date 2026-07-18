@@ -17,6 +17,9 @@ type RegistryOptions struct {
 	Only []string
 	All bool
 	Settings map[string]config.RuleConfig
+	MinimumSeverity diagnostic.Severity
+	LintMinimumSeverity diagnostic.Severity
+	AnalyzeMinimumSeverity diagnostic.Severity
 	LintExcludes []string
 	AnalyzeExcludes []string
 	FormatExcludes []string
@@ -27,6 +30,7 @@ type RegistryOptions struct {
 type Registry struct {
 	rules []Rule
 	settings map[string]configuredRule
+	knownCodes map[string]bool
 	root string
 	format bool
 	lint *lint.Registry
@@ -44,6 +48,24 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 	if options.All && len(options.Only) != 0 {
 		return nil, fmt.Errorf("all checks and an explicit selection are mutually exclusive")
 	}
+	minimumSeverity, err := normalizedMinimumSeverity(options.MinimumSeverity)
+	if err != nil {
+		return nil, err
+	}
+	lintMinimumSeverity := minimumSeverity
+	if options.LintMinimumSeverity != "" {
+		lintMinimumSeverity, err = normalizedMinimumSeverity(options.LintMinimumSeverity)
+		if err != nil {
+			return nil, err
+		}
+	}
+	analyzeMinimumSeverity := minimumSeverity
+	if options.AnalyzeMinimumSeverity != "" {
+		analyzeMinimumSeverity, err = normalizedMinimumSeverity(options.AnalyzeMinimumSeverity)
+		if err != nil {
+			return nil, err
+		}
+	}
 	available, lintCodes, analyzeCodes, err := availableRules()
 	if err != nil {
 		return nil, err
@@ -51,6 +73,11 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 	normalizedSettings := make(map[string]config.RuleConfig, len(options.Settings))
 	unknown := []string{}
 	for code, setting := range options.Settings {
+		if setting.Severity != "" && !diagnostic.ValidSeverity(
+			diagnostic.Severity(setting.Severity),
+		) {
+			return nil, fmt.Errorf("check %q severity must be note, warning, or error", code)
+		}
 		normalized := strings.ToLower(code)
 		if _, ok := available[normalized]; !ok {
 			unknown = append(unknown, code)
@@ -86,24 +113,34 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 
 	registry := &Registry{
 		settings: make(map[string]configuredRule, len(available)),
+		knownCodes: make(map[string]bool, len(available)),
 		root: options.Root,
 	}
+	for _, meta := range available {
+		registry.knownCodes[meta.Code] = true
+	}
 	if !explicit || len(lintOnly) != 0 {
-		registry.lint, err = lint.NewRegistryConfigured(
-			lintOnly,
-			options.All,
-			lintSettings,
-			options.Root,
+		registry.lint, err = lint.NewRegistryWithOptions(
+			lint.RegistryOptions{
+				Only: lintOnly,
+				EnableAll: options.All,
+				Settings: lintSettings,
+				Root: options.Root,
+				MinimumSeverity: lintMinimumSeverity,
+			},
 		)
 		if err != nil {
 			return nil, err
 		}
 	}
 	if !explicit || len(analyzeOnly) != 0 {
-		registry.analyze, err = analyze.NewRegistryConfigured(
-			analyzeOnly,
-			analyzeSettings,
-			options.Root,
+		registry.analyze, err = analyze.NewRegistryWithOptions(
+			analyze.RegistryOptions{
+				Only: analyzeOnly,
+				Settings: analyzeSettings,
+				Root: options.Root,
+				MinimumSeverity: analyzeMinimumSeverity,
+			},
 		)
 		if err != nil {
 			return nil, err
@@ -122,8 +159,25 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 	if options.All {
 		registry.format = true
 	}
+	formatSeverity := formatMeta.DefaultSeverity
+	if formatSetting.Severity != "" {
+		formatSeverity = diagnostic.Severity(formatSetting.Severity)
+	}
+	if !formatSeverity.AtLeast(minimumSeverity) {
+		registry.format = false
+	}
 	registry.addSelectedRules(available, formatSetting)
 	return registry, nil
+}
+
+func normalizedMinimumSeverity(minimum diagnostic.Severity) (diagnostic.Severity, error) {
+	if minimum == "" {
+		minimum = diagnostic.SeverityNote
+	}
+	if !diagnostic.ValidSeverity(minimum) {
+		return "", fmt.Errorf("minimum severity must be note, warning, or error")
+	}
+	return minimum, nil
 }
 
 func availableRules() (map[string]Meta, map[string]bool, map[string]bool, error) {
@@ -255,6 +309,19 @@ func (registry *Registry) Rules() []Rule {
 		return nil
 	}
 	return append([]Rule(nil), registry.rules...)
+}
+
+// KnownCodes returns every unified check code, including checks that are
+// disabled or below the current severity threshold.
+func (registry *Registry) KnownCodes() map[string]bool {
+	if registry == nil {
+		return nil
+	}
+	result := make(map[string]bool, len(registry.knownCodes))
+	for code := range registry.knownCodes {
+		result[code] = true
+	}
+	return result
 }
 
 // Capabilities returns the union required by the selected checks.

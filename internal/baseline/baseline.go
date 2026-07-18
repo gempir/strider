@@ -125,11 +125,54 @@ func Load(path string) (File, error) {
 // Apply suppresses diagnostics consumed by a baseline and reports unmatched
 // baseline entries as stale. Matched contains only entries still present.
 func Apply(path string, baseline File, diagnostics []diagnostic.Diagnostic) (Result, error) {
+	return ApplySelected(path, baseline, diagnostics, nil)
+}
+
+// ApplySelected applies active check entries while preserving entries for
+// checks that were not selected for this run. An omitted check was not
+// evaluated, so its baseline debt is neither matched nor stale and must survive
+// pruning unchanged. A nil selectedCodes map means every code is active.
+func ApplySelected(
+	path string,
+	baseline File,
+	diagnostics []diagnostic.Diagnostic,
+	selectedCodes map[string]bool,
+) (Result, error) {
+	return applySelection(path, baseline, diagnostics, selectedCodes, nil)
+}
+
+// ApplyCatalogSelection preserves known checks that were inactive for this
+// run while treating codes outside the current catalog as stale. This keeps a
+// severity-filtered baseline intact without retaining entries for rules that
+// were removed or renamed.
+func ApplyCatalogSelection(
+	path string,
+	baseline File,
+	diagnostics []diagnostic.Diagnostic,
+	selectedCodes,
+	knownCodes map[string]bool,
+) (Result, error) {
+	return applySelection(path, baseline, diagnostics, selectedCodes, knownCodes)
+}
+
+func applySelection(
+	path string,
+	baseline File,
+	diagnostics []diagnostic.Diagnostic,
+	selectedCodes,
+	knownCodes map[string]bool,
+) (Result, error) {
 	directory := filepath.Dir(path)
 	result := Result{Matched: File{Version: Version, Variant: baseline.Variant}}
 	remaining := make(map[string]int, len(baseline.Issues))
 	templates := make(map[string]Issue, len(baseline.Issues))
 	for _, issue := range baseline.Issues {
+		if selectedCodes != nil && !selectedCodes[issue.Code] && (knownCodes == nil || knownCodes[
+			issue.Code,
+		]) {
+			result.Matched.Issues = append(result.Matched.Issues, issue)
+			continue
+		}
 		key := issueKey(issue, baseline.Variant)
 		count := 1
 		if baseline.Variant == Loose {

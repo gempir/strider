@@ -26,7 +26,7 @@ func (deprecatedAPIUsageRule) Meta() Meta {
 		Explanation: "Go documentation marks packages, functions, methods, fields, variables, constants, and types with Deprecated paragraphs. Uses from other packages should migrate to the documented replacement.",
 		GoodExample: "value, err := io.ReadAll(reader)",
 		BadExample: "value, err := ioutil.ReadAll(reader)",
-		DefaultSeverity: diagnostic.SeverityWarning,
+		DefaultSeverity: diagnostic.SeverityNote,
 	}
 }
 

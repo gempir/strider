@@ -11,6 +11,16 @@ func TestLoadDiscoversAndAppliesDefaults(t *testing.T) {
 	if got := Defaults().Formatter.MaxEmptyLines; got != 1 {
 		t.Fatalf("default max empty lines = %d, want 1", got)
 	}
+	defaults := Defaults()
+	for name, severity := range map[string]string{
+		"checks": defaults.Checks.MinimumSeverity,
+		"linter": defaults.Linter.MinimumSeverity,
+		"analyzer": defaults.Analyzer.MinimumSeverity,
+	} {
+		if severity != "note" {
+			t.Fatalf("default %s minimum severity = %q, want note", name, severity)
+		}
+	}
 	root := t.TempDir()
 	child := filepath.Join(root, "a", "b")
 	if err := os.MkdirAll(child, 0o755); err != nil {
@@ -74,6 +84,14 @@ func TestLoadRejectsUnknownAndInvalidSettings(t *testing.T) {
 			"version = 2\n[checks.rules.no-init]\nseverity = \"fatal\"\n",
 			"checks.rules.no-init.severity",
 		},
+		"minimum-severity": {
+			"version = 2\n[checks]\nminimum-severity = \"fatal\"\n",
+			"checks.minimum-severity",
+		},
+		"legacy-minimum-severity": {
+			"version = 1\n[linter]\nminimum-severity = \"fatal\"\n",
+			"linter.minimum-severity",
+		},
 		"checks-unknown": {"version = 2\n[checks]\nunknown = true\n", "unknown configuration key"},
 		"color": {"version = 1\ncolor = \"sometimes\"\n", "color"},
 	} {
@@ -118,6 +136,7 @@ func TestLoadVersionTwoChecks(t *testing.T) {
 excludes = ["generated/**"]
 baseline = "strider-baseline.toml"
 baseline-variant = "strict"
+minimum-severity = "warning"
 [checks.rules.no-init]
 enabled = false
 severity = "error"
@@ -130,7 +149,7 @@ excludes = ["legacy/**"]
 	if err != nil {
 		t.Fatal(err)
 	}
-	if configuration.Version != 2 || configuration.Checks.Baseline != "strider-baseline.toml" || configuration.Checks.BaselineVariant != "strict" {
+	if configuration.Version != 2 || configuration.Checks.Baseline != "strider-baseline.toml" || configuration.Checks.BaselineVariant != "strict" || configuration.Checks.MinimumSeverity != "warning" {
 		t.Fatalf("unexpected checks config: %#v", configuration.Checks)
 	}
 	rule := configuration.EffectiveCheckRule(LegacyLintScope, "no-init")
@@ -152,6 +171,7 @@ func TestLoadVersionOnePreservesLegacyCheckScopes(t *testing.T) {
 [linter]
 excludes = ["lint-only/**"]
 baseline = "lint-baseline.toml"
+minimum-severity = "error"
 [linter.rules.no-init]
 severity = "note"
 excludes = ["lint-rule/**"]
@@ -159,6 +179,7 @@ excludes = ["lint-rule/**"]
 excludes = ["analyze-only/**"]
 baseline = "analysis-baseline.toml"
 baseline-variant = "strict"
+minimum-severity = "warning"
 [analyzer.rules.invalid-regexp]
 severity = "error"
 excludes = ["analysis-rule/**"]
@@ -181,10 +202,13 @@ excludes = ["analysis-rule/**"]
 	}
 	lintTool := configuration.EffectiveChecks(LegacyLintScope)
 	analysisTool := configuration.EffectiveChecks(LegacyAnalyzeScope)
-	if lintTool.Baseline != "lint-baseline.toml" || strings.Join(lintTool.Excludes, ",") != "lint-only/**" {
+	if lintTool.Baseline != "lint-baseline.toml" || lintTool.MinimumSeverity != "error" || strings.Join(
+		lintTool.Excludes,
+		",",
+	) != "lint-only/**" {
 		t.Fatalf("unexpected effective lint checks: %#v", lintTool)
 	}
-	if analysisTool.Baseline != "analysis-baseline.toml" || analysisTool.BaselineVariant != "strict" || strings.Join(
+	if analysisTool.Baseline != "analysis-baseline.toml" || analysisTool.BaselineVariant != "strict" || analysisTool.MinimumSeverity != "warning" || strings.Join(
 		analysisTool.Excludes,
 		",",
 	) != "analyze-only/**" {

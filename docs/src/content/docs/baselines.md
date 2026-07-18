@@ -39,12 +39,17 @@ Generation sees the same effective configuration as an ordinary run:
 
 - Disabled checks are not captured.
 - `--only` and `--all` determine the selected checks.
+- `minimum-severity` removes lower-severity checks before generation.
 - Tool-wide and per-check exclusions are applied first.
 - Supported source suppressions are applied first.
 - Configured severity changes do not affect matching identity.
 
 Generate with the policy CI will actually use. A baseline created with
 `--only no-init` cannot suppress unrelated checks later.
+
+When applying or pruning an existing baseline, entries for checks omitted by
+the current minimum-severity threshold are preserved and are not called stale.
+Strider has not run those checks, so their findings cannot be considered fixed.
 
 ## Configure automatic use
 

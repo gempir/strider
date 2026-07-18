@@ -16,7 +16,7 @@ func (singleArgumentAppendRule) Meta() Meta {
 		Explanation: "Calling the predeclared append function with only a slice argument returns that same slice unchanged. Assign the slice directly instead.",
 		GoodExample: "destination = source",
 		BadExample: "destination = append(source)",
-		DefaultSeverity: diagnostic.SeverityWarning,
+		DefaultSeverity: diagnostic.SeverityNote,
 	}
 }
 

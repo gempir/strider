@@ -18,7 +18,7 @@ func (timerResetDrainRaceRule) Meta() Meta {
 		Explanation: "Using time.Timer.Reset's boolean result to decide whether to receive from a timer channel is racy on older timer implementations and can block with current synchronous timer channels. Stop and drain before resetting when compatibility requires it, or reset without conditionally draining afterward.",
 		GoodExample: "if !timer.Stop() { select { case <-timer.C: default: } }\ntimer.Reset(delay)",
 		BadExample: "if !timer.Reset(delay) { <-timer.C }",
-		DefaultSeverity: diagnostic.SeverityWarning,
+		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
 

@@ -28,6 +28,11 @@ func runCheck(
 	flags := flag.NewFlagSet("check", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	reportFormat := flags.String("format", "text", "report format: text, json, or html")
+	minimumSeverityFlag := flags.String(
+		"minimum-severity",
+		"",
+		"minimum effective severity: note, warning, or error",
+	)
 	watch := flags.Bool("watch", false, "rerun checks when source changes")
 	listChecks := false
 	flags.BoolVar(&listChecks, "list-checks", false, "list enabled checks")
@@ -98,17 +103,57 @@ func runCheck(
 	}
 
 	checkConfig := configuration.Checks
+	minimumSeverity, ok := resolveMinimumSeverity(
+		flags,
+		*minimumSeverityFlag,
+		checkConfig.MinimumSeverity,
+		"check",
+		colorMode,
+		stderr,
+	)
+	if !ok {
+		return exitError
+	}
+	lintMinimumSeverity := minimumSeverity
+	analyzeMinimumSeverity := minimumSeverity
 	lintExcludes := []string(nil)
 	analyzeExcludes := []string(nil)
 	if configuration.Version == 1 {
-		lintExcludes = configuration.EffectiveChecks(config.LegacyLintScope).Excludes
-		analyzeExcludes = configuration.EffectiveChecks(config.LegacyAnalyzeScope).Excludes
+		lintConfig := configuration.EffectiveChecks(config.LegacyLintScope)
+		analyzeConfig := configuration.EffectiveChecks(config.LegacyAnalyzeScope)
+		lintExcludes = lintConfig.Excludes
+		analyzeExcludes = analyzeConfig.Excludes
+		lintMinimumSeverity, ok = resolveMinimumSeverity(
+			flags,
+			*minimumSeverityFlag,
+			lintConfig.MinimumSeverity,
+			"check",
+			colorMode,
+			stderr,
+		)
+		if !ok {
+			return exitError
+		}
+		analyzeMinimumSeverity, ok = resolveMinimumSeverity(
+			flags,
+			*minimumSeverityFlag,
+			analyzeConfig.MinimumSeverity,
+			"check",
+			colorMode,
+			stderr,
+		)
+		if !ok {
+			return exitError
+		}
 	}
 	registry, err := checkengine.NewRegistry(
 		checkengine.RegistryOptions{
 			Only: only,
 			All: allChecks,
 			Settings: checkConfig.Rules,
+			MinimumSeverity: minimumSeverity,
+			LintMinimumSeverity: lintMinimumSeverity,
+			AnalyzeMinimumSeverity: analyzeMinimumSeverity,
 			LintExcludes: lintExcludes,
 			AnalyzeExcludes: analyzeExcludes,
 			FormatExcludes: configuration.Formatter.Excludes,
@@ -143,6 +188,11 @@ func runCheck(
 	if !ok {
 		return exitError
 	}
+	baselineConfig.selectedCodes = make(map[string]bool, len(registry.Rules()))
+	for _, rule := range registry.Rules() {
+		baselineConfig.selectedCodes[rule.Meta().Code] = true
+	}
+	baselineConfig.knownCodes = registry.KnownCodes()
 	workspaceOptions := workspace.Options{
 		SkipGenerated: true,
 		Root: configuration.Root,

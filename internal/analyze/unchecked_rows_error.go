@@ -16,7 +16,7 @@ func (uncheckedRowsErrorRule) Meta() Meta {
 		Explanation: "Rows.Next returns false both at the end of a result set and when iteration fails. Check Rows.Err after iteration to distinguish successful completion from a driver, network, or decoding failure.",
 		GoodExample: "for rows.Next() { scan(rows) }; if err := rows.Err(); err != nil { return err }",
 		BadExample: "for rows.Next() { scan(rows) }",
-		DefaultSeverity: diagnostic.SeverityWarning,
+		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
 

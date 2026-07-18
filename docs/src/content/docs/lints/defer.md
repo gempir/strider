@@ -6,6 +6,8 @@ description: Detect call and return-value mistakes in defer statements.
 Purpose: detect defer expressions whose evaluation or return values do not
 behave as intended.
 
+**Default severity:** `error`
+
 ## Behavior
 
 The rule reports `defer recover()` (which evaluates `recover` immediately) and

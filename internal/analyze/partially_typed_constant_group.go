@@ -17,7 +17,7 @@ func (partiallyTypedConstantGroupRule) Meta() Meta {
 		Explanation: "In a constant group, an explicit type is inherited only when a later declaration omits its value. If every declaration has an explicit literal but only the first has a type, later constants silently use default built-in types and may lose methods or assignment compatibility.",
 		GoodExample: "const ( first Kind = 1; second Kind = 2 )",
 		BadExample: "const ( first Kind = 1; second = 2 )",
-		DefaultSeverity: diagnostic.SeverityWarning,
+		DefaultSeverity: diagnostic.SeverityNote,
 	}
 }
 

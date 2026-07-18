@@ -21,4 +21,4 @@ func Load(ctx context.Context, id string) error
 
 ## Enable
 
-This optional check runs when selected with `--only context-as-argument`, enabled in `strider.toml`, or included with `--all`. The default severity is `warning`.
+This optional check runs when selected with `--only context-as-argument`, enabled in `strider.toml`, or included with `--all`. The default severity is `note`.

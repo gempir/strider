@@ -66,11 +66,17 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) (
 	[]diagnostic.Diagnostic,
 	error,
 ) {
-	plan := registry.executionPlan()
+	if registry == nil {
+		return nil, fmt.Errorf("analysis registry is nil")
+	}
 	patterns, targets, err := loadInputs(paths)
 	if err != nil {
 		return nil, err
 	}
+	if len(registry.rules) == 0 {
+		return[]diagnostic.Diagnostic{}, nil
+	}
+	plan := registry.executionPlan()
 	loaded, err := packages.Load(&packages.Config{Mode: loadMode, Tests: true}, patterns...)
 	if err != nil {
 		return nil, err

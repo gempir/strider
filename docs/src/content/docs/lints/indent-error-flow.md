@@ -22,4 +22,4 @@ use(value)
 
 ## Enable
 
-This optional check runs when selected with `--only indent-error-flow`, enabled in `strider.toml`, or included with `--all`. The default severity is `warning`.
+This optional check runs when selected with `--only indent-error-flow`, enabled in `strider.toml`, or included with `--all`. The default severity is `note`.

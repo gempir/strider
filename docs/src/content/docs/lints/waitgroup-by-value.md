@@ -21,4 +21,4 @@ func wait(group *sync.WaitGroup)
 
 ## Enable
 
-This optional check runs when selected with `--only waitgroup-by-value`, enabled in `strider.toml`, or included with `--all`. The default severity is `warning`.
+This optional check runs when selected with `--only waitgroup-by-value`, enabled in `strider.toml`, or included with `--all`. The default severity is `error`.

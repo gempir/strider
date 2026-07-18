@@ -19,7 +19,7 @@ func (neverNilComparisonRule) Meta() Meta {
 		Explanation: "Fresh allocations, make results, functions, closures, and values flowing exclusively from those sources cannot be nil. Comparing them with nil has a fixed result and often means the wrong value was checked.",
 		GoodExample: "var values []int; if values == nil { initialize() }",
 		BadExample: "values := make([]int, 0); if values == nil { unreachable() }",
-		DefaultSeverity: diagnostic.SeverityWarning,
+		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
 

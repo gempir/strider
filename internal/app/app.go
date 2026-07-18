@@ -15,6 +15,7 @@ import (
 
 	"github.com/gempir/strider/internal/analyze"
 	"github.com/gempir/strider/internal/baseline"
+	checkengine "github.com/gempir/strider/internal/check"
 	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/diagnostic"
 	"github.com/gempir/strider/internal/formatter"
@@ -58,6 +59,8 @@ type baselineOptions struct {
 	prune bool
 	ignore bool
 	backup bool
+	selectedCodes map[string]bool
+	knownCodes map[string]bool
 }
 
 const (
@@ -660,6 +663,11 @@ func runLint(
 	flags := flag.NewFlagSet("lint", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	format := flags.String("format", "text", "report format: text, json, or html")
+	minimumSeverityFlag := flags.String(
+		"minimum-severity",
+		"",
+		"minimum effective severity: note, warning, or error",
+	)
 	listRules := flags.Bool("list-rules", false, "list enabled lint rules")
 	allRules := flags.Bool("all-rules", false, "run every built-in rule")
 	explain := flags.String("explain", "", "explain a lint rule")
@@ -704,10 +712,31 @@ func runLint(
 		)
 		return exitError
 	}
+	lintConfig := configuration.EffectiveChecks(config.LegacyLintScope)
+	lintSettings, knownCodes, settingsErr := legacyCommandSettings(
+		configuration,
+		config.LegacyLintScope,
+		lintConfig.Rules,
+	)
+	if settingsErr != nil {
+		printCommandError(stderr, colorMode, "strider lint", "%v", settingsErr)
+		return exitError
+	}
+	minimumSeverity, ok := resolveMinimumSeverity(
+		flags,
+		*minimumSeverityFlag,
+		lintConfig.MinimumSeverity,
+		"lint",
+		colorMode,
+		stderr,
+	)
+	if !ok {
+		return exitError
+	}
 	baselineConfig, ok := resolveBaselineOptions(
 		flags,
 		configuration,
-		configuration.Linter,
+		lintConfig,
 		*baselinePath,
 		*baselineVariant,
 		*generateBaseline,
@@ -723,16 +752,27 @@ func runLint(
 	}
 	var registry *lint.Registry
 	var err error
-	registry, err = lint.NewRegistryConfigured(
-		only,
-		*allRules,
-		configuration.Linter.Rules,
-		configuration.Root,
+	registry, err = lint.NewRegistryWithOptions(
+		lint.RegistryOptions{
+			Only: only,
+			EnableAll: *allRules,
+			Settings: lintSettings,
+			Root: configuration.Root,
+			MinimumSeverity: minimumSeverity,
+		},
 	)
 	if err != nil {
 		printCommandError(stderr, colorMode, "strider lint", "%v", err)
 		return exitError
 	}
+	baselineConfig.selectedCodes = make(map[string]bool, len(registry.Rules()))
+	for _, rule := range registry.Rules() {
+		baselineConfig.selectedCodes[rule.Meta().Code] = true
+	}
+	if knownCodes == nil {
+		knownCodes = registry.KnownCodes()
+	}
+	baselineConfig.knownCodes = knownCodes
 	if *listRules {
 		return listLintRules(registry, colorMode, stdout)
 	}
@@ -754,7 +794,7 @@ func runLint(
 		*format,
 		registry,
 		configuration.Root,
-		configuration.Linter.Excludes,
+		lintConfig.Excludes,
 		baselineConfig,
 		colorMode,
 		stdout,
@@ -875,6 +915,11 @@ func runAnalyze(
 	flags := flag.NewFlagSet("analyze", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	format := flags.String("format", "text", "report format: text, json, or html")
+	minimumSeverityFlag := flags.String(
+		"minimum-severity",
+		"",
+		"minimum effective severity: note, warning, or error",
+	)
 	listRules := flags.Bool("list-rules", false, "list enabled analysis rules")
 	explain := flags.String("explain", "", "explain an analysis rule")
 	baselinePath := flags.String("baseline", "", "path to the analysis baseline")
@@ -909,10 +954,31 @@ func runAnalyze(
 	if err := flags.Parse(args); err != nil {
 		return exitError
 	}
+	analyzeConfig := configuration.EffectiveChecks(config.LegacyAnalyzeScope)
+	analyzeSettings, knownCodes, settingsErr := legacyCommandSettings(
+		configuration,
+		config.LegacyAnalyzeScope,
+		analyzeConfig.Rules,
+	)
+	if settingsErr != nil {
+		printCommandError(stderr, colorMode, "strider analyze", "%v", settingsErr)
+		return exitError
+	}
+	minimumSeverity, ok := resolveMinimumSeverity(
+		flags,
+		*minimumSeverityFlag,
+		analyzeConfig.MinimumSeverity,
+		"analyze",
+		colorMode,
+		stderr,
+	)
+	if !ok {
+		return exitError
+	}
 	baselineConfig, ok := resolveBaselineOptions(
 		flags,
 		configuration,
-		configuration.Analyzer,
+		analyzeConfig,
 		*baselinePath,
 		*baselineVariant,
 		*generateBaseline,
@@ -926,15 +992,26 @@ func runAnalyze(
 	if !ok {
 		return exitError
 	}
-	registry, err := analyze.NewRegistryConfigured(
-		only,
-		configuration.Analyzer.Rules,
-		configuration.Root,
+	registry, err := analyze.NewRegistryWithOptions(
+		analyze.RegistryOptions{
+			Only: only,
+			Settings: analyzeSettings,
+			Root: configuration.Root,
+			MinimumSeverity: minimumSeverity,
+		},
 	)
 	if err != nil {
 		printCommandError(stderr, colorMode, "strider analyze", "%v", err)
 		return exitError
 	}
+	baselineConfig.selectedCodes = make(map[string]bool, len(registry.Rules()))
+	for _, rule := range registry.Rules() {
+		baselineConfig.selectedCodes[rule.Meta().Code] = true
+	}
+	if knownCodes == nil {
+		knownCodes = registry.KnownCodes()
+	}
+	baselineConfig.knownCodes = knownCodes
 	if *listRules {
 		return listAnalyzeRules(registry, colorMode, stdout)
 	}
@@ -956,7 +1033,7 @@ func runAnalyze(
 		*format,
 		registry,
 		configuration.Root,
-		configuration.Analyzer.Excludes,
+		analyzeConfig.Excludes,
 		baselineConfig,
 		colorMode,
 		stdout,
@@ -1073,6 +1150,72 @@ func colorSeverity(severity diagnostic.Severity, palette ui.Palette) string {
 	}
 }
 
+func resolveMinimumSeverity(
+	flags *flag.FlagSet,
+	flagValue,
+	configured string,
+	command string,
+	colorMode ui.ColorMode,
+	stderr io.Writer,
+) (diagnostic.Severity, bool) {
+	value := configured
+	if flagWasSet(flags, "minimum-severity") {
+		value = flagValue
+	}
+	severity := diagnostic.Severity(value)
+	if diagnostic.ValidSeverity(severity) {
+		return severity, true
+	}
+	printCommandError(
+		stderr,
+		colorMode,
+		"strider " + command,
+		"--minimum-severity must be note, warning, or error",
+	)
+	return "", false
+}
+
+func legacyCommandSettings(
+	configuration config.Config,
+	scope config.LegacyCheckScope,
+	settings map[string]config.RuleConfig,
+) (map[string]config.RuleConfig, map[string]bool, error) {
+	if configuration.Version == 1 {
+		return settings, nil, nil
+	}
+	registry, err := checkengine.NewRegistry(
+		checkengine.RegistryOptions{All: true, Settings: settings},
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	normalized := make(map[string]config.RuleConfig, len(settings))
+	for code, setting := range settings {
+		normalized[strings.ToLower(code)] = setting
+	}
+	filtered := make(map[string]config.RuleConfig)
+	for _, rule := range registry.Rules() {
+		meta := rule.Meta()
+		setting, configured := normalized[strings.ToLower(meta.Code)]
+		if !configured {
+			continue
+		}
+		switch scope {
+		case config.LegacyLintScope:
+			if meta.Code != "format" && meta.Capabilities == checkengine.CapabilityCST {
+				filtered[meta.Code] = setting
+			}
+		case config.LegacyAnalyzeScope:
+			if meta.Capabilities & checkengine.CapabilityAST != 0 {
+				filtered[meta.Code] = setting
+			}
+		default:
+			return nil, nil, fmt.Errorf("invalid legacy check scope")
+		}
+	}
+	return filtered, registry.KnownCodes(), nil
+}
+
 func resolveBaselineOptions(
 	flags *flag.FlagSet,
 	configuration config.Config,
@@ -1180,7 +1323,13 @@ func applyBaseline(
 	if err != nil {
 		return nil, false, fmt.Errorf("load baseline %s: %w", options.path, err)
 	}
-	result, err := baseline.Apply(options.path, loaded, diagnostics)
+	result, err := baseline.ApplyCatalogSelection(
+		options.path,
+		loaded,
+		diagnostics,
+		options.selectedCodes,
+		options.knownCodes,
+	)
 	if err != nil {
 		return nil, false, err
 	}

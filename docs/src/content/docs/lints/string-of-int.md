@@ -21,4 +21,4 @@ text := strconv.Itoa(value)
 
 ## Enable
 
-This optional check runs when selected with `--only string-of-int`, enabled in `strider.toml`, or included with `--all`. The default severity is `warning`.
+This optional check runs when selected with `--only string-of-int`, enabled in `strider.toml`, or included with `--all`. The default severity is `error`.

@@ -22,4 +22,4 @@ func retry() { reconnect() }
 
 ## Enable
 
-This optional check runs when selected with `--only comments-density`, enabled in `strider.toml`, or included with `--all`. The default severity is `warning`.
+This optional check runs when selected with `--only comments-density`, enabled in `strider.toml`, or included with `--all`. The default severity is `note`.

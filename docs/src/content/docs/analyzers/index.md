@@ -5,7 +5,7 @@ sidebar:
   order: 0
 ---
 
-These 86 checks answer correctness questions that depend on what an identifier
+These 110 checks answer correctness questions that depend on what an identifier
 or call resolves to, how values flow, or which Go and API contracts apply. They
 all belong to the same `strider check` catalog as formatting and
 [style and maintainability checks](/lints/).
@@ -26,7 +26,7 @@ the built-in summary and examples. Check codes are descriptive kebab-case names.
 
 ## Configuration and baselines
 
-All 86 checks in this group are enabled by default. Every check can be disabled,
+All 110 checks in this group are enabled by default. Every check can be disabled,
 assigned `note`, `warning`, or `error` severity, and excluded from selected
 paths:
 
@@ -139,3 +139,27 @@ See [Configuration](/configuration/#checks) and
 - [`context-stored-in-struct`](./context-stored-in-struct/)
 - [`unsafe-formatted-url-host-port`](./unsafe-formatted-url-host-port/)
 - [`unchecked-rows-error`](./unchecked-rows-error/)
+- [`nil-error-return`](./nil-error-return/)
+- [`nil-value-with-nil-error`](./nil-value-with-nil-error/)
+- [`unclosed-http-response-body`](./unclosed-http-response-body/)
+- [`unclosed-sql-resource`](./unclosed-sql-resource/)
+- [`context-cancel-in-loop`](./context-cancel-in-loop/)
+- [`copy-lock-value`](./copy-lock-value/)
+- [`append-to-sized-slice`](./append-to-sized-slice/)
+- [`redundant-conversion`](./redundant-conversion/)
+- [`slice-preallocation`](./slice-preallocation/)
+- [`inefficient-sprintf`](./inefficient-sprintf/)
+- [`interface-method-limit`](./interface-method-limit/)
+- [`interface-return`](./interface-return/)
+- [`slog-argument-shape`](./slog-argument-shape/)
+- [`external-call-in-loop`](./external-call-in-loop/)
+- [`excessive-blank-identifiers`](./excessive-blank-identifiers/)
+- [`task-comment`](./task-comment/)
+- [`doc-comment-period`](./doc-comment-period/)
+- [`error-type-naming`](./error-type-naming/)
+- [`standard-http-method-constant`](./standard-http-method-constant/)
+- [`weak-cryptography`](./weak-cryptography/)
+- [`discarded-error-result`](./discarded-error-result/)
+- [`inline-error-declaration`](./inline-error-declaration/)
+- [`test-parallelism`](./test-parallelism/)
+- [`declaration-order`](./declaration-order/)

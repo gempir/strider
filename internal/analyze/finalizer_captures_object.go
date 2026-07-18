@@ -17,7 +17,7 @@ func (finalizerCapturesObjectRule) Meta() Meta {
 		Explanation: "A finalizer closure that captures the finalized object keeps that object reachable. The garbage collector can never make the object eligible for finalization, so the finalizer never runs and the object leaks. Use the finalizer function's parameter instead.",
 		GoodExample: "runtime.SetFinalizer(object, func(object *resource) { object.Close() })",
 		BadExample: "runtime.SetFinalizer(object, func(*resource) { object.Close() })",
-		DefaultSeverity: diagnostic.SeverityWarning,
+		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
 

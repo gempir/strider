@@ -46,8 +46,8 @@ JSON and formatted source are never decorated with ANSI escapes.
 strider check [OPTIONS] [FILE|DIR]...
 ```
 
-`check` is read-only. Its default profile contains 94 checks, including code
-`format`; `--all` enables the complete 203-check catalog.
+`check` is read-only. Its default profile contains 118 checks, including code
+`format`; `--all` enables the complete 227-check catalog.
 
 ### Selection and reporting
 
@@ -56,13 +56,16 @@ strider check [OPTIONS] [FILE|DIR]...
 | `--format text\|json\|html` | Select text, JSON, or a self-contained HTML report. Default: `text`. |
 | `--only CODE` | Run exactly these check codes. Repeatable, comma-separated, and case-insensitive. |
 | `--all` | Enable every built-in check. Mutually exclusive with `--only`. |
+| `--minimum-severity note\|warning\|error` | Run only checks at or above this effective severity; overrides configuration. |
 | `--list-checks` | List the effective selected registry and severity, then exit. |
 | `--explain CODE` | Explain one selected check and show its effective severity, then exit. |
 | `--watch` | Keep a text-mode incremental session open and rerun changed generations. |
 
 An unknown code supplied by configuration, `--only`, or `--explain` is an
 exit-code `2` error. Explicit CLI selection overrides configured `enabled`
-states but preserves configured severity and path exclusions.
+states but preserves configured severity, the minimum threshold, and path
+exclusions. Severity overrides are resolved before the threshold, and neither
+`--only` nor `--all` bypasses it.
 
 Use `--only format` to check formatting without writing. Use `strider fmt` to
 write the suggested result or `strider fmt --diff` to inspect it.

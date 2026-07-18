@@ -11,6 +11,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 
+	"github.com/gempir/strider/internal/diagnostic"
 	"github.com/gempir/strider/internal/ui"
 )
 
@@ -45,6 +46,7 @@ type ToolConfig struct {
 	Excludes []string `toml:"excludes"`
 	Baseline string `toml:"baseline"`
 	BaselineVariant string `toml:"baseline-variant"`
+	MinimumSeverity string `toml:"minimum-severity"`
 	Rules map[string]RuleConfig `toml:"rules"`
 }
 
@@ -70,13 +72,17 @@ func Defaults() Config {
 		Color: string(ui.ColorAuto),
 		Formatter: FormatterConfig{PrintWidth: 100, IndentWidth: 4, MaxEmptyLines: 1, EndOfLine: "lf"},
 		Checks: defaultToolConfig(),
-		Linter: ToolConfig{BaselineVariant: "loose", Rules: make(map[string]RuleConfig)},
-		Analyzer: ToolConfig{BaselineVariant: "loose", Rules: make(map[string]RuleConfig)},
+		Linter: defaultToolConfig(),
+		Analyzer: defaultToolConfig(),
 	}
 }
 
 func defaultToolConfig() ToolConfig {
-	return ToolConfig{BaselineVariant: "loose", Rules: make(map[string]RuleConfig)}
+	return ToolConfig{
+		BaselineVariant: "loose",
+		MinimumSeverity: string(diagnostic.SeverityNote),
+		Rules: make(map[string]RuleConfig),
+	}
 }
 
 // Load reads an explicit path or discovers strider.toml from the working
@@ -234,6 +240,9 @@ func (configuration Config) validate() error {
 func validateTool(name string, tool ToolConfig) error {
 	if tool.BaselineVariant != "loose" && tool.BaselineVariant != "strict" {
 		return fmt.Errorf("%s.baseline-variant must be \"loose\" or \"strict\"", name)
+	}
+	if !diagnostic.ValidSeverity(diagnostic.Severity(tool.MinimumSeverity)) {
+		return fmt.Errorf("%s.minimum-severity must be note, warning, or error", name)
 	}
 	for code, rule := range tool.Rules {
 		if rule.Severity != "" && rule.Severity != "note" && rule.Severity != "warning" && rule.Severity != "error" {

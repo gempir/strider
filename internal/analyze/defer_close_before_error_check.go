@@ -17,7 +17,7 @@ func (deferCloseBeforeErrorCheckRule) Meta() Meta {
 		Explanation: "A resource-returning call may yield an unusable or nil value when it also returns an error. Check the error before deferring Close on the resource.",
 		GoodExample: "file, err := os.Open(path); if err != nil { return err }; defer file.Close()",
 		BadExample: "file, err := os.Open(path); defer file.Close(); if err != nil { return err }",
-		DefaultSeverity: diagnostic.SeverityWarning,
+		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
 

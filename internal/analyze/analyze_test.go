@@ -747,6 +747,162 @@ type Value struct {
 	}
 }
 
+func TestDeprecatedAPIUsageReportsImportedGenericAndInterfaceMethods(t *testing.T) {
+	root := analysisModule(
+		t,
+		`package sample
+
+import "example.com/analysis/legacy"
+
+func use(generic legacy.Generic[int], contract legacy.Contract) {
+	generic.OldMethod()
+	contract.OldInterfaceMethod()
+}
+`,
+	)
+	legacy := filepath.Join(root, "legacy")
+	if err := os.MkdirAll(legacy, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(
+		filepath.Join(legacy, "legacy.go"),
+		[]byte(`package legacy
+
+type Generic[T any] struct{}
+
+// Deprecated: use NewMethod instead.
+func (Generic[T]) OldMethod() {}
+
+type Contract interface {
+	// Deprecated: use NewInterfaceMethod instead.
+	OldInterfaceMethod()
+}
+`),
+		0o600,
+	); err != nil {
+		t.Fatal(err)
+	}
+	registry, err := NewRegistry([]string{"deprecated-api-usage"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{root}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diagnostics) != 2 {
+		t.Fatalf("got %d diagnostics, want 2: %#v", len(diagnostics), diagnostics)
+	}
+}
+
+func TestDeprecatedAPIUsageReportsImportedGenericFields(t *testing.T) {
+	root := analysisModule(
+		t,
+		`package sample
+
+import "example.com/analysis/legacy"
+
+func use(value legacy.Generic[int]) int {
+	return value.OldField
+}
+`,
+	)
+	legacy := filepath.Join(root, "legacy")
+	if err := os.MkdirAll(legacy, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(
+		filepath.Join(legacy, "legacy.go"),
+		[]byte(`package legacy
+
+type Generic[T any] struct {
+	// Deprecated: use NewField instead.
+	OldField T
+}
+`),
+		0o600,
+	); err != nil {
+		t.Fatal(err)
+	}
+	registry, err := NewRegistry([]string{"deprecated-api-usage"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{root}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diagnostics) != 1 {
+		t.Fatalf("got %d diagnostics, want 1: %#v", len(diagnostics), diagnostics)
+	}
+}
+
+func TestDeprecatedAPIUsageFollowsPhysicalFilesForLineDirectives(t *testing.T) {
+	root := analysisModule(
+		t,
+		`package sample
+
+import "example.com/analysis/legacy"
+
+func use() {
+	legacy.Old()
+}
+`,
+	)
+	legacy := filepath.Join(root, "legacy")
+	if err := os.MkdirAll(legacy, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(
+		filepath.Join(legacy, "legacy.go"),
+		[]byte(`package legacy
+
+// Deprecated: use New instead.
+//line legacy.schema:400
+func Old() {}
+`),
+		0o600,
+	); err != nil {
+		t.Fatal(err)
+	}
+	registry, err := NewRegistry([]string{"deprecated-api-usage"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{root}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diagnostics) != 1 {
+		t.Fatalf("got %d diagnostics, want 1: %#v", len(diagnostics), diagnostics)
+	}
+}
+
+func TestDeprecatedAPIUsageReadsStandardLibraryMarkers(t *testing.T) {
+	root := analysisModule(
+		t,
+		`package sample
+
+import "io/ioutil"
+
+func read() {
+	_, _ = ioutil.ReadAll(nil)
+}
+`,
+	)
+	registry, err := NewRegistry([]string{"deprecated-api-usage"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{root}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diagnostics) != 2 {
+		t.Fatalf("got %d diagnostics, want 2: %#v", len(diagnostics), diagnostics)
+	}
+}
+
 func TestInvalidListenAddressReportsInvalidConstants(t *testing.T) {
 	root := analysisModule(
 		t,
@@ -1294,6 +1450,34 @@ func compare(value int, floating float64) bool {
 }
 `,
 	)
+	registry, err := NewRegistry([]string{"identical-binary-operands"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run([]string{root}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diagnostics) != 1 {
+		t.Fatalf("got %d diagnostics, want 1: %#v", len(diagnostics), diagnostics)
+	}
+}
+
+func TestCommandModuleEndingDotTestIsAnalyzed(t *testing.T) {
+	root := analysisModule(
+		t,
+		`package main
+
+func compare(value int) bool { return value == value }
+`,
+	)
+	if err := os.WriteFile(
+		filepath.Join(root, "go.mod"),
+		[]byte("module example.com/analysis.test\n\ngo 1.26\n"),
+		0o600,
+	); err != nil {
+		t.Fatal(err)
+	}
 	registry, err := NewRegistry([]string{"identical-binary-operands"})
 	if err != nil {
 		t.Fatal(err)

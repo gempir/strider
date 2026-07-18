@@ -3,7 +3,7 @@ title: sourcegraph/conc
 description: Detailed Strider findings for sourcegraph/conc.
 tableOfContents: false
 sidebar:
-  order: 22
+  order: 8
 ---
 
 Pinned [`sourcegraph/conc`](https://github.com/sourcegraph/conc) results. Expand any

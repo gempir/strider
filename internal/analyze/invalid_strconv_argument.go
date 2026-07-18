@@ -28,7 +28,7 @@ func (invalidStrconvArgumentRule) Meta() Meta {
 }
 
 func (invalidStrconvArgumentRule) Run(pass *Pass) {
-	calls := argumentsByCallPosition(pass.Files)
+	calls := pass.argumentsByCallPosition()
 	for _, function := range pass.Functions {
 		for _, block := range function.Blocks {
 			for _, instruction := range block.Instrs {

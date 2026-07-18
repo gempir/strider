@@ -13,6 +13,11 @@ import (
 	"github.com/gempir/strider/internal/cst"
 )
 
+var (
+	validFilenamePattern = regexp.MustCompile(`^[_A-Za-z0-9][_A-Za-z0-9-]*\.go$`)
+	validPackagePattern = regexp.MustCompile(`^[a-z][a-z0-9]*$`)
+)
+
 func (a *cstAnalyzer) checkFilenameAndPackage() {
 	nameToken := a.packageNameToken()
 	if !nameToken.IsValid() {
@@ -20,16 +25,14 @@ func (a *cstAnalyzer) checkFilenameAndPackage() {
 	}
 	name := nameToken.Src()
 	base := filepath.Base(a.filename)
-	validFile := regexp.MustCompile(`^[_A-Za-z0-9][_A-Za-z0-9-]*\.go$`)
-	if a.enabled["filename-format"] && !validFile.MatchString(base) {
+	if a.enabled["filename-format"] && !validFilenamePattern.MatchString(base) {
 		a.report(
 			"filename-format",
 			nameToken,
 			"filename does not match the supported Go filename format",
 		)
 	}
-	validPackage := regexp.MustCompile(`^[a-z][a-z0-9]*$`)
-	if a.enabled["package-naming"] && name != "main" && !validPackage.MatchString(name) {
+	if a.enabled["package-naming"] && name != "main" && !validPackagePattern.MatchString(name) {
 		a.report(
 			"package-naming",
 			nameToken,
@@ -65,6 +68,7 @@ func (a *cstAnalyzer) checkConcreteImports() {
 			}
 			path,
 			_ := strconv.Unquote(spec.ImportPath.Src())
+			a.importPaths[path] = true
 			if seen[path] {
 				a.report(
 					"duplicated-imports",
@@ -98,7 +102,7 @@ func (a *cstAnalyzer) checkConcreteImports() {
 					a.report("blank-imports", spec, "blank import should be justified by a comment")
 				}
 			default:
-				if !regexp.MustCompile(`^[a-z][a-z0-9]*$`).MatchString(alias) {
+				if !validPackagePattern.MatchString(alias) {
 					a.report(
 						"import-alias-naming",
 						aliasNode,
@@ -129,7 +133,7 @@ func concreteImportHasComment(tree *cst.Tree, spec *cst.ImportSpec) bool {
 	start, end := cst.Range(spec)
 	startPosition := tree.Position(start)
 	endPosition := tree.Position(end)
-	source := tree.Source()
+	source := tree.Bytes()
 	for _, comment := range tree.Comments() {
 		if comment.Line == endPosition.Line || (comment.End <= start && strings.Count(
 			string(source[comment.End:start]),

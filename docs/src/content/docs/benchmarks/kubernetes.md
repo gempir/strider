@@ -3,7 +3,7 @@ title: kubernetes/kubernetes
 description: Detailed Strider findings for Kubernetes core packages.
 tableOfContents: false
 sidebar:
-  order: 26
+  order: 11
 ---
 
 Pinned [`kubernetes/kubernetes`](https://github.com/kubernetes/kubernetes) results

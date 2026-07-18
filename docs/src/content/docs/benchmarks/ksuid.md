@@ -3,7 +3,7 @@ title: segmentio/ksuid
 description: Detailed Strider findings for segmentio/ksuid.
 tableOfContents: false
 sidebar:
-  order: 12
+  order: 5
 ---
 
 Pinned [`segmentio/ksuid`](https://github.com/segmentio/ksuid) results. Expand any

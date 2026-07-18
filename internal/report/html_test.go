@@ -76,7 +76,12 @@ func TestHTMLRendersOperationTimings(t *testing.T) {
 	if err := HTMLWithOptions(&output, options, nil); err != nil {
 		t.Fatal(err)
 	}
-	for _, wanted := range[]string{"Operation timings", "format", "14 <small>ms</small>", "903 <small>ms</small>"} {
+	for _, wanted := range[]string{
+		"Operation timings",
+		"format",
+		"14 <small>ms</small>",
+		"903 <small>ms</small>",
+	} {
 		if !strings.Contains(output.String(), wanted) {
 			t.Fatalf("HTML output missing timing %q: %s", wanted, output.String())
 		}
@@ -110,5 +115,46 @@ func TestHTMLResolvesRelativeSourcesAgainstRoot(t *testing.T) {
 		if !strings.Contains(output.String(), wanted) {
 			t.Fatalf("HTML output missing source context %q: %s", wanted, output.String())
 		}
+	}
+}
+
+func TestHTMLLimitsDetailsButSummarizesAllDiagnostics(t *testing.T) {
+	diagnostics := []diagnostic.Diagnostic{
+		{Code: "common-rule", Message: "common one", Severity: diagnostic.SeverityWarning},
+		{Code: "common-rule", Message: "common two", Severity: diagnostic.SeverityWarning},
+		{Code: "rare-rule", Message: "rare one", Severity: diagnostic.SeverityError},
+	}
+	var output bytes.Buffer
+	if err := HTMLWithOptions(
+		&output,
+		HTMLOptions{Title: "Limited report", MaxDiagnostics: 2},
+		diagnostics,
+	); err != nil {
+		t.Fatal(err)
+	}
+	page := output.String()
+	if got := strings.Count(page, `<details class="diagnostic"`); got != 2 {
+		t.Fatalf("rendered %d diagnostic details, want 2", got)
+	}
+	for _, wanted := range[]string{
+		"Showing 2 of 3 detailed findings",
+		"The summary includes all 3 findings",
+		"common-rule</code></td><td>2",
+		"rare-rule</code></td><td>1",
+		"common one",
+		"rare one",
+	} {
+		if !strings.Contains(page, wanted) {
+			t.Fatalf("HTML output missing %q: %s", wanted, page)
+		}
+	}
+	if strings.Contains(page, "common two") {
+		t.Fatal("report rendered a diagnostic beyond the detail limit")
+	}
+	if strings.Index(page, "common-rule</code></td><td>2") > strings.Index(
+		page,
+		"rare-rule</code></td><td>1",
+	) {
+		t.Fatal("rule summary was not sorted by descending finding count")
 	}
 }

@@ -3,7 +3,7 @@ title: allegro/bigcache
 description: Detailed Strider findings for allegro/bigcache.
 tableOfContents: false
 sidebar:
-  order: 21
+  order: 7
 ---
 
 Pinned [`allegro/bigcache`](https://github.com/allegro/bigcache) results. Expand any

@@ -25,7 +25,7 @@ func (invalidRegexpRule) Meta() Meta {
 }
 
 func (invalidRegexpRule) Run(pass *Pass) {
-	calls := firstArgumentsByCallPosition(pass.Files)
+	calls := pass.firstArgumentsByCallPosition()
 	for _, function := range pass.Functions {
 		for _, block := range function.Blocks {
 			for _, instruction := range block.Instrs {
@@ -83,24 +83,19 @@ func ssaConstant(value ssa.Value) *ssa.Const {
 	}
 }
 
-func firstArgumentsByCallPosition(files []*ast.File) map[token.Pos]ast.Node {
-	calls := make(map[token.Pos]ast.Node)
-	for _, file := range files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				call,
-				ok := node.(*ast.CallExpr)
-				if !ok || len(call.Args) == 0 {
-					return true
+func (pass *Pass) firstArgumentsByCallPosition() map[token.Pos]ast.Node {
+	pass.facts.firstArgumentsOnce.Do(
+		func() {
+			pass.facts.firstArguments = make(map[token.Pos]ast.Node)
+			for position,
+			arguments := range pass.argumentsByCallPosition() {
+				if len(arguments) != 0 {
+					pass.facts.firstArguments[position] = arguments[0]
 				}
-				calls[call.Pos()] = call.Args[0]
-				calls[call.Lparen] = call.Args[0]
-				return true
-			},
-		)
-	}
-	return calls
+			}
+		},
+	)
+	return pass.facts.firstArguments
 }
 
 type positionNode struct {

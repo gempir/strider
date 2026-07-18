@@ -26,7 +26,7 @@ func (misalignedAtomic64Rule) Run(pass *Pass) {
 	if pass.TypesSizes == nil || pass.TypesSizes.Sizeof(types.Typ[types.Uintptr]) != 4 {
 		return
 	}
-	calls := argumentsByCallPosition(pass.Files)
+	calls := pass.argumentsByCallPosition()
 	for _, function := range pass.Functions {
 		for _, block := range function.Blocks {
 			for _, instruction := range block.Instrs {

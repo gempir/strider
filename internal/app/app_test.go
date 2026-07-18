@@ -80,6 +80,55 @@ func TestFormatBatchDoesNotWriteWhenAnyFileIsUnsupported(t *testing.T) {
 	}
 }
 
+func TestFormatBatchReportsFirstFilenameError(t *testing.T) {
+	root := t.TempDir()
+	for name, source := range map[string]string{
+		"a.go": "package p\nfunc A(v int) { switch v { case 1: fallthrough; default: return } }\n",
+		"z.go": "package p\nfunc Z() { goto done; done: return }\n",
+	} {
+		if err := os.WriteFile(filepath.Join(root, name), []byte(source), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var stdout, stderr bytes.Buffer
+	code := Run([]string{"fmt", "--check", root}, strings.NewReader(""), &stdout, &stderr)
+	if code != exitError || !strings.Contains(stderr.String(), "a.go") || !strings.Contains(
+		stderr.String(),
+		"fallthrough statements",
+	) {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	if strings.Contains(stderr.String(), "z.go") || strings.Contains(
+		stderr.String(),
+		"goto statements",
+	) {
+		t.Fatalf("reported a later file error: %q", stderr.String())
+	}
+}
+
+func TestFormatBatchReportsChangesInFilenameOrder(t *testing.T) {
+	root := t.TempDir()
+	for _, name := range[]string{"z.go", "a.go"} {
+		if err := os.WriteFile(
+			filepath.Join(root, name),
+			[]byte("package p\nfunc F( ){return}\n"),
+			0o600,
+		); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var stdout, stderr bytes.Buffer
+	code := Run([]string{"fmt", "--check", root}, strings.NewReader(""), &stdout, &stderr)
+	if code != exitFindings || stderr.Len() != 0 {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	a := strings.Index(stdout.String(), "a.go")
+	z := strings.Index(stdout.String(), "z.go")
+	if a < 0 || z < 0 || a >= z {
+		t.Fatalf("changes are not filename ordered: %q", stdout.String())
+	}
+}
+
 func TestFormatCheckDiffAndWrite(t *testing.T) {
 	root := t.TempDir()
 	filename := filepath.Join(root, "main.go")

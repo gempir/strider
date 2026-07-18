@@ -21,7 +21,7 @@ func (separateByteStringMapKeyRule) Meta() Meta {
 }
 
 func (separateByteStringMapKeyRule) Run(pass *Pass) {
-	parents := analysisParents(pass.Files)
+	parents := pass.analysisParents()
 	for _, file := range pass.Files {
 		ast.Inspect(
 			file,

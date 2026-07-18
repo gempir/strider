@@ -3,7 +3,7 @@ title: go-retryablehttp
 description: Detailed Strider findings for hashicorp/go-retryablehttp.
 tableOfContents: false
 sidebar:
-  order: 10
+  order: 4
 ---
 
 Pinned [`hashicorp/go-retryablehttp`](https://github.com/hashicorp/go-retryablehttp)

@@ -104,7 +104,7 @@ func (a *cstAnalyzer) checkConcreteExportedList(list *cst.IdentifierList, node c
 
 func (a *cstAnalyzer) concreteHasDocumentation(name string, node cst.Node) bool {
 	start, _ := cst.Range(node)
-	source := a.tree.Source()
+	source := a.tree.Bytes()
 	comments := a.tree.Comments()
 	for index := len(comments) - 1; index >= 0; index-- {
 		comment := comments[index]

@@ -142,6 +142,7 @@ type cstAnalyzer struct {
 	receiverNames map[string]string
 	marshalKinds map[string]string
 	importNames map[string]bool
+	importPaths map[string]bool
 	foldedNames map[string]map[string]string
 	publicStructs int
 }
@@ -158,28 +159,25 @@ func AnalyzeCST(input CSTInput) {
 	analyzer := &cstAnalyzer{
 		filename: input.Filename,
 		tree: input.Tree,
-		content: input.Tree.Source(),
+		content: input.Tree.Bytes(),
 		enabled: enabled,
 		reporter: input.Report,
 		receiverNames: make(map[string]string),
 		marshalKinds: make(map[string]string),
 		importNames: make(map[string]bool),
+		importPaths: make(map[string]bool),
 		foldedNames: make(map[string]map[string]string),
 	}
 	analyzer.checkFile()
-	stack := []cst.Node{}
-	var visit func(cst.Node)
-	visit = func(node cst.Node) {
-		analyzer.ancestors = stack
-		analyzer.current = node
-		analyzer.check(node)
-		stack = append(stack, node)
-		for _, child := range cst.Children(node) {
-			visit(child)
-		}
-		stack = stack[:len(stack) - 1]
-	}
-	visit(input.Tree.Root())
+	cst.WalkWithAncestors(
+		input.Tree.Root(),
+		func(node cst.Node, ancestors []cst.Node) bool {
+			analyzer.ancestors = ancestors
+			analyzer.current = node
+			analyzer.check(node)
+			return true
+		},
+	)
 }
 
 func (a *cstAnalyzer) check(node cst.Node) {

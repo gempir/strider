@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -20,6 +21,14 @@ type htmlReport struct {
 	Errors int
 	Warnings int
 	Notes int
+	Shown int
+	Omitted int
+	Rules []htmlRuleCount
+}
+
+type htmlRuleCount struct {
+	Code string
+	Count int
 }
 
 type htmlDiagnostic struct {
@@ -52,6 +61,7 @@ type HTMLOptions struct {
 	Title string
 	SourceRoot string
 	Timings []HTMLTiming
+	MaxDiagnostics int
 }
 
 // HTML writes a deterministic, self-contained diagnostic report. The report
@@ -63,15 +73,10 @@ func HTML(writer io.Writer, title string, diagnostics []diagnostic.Diagnostic) e
 // HTMLWithOptions writes a deterministic, self-contained diagnostic report
 // and resolves relative diagnostic filenames against SourceRoot.
 func HTMLWithOptions(writer io.Writer, options HTMLOptions, diagnostics []diagnostic.Diagnostic) error {
-	data := htmlReport{
-		Title: options.Title,
-		Timings: options.Timings,
-		Diagnostics: make([]htmlDiagnostic, 0, len(diagnostics)),
-		Total: len(diagnostics),
-	}
-	sources := make(map[string][]string)
-	missing := make(map[string]bool)
+	data := htmlReport{Title: options.Title, Timings: options.Timings, Total: len(diagnostics)}
+	counts := make(map[string]int)
 	for _, item := range diagnostics {
+		counts[item.Code]++
 		switch item.Severity {
 		case diagnostic.SeverityError:
 			data.Errors++
@@ -80,6 +85,15 @@ func HTMLWithOptions(writer io.Writer, options HTMLOptions, diagnostics []diagno
 		default:
 			data.Warnings++
 		}
+	}
+	data.Rules = sortedRuleCounts(counts)
+	displayed := limitedDiagnostics(diagnostics, options.MaxDiagnostics)
+	data.Shown = len(displayed)
+	data.Omitted = len(diagnostics) - len(displayed)
+	data.Diagnostics = make([]htmlDiagnostic, 0, len(displayed))
+	sources := make(map[string][]string)
+	missing := make(map[string]bool)
+	for _, item := range displayed {
 		data.Diagnostics = append(
 			data.Diagnostics,
 			htmlDiagnostic{
@@ -95,6 +109,56 @@ func HTMLWithOptions(writer io.Writer, options HTMLOptions, diagnostics []diagno
 		)
 	}
 	return htmlTemplate.Execute(writer, data)
+}
+
+func sortedRuleCounts(counts map[string]int) []htmlRuleCount {
+	result := make([]htmlRuleCount, 0, len(counts))
+	for code, count := range counts {
+		result = append(result, htmlRuleCount{Code: code, Count: count})
+	}
+	sort.Slice(
+		result,
+		func(left, right int) bool {
+			if result[left].Count != result[right].Count {
+				return result[left].Count > result[right].Count
+			}
+			return result[left].Code < result[right].Code
+		},
+	)
+	return result
+}
+
+func limitedDiagnostics(items []diagnostic.Diagnostic, limit int) []diagnostic.Diagnostic {
+	if limit <= 0 || len(items) <= limit {
+		return items
+	}
+	byCode := make(map[string][]diagnostic.Diagnostic)
+	for _, item := range items {
+		byCode[item.Code] = append(byCode[item.Code], item)
+	}
+	codes := make([]string, 0, len(byCode))
+	for code := range byCode {
+		codes = append(codes, code)
+	}
+	sort.Strings(codes)
+	result := make([]diagnostic.Diagnostic, 0, limit)
+	for index := 0; len(result) < limit; index++ {
+		added := false
+		for _, code := range codes {
+			if index >= len(byCode[code]) {
+				continue
+			}
+			result = append(result, byCode[code][index])
+			added = true
+			if len(result) == limit {
+				break
+			}
+		}
+		if !added {
+			break
+		}
+	}
+	return result
 }
 
 func htmlLocation(item diagnostic.Diagnostic) string {
@@ -174,6 +238,7 @@ var htmlTemplate = template.Must(
 <script>if(self!==top)document.documentElement.classList.add('embedded')</script>
 <style>
 :root{color-scheme:dark;--bg:#0d1117;--panel:#121820;--panel-strong:#171e27;--text:#e6edf3;--muted:#8f9baa;--line:#2a3440;--accent:#54d6b0;--error:#ff7b72;--warning:#e6b85c;--note:#79c0ff;--code:#0a0f14;--marked:#f0c75e}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-feature-settings:"ss01","cv02","cv11"}main{width:min(1440px,calc(100% - 48px));margin:56px auto 88px}header{border-left:2px solid var(--accent);padding-left:20px}h1{margin:0;font-size:clamp(2rem,5vw,3.6rem);line-height:1.04;letter-spacing:-.045em}.lede{color:var(--muted);margin:.6rem 0 2.25rem}.timings{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0 0 16px;border-block:1px solid var(--line)}.timing{min-width:0;padding:17px 20px;border-right:1px solid var(--line)}.timing:last-child{border-right:0}.timing span{display:block;color:var(--muted);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase}.timing strong{display:block;margin-top:2px;font-size:1.45rem;line-height:1.2;letter-spacing:-.03em}.timing small{color:var(--muted);font-size:.72em;font-weight:500;letter-spacing:0}.summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:0 0 24px;border-block:1px solid var(--line)}.card{min-width:0;padding:18px 20px;border-right:1px solid var(--line)}.card:last-child{border-right:0}.card strong{display:block;font-size:1.85rem;line-height:1.1;letter-spacing:-.035em}.card span{color:var(--muted);font-size:.8rem;letter-spacing:.05em;text-transform:uppercase}.card.error strong{color:var(--error)}.card.warning strong{color:var(--warning)}.card.note strong{color:var(--note)}.controls{position:sticky;top:0;z-index:5;display:grid;grid-template-columns:1fr 190px;gap:10px;margin-bottom:14px;padding:12px 0;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(14px)}.controls input,.controls select{width:100%;min-height:43px;border:1px solid var(--line);border-radius:3px;outline:0;background:var(--panel);color:var(--text);font:inherit;padding:9px 12px}.controls input:focus,.controls select:focus{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}.diagnostic{background:var(--panel);border:1px solid var(--line);border-left:2px solid var(--warning);border-radius:3px;margin:8px 0;overflow:hidden}.diagnostic:hover{border-color:color-mix(in srgb,var(--accent) 40%,var(--line));border-left-color:var(--warning)}.diagnostic[data-severity="error"]{border-left-color:var(--error)}.diagnostic[data-severity="note"]{border-left-color:var(--note)}summary{display:grid;grid-template-columns:6.2rem minmax(12rem,auto) 1fr;gap:14px;align-items:baseline;cursor:pointer;padding:15px 17px;list-style:none}summary::-webkit-details-marker{display:none}.severity{font-size:.69rem;font-weight:750;letter-spacing:.1em;text-transform:uppercase;color:var(--warning)}[data-severity="error"] .severity{color:var(--error)}[data-severity="note"] .severity{color:var(--note)}code{font:13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}.rule{color:var(--accent)}.message{font-weight:620}.details{border-top:1px solid var(--line);padding:15px 17px 18px}.location{color:var(--muted);margin:0 0 10px}.source{background:var(--code);border:1px solid color-mix(in srgb,var(--line) 75%,transparent);border-radius:2px;margin:0;padding:10px 0;overflow:auto}.source-line{display:grid;grid-template-columns:4rem 1fr;min-width:max-content;padding:2px 14px}.source-line.current{background:color-mix(in srgb,var(--accent) 9%,transparent)}.line-number{color:var(--muted);padding-right:14px;text-align:right;user-select:none}.source code{white-space:pre}.source mark{background:color-mix(in srgb,var(--marked) 78%,transparent);color:#111820;border-radius:1px;padding:1px 0}.extras{margin:12px 0 0;padding-left:20px}.empty{border-block:1px solid var(--line);text-align:center;padding:56px 20px}.hidden{display:none}html.embedded main{width:100%;margin:0;padding:24px}html.embedded header{display:none}html.embedded .timings{margin-top:0}:root[data-theme="light"]{color-scheme:light;--bg:#f7f9f8;--panel:#fff;--panel-strong:#f0f4f2;--text:#17201d;--muted:#65736d;--line:#ced9d4;--accent:#087a5c;--error:#c93c37;--warning:#a05a00;--note:#0969a9;--code:#f0f4f2;--marked:#f5d765}@media(max-width:700px){main{width:min(100% - 28px,1440px);margin-top:28px}.timing{padding:14px 10px}.summary{grid-template-columns:repeat(2,1fr)}.card:nth-child(2){border-right:0}.card:nth-child(-n+2){border-bottom:1px solid var(--line)}.controls{grid-template-columns:1fr}.controls select{min-height:43px}summary{grid-template-columns:auto 1fr;gap:8px 12px}.message{grid-column:1/-1}html.embedded main{padding:14px}}
+.rule-summary{margin:0 0 24px}.rule-summary h2{font-size:1rem;letter-spacing:-.01em}.rule-summary table{border-collapse:collapse;width:100%;background:var(--panel)}.rule-summary th,.rule-summary td{border-top:1px solid var(--line);padding:9px 12px;text-align:left}.rule-summary th:last-child,.rule-summary td:last-child{text-align:right}.rule-summary th{color:var(--muted);font-size:.69rem;letter-spacing:.09em;text-transform:uppercase}.limit-note{color:var(--muted);margin:-8px 0 20px}
 </style>
 </head>
 <body>
@@ -186,6 +251,8 @@ var htmlTemplate = template.Must(
 <div class="card warning"><strong>{{.Warnings}}</strong><span>Warnings</span></div>
 <div class="card note"><strong>{{.Notes}}</strong><span>Notes</span></div>
 </section>
+{{if .Omitted}}<p class="limit-note">Showing {{.Shown}} of {{.Total}} detailed findings. The summary includes all {{.Total}} findings.</p>{{end}}
+{{if .Rules}}<section class="rule-summary"><h2>Findings by rule</h2><table><thead><tr><th>Rule</th><th>Findings</th></tr></thead><tbody>{{range .Rules}}<tr><td><code>{{.Code}}</code></td><td>{{.Count}}</td></tr>{{end}}</tbody></table></section>{{end}}
 {{if .Diagnostics}}
 <section class="controls" aria-label="Report filters"><input id="search" type="search" placeholder="Search code, message, or file…" aria-label="Search diagnostics"><select id="severity" aria-label="Filter by severity"><option value="">All severities</option><option value="error">Errors</option><option value="warning">Warnings</option><option value="note">Notes</option></select></section>
 <section id="diagnostics">

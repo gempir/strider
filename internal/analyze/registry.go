@@ -111,6 +111,60 @@ func (registry *Registry) hasRule(code string) bool {
 	return false
 }
 
+func (registry *Registry) needsSSA() bool {
+	for _, rule := range registry.rules {
+		if ssaRuleCodes[rule.Meta().Code] {
+			return true
+		}
+	}
+	return false
+}
+
+var ssaRuleCodes = map[string]bool{
+	"argument-overwritten-before-use": true,
+	"context-key-type": true,
+	"dangerous-directory-removal": true,
+	"discarded-pure-result": true,
+	"duplicate-trim-cutset": true,
+	"finalizer-captures-object": true,
+	"impossible-interface-nil-comparison": true,
+	"ineffective-value-receiver-assignment": true,
+	"infinite-recursion": true,
+	"invalid-listen-address": true,
+	"invalid-regexp": true,
+	"invalid-strconv-argument": true,
+	"invalid-time-layout": true,
+	"invalid-url": true,
+	"invalid-utf8": true,
+	"ip-byte-comparison": true,
+	"leaky-time-tick": true,
+	"misaligned-atomic-64": true,
+	"nan-comparison": true,
+	"never-nil-comparison": true,
+	"nil-map-assignment": true,
+	"non-pointer-unmarshal": true,
+	"overlapping-encode-buffers": true,
+	"overwritten-before-use": true,
+	"pointless-integer-math": true,
+	"possible-nil-dereference": true,
+	"random-bound-one": true,
+	"regexp-find-all-zero": true,
+	"regexp-match-in-loop": true,
+	"self-assignment": true,
+	"sort-non-slice": true,
+	"swapped-errors-is-arguments": true,
+	"testing-fatal-in-goroutine": true,
+	"timer-reset-drain-race": true,
+	"unbuffered-signal-channel": true,
+	"unchanged-loop-condition": true,
+	"unexported-serialization-fields": true,
+	"unsupported-binary-write": true,
+	"unsupported-marshal-type": true,
+	"unused-append-result": true,
+	"writer-buffer-mutation": true,
+	"zero-replacement-limit": true,
+}
+
 func allRules() []Rule {
 	return[]Rule{
 		invalidRegexpRule{},

@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"go/token"
-	"strings"
 
 	"github.com/gempir/strider/internal/cst"
 )
@@ -67,21 +66,30 @@ func FormatWithOptions(filename string, source []byte, options Options) (Result,
 }
 
 func (s *Session) FormatWithOptions(filename string, source []byte, options Options) (Result, error) {
-	if bytes.Contains(source, []byte("//strider:format-ignore")) {
+	if IsIgnored(source) {
 		copyOfSource := append([]byte(nil), source...)
 		return Result{Source: copyOfSource, Ignored: true}, nil
 	}
-
-	originalTree, hasImports, err := parseConcrete(filename, source)
+	originalTree, err := cst.Parse(filename, source)
 	if err != nil {
 		return Result{}, err
 	}
-	module := ""
-	if hasImports {
-		module = s.modules.find(filename)
+	return s.FormatTree(filename, originalTree, options)
+}
+
+// IsIgnored reports whether source opts out of canonical formatting.
+func IsIgnored(source []byte) bool {
+	return bytes.Contains(source, []byte("//strider:format-ignore"))
+}
+
+// FormatTree formats a previously parsed source tree. The tree and its source
+// remain immutable and may be shared with other checks.
+func (s *Session) FormatTree(filename string, originalTree *cst.Tree, options Options) (Result, error) {
+	preview, module, err := s.previewTree(filename, originalTree, options)
+	if err != nil || preview.Ignored {
+		return preview, err
 	}
-	formatted := []byte(renderConcreteWithModule(originalTree, options, module))
-	formattedTree, err := cst.Parse(filename, formatted)
+	formattedTree, err := cst.Parse(filename, preview.Source)
 	if err != nil {
 		return Result{}, fmt.Errorf("formatter safety check: formatted output does not parse: %w", err)
 	}
@@ -92,38 +100,54 @@ func (s *Session) FormatWithOptions(filename string, source []byte, options Opti
 		return Result{}, fmt.Errorf("formatter idempotence check: %w", err)
 	}
 	second := []byte(renderConcreteWithModule(formattedTree, options, module))
-	if !bytes.Equal(formatted, second) {
+	if !bytes.Equal(preview.Source, second) {
 		return Result{}, fmt.Errorf("formatter idempotence check failed for %s", filename)
 	}
-	return Result{Source: formatted, Changed: !bytes.Equal(source, formatted)}, nil
+	return preview, nil
 }
 
-func parseConcrete(filename string, source []byte) (*cst.Tree, bool, error) {
-	concreteTree, err := cst.Parse(filename, source)
-	if err != nil {
-		return nil, false, err
-	}
-	hasImports, err := validateConcreteSyntax(filename, concreteTree)
-	if err != nil {
-		return nil, false, err
-	}
-	return concreteTree, hasImports, nil
+// PreviewTree renders a read-only formatting candidate without reparsing it.
+// It is intended for drift checks; callers that may expose or write the
+// candidate must use FormatTree and its equivalence/idempotence checks.
+func (s *Session) PreviewTree(
+	filename string,
+	originalTree *cst.Tree,
+	options Options,
+) (Result, error) {
+	result, _, err := s.previewTree(filename, originalTree, options)
+	return result, err
 }
 
-func validateConcreteSyntax(filename string, tree *cst.Tree) (bool, error) {
+func (s *Session) previewTree(
+	filename string,
+	originalTree *cst.Tree,
+	options Options,
+) (Result, string, error) {
+	if originalTree == nil {
+		return Result{}, "", fmt.Errorf("format %s: nil concrete syntax tree", filename)
+	}
+	source := originalTree.Bytes()
+	if IsIgnored(source) {
+		copyOfSource := append([]byte(nil), source...)
+		return Result{Source: copyOfSource, Ignored: true}, "", nil
+	}
+	hasImports, err := validateConcreteSyntax(filename, originalTree)
+	if err != nil {
+		return Result{}, "", err
+	}
+	module := ""
+	if hasImports {
+		module = s.modules.find(filename)
+	}
+	formatted := []byte(renderConcreteWithModule(originalTree, options, module))
+	return Result{Source: formatted, Changed: !bytes.Equal(source, formatted)}, module, nil
+}
+
+func validateConcreteSyntax(_ string, tree *cst.Tree) (bool, error) {
 	hasImports := false
 	for _, current := range tree.Tokens() {
-		switch current.Ch() {
-		case token.IMPORT:
+		if current.Ch() == token.IMPORT {
 			hasImports = true
-		case token.GOTO, token.FALLTHROUGH:
-			position := current.Position()
-			return false, &UnsupportedError{
-				Filename: filename,
-				Line:     position.Line,
-				Column:   position.Column,
-				Feature:  strings.ToLower(current.Ch().String()) + " statements",
-			}
 		}
 	}
 	return hasImports, nil

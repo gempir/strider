@@ -14,8 +14,7 @@ deferred function literals whose returned values are discarded. Calls such as
 returned cleanup function is deferred. Loop placement is owned by the
 dedicated [`no-defer-in-loop`](../no-defer-in-loop/) rule.
 
-## Default
+## Enable
 
-all checks enabled. The rule is part of Strider's extended catalog and runs
-when selected with `--only defer` or when the complete catalog is enabled
-with `--all-rules`.
+This optional check runs when selected with `--only defer`, enabled in
+`strider.toml`, or included with `--all`.

@@ -46,7 +46,6 @@ func (a *cstAnalyzer) checkConcreteIfElse(statement *cst.IfElseStmt) {
 }
 
 func (a *cstAnalyzer) checkConcreteConditional(statement concreteIf) {
-	a.checkConcreteControlNesting(statement.node)
 	a.checkConcreteMapLookup(statement)
 	if statement.init != nil {
 		start, end := cst.Range(statement.init)

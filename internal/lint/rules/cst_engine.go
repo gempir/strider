@@ -136,6 +136,8 @@ type cstAnalyzer struct {
 	tree *cst.Tree
 	content []byte
 	enabled map[string]bool
+	extended bool
+	plan cstExecutionPlan
 	reporter func(Finding)
 	ancestors []cst.Node
 	current cst.Node
@@ -143,6 +145,13 @@ type cstAnalyzer struct {
 	marshalKinds map[string]string
 	importNames map[string]bool
 	importPaths map[string]bool
+	importSeen map[string]bool
+	packageName string
+	repeatedLiterals map[string][]*cst.BasicLit
+	functions []*cstFunctionFacts
+	activeFunction *cstFunctionFacts
+	functionDepth int
+	functionBodyDepth int
 	foldedNames map[string]map[string]string
 	publicStructs int
 }
@@ -156,108 +165,287 @@ func AnalyzeCST(input CSTInput) {
 	if len(enabled) == 0 || input.Tree == nil {
 		return
 	}
+	extended := false
+	for code := range enabled {
+		if !defaultCSTCodes[code] {
+			extended = true
+			break
+		}
+	}
+	plan := compileCSTExecutionPlan(enabled)
 	analyzer := &cstAnalyzer{
 		filename: input.Filename,
 		tree: input.Tree,
 		content: input.Tree.Bytes(),
 		enabled: enabled,
+		extended: extended,
+		plan: plan,
 		reporter: input.Report,
-		receiverNames: make(map[string]string),
-		marshalKinds: make(map[string]string),
-		importNames: make(map[string]bool),
-		importPaths: make(map[string]bool),
-		foldedNames: make(map[string]map[string]string),
 	}
-	analyzer.checkFile()
-	cst.WalkWithAncestors(
+	if enabled["receiver-naming"] {
+		analyzer.receiverNames = make(map[string]string)
+	}
+	if enabled["marshal-receiver"] {
+		analyzer.marshalKinds = make(map[string]string)
+	}
+	if plan.imports {
+		analyzer.importNames = make(map[string]bool)
+		analyzer.importPaths = make(map[string]bool)
+		analyzer.importSeen = make(map[string]bool)
+	}
+	if plan.repeatedLiterals {
+		analyzer.repeatedLiterals = make(map[string][]*cst.BasicLit)
+	}
+	if plan.identifiers {
+		analyzer.foldedNames = make(map[string]map[string]string)
+	}
+	if plan.imports || enabled["exported"] {
+		analyzer.packageName = analyzer.packageNameToken().Src()
+	}
+	if analyzer.extended {
+		analyzer.checkFile()
+	}
+	cst.WalkProductionsWithAncestors(
 		input.Tree.Root(),
 		func(node cst.Node, ancestors []cst.Node) bool {
 			analyzer.ancestors = ancestors
 			analyzer.current = node
-			analyzer.check(node)
+			analyzer.observe(node, ancestors)
+			if analyzer.extended {
+				analyzer.check(node)
+			} else {
+				analyzer.checkDefaults(node)
+			}
 			return true
 		},
 	)
+	analyzer.finishTraversal()
+}
+
+var defaultCSTCodes = map[string]bool{
+	"cyclomatic-complexity": true,
+	"max-parameters": true,
+	"no-naked-return": true,
+	"no-init": true,
+	"no-package-var": true,
+	"no-defer-in-loop": true,
+	"no-else-after-return": true,
+}
+
+func (a *cstAnalyzer) checkDefaults(node cst.Node) {
+	switch current := node.(type) {
+	case *cst.FunctionDecl:
+		if current.FunctionName == nil {
+			return
+		}
+		name := current.FunctionName.IDENT
+		if a.enabled["no-init"] && name.Src() == "init" {
+			a.report("no-init", name, "replace init with explicit initialization")
+		}
+	case *cst.ReturnStmt:
+		if a.enabled["no-naked-return"] {
+			a.checkNakedReturn(current)
+		}
+	case *cst.DeferStmt:
+		if a.enabled["no-defer-in-loop"] {
+			a.checkDefer(current)
+		}
+	case *cst.IfElseStmt:
+		if a.enabled["no-else-after-return"] {
+			a.checkElseAfterReturn(current)
+		}
+	case *cst.VarDecl:
+		if a.enabled["no-package-var"] {
+			a.checkPackageVar(current)
+		}
+	}
 }
 
 func (a *cstAnalyzer) check(node cst.Node) {
 	switch current := node.(type) {
 	case *cst.FunctionDecl:
-		a.checkFunction(current)
-		a.checkConcreteFoldedName("_", current.FunctionName.IDENT)
+		if current.FunctionName == nil {
+			return
+		}
+		name := current.FunctionName.IDENT
+		if a.enabled["no-init"] && name.Src() == "init" {
+			a.report("no-init", name, "replace init with explicit initialization")
+		}
+		if a.plan.identifiers {
+			a.checkConcreteFoldedName("_", name)
+		}
 	case *cst.MethodDecl:
-		a.checkMethod(current)
-		a.checkConcreteMethodName(current)
+		if a.plan.identifiers {
+			a.checkConcreteMethodName(current)
+		}
 	case *cst.ReturnStmt:
-		a.checkNakedReturn(current)
+		if a.plan.returns {
+			a.checkNakedReturn(current)
+		}
 	case *cst.DeferStmt:
-		a.checkDefer(current)
+		if a.plan.defers {
+			a.checkDefer(current)
+		}
 	case *cst.IfElseStmt:
-		a.checkElseAfterReturn(current)
-		a.checkConcreteIfElse(current)
+		if a.enabled["no-else-after-return"] {
+			a.checkElseAfterReturn(current)
+		}
+		if a.plan.controlNesting {
+			a.checkConcreteControlNesting(current)
+		}
+		if a.plan.conditionals {
+			a.checkConcreteIfElse(current)
+		}
 	case *cst.IfStmt:
-		a.checkConcreteIf(current)
+		if a.plan.controlNesting {
+			a.checkConcreteControlNesting(current)
+		}
+		if a.plan.conditionals {
+			a.checkConcreteIf(current)
+		}
 	case *cst.VarDecl:
-		a.checkPackageVar(current)
+		if a.plan.packageVars {
+			a.checkPackageVar(current)
+		}
 	case *cst.BinaryExpression:
-		a.checkBinaryExpression(current)
+		if a.plan.binaryExpressions {
+			a.checkBinaryExpression(current)
+		}
 	case *cst.UnaryExpr:
-		a.checkUnaryExpression(current)
+		if a.plan.unaryExpressions {
+			a.checkUnaryExpression(current)
+		}
 	case *cst.InterfaceType:
-		a.checkInterfaceType(current)
+		if a.plan.interfaces {
+			a.checkInterfaceType(current)
+		}
 	case *cst.Assignment:
-		a.checkIncrementAssignment(current)
-		a.checkConcreteAssignmentPolicy(current)
+		if a.plan.incrementAssignments {
+			a.checkIncrementAssignment(current)
+		}
+		if a.plan.assignmentPolicies {
+			a.checkConcreteAssignmentPolicy(current)
+		}
 	case *cst.ShortVarDecl:
-		a.checkIncrementShortDeclaration(current)
-		a.checkConcreteIdentifierList(current.IdentifierList)
-		a.checkConcreteShortDeclarationPolicy(current)
+		if a.plan.incrementAssignments {
+			a.checkIncrementShortDeclaration(current)
+		}
+		if a.plan.assignmentPolicies {
+			a.checkConcreteShortDeclarationPolicy(current)
+		}
+		if a.plan.identifiers {
+			a.checkConcreteIdentifierList(current.IdentifierList)
+		}
 	case *cst.PrimaryExpr:
-		a.checkConcreteCall(current)
+		if a.plan.calls {
+			a.checkConcreteCall(current)
+		}
 	case *cst.StructType:
-		a.checkConcreteStruct(current)
+		if a.plan.structs {
+			a.checkConcreteStruct(current)
+		}
 	case *cst.FieldDecl:
-		a.checkConcreteStructField(current)
-		a.checkConcreteFieldNames(current)
+		if a.plan.fields {
+			a.checkConcreteStructField(current)
+		}
+		if a.plan.identifiers {
+			a.checkConcreteFieldNames(current)
+		}
 	case *cst.BasicLit:
-		a.checkConcreteStringLiteral(current)
+		if a.plan.stringLiterals {
+			a.checkConcreteStringLiteral(current)
+		}
 	case *cst.Block:
-		a.checkConcreteBlock(current)
+		if a.plan.blocks {
+			a.checkConcreteBlock(current)
+		}
 	case *cst.ForStmt:
-		a.checkConcreteControlNesting(current)
-		a.checkConcreteFor(current)
+		if a.plan.controlNesting {
+			a.checkConcreteControlNesting(current)
+		}
+		if a.plan.loops {
+			a.checkConcreteFor(current)
+		}
 	case *cst.SelectStmt:
-		a.checkConcreteControlNesting(current)
+		if a.plan.controlNesting {
+			a.checkConcreteControlNesting(current)
+		}
 	case *cst.TypeSwitchStmt:
-		a.checkConcreteControlNesting(current)
-		a.checkConcreteSwitch(current)
+		if a.plan.controlNesting {
+			a.checkConcreteControlNesting(current)
+		}
+		if a.plan.switches {
+			a.checkConcreteSwitch(current)
+		}
 	case *cst.ExprSwitchStmt:
-		a.checkConcreteControlNesting(current)
-		a.checkConcreteSwitch(current)
+		if a.plan.controlNesting {
+			a.checkConcreteControlNesting(current)
+		}
+		if a.plan.switches {
+			a.checkConcreteSwitch(current)
+		}
 	case *cst.TypeAssertion:
-		a.checkConcreteTypeAssertion(current)
+		if a.plan.typeAssertions {
+			a.checkConcreteTypeAssertion(current)
+		}
 	case *cst.ParameterDecl:
-		a.checkConcreteIdentifierList(current.IdentifierList)
+		if a.plan.identifiers {
+			a.checkConcreteIdentifierList(current.IdentifierList)
+		}
 	case *cst.VarSpec:
-		a.checkConcreteIdentifier(current.IDENT)
-		a.checkConcreteVarSpec(current.IDENT, current.TypeNode, current.ExpressionList)
+		if a.plan.identifiers {
+			a.checkConcreteIdentifier(current.IDENT)
+		}
+		if a.plan.varSpecs {
+			a.checkConcreteVarSpec(current.IDENT, current.TypeNode, current.ExpressionList)
+		}
 	case *cst.VarSpec2:
-		a.checkConcreteIdentifierList(current.IdentifierList)
-		a.checkConcreteVarSpecList(current.IdentifierList, current.TypeNode, current.ExpressionList)
+		if a.plan.identifiers {
+			a.checkConcreteIdentifierList(current.IdentifierList)
+		}
+		if a.plan.varSpecs {
+			a.checkConcreteVarSpecList(
+				current.IdentifierList,
+				current.TypeNode,
+				current.ExpressionList,
+			)
+		}
 	case *cst.ConstSpec:
-		a.checkConcreteIdentifier(current.IDENT)
-		a.checkConcreteExportedDeclaration(current.IDENT, current)
+		if a.plan.identifiers {
+			a.checkConcreteIdentifier(current.IDENT)
+		}
+		if a.plan.constSpecs {
+			a.checkConcreteExportedDeclaration(current.IDENT, current)
+		}
 	case *cst.ConstSpec2:
-		a.checkConcreteIdentifierList(current.IdentifierList)
-		a.checkConcreteExportedList(current.IdentifierList, current)
+		if a.plan.identifiers {
+			a.checkConcreteIdentifierList(current.IdentifierList)
+		}
+		if a.plan.constSpecs {
+			a.checkConcreteExportedList(current.IdentifierList, current)
+		}
 	case *cst.TypeDef:
-		a.checkConcreteIdentifier(current.IDENT)
-		a.checkConcreteTypeDefinition(current)
+		if a.plan.identifiers {
+			a.checkConcreteIdentifier(current.IDENT)
+		}
+		if a.plan.typeDefinitions {
+			a.checkConcreteTypeDefinition(current)
+		}
 	case *cst.AliasDecl:
-		a.checkConcreteIdentifier(current.IDENT)
-		a.checkConcreteExportedDeclaration(current.IDENT, current)
+		if a.plan.identifiers {
+			a.checkConcreteIdentifier(current.IDENT)
+		}
+		if a.plan.constSpecs {
+			a.checkConcreteExportedDeclaration(current.IDENT, current)
+		}
+	case *cst.ImportSpec:
+		if a.plan.imports {
+			a.checkConcreteImport(current)
+		}
 	case *cst.BreakStmt:
-		a.checkConcreteBreak(current)
+		if a.plan.breaks {
+			a.checkConcreteBreak(current)
+		}
 	}
 }
 
@@ -284,10 +472,12 @@ func (a *cstAnalyzer) reportRange(code string, start, end int, message string) {
 }
 
 func (a *cstAnalyzer) checkFile() {
-	a.checkFilenameAndPackage()
-	a.checkLinesAndComments()
-	a.checkConcreteImports()
-	a.checkConcreteRepeatedLiterals()
+	if a.plan.filename {
+		a.checkFilenameAndPackage()
+	}
+	if a.plan.comments {
+		a.checkLinesAndComments()
+	}
 }
 
 func (a *cstAnalyzer) packageNameToken() cst.Token {
@@ -300,55 +490,88 @@ func (a *cstAnalyzer) packageNameToken() cst.Token {
 	return cst.Token{}
 }
 
-func (a *cstAnalyzer) checkFunction(function *cst.FunctionDecl) {
+func (a *cstAnalyzer) finishTraversal() {
+	if a.plan.repeatedLiterals {
+		a.finishConcreteRepeatedLiterals()
+	}
+	for _, facts := range a.functions {
+		switch function := facts.node.(type) {
+		case *cst.FunctionDecl:
+			a.checkFunction(function, facts)
+		case *cst.MethodDecl:
+			a.checkMethod(function, facts)
+		}
+	}
+}
+
+func (a *cstAnalyzer) checkFunction(function *cst.FunctionDecl, facts *cstFunctionFacts) {
 	if function.FunctionName == nil || function.Signature == nil {
 		return
 	}
 	name := function.FunctionName.IDENT
-	a.checkConcreteExportedFunction(name, function, false)
-	if name.Src() == "init" {
-		a.report("no-init", name, "replace init with explicit initialization")
+	if a.enabled["exported"] {
+		a.checkConcreteExportedFunction(name, function, false)
 	}
-	a.checkSignature(name, function.Signature.Parameters, function.FunctionBody)
-	a.checkConcreteFunctionRules(name, function.Signature, function.FunctionBody, nil)
-	a.checkConcreteTestMain(function)
-	a.checkConcreteFunctionMutation(function.Signature.Parameters, nil, function.FunctionBody)
+	a.checkSignature(name, function.Signature.Parameters, facts.complexity)
+	if a.extended {
+		a.checkConcreteFunctionRules(name, function.Signature, function.FunctionBody, nil, facts)
+		if a.enabled["redundant-test-main-exit"] {
+			a.checkConcreteTestMain(function)
+		}
+		if a.enabled["modifies-parameter"] {
+			a.checkConcreteFunctionMutation(
+				function.Signature.Parameters,
+				nil,
+				function.FunctionBody,
+			)
+		}
+	}
 }
 
-func (a *cstAnalyzer) checkMethod(method *cst.MethodDecl) {
+func (a *cstAnalyzer) checkMethod(method *cst.MethodDecl, facts *cstFunctionFacts) {
 	if method.Signature != nil {
-		a.checkConcreteExportedFunction(method.MethodName, method, true)
-		a.checkSignature(method.MethodName, method.Signature.Parameters, method.FunctionBody)
-		a.checkConcreteFunctionRules(
-			method.MethodName,
-			method.Signature,
-			method.FunctionBody,
-			method.Receiver,
-		)
-		a.checkConcreteFunctionMutation(
-			method.Signature.Parameters,
-			method.Receiver,
-			method.FunctionBody,
-		)
+		if a.enabled["exported"] {
+			a.checkConcreteExportedFunction(method.MethodName, method, true)
+		}
+		a.checkSignature(method.MethodName, method.Signature.Parameters, facts.complexity)
+		if a.extended {
+			a.checkConcreteFunctionRules(
+				method.MethodName,
+				method.Signature,
+				method.FunctionBody,
+				method.Receiver,
+				facts,
+			)
+			if a.enabled["modifies-parameter"] || a.enabled["modifies-value-receiver"] {
+				a.checkConcreteFunctionMutation(
+					method.Signature.Parameters,
+					method.Receiver,
+					method.FunctionBody,
+				)
+			}
+		}
 	}
 }
 
-func (a *cstAnalyzer) checkSignature(name cst.Token, parameters *cst.Parameters, body cst.Node) {
-	count := parameterCount(parameters)
-	if count > 5 {
-		a.report(
-			"max-parameters",
-			name,
-			fmt.Sprintf("function has %d parameters; maximum is 5", count),
-		)
+func (a *cstAnalyzer) checkSignature(name cst.Token, parameters *cst.Parameters, complexity int) {
+	if a.enabled["max-parameters"] {
+		count := parameterCount(parameters)
+		if count > 5 {
+			a.report(
+				"max-parameters",
+				name,
+				fmt.Sprintf("function has %d parameters; maximum is 5", count),
+			)
+		}
 	}
-	complexity := cyclomaticComplexity(body)
-	if complexity > 10 {
-		a.report(
-			"cyclomatic-complexity",
-			name,
-			fmt.Sprintf("function complexity is %d; maximum is 10", complexity),
-		)
+	if a.enabled["cyclomatic-complexity"] {
+		if complexity > 10 {
+			a.report(
+				"cyclomatic-complexity",
+				name,
+				fmt.Sprintf("function complexity is %d; maximum is 10", complexity),
+			)
+		}
 	}
 }
 
@@ -366,33 +589,6 @@ func parameterCount(parameters *cst.Parameters) int {
 		count += declaration.IdentifierList.Len()
 	}
 	return count
-}
-
-func cyclomaticComplexity(body cst.Node) int {
-	if body == nil {
-		return 0
-	}
-	complexity := 1
-	cst.Walk(
-		body,
-		func(node cst.Node) bool {
-			switch current := node.(type) {
-			case cst.Token:
-				switch current.Ch() {
-				case token.IF,
-					token.FOR,
-					token.CASE,
-					token.LAND,
-					token.LOR:
-					complexity++
-				}
-			case *cst.TypeSwitchStmt:
-				complexity++
-			}
-			return true
-		},
-	)
-	return complexity
 }
 
 func (a *cstAnalyzer) checkNakedReturn(statement *cst.ReturnStmt) {
@@ -452,6 +648,9 @@ func (a *cstAnalyzer) checkDefer(statement *cst.DeferStmt) {
 			statement,
 			"defer inside a loop runs at function exit, not iteration exit",
 		)
+	}
+	if !a.enabled["defer"] {
+		return
 	}
 	call, ok := statement.Expression.(*cst.PrimaryExpr)
 	if !ok {

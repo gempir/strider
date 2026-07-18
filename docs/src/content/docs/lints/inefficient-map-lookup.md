@@ -21,4 +21,4 @@ if value, ok := values[key]; ok { use(value) }
 
 ## Enable
 
-This extended rule runs when selected with `--only inefficient-map-lookup`, enabled in `strider.toml`, or included with `--all-rules`. The default severity is `warning`.
+This optional check runs when selected with `--only inefficient-map-lookup`, enabled in `strider.toml`, or included with `--all`. The default severity is `warning`.

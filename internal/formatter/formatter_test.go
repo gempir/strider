@@ -2,9 +2,10 @@ package formatter
 
 import (
 	"bytes"
-	"errors"
 	"strings"
 	"testing"
+
+	"github.com/gempir/strider/internal/cst"
 )
 
 func TestFormatTypicalApplicationCode(t *testing.T) {
@@ -123,16 +124,28 @@ func TestFormatCapsPreservedEmptyLines(t *testing.T) {
 	}
 }
 
-func TestFormatRefusesUnsupportedSyntax(t *testing.T) {
-	tests := map[string]string{
-		"fallthrough": "package p\nfunc F(v int) { switch v { case 1: fallthrough; default: return } }\n",
-		"goto":        "package p\nfunc F() { goto done; done: return }\n",
+func TestFormatGotoAndFallthrough(t *testing.T) {
+	tests := map[string]struct {
+		input string
+		want  string
+	}{
+		"fallthrough": {
+			input: "package p\nfunc F(v int) { switch v { case 1: fallthrough; default: return } }\n",
+			want:  "package p\n\nfunc F(v int) {\n\tswitch v {\n\tcase 1:\n\t\tfallthrough\n\tdefault:\n\t\treturn\n\t}\n}\n",
+		},
+		"goto": {
+			input: "package p\nfunc F() { goto done; done: return }\n",
+			want:  "package p\n\nfunc F() {\n\tgoto done\n\tdone:\n\treturn\n}\n",
+		},
 	}
-	for name, input := range tests {
+	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			_, err := Format(name+".go", []byte(input))
-			if !errors.Is(err, ErrUnsupported) {
-				t.Fatalf("got %v, want ErrUnsupported", err)
+			result, err := Format(name+".go", []byte(test.input))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := string(result.Source); got != test.want {
+				t.Fatalf("formatted source:\n%s\nwant:\n%s", got, test.want)
 			}
 		})
 	}
@@ -459,5 +472,32 @@ func BenchmarkFormat(b *testing.B) {
 		if _, err := Format("bench.go", source); err != nil {
 			b.Fatal(err)
 		}
+	}
+}
+
+func TestFormatTreeMatchesSourceFormatting(t *testing.T) {
+	input := []byte("package p\nfunc F( ){return}\n")
+	tree, err := cst.Parse("tree.go", input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	session := NewSession()
+	fromTree, err := session.FormatTree("tree.go", tree, DefaultOptions())
+	if err != nil {
+		t.Fatal(err)
+	}
+	fromSource, err := session.FormatWithOptions("tree.go", input, DefaultOptions())
+	if err != nil {
+		t.Fatal(err)
+	}
+	preview, err := session.PreviewTree("tree.go", tree, DefaultOptions())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(fromTree.Source, fromSource.Source) || fromTree.Changed != fromSource.Changed {
+		t.Fatalf("tree result %#v differs from source result %#v", fromTree, fromSource)
+	}
+	if !bytes.Equal(preview.Source, fromTree.Source) || preview.Changed != fromTree.Changed {
+		t.Fatalf("preview result %#v differs from verified result %#v", preview, fromTree)
 	}
 }

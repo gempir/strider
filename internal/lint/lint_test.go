@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/gempir/strider/internal/config"
+	"github.com/gempir/strider/internal/cst"
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
@@ -976,6 +977,30 @@ func BenchmarkLint(b *testing.B) {
 		if _, err := Run([]string{filename}, registry); err != nil {
 			b.Fatal(err)
 		}
+	}
+}
+
+func TestAnalyzeTreeMatchesFileRun(t *testing.T) {
+	filename := writeFixture(t, "package p\nfunc init() {}\n")
+	registry, err := NewRegistry([]string{"no-init"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	contents, err := os.ReadFile(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tree, err := cst.Parse(filename, contents)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fromTree := AnalyzeTree(filename, tree, registry)
+	fromFile, err := Run([]string{filename}, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(fromTree, fromFile) {
+		t.Fatalf("tree diagnostics %#v differ from file diagnostics %#v", fromTree, fromFile)
 	}
 }
 

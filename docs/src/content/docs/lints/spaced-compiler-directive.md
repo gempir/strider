@@ -6,7 +6,7 @@ description: Detect compiler directives disabled by leading whitespace.
 Purpose: detect top-level compiler directives that look intentional but are
 ignored because whitespace appears between `//` and `go:`.
 
-Strider default: enabled in the extended lint catalog at `warning` severity.
+Strider default: available in the optional check catalog at `warning` severity.
 
 ```go
 // go:noinline

@@ -11,7 +11,7 @@ dynamic type can implement both contracts, so the assertion can never
 succeed.
 
 Assertions to concrete types are already checked by the Go compiler. This
-analyzer focuses on interface-to-interface assertions.
+check focuses on interface-to-interface assertions.
 
 ```go
 type source interface { Read() int }

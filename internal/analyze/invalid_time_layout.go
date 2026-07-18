@@ -25,28 +25,23 @@ func (invalidTimeParseRule) Meta() Meta {
 
 func (invalidTimeParseRule) Run(pass *Pass) {
 	calls := pass.firstArgumentsByCallPosition()
-	for _, function := range pass.Functions {
-		for _, block := range function.Blocks {
-			for _, instruction := range block.Instrs {
-				call, ok := instruction.(ssa.CallInstruction)
-				if !ok || !isStaticFunction(call, "time", "Parse") || len(call.Common().Args) == 0 {
-					continue
-				}
-				value := ssaConstant(call.Common().Args[0])
-				if value == nil || value.Value == nil || value.Value.Kind() != constant.String {
-					continue
-				}
-				layout := constant.StringVal(value.Value)
-				layout = strings.ReplaceAll(layout, "_", " ")
-				layout = strings.ReplaceAll(layout, "Z", "-")
-				if _, err := time.Parse(layout, layout); err != nil {
-					node := calls[call.Pos()]
-					if node == nil {
-						node = positionNode{position: call.Pos()}
-					}
-					pass.Report(node, err.Error())
-				}
+	for _, call := range pass.staticCallsInPackage("time") {
+		if !isStaticFunction(call, "time", "Parse") || len(call.Common().Args) == 0 {
+			continue
+		}
+		value := ssaConstant(call.Common().Args[0])
+		if value == nil || value.Value == nil || value.Value.Kind() != constant.String {
+			continue
+		}
+		layout := constant.StringVal(value.Value)
+		layout = strings.ReplaceAll(layout, "_", " ")
+		layout = strings.ReplaceAll(layout, "Z", "-")
+		if _, err := time.Parse(layout, layout); err != nil {
+			node := calls[call.Pos()]
+			if node == nil {
+				node = positionNode{position: call.Pos()}
 			}
+			pass.Report(node, err.Error())
 		}
 	}
 }

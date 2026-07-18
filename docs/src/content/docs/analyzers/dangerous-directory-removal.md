@@ -10,7 +10,7 @@ Passing the direct result of `os.TempDir` or a user directory helper to
 application-owned child. This is commonly caused by confusing `TempDir` with a
 directory-creation helper or forgetting to append a suffix.
 
-The analyzer covers the temporary, user cache, user configuration, and user
+The check covers the temporary, user cache, user configuration, and user
 home directory helpers.
 
 ```go

@@ -27,7 +27,7 @@ func TestWriteProjectReportLimitsDetailedDiagnostics(t *testing.T) {
 	}
 	result := projectResult{
 		Name: "example",
-		Operations: []operationResult{{Name: "lint", Diagnostics: diagnostics}},
+		Operations: []operationResult{{Name: "check", Diagnostics: diagnostics}},
 	}
 	if err := writeProjectReport(root, result, ""); err != nil {
 		t.Fatal(err)
@@ -57,8 +57,7 @@ func TestWriteProjectReportIncludesOperationTimings(t *testing.T) {
 		Name: "example",
 		Operations: []operationResult{
 			{Name: "format", DurationMS: 14},
-			{Name: "lint", DurationMS: 287},
-			{Name: "analyze", DurationMS: 903},
+			{Name: "check", DurationMS: 1190},
 		},
 	}
 	if err := writeProjectReport(root, result, ""); err != nil {
@@ -68,7 +67,7 @@ func TestWriteProjectReportIncludesOperationTimings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, wanted := range[]string{"format", "14 <small>ms</small>", "903 <small>ms</small>"} {
+	for _, wanted := range[]string{"format", "14 <small>ms</small>", "1190 <small>ms</small>"} {
 		if !strings.Contains(string(contents), wanted) {
 			t.Fatalf("project report missing timing %q", wanted)
 		}
@@ -82,9 +81,9 @@ func TestManifestRequiresElevenPinnedProjectsAndBudgets(t *testing.T) {
 		projects[index] = `{"name":"project-` + string(rune('a' + index)) + `","repository":"https://example.com/project.git","revision":"` + strings.Repeat(
 			"a",
 			40,
-		) + `","budgets_ms":{"format":1,"lint":1,"analyze":1}}`
+		) + `","budgets_ms":{"format":1,"check":1}}`
 	}
-	contents := `{"version":1,"projects":[` + strings.Join(projects, ",") + `]}`
+	contents := `{"version":2,"projects":[` + strings.Join(projects, ",") + `]}`
 	if err := os.WriteFile(path, []byte(contents), 0o600); err != nil {
 		t.Fatal(err)
 	}

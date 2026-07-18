@@ -32,42 +32,32 @@ func (unsupportedMarshalTypeRule) Meta() Meta {
 
 func (unsupportedMarshalTypeRule) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
-	for _, function := range pass.Functions {
-		for _, block := range function.Blocks {
-			for _, instruction := range block.Instrs {
-				call, ok := instruction.(ssa.CallInstruction)
-				if !ok {
-					continue
-				}
-				descriptor, ok := marshalDescriptor(call)
-				if !ok || len(call.Common().Args) <= descriptor.ssaArgument {
-					continue
-				}
-				value := unwrapSSAValue(call.Common().Args[descriptor.ssaArgument])
-				unsupported, path := unsupportedMarshalType(
-					value.Type(),
-					descriptor.format,
-					make(map[types.Type]bool),
-					"",
-				)
-				if unsupported == nil {
-					continue
-				}
-				node := explicitCallArgument(
-					calls[call.Pos()],
-					descriptor.sourceArgument,
-					call.Pos(),
-				)
-				message := fmt.Sprintf(
-					"%s cannot marshal values of type %s",
-					descriptor.format,
-					types.TypeString(unsupported, types.RelativeTo(pass.Types)),
-				)
-				if path != "" {
-					message += " via " + path
-				}
-				pass.Report(node, message)
+	for _, packagePath := range[]string{"encoding/json", "encoding/xml"} {
+		for _, call := range pass.staticCallsInPackage(packagePath) {
+			descriptor, ok := marshalDescriptor(call)
+			if !ok || len(call.Common().Args) <= descriptor.ssaArgument {
+				continue
 			}
+			value := unwrapSSAValue(call.Common().Args[descriptor.ssaArgument])
+			unsupported, path := unsupportedMarshalType(
+				value.Type(),
+				descriptor.format,
+				make(map[types.Type]bool),
+				"",
+			)
+			if unsupported == nil {
+				continue
+			}
+			node := explicitCallArgument(calls[call.Pos()], descriptor.sourceArgument, call.Pos())
+			message := fmt.Sprintf(
+				"%s cannot marshal values of type %s",
+				descriptor.format,
+				types.TypeString(unsupported, types.RelativeTo(pass.Types)),
+			)
+			if path != "" {
+				message += " via " + path
+			}
+			pass.Report(node, message)
 		}
 	}
 }

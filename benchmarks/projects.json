@@ -1,71 +1,71 @@
 {
-  "version": 1,
+  "version": 2,
   "projects": [
     {
       "name": "chi",
       "repository": "https://github.com/go-chi/chi.git",
       "revision": "8b258c7bb28f97a5f2a856ff7ef962578fec9215",
-      "budgets_ms": { "format": 3000, "lint": 5000, "analyze": 15000 }
+      "budgets_ms": { "format": 3000, "check": 20000 }
     },
     {
       "name": "gin",
       "repository": "https://github.com/gin-gonic/gin.git",
       "revision": "34dac209ffb6ef85cc78c5d217bbb7ad001d68fd",
-      "budgets_ms": { "format": 5000, "lint": 15000, "analyze": 20000 }
+      "budgets_ms": { "format": 5000, "check": 35000 }
     },
     {
       "name": "websocket",
       "repository": "https://github.com/gorilla/websocket.git",
       "revision": "e064f32e3674d9d79a8fd417b5bc06fa5c6cad8f",
-      "budgets_ms": { "format": 3000, "lint": 5000, "analyze": 15000 }
+      "budgets_ms": { "format": 3000, "check": 20000 }
     },
     {
       "name": "retryablehttp",
       "repository": "https://github.com/hashicorp/go-retryablehttp.git",
       "revision": "fd004584a46724fae09e2f21d7c382e15c893f42",
-      "budgets_ms": { "format": 3000, "lint": 5000, "analyze": 15000 }
+      "budgets_ms": { "format": 3000, "check": 20000 }
     },
     {
       "name": "ksuid",
       "repository": "https://github.com/segmentio/ksuid.git",
       "revision": "d33724947fcfba7949906c2b1821e96a1c8d06e7",
-      "budgets_ms": { "format": 3000, "lint": 8000, "analyze": 15000 }
+      "budgets_ms": { "format": 3000, "check": 23000 }
     },
     {
       "name": "groupcache",
       "repository": "https://github.com/golang/groupcache.git",
       "revision": "2c02b8208cf8c02a3e358cb1d9b60950647543fc",
-      "budgets_ms": { "format": 5000, "lint": 12000, "analyze": 20000 }
+      "budgets_ms": { "format": 5000, "check": 32000 }
     },
     {
       "name": "bigcache",
       "repository": "https://github.com/allegro/bigcache.git",
       "revision": "532eb6410aefb749509084c74f56b8313e200f4a",
-      "budgets_ms": { "format": 5000, "lint": 12000, "analyze": 20000 }
+      "budgets_ms": { "format": 5000, "check": 32000 }
     },
     {
       "name": "conc",
       "repository": "https://github.com/sourcegraph/conc.git",
       "revision": "5f936abd7ae87036af1f75c95fb9d0daaf00116b",
-      "budgets_ms": { "format": 3000, "lint": 8000, "analyze": 15000 }
+      "budgets_ms": { "format": 3000, "check": 23000 }
     },
     {
       "name": "golang-set",
       "repository": "https://github.com/deckarep/golang-set.git",
       "revision": "da03b7639be5170e7b8fc7183b2d4663a4133419",
-      "budgets_ms": { "format": 3000, "lint": 8000, "analyze": 15000 }
+      "budgets_ms": { "format": 3000, "check": 23000 }
     },
     {
       "name": "copier",
       "repository": "https://github.com/jinzhu/copier.git",
       "revision": "c6b47b092d9840406d0abc347e68a28a7b812643",
-      "budgets_ms": { "format": 3000, "lint": 10000, "analyze": 15000 }
+      "budgets_ms": { "format": 3000, "check": 25000 }
     },
     {
       "name": "kubernetes",
       "repository": "https://github.com/kubernetes/kubernetes.git",
       "revision": "bd1a1b897340ef91595c36439fed49b9072f8b1d",
-      "budgets_ms": { "format": 30000, "lint": 120000, "analyze": 60000 },
+      "budgets_ms": { "format": 30000, "check": 180000 },
       "paths": ["pkg/scheduler", "pkg/registry", "pkg/proxy", "pkg/kubeapiserver"],
       "format_excludes": [
         "pkg/proxy/iptables/proxier_test.go",

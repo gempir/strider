@@ -21,4 +21,4 @@ const identifier = "abc-123" // matching the configured format
 
 ## Enable
 
-This extended rule runs when selected with `--only string-format`, enabled in `strider.toml`, or included with `--all-rules`. The default severity is `warning`.
+This optional check runs when selected with `--only string-format`, enabled in `strider.toml`, or included with `--all`. The default severity is `warning`.

@@ -10,7 +10,7 @@ passed to legacy `sync/atomic` functions are aligned to 8 bytes. Put the
 64-bit atomic field first in its allocated struct, or use the typed atomic
 wrappers that arrange their own alignment.
 
-This analyzer is target-aware and remains silent when loading a 64-bit build.
+This check is target-aware and remains silent when loading a 64-bit build.
 
 ```go
 type counters struct {

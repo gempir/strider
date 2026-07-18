@@ -231,6 +231,9 @@ func Kind(node Node) string {
 	if current, ok := node.(gc.Token); ok {
 		return current.Ch().String()
 	}
+	if kind, ok := generatedKind(node); ok {
+		return kind
+	}
 	valueType := reflect.TypeOf(node)
 	for valueType.Kind() == reflect.Pointer {
 		valueType = valueType.Elem()
@@ -359,17 +362,22 @@ func Children(node Node) []Node {
 		return nil
 	}
 	result := []Node{}
+	if generated, ok := appendGeneratedChildren(result, node, false); ok {
+		return generated
+	}
 	collectChildren(indirect(reflect.ValueOf(node)), &result)
 	return result
 }
 
-// Walk visits node and its concrete children in source order. Returning false
-// skips the current node's descendants.
+// Walk visits node and its concrete children in structural grammar order.
+// Returning false skips the current node's descendants.
 func Walk(node Node, visit func(Node) bool) {
 	if isNilNode(node) || visit == nil {
 		return
 	}
-	stack := []Node{node}
+	var inline [32]Node
+	stack := inline[:1]
+	stack[0] = node
 	for len(stack) != 0 {
 		last := len(stack) - 1
 		current := stack[last]
@@ -380,9 +388,9 @@ func Walk(node Node, visit func(Node) bool) {
 	}
 }
 
-// WalkWithAncestors visits a tree in source order and supplies the current
-// node's ancestors from the root down. The ancestor slice is reused and must
-// not be retained by the visitor.
+// WalkWithAncestors visits a tree in structural grammar order and supplies the
+// current node's ancestors from the root down. The ancestor slice is reused
+// and must not be retained by the visitor.
 func WalkWithAncestors(node Node, visit func(Node, []Node) bool) {
 	if isNilNode(node) || visit == nil {
 		return
@@ -391,8 +399,11 @@ func WalkWithAncestors(node Node, visit func(Node, []Node) bool) {
 		node Node
 		exit bool
 	}
-	stack := []item{{node: node}}
-	ancestors := []Node{}
+	var inlineStack [32]item
+	stack := inlineStack[:1]
+	stack[0].node = node
+	var inlineAncestors [16]Node
+	ancestors := inlineAncestors[:0]
 	for len(stack) != 0 {
 		last := len(stack) - 1
 		current := stack[last]
@@ -407,6 +418,40 @@ func WalkWithAncestors(node Node, visit func(Node, []Node) bool) {
 		stack = append(stack, item{exit: true})
 		ancestors = append(ancestors, current.node)
 		stack = appendChildItemsReverse(stack, current.node)
+	}
+}
+
+// WalkProductionsWithAncestors visits only grammar productions in structural
+// order and supplies their production ancestors from the root down. Token
+// leaves are skipped, avoiding their conversion to Node interface values. The
+// ancestor slice is reused and must not be retained by the visitor.
+func WalkProductionsWithAncestors(node Node, visit func(Node, []Node) bool) {
+	if isNilNode(node) || tokenNode(node) || visit == nil {
+		return
+	}
+	type item struct {
+		node Node
+		exit bool
+	}
+	var inlineStack [32]item
+	stack := inlineStack[:1]
+	stack[0].node = node
+	var inlineAncestors [16]Node
+	ancestors := inlineAncestors[:0]
+	for len(stack) != 0 {
+		last := len(stack) - 1
+		current := stack[last]
+		stack = stack[:last]
+		if current.exit {
+			ancestors = ancestors[:len(ancestors) - 1]
+			continue
+		}
+		if !visit(current.node, ancestors) {
+			continue
+		}
+		stack = append(stack, item{exit: true})
+		ancestors = append(ancestors, current.node)
+		stack = appendProductionChildItemsReverse(stack, current.node)
 	}
 }
 
@@ -454,6 +499,9 @@ func childFields(valueType reflect.Type) []childField {
 }
 
 func appendChildrenReverse(stack []Node, node Node) []Node {
+	if generated, ok := appendGeneratedChildren(stack, node, true); ok {
+		return generated
+	}
 	if _, ok := node.(Token); ok {
 		return stack
 	}
@@ -484,6 +532,9 @@ func appendChildItemsReverse[T ~struct {
 	node Node
 	exit bool
 }](stack []T, node Node) []T {
+	if generated, ok := appendGeneratedChildItemsReverse(stack, node, true); ok {
+		return generated
+	}
 	if _, ok := node.(Token); ok {
 		return stack
 	}
@@ -510,6 +561,41 @@ func appendChildItemsReverse[T ~struct {
 	return stack
 }
 
+func appendProductionChildItemsReverse[T ~struct {
+	node Node
+	exit bool
+}](stack []T, node Node) []T {
+	if generated, ok := appendGeneratedChildItemsReverse(stack, node, false); ok {
+		return generated
+	}
+	if tokenNode(node) {
+		return stack
+	}
+	value := indirect(reflect.ValueOf(node))
+	if !value.IsValid() || value.Kind() != reflect.Struct {
+		return stack
+	}
+	fields := childFields(value.Type())
+	for fieldIndex := len(fields) - 1; fieldIndex >= 0; fieldIndex-- {
+		plan := fields[fieldIndex]
+		field := value.Field(plan.index)
+		if child, ok := nodeValue(field); ok {
+			if !tokenNode(child) {
+				stack = append(stack, T{node: child})
+			}
+			continue
+		}
+		if plan.slice {
+			for item := field.Len() - 1; item >= 0; item-- {
+				if child, ok := nodeValue(field.Index(item)); ok && !tokenNode(child) {
+					stack = append(stack, T{node: child})
+				}
+			}
+		}
+	}
+	return stack
+}
+
 type bounds struct {
 	first Token
 	last Token
@@ -518,13 +604,55 @@ type bounds struct {
 	found bool
 }
 
+type tokenWalkItem struct {
+	node Node
+	token Token
+	isToken bool
+}
+
 func nodeTokenBounds(node Node, concreteOnly bool) (Token, Token, bool) {
 	if isNilNode(node) {
 		return Token{}, Token{}, false
 	}
 	result := bounds{}
-	collectTokenBounds(reflect.ValueOf(node), concreteOnly, &result)
+	var inline [32]tokenWalkItem
+	stack := inline[:1]
+	stack[0].node = node
+	for len(stack) != 0 {
+		last := len(stack) - 1
+		current := stack[last]
+		stack = stack[:last]
+		if current.isToken {
+			includeTokenBounds(current.token, concreteOnly, &result)
+			continue
+		}
+		if currentToken, ok := current.node.(Token); ok {
+			includeTokenBounds(currentToken, concreteOnly, &result)
+			continue
+		}
+		if generated, ok := appendGeneratedTokenItemsReverse(stack, current.node); ok {
+			stack = generated
+			continue
+		}
+		collectTokenBounds(reflect.ValueOf(current.node), concreteOnly, &result)
+	}
 	return result.first, result.last, result.found
+}
+
+func includeTokenBounds(current Token, concreteOnly bool, result *bounds) {
+	if !current.IsValid() || (concreteOnly && !concreteToken(current)) {
+		return
+	}
+	offset := current.Position().Offset
+	if !result.found || offset < result.firstOffset {
+		result.first = current
+		result.firstOffset = offset
+	}
+	if !result.found || offset >= result.lastOffset {
+		result.last = current
+		result.lastOffset = offset
+	}
+	result.found = true
 }
 
 func collectTokenBounds(value reflect.Value, concreteOnly bool, result *bounds) {
@@ -532,18 +660,7 @@ func collectTokenBounds(value reflect.Value, concreteOnly bool, result *bounds) 
 		return
 	}
 	if current, ok := tokenValue(value); ok {
-		if current.IsValid() && (!concreteOnly || concreteToken(current)) {
-			offset := current.Position().Offset
-			if !result.found || offset < result.firstOffset {
-				result.first = current
-				result.firstOffset = offset
-			}
-			if !result.found || offset >= result.lastOffset {
-				result.last = current
-				result.lastOffset = offset
-			}
-			result.found = true
-		}
+		includeTokenBounds(current, concreteOnly, result)
 		return
 	}
 	value = indirect(value)
@@ -594,11 +711,33 @@ func indirect(value reflect.Value) reflect.Value {
 }
 
 func isNilNode(node Node) bool {
-	if node == nil {
-		return true
+	if result, ok := generatedNodeNil(node); ok {
+		return result
 	}
 	value := reflect.ValueOf(node)
 	return nilable(value.Kind()) && value.IsNil()
+}
+
+func nodePresent(node Node) bool {
+	if present, ok := generatedNodePresent(node); ok {
+		return present
+	}
+	if node == nil {
+		return false
+	}
+	if current, ok := node.(Token); ok && !current.IsValid() {
+		return false
+	}
+	return !isNilNode(node)
+}
+
+func tokenNode(node Node) bool {
+	switch node.(type) {
+	case Token, *Token:
+		return true
+	default:
+		return false
+	}
 }
 
 func nilable(kind reflect.Kind) bool {

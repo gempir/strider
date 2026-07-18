@@ -22,27 +22,22 @@ func (dangerousDirectoryRemovalRule) Meta() Meta {
 }
 
 func (dangerousDirectoryRemovalRule) Run(pass *Pass) {
-	for _, function := range pass.Functions {
-		for _, block := range function.Blocks {
-			for _, instruction := range block.Instrs {
-				call, ok := instruction.(ssa.CallInstruction)
-				if !ok || !isStaticFunction(call, "os", "RemoveAll") || len(call.Common().Args) == 0 {
-					continue
-				}
-				helper, kind := dangerousDirectorySource(call.Common().Args[0])
-				if helper == "" {
-					continue
-				}
-				pass.Report(
-					positionNode{position: call.Pos()},
-					fmt.Sprintf(
-						"os.RemoveAll receives the entire %s directory from os.%s; remove only an application-owned subdirectory",
-						kind,
-						helper,
-					),
-				)
-			}
+	for _, call := range pass.staticCallsInPackage("os") {
+		if !isStaticFunction(call, "os", "RemoveAll") || len(call.Common().Args) == 0 {
+			continue
 		}
+		helper, kind := dangerousDirectorySource(call.Common().Args[0])
+		if helper == "" {
+			continue
+		}
+		pass.Report(
+			positionNode{position: call.Pos()},
+			fmt.Sprintf(
+				"os.RemoveAll receives the entire %s directory from os.%s; remove only an application-owned subdirectory",
+				kind,
+				helper,
+			),
+		)
 	}
 }
 

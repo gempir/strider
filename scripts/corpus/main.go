@@ -23,7 +23,7 @@ import (
 	reporter "github.com/gempir/strider/internal/report"
 )
 
-const schemaVersion = 1
+const schemaVersion = 2
 
 const projectReportDiagnosticLimit = 1000
 
@@ -178,7 +178,7 @@ func run(options options) error {
 				operationResult{Name: "prepare", Error: checkoutErr.Error()},
 			)
 		} else {
-			for _, operation := range[]string{"format", "lint", "analyze"} {
+			for _, operation := range[]string{"format", "check"} {
 				observed := runOperation(strider, checkout, operation, item)
 				expectedSignature, found := findExpected(
 					expected,
@@ -251,7 +251,7 @@ func readManifest(path string) (manifest, error) {
 			return result, fmt.Errorf("invalid project entry %q", item.Name)
 		}
 		seen[item.Name] = true
-		for _, operation := range[]string{"format", "lint", "analyze"} {
+		for _, operation := range[]string{"format", "check"} {
 			if item.BudgetsMS[operation] <= 0 {
 				return result, fmt.Errorf("%s has no positive %s budget", item.Name, operation)
 			}
@@ -363,10 +363,9 @@ func commandOutput(directory, name string, arguments... string) ([]byte, error) 
 func runOperation(strider, checkout, operation string, item project) operationResult {
 	arguments := map[string][]string{
 		"format": {"--no-config", "fmt", "--check"},
-		"lint": {"--no-config", "lint", "--all-rules", "--format", "json"},
-		"analyze": {"--no-config", "analyze", "--format", "json"},
+		"check": {"--no-config", "check", "--all", "--format", "json"},
 	}[operation]
-	if operation == "format" && len(item.FormatExcludes) != 0 {
+	if len(item.FormatExcludes) != 0 {
 		configPath := filepath.Join(checkout, ".strider-corpus.toml")
 		encoded, err := json.Marshal(item.FormatExcludes)
 		if err != nil {
@@ -376,7 +375,7 @@ func runOperation(strider, checkout, operation string, item project) operationRe
 				Error: err.Error(),
 			}
 		}
-		contents := []byte("version = 1\n[formatter]\nexcludes = " + string(encoded) + "\n")
+		contents := []byte("version = 2\n[formatter]\nexcludes = " + string(encoded) + "\n")
 		if err := os.WriteFile(configPath, contents, 0o600); err != nil {
 			return operationResult{
 				Name: operation,
@@ -458,13 +457,10 @@ func writeProjectReport(htmlRoot string, project projectResult, sourceRoot strin
 			timings,
 			reporter.HTMLTiming{Name: operation.Name, DurationMS: operation.DurationMS},
 		)
-		if operation.Name != "lint" && operation.Name != "analyze" {
+		if operation.Name != "check" {
 			continue
 		}
-		for _, item := range operation.Diagnostics {
-			item.Code = operation.Name + "/" + item.Code
-			diagnostics = append(diagnostics, item)
-		}
+		diagnostics = append(diagnostics, operation.Diagnostics...)
 	}
 	path := filepath.Join(htmlRoot, project.Name, "index.html")
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
@@ -671,7 +667,7 @@ var reportTemplate = template.Must(
 		`<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Strider open-source corpus</title><script>if(self!==top)document.documentElement.classList.add('embedded')</script><style>
 :root{color-scheme:dark;--bg:#0d1117;--panel:#121820;--text:#e6edf3;--muted:#8f9baa;--line:#2a3440;--accent:#54d6b0;--pass:#54d6b0;--fail:#ff7b72;--code:#0a0f14}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-feature-settings:"ss01","cv02","cv11"}main{width:min(1440px,calc(100% - 48px));margin:56px auto 88px}header{border-left:2px solid var(--accent);padding-left:20px}h1{font-size:clamp(2rem,5vw,3.6rem);line-height:1.04;letter-spacing:-.045em;margin:0}.lede{color:var(--muted);margin:.6rem 0 2.25rem}.project{border-block-start:1px solid var(--line);margin:0}.project:last-child{border-block-end:1px solid var(--line)}.project h2{display:flex;align-items:baseline;gap:12px;margin:0;padding:18px 16px 14px;font-size:1.12rem;letter-spacing:-.02em}.project h2>a:first-child{color:var(--text);font-size:1.25rem;text-decoration:none}.project h2>a:first-child:hover{color:var(--accent)}.project h2>a:last-child{margin-left:auto;color:var(--muted);font-size:.78rem;font-weight:500;text-underline-offset:3px}.revision{max-width:24ch;overflow:hidden;color:var(--muted);font:11px ui-monospace,SFMono-Regular,Consolas,monospace;text-overflow:ellipsis;white-space:nowrap}table{border-collapse:collapse;width:100%;background:var(--panel)}th,td{text-align:left;padding:11px 16px;border-top:1px solid var(--line)}th{color:var(--muted);font-size:.69rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em}tbody tr:hover{background:color-mix(in srgb,var(--accent) 5%,transparent)}.pass{color:var(--pass);font-weight:650}.fail{color:var(--fail);font-weight:650}details{padding:0 16px;border-top:1px solid var(--line)}summary{cursor:pointer;color:var(--muted);padding:12px 0;font-size:.82rem;text-transform:capitalize}details p{margin:0 0 14px;line-height:1.9}code{border-left:1px solid var(--line);color:var(--muted);font:11px ui-monospace,SFMono-Regular,Consolas,monospace;padding:1px 7px}html.embedded main{width:100%;margin:0;padding:24px}html.embedded header{display:none}:root[data-theme="light"]{color-scheme:light;--bg:#f7f9f8;--panel:#fff;--text:#17201d;--muted:#65736d;--line:#ced9d4;--accent:#087a5c;--pass:#087a5c;--fail:#c93c37;--code:#f0f4f2}@media(max-width:700px){main{width:min(100% - 28px,1440px);margin-top:28px}.project h2{align-items:flex-start;flex-wrap:wrap}.project h2>a:last-child{margin-left:0}.revision{order:3;flex-basis:100%;max-width:100%}.scroll{overflow-x:auto}table{min-width:620px}th,td{padding:10px 12px}html.embedded main{padding:14px}}
-</style></head><body><main><header><h1>Strider open-source corpus</h1><p class="lede">Pinned, repeatable format, lint, and analysis results across {{len .Projects}} Go projects. Total wall time: {{seconds .TotalMS}}.</p></header>
+</style></head><body><main><header><h1>Strider open-source corpus</h1><p class="lede">Pinned, repeatable format and unified check results across {{len .Projects}} Go projects. Total wall time: {{seconds .TotalMS}}.</p></header>
 {{range .Projects}}<section class="project"><h2><a href="projects/{{.Name}}/index.html">{{.Name}}</a><span class="revision">{{.Revision}}</span> <a href="{{.Repository}}"><small>repository</small></a></h2><div class="scroll"><table><thead><tr><th>Operation</th><th>Findings</th><th>Time</th><th>Budget</th><th>Baseline</th><th>Performance</th></tr></thead><tbody>{{range .Operations}}<tr><td>{{.Name}}</td><td>{{.Findings}}</td><td>{{seconds .DurationMS}}</td><td>{{budget .BudgetMS}}</td><td class="{{status .}}">{{if .BaselineMatch}}match{{else}}changed{{end}}</td><td class="{{status .}}">{{if .Error}}error{{else if .WithinBudget}}within budget{{else}}slower{{end}}</td></tr>{{end}}</tbody></table></div>{{range .Operations}}{{if .ByCode}}{{$operation := .}}<details><summary>{{.Name}} findings by rule</summary><p>{{range $code := codes .ByCode}}<code>{{$code}}={{index $operation.ByCode $code}}</code> {{end}}</p></details>{{end}}{{end}}</section>{{end}}
 </main></body></html>`,
 	),

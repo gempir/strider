@@ -10,7 +10,7 @@ dereference that is not dominated by the check's non-nil path may panic. This
 commonly happens when the dereference precedes the check, or when the nil
 branch logs an error but continues execution.
 
-The analyzer follows control-flow dominance so guarded dereferences and code
+The check follows control-flow dominance so guarded dereferences and code
 reached only after a terminating nil branch are accepted.
 
 ```go

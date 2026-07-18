@@ -22,26 +22,19 @@ func (finalizerCapturesObjectRule) Meta() Meta {
 }
 
 func (finalizerCapturesObjectRule) Run(pass *Pass) {
-	for _, function := range pass.Functions {
-		for _, block := range function.Blocks {
-			for _, instruction := range block.Instrs {
-				call, ok := instruction.(ssa.CallInstruction)
-				if !ok || !isStaticFunction(call, "runtime", "SetFinalizer") || len(
-					call.Common().Args,
-				) < 2 {
-					continue
-				}
-				object := finalizerObject(call.Common().Args[0])
-				closure, ok := unwrapSSAValue(call.Common().Args[1]).(*ssa.MakeClosure)
-				if !ok || !closureCapturesFinalizerObject(closure, object) {
-					continue
-				}
-				pass.Report(
-					positionNode{position: call.Pos()},
-					"finalizer captures the finalized object and prevents it from being collected; use the finalizer parameter instead",
-				)
-			}
+	for _, call := range pass.staticCallsInPackage("runtime") {
+		if !isStaticFunction(call, "runtime", "SetFinalizer") || len(call.Common().Args) < 2 {
+			continue
 		}
+		object := finalizerObject(call.Common().Args[0])
+		closure, ok := unwrapSSAValue(call.Common().Args[1]).(*ssa.MakeClosure)
+		if !ok || !closureCapturesFinalizerObject(closure, object) {
+			continue
+		}
+		pass.Report(
+			positionNode{position: call.Pos()},
+			"finalizer captures the finalized object and prevents it from being collected; use the finalizer parameter instead",
+		)
 	}
 }
 

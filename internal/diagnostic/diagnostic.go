@@ -35,7 +35,7 @@ type TextEdit struct {
 type Fix struct {
 	Message string `json:"message"`
 	Safety Safety `json:"safety"`
-	Edits []TextEdit `json:"edits"`
+	Edits []TextEdit `json:"edits,omitempty"`
 }
 
 type Diagnostic struct {

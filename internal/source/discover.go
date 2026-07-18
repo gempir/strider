@@ -85,8 +85,15 @@ func walkSourceFiles(seen map[string]struct {}, root string, opts Options) fs.Wa
 }
 
 func isSkippedDirectory(name string) bool {
+	// Follow the Go convention for hidden and generated directory trees:
+	// directories beginning with a dot or underscore are ignored unless the
+	// user names one directly. This also prevents local tool caches from
+	// silently becoming source input.
+	if strings.HasPrefix(name, ".") || strings.HasPrefix(name, "_") {
+		return true
+	}
 	switch name {
-	case ".git", ".hg", ".svn", "vendor":
+	case "vendor":
 		return true
 	default:
 		return false

@@ -23,21 +23,16 @@ func (ipByteComparisonRule) Meta() Meta {
 
 func (ipByteComparisonRule) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
-	for _, function := range pass.Functions {
-		for _, block := range function.Blocks {
-			for _, instruction := range block.Instrs {
-				call, ok := instruction.(ssa.CallInstruction)
-				if !ok || !isStaticFunction(call, "bytes", "Equal") || len(call.Common().Args) != 2 || !convertedFromNamedType(
-					call.Common().Args[0],
-					"net",
-					"IP",
-				) || !convertedFromNamedType(call.Common().Args[1], "net", "IP") {
-					continue
-				}
-				node := explicitCallArgument(calls[call.Pos()], 0, call.Pos())
-				pass.Report(node, "use net.IP.Equal to compare IP addresses, not bytes.Equal")
-			}
+	for _, call := range pass.staticCallsInPackage("bytes") {
+		if !isStaticFunction(call, "bytes", "Equal") || len(call.Common().Args) != 2 || !convertedFromNamedType(
+			call.Common().Args[0],
+			"net",
+			"IP",
+		) || !convertedFromNamedType(call.Common().Args[1], "net", "IP") {
+			continue
 		}
+		node := explicitCallArgument(calls[call.Pos()], 0, call.Pos())
+		pass.Report(node, "use net.IP.Equal to compare IP addresses, not bytes.Equal")
 	}
 }
 

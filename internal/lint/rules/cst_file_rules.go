@@ -55,78 +55,62 @@ func (a *cstAnalyzer) checkFilenameAndPackage() {
 	}
 }
 
-func (a *cstAnalyzer) checkConcreteImports() {
-	seen := map[string]bool{}
-	packageName := a.packageNameToken().Src()
-	cst.Walk(
-		a.tree.Root(),
-		func(node cst.Node) bool {
-			spec,
-			ok := node.(*cst.ImportSpec)
-			if !ok {
-				return true
-			}
-			path,
-			_ := strconv.Unquote(spec.ImportPath.Src())
-			a.importPaths[path] = true
-			if seen[path] {
-				a.report(
-					"duplicated-imports",
-					spec,
-					fmt.Sprintf("package %s is imported more than once", path),
-				)
-			} else {
-				seen[path] = true
-			}
-			alias := ""
-			var aliasNode cst.Node
-			switch {
-			case spec.PERIOD.IsValid():
-				alias,
-				aliasNode = ".",
-				spec.PERIOD
-			case spec.PackageName.IsValid():
-				alias,
-				aliasNode = spec.PackageName.Src(),
-				spec.PackageName
-			}
-			switch alias {
-			case "":
-			case ".":
-				a.report("dot-imports", spec, "dot imports obscure where identifiers come from")
-			case "_":
-				if packageName != "main" && !strings.HasSuffix(a.filename, "_test.go") && !concreteImportHasComment(
-					a.tree,
-					spec,
-				) {
-					a.report("blank-imports", spec, "blank import should be justified by a comment")
-				}
-			default:
-				if !validPackagePattern.MatchString(alias) {
-					a.report(
-						"import-alias-naming",
-						aliasNode,
-						"import alias should contain lower-case letters and digits",
-					)
-				}
-				if alias == filepath.Base(path) {
-					a.report(
-						"redundant-import-alias",
-						aliasNode,
-						"import alias is identical to the package name",
-					)
-				}
-			}
-			importName := filepath.Base(path)
-			if alias != "" && alias != "." && alias != "_" {
-				importName = alias
-			}
-			if importName != "." && importName != "_" {
-				a.importNames[importName] = true
-			}
-			return false
-		},
-	)
+func (a *cstAnalyzer) checkConcreteImport(spec *cst.ImportSpec) {
+	path, _ := strconv.Unquote(spec.ImportPath.Src())
+	a.importPaths[path] = true
+	if a.importSeen[path] {
+		if a.enabled["duplicated-imports"] {
+			a.report(
+				"duplicated-imports",
+				spec,
+				fmt.Sprintf("package %s is imported more than once", path),
+			)
+		}
+	} else {
+		a.importSeen[path] = true
+	}
+	alias := ""
+	var aliasNode cst.Node
+	switch {
+	case spec.PERIOD.IsValid():
+		alias, aliasNode = ".", spec.PERIOD
+	case spec.PackageName.IsValid():
+		alias, aliasNode = spec.PackageName.Src(), spec.PackageName
+	}
+	switch alias {
+	case "":
+	case ".":
+		a.report("dot-imports", spec, "dot imports obscure where identifiers come from")
+	case "_":
+		if a.enabled["blank-imports"] && a.packageName != "main" && !strings.HasSuffix(
+			a.filename,
+			"_test.go",
+		) && !concreteImportHasComment(a.tree, spec) {
+			a.report("blank-imports", spec, "blank import should be justified by a comment")
+		}
+	default:
+		if a.enabled["import-alias-naming"] && !validPackagePattern.MatchString(alias) {
+			a.report(
+				"import-alias-naming",
+				aliasNode,
+				"import alias should contain lower-case letters and digits",
+			)
+		}
+		if a.enabled["redundant-import-alias"] && alias == filepath.Base(path) {
+			a.report(
+				"redundant-import-alias",
+				aliasNode,
+				"import alias is identical to the package name",
+			)
+		}
+	}
+	importName := filepath.Base(path)
+	if alias != "" && alias != "." && alias != "_" {
+		importName = alias
+	}
+	if importName != "." && importName != "_" {
+		a.importNames[importName] = true
+	}
 }
 
 func concreteImportHasComment(tree *cst.Tree, spec *cst.ImportSpec) bool {

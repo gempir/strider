@@ -30,34 +30,24 @@ func (nonPointerUnmarshalRule) Meta() Meta {
 
 func (nonPointerUnmarshalRule) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
-	for _, function := range pass.Functions {
-		for _, block := range function.Blocks {
-			for _, instruction := range block.Instrs {
-				call, ok := instruction.(ssa.CallInstruction)
-				if !ok {
-					continue
-				}
-				descriptor, ok := unmarshalDescriptor(call)
-				if !ok || len(call.Common().Args) <= descriptor.ssaArgument {
-					continue
-				}
-				value := unwrapSSAValue(call.Common().Args[descriptor.ssaArgument])
-				if isPointerOrInterface(value.Type()) {
-					continue
-				}
-				node := explicitCallArgument(
-					calls[call.Pos()],
-					descriptor.sourceArgument,
-					call.Pos(),
-				)
-				pass.Report(
-					node,
-					fmt.Sprintf(
-						"%s expects to unmarshal into a pointer, but the provided value is not a pointer",
-						descriptor.name,
-					),
-				)
+	for _, packagePath := range[]string{"encoding/json", "encoding/xml"} {
+		for _, call := range pass.staticCallsInPackage(packagePath) {
+			descriptor, ok := unmarshalDescriptor(call)
+			if !ok || len(call.Common().Args) <= descriptor.ssaArgument {
+				continue
 			}
+			value := unwrapSSAValue(call.Common().Args[descriptor.ssaArgument])
+			if isPointerOrInterface(value.Type()) {
+				continue
+			}
+			node := explicitCallArgument(calls[call.Pos()], descriptor.sourceArgument, call.Pos())
+			pass.Report(
+				node,
+				fmt.Sprintf(
+					"%s expects to unmarshal into a pointer, but the provided value is not a pointer",
+					descriptor.name,
+				),
+			)
 		}
 	}
 }

@@ -5,7 +5,6 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
-	"sync"
 
 	"golang.org/x/tools/go/ssa"
 
@@ -46,15 +45,6 @@ type Pass struct {
 	deprecatedPackages map[*types.Package]string
 
 	report func(ast.Node, string)
-}
-
-type packageFacts struct {
-	argumentsOnce sync.Once
-	arguments map[token.Pos][]ast.Node
-	firstArgumentsOnce sync.Once
-	firstArguments map[token.Pos]ast.Node
-	parentsOnce sync.Once
-	parents map[ast.Node]ast.Node
 }
 
 // Report emits a diagnostic for the rule currently running.

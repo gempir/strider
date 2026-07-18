@@ -24,28 +24,20 @@ func (duplicateTrimCutsetRule) Meta() Meta {
 
 func (duplicateTrimCutsetRule) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
-	for _, function := range pass.Functions {
-		for _, block := range function.Blocks {
-			for _, instruction := range block.Instrs {
-				call, ok := instruction.(ssa.CallInstruction)
-				if !ok || !isStringTrimCutsetCall(call) || len(call.Common().Args) <= 1 {
-					continue
-				}
-				cutset := ssaConstant(call.Common().Args[1])
-				if cutset == nil || cutset.Value == nil || cutset.Value.Kind() != constant.String {
-					continue
-				}
-				duplicate, ok := duplicateRune(constant.StringVal(cutset.Value))
-				if !ok {
-					continue
-				}
-				node := explicitCallArgument(calls[call.Pos()], 1, call.Pos())
-				pass.Report(
-					node,
-					fmt.Sprintf("trim cutset contains duplicate character %q", duplicate),
-				)
-			}
+	for _, call := range pass.staticCallsInPackage("strings") {
+		if !isStringTrimCutsetCall(call) || len(call.Common().Args) <= 1 {
+			continue
 		}
+		cutset := ssaConstant(call.Common().Args[1])
+		if cutset == nil || cutset.Value == nil || cutset.Value.Kind() != constant.String {
+			continue
+		}
+		duplicate, ok := duplicateRune(constant.StringVal(cutset.Value))
+		if !ok {
+			continue
+		}
+		node := explicitCallArgument(calls[call.Pos()], 1, call.Pos())
+		pass.Report(node, fmt.Sprintf("trim cutset contains duplicate character %q", duplicate))
 	}
 }
 

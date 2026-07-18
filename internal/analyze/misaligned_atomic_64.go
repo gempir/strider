@@ -27,35 +27,30 @@ func (misalignedAtomic64Rule) Run(pass *Pass) {
 		return
 	}
 	calls := pass.argumentsByCallPosition()
-	for _, function := range pass.Functions {
-		for _, block := range function.Blocks {
-			for _, instruction := range block.Instrs {
-				call, ok := instruction.(ssa.CallInstruction)
-				if !ok || !isAtomic64Call(call) || len(call.Common().Args) == 0 {
-					continue
-				}
-				field, structure, ok := atomicFieldAddress(call.Common().Args[0])
-				if !ok || field >= structure.NumFields() {
-					continue
-				}
-				fields := make([]*types.Var, field + 1)
-				for index := range fields {
-					fields[index] = structure.Field(index)
-				}
-				offset := pass.TypesSizes.Offsetsof(fields)[field]
-				if offset % 8 == 0 {
-					continue
-				}
-				node := explicitCallArgument(calls[call.Pos()], 0, call.Pos())
-				pass.Report(
-					node,
-					fmt.Sprintf(
-						"field %s is not 64-bit aligned for atomic access on this target",
-						structure.Field(field).Name(),
-					),
-				)
-			}
+	for _, call := range pass.staticCallsInPackage("sync/atomic") {
+		if !isAtomic64Call(call) || len(call.Common().Args) == 0 {
+			continue
 		}
+		field, structure, ok := atomicFieldAddress(call.Common().Args[0])
+		if !ok || field >= structure.NumFields() {
+			continue
+		}
+		fields := make([]*types.Var, field + 1)
+		for index := range fields {
+			fields[index] = structure.Field(index)
+		}
+		offset := pass.TypesSizes.Offsetsof(fields)[field]
+		if offset % 8 == 0 {
+			continue
+		}
+		node := explicitCallArgument(calls[call.Pos()], 0, call.Pos())
+		pass.Report(
+			node,
+			fmt.Sprintf(
+				"field %s is not 64-bit aligned for atomic access on this target",
+				structure.Field(field).Name(),
+			),
+		)
 	}
 }
 

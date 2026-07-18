@@ -1,77 +1,66 @@
 {
-  "version": 1,
+  "version": 2,
   "projects": [
     {
       "name": "chi",
       "revision": "8b258c7bb28f97a5f2a856ff7ef962578fec9215",
       "operations": {
-        "analyze": {
+        "check": {
           "exit_code": 1,
-          "digest": "a04580d488f845bbfc82f8aa06eb0857b6d34d5569be30503b9d905ad9b4b4b2",
-          "findings": 2,
+          "digest": "3eb8283fb8b801c2e1ca07fd59d8844122abdece935b26cb6966c1ea24ea22fb",
+          "findings": 1427,
           "by_code": {
-            "context-stored-in-struct": 2
-          }
-        },
-        "format": {
-          "exit_code": 1,
-          "digest": "e15d068c334f508e2292d0c510523ca29f4444399241fba3b8f1e989415cd5b3",
-          "findings": 71
-        },
-        "lint": {
-          "exit_code": 1,
-          "digest": "1ca4eaaf67c271e4892f8307c7b801852d864f935aa92bf863eb811fad97fc79",
-          "findings": 1590,
-          "by_code": {
-            "add-constant": 185,
+            "add-constant": 175,
             "bare-return": 1,
             "bool-literal-in-expr": 10,
             "cognitive-complexity": 39,
-            "comment-spacings": 6,
             "confusing-naming": 6,
             "confusing-results": 3,
+            "context-stored-in-struct": 2,
             "cyclomatic": 14,
             "cyclomatic-complexity": 14,
             "datarace": 21,
-            "early-return": 2,
-            "empty-lines": 71,
-            "error-strings": 35,
-            "exported": 140,
+            "early-return": 1,
+            "empty-lines": 56,
+            "error-strings": 17,
+            "exported": 123,
             "flag-parameter": 4,
+            "format": 57,
             "function-length": 19,
             "function-result-limit": 1,
-            "get-return": 5,
-            "import-shadowing": 5,
-            "line-length-limit": 434,
+            "get-return": 1,
+            "import-shadowing": 4,
+            "line-length-limit": 412,
             "max-control-nesting": 3,
-            "max-public-structs": 1,
-            "modifies-parameter": 46,
+            "modifies-parameter": 42,
             "modifies-value-receiver": 8,
             "multiline-if-init": 1,
             "nested-structs": 41,
             "no-defer-in-loop": 1,
-            "no-init": 6,
+            "no-init": 4,
             "no-naked-return": 1,
-            "no-package-var": 47,
+            "no-package-var": 40,
             "optimize-operands-order": 11,
-            "package-comments": 53,
+            "package-comments": 34,
             "package-directory-mismatch": 1,
             "package-naming": 1,
             "range-val-in-closure": 21,
             "redefines-builtin-id": 2,
-            "redundant-import-alias": 3,
-            "struct-tag": 1,
-            "unchecked-type-assertion": 31,
+            "unchecked-type-assertion": 26,
             "unexported-return": 4,
-            "unhandled-error": 206,
-            "unnecessary-format": 1,
-            "unnecessary-stmt": 10,
-            "unsecure-url-scheme": 3,
-            "unused-parameter": 29,
-            "unused-receiver": 17,
-            "use-any": 18,
+            "unhandled-error": 168,
+            "unnecessary-stmt": 6,
+            "unsecure-url-scheme": 1,
+            "unused-parameter": 5,
+            "unused-receiver": 4,
+            "use-any": 14,
             "use-waitgroup-go": 8
           }
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "e3c988aaa48268c29e6b56d6f5fdc934f5dfc8e88f9d23e3d54cc09f9e78616e",
+          "findings": 57
         }
       }
     },
@@ -79,25 +68,10 @@
       "name": "gin",
       "revision": "34dac209ffb6ef85cc78c5d217bbb7ad001d68fd",
       "operations": {
-        "analyze": {
+        "check": {
           "exit_code": 1,
-          "digest": "4611df41debc6d8f68814d19ff0504f6d11a6bc21f576c947fce8255774e6dad",
-          "findings": 5,
-          "by_code": {
-            "deprecated-api-usage": 3,
-            "nil-context": 1,
-            "unsafe-formatted-url-host-port": 1
-          }
-        },
-        "format": {
-          "exit_code": 1,
-          "digest": "bcf38aadebee1aa01af4477fc8756abdda4a5302d470335c76004fde9cfca247",
-          "findings": 79
-        },
-        "lint": {
-          "exit_code": 1,
-          "digest": "0df8e047784d4760f02c90eb680a95281cd356a8629602c10dfd5f481ba309db",
-          "findings": 2864,
+          "digest": "1aa8520252e893a5db3a7147d53cfeb19b367a26a1669a0b7f0e553207125918",
+          "findings": 2948,
           "by_code": {
             "add-constant": 503,
             "bare-return": 31,
@@ -108,12 +82,14 @@
             "cyclomatic": 16,
             "cyclomatic-complexity": 16,
             "datarace": 28,
+            "deprecated-api-usage": 3,
             "empty-lines": 89,
             "epoch-naming": 4,
             "error-naming": 1,
             "error-strings": 20,
             "exported": 352,
             "flag-parameter": 7,
+            "format": 79,
             "function-length": 20,
             "import-alias-naming": 1,
             "import-shadowing": 7,
@@ -127,6 +103,7 @@
             "modifies-value-receiver": 3,
             "multiline-if-init": 4,
             "nested-structs": 158,
+            "nil-context": 1,
             "no-else-after-return": 4,
             "no-init": 14,
             "no-naked-return": 31,
@@ -141,12 +118,18 @@
             "unexported-return": 1,
             "unhandled-error": 25,
             "unnecessary-stmt": 34,
+            "unsafe-formatted-url-host-port": 1,
             "unsecure-url-scheme": 26,
             "unused-parameter": 22,
             "unused-receiver": 66,
             "use-waitgroup-go": 1,
             "var-naming": 4
           }
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "bcf38aadebee1aa01af4477fc8756abdda4a5302d470335c76004fde9cfca247",
+          "findings": 79
         }
       }
     },
@@ -154,37 +137,24 @@
       "name": "websocket",
       "revision": "e064f32e3674d9d79a8fd417b5bc06fa5c6cad8f",
       "operations": {
-        "analyze": {
+        "check": {
           "exit_code": 1,
-          "digest": "3c5247fe3324beb9b6d93509ddf73d29bc85fb6a5420388071dc74c88d46d644",
-          "findings": 32,
-          "by_code": {
-            "byte-string-write": 1,
-            "defer-close-before-error-check": 25,
-            "overwritten-before-use": 1,
-            "possible-nil-dereference": 5
-          }
-        },
-        "format": {
-          "exit_code": 1,
-          "digest": "96e2be4da33ed0cf2ae5680194ccf3730774e2153904f9955785b5a6222a5a05",
-          "findings": 30
-        },
-        "lint": {
-          "exit_code": 1,
-          "digest": "4da7546df08314735a5de5eb10d952b8935cb6e5dfb5abc0df3f1da5c863f2ec",
-          "findings": 842,
+          "digest": "b6a17f8e692757f1ad8152d377250ca00ec4855e659da18c06c516604b184c28",
+          "findings": 904,
           "by_code": {
             "add-constant": 42,
+            "byte-string-write": 1,
             "cognitive-complexity": 40,
             "cyclomatic": 17,
             "cyclomatic-complexity": 17,
             "datarace": 8,
+            "defer-close-before-error-check": 25,
             "empty-lines": 55,
             "epoch-naming": 2,
             "error-strings": 35,
             "exported": 90,
             "flag-parameter": 8,
+            "format": 30,
             "function-length": 10,
             "import-shadowing": 7,
             "increment-decrement": 1,
@@ -195,9 +165,11 @@
             "nested-structs": 46,
             "no-package-var": 61,
             "optimize-operands-order": 17,
+            "overwritten-before-use": 1,
             "package-comments": 19,
             "package-directory-mismatch": 1,
             "package-naming": 1,
+            "possible-nil-dereference": 5,
             "range-val-address": 2,
             "range-val-in-closure": 8,
             "redefines-builtin-id": 1,
@@ -212,6 +184,11 @@
             "use-waitgroup-go": 1,
             "var-declaration": 1
           }
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "96e2be4da33ed0cf2ae5680194ccf3730774e2153904f9955785b5a6222a5a05",
+          "findings": 30
         }
       }
     },
@@ -219,23 +196,10 @@
       "name": "retryablehttp",
       "revision": "fd004584a46724fae09e2f21d7c382e15c893f42",
       "operations": {
-        "analyze": {
+        "check": {
           "exit_code": 1,
-          "digest": "c44c3ad02eb6246c4eaa0786c0473e947b2c8190586e706b599bbdff960d59c1",
-          "findings": 1,
-          "by_code": {
-            "possible-nil-dereference": 1
-          }
-        },
-        "format": {
-          "exit_code": 1,
-          "digest": "52020b34648057666d302cec22ec4b4e3934d3cc0f41fad664c86e6c15b8539d",
-          "findings": 3
-        },
-        "lint": {
-          "exit_code": 1,
-          "digest": "37a1bff3d7f0c1c163111671f52c3c61ff57549f523392ac6063ca391e71c1eb",
-          "findings": 328,
+          "digest": "151931a9003cb25c72af28386a495d03e7ab43159cc36bed49abc708cdd0bc5f",
+          "findings": 332,
           "by_code": {
             "add-constant": 22,
             "cognitive-complexity": 9,
@@ -244,6 +208,7 @@
             "datarace": 6,
             "empty-lines": 24,
             "exported": 28,
+            "format": 3,
             "function-length": 6,
             "identical-switch-branches": 1,
             "import-shadowing": 13,
@@ -253,6 +218,7 @@
             "no-package-var": 11,
             "optimize-operands-order": 8,
             "package-comments": 3,
+            "possible-nil-dereference": 1,
             "range-val-in-closure": 6,
             "redefines-builtin-id": 14,
             "redundant-build-tag": 2,
@@ -265,6 +231,11 @@
             "use-any": 17,
             "var-declaration": 1
           }
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "52020b34648057666d302cec22ec4b4e3934d3cc0f41fad664c86e6c15b8539d",
+          "findings": 3
         }
       }
     },
@@ -272,23 +243,10 @@
       "name": "ksuid",
       "revision": "d33724947fcfba7949906c2b1821e96a1c8d06e7",
       "operations": {
-        "analyze": {
+        "check": {
           "exit_code": 1,
-          "digest": "e32a46e35ce2c8299185f9ae11d229da4d2b0653876ed4d512e56f00f946415e",
-          "findings": 1,
-          "by_code": {
-            "ineffective-bitwise-zero": 1
-          }
-        },
-        "format": {
-          "exit_code": 1,
-          "digest": "d4fcd98f254af5254700ace49e700802666adf67df8bd1f8e2dec8386e17acd2",
-          "findings": 11
-        },
-        "lint": {
-          "exit_code": 1,
-          "digest": "9d7860d2a3c6b4a555ea5ec07ddfaa21d074b6ead229ecfcf6f8db3d8aec4c5f",
-          "findings": 238,
+          "digest": "0cd2aef868a53ff41e2f03de04358178c72884d7bf0066cf13acd2f6ef7d7af6",
+          "findings": 250,
           "by_code": {
             "add-constant": 8,
             "bare-return": 14,
@@ -301,7 +259,9 @@
             "epoch-naming": 1,
             "error-strings": 11,
             "exported": 34,
+            "format": 11,
             "import-alias-naming": 1,
+            "ineffective-bitwise-zero": 1,
             "line-length-limit": 25,
             "marshal-receiver": 2,
             "modifies-parameter": 32,
@@ -322,6 +282,11 @@
             "use-fmt-print": 1,
             "use-slices-sort": 1
           }
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "d4fcd98f254af5254700ace49e700802666adf67df8bd1f8e2dec8386e17acd2",
+          "findings": 11
         }
       }
     },
@@ -329,23 +294,10 @@
       "name": "groupcache",
       "revision": "2c02b8208cf8c02a3e358cb1d9b60950647543fc",
       "operations": {
-        "analyze": {
+        "check": {
           "exit_code": 1,
-          "digest": "0e61ff712569c615f8b042fc315ff8896aaa429b1dc9b4f31bf8b476356e24aa",
-          "findings": 5,
-          "by_code": {
-            "deprecated-api-usage": 5
-          }
-        },
-        "format": {
-          "exit_code": 1,
-          "digest": "d53b1bbf677f4db3b08f4440a392b18b1f021194996a65aa38b13bd27270cd0a",
-          "findings": 16
-        },
-        "lint": {
-          "exit_code": 1,
-          "digest": "a040b2140af87592f8a77aba0f88e2a904b125758a1b62ee56fb342b30ed93e1",
-          "findings": 344,
+          "digest": "98bc27d79a60a8c5d85e063c15b8c881626d99415bce01e12956feb1254b862b",
+          "findings": 365,
           "by_code": {
             "add-constant": 13,
             "bare-return": 13,
@@ -354,10 +306,12 @@
             "cyclomatic": 1,
             "cyclomatic-complexity": 1,
             "deep-exit": 2,
+            "deprecated-api-usage": 5,
             "empty-lines": 10,
             "error-strings": 10,
             "exported": 103,
             "filename-format": 2,
+            "format": 16,
             "import-shadowing": 4,
             "line-length-limit": 61,
             "max-public-structs": 1,
@@ -380,6 +334,11 @@
             "use-waitgroup-go": 1,
             "var-naming": 9
           }
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "d53b1bbf677f4db3b08f4440a392b18b1f021194996a65aa38b13bd27270cd0a",
+          "findings": 16
         }
       }
     },
@@ -387,23 +346,10 @@
       "name": "bigcache",
       "revision": "532eb6410aefb749509084c74f56b8313e200f4a",
       "operations": {
-        "analyze": {
+        "check": {
           "exit_code": 1,
-          "digest": "58eca24d781dd9ec764cb63fe952008634819f2c7438ffabd61a96717d5a74b4",
-          "findings": 1,
-          "by_code": {
-            "dynamic-printf": 1
-          }
-        },
-        "format": {
-          "exit_code": 1,
-          "digest": "1365a88c2ab8a2d4606f5a07fc6a4806e80f99b930276c8a667b2a2a03e47bb6",
-          "findings": 25
-        },
-        "lint": {
-          "exit_code": 1,
-          "digest": "145e4cdf4b6a84d23bb01747afc68eedf9ba904600723a478bfb8d4f3bd9972f",
-          "findings": 402,
+          "digest": "846a07c9941bdd6bd651d5b9cf4e88bca162680b216e9d5d012b5c83cada96ff",
+          "findings": 428,
           "by_code": {
             "add-constant": 38,
             "cognitive-complexity": 11,
@@ -413,11 +359,13 @@
             "cyclomatic-complexity": 1,
             "datarace": 7,
             "deep-exit": 3,
+            "dynamic-printf": 1,
             "empty-lines": 22,
             "epoch-naming": 1,
             "error-strings": 28,
             "exported": 18,
             "flag-parameter": 1,
+            "format": 25,
             "get-return": 2,
             "increment-decrement": 2,
             "indent-error-flow": 1,
@@ -444,6 +392,11 @@
             "use-any": 9,
             "use-waitgroup-go": 2
           }
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "1365a88c2ab8a2d4606f5a07fc6a4806e80f99b930276c8a667b2a2a03e47bb6",
+          "findings": 25
         }
       }
     },
@@ -451,26 +404,14 @@
       "name": "conc",
       "revision": "5f936abd7ae87036af1f75c95fb9d0daaf00116b",
       "operations": {
-        "analyze": {
+        "check": {
           "exit_code": 1,
-          "digest": "d71d78dbe1e93ec8c3dab4a254b15b7dc66c9b4f29511ec29457f2b10aad840d",
-          "findings": 1,
-          "by_code": {
-            "context-stored-in-struct": 1
-          }
-        },
-        "format": {
-          "exit_code": 1,
-          "digest": "b183b767652cae417b328df9db95de02c0bc8f0aa134aa4192a9a4372f48c020",
-          "findings": 22
-        },
-        "lint": {
-          "exit_code": 1,
-          "digest": "f509280e9deff8408c29efccc8dc5519f293803f7a490cbc8a85a3faf53ea79d",
-          "findings": 261,
+          "digest": "4f9d06e04a9ec684bef66f29803210f9e1e8644fcfd11fd7ade1c543990f6d10",
+          "findings": 284,
           "by_code": {
             "add-constant": 1,
             "cognitive-complexity": 5,
+            "context-stored-in-struct": 1,
             "datarace": 8,
             "empty-lines": 34,
             "error-naming": 1,
@@ -478,6 +419,7 @@
             "exported": 64,
             "flag-parameter": 2,
             "forbidden-call-in-wg-go": 37,
+            "format": 22,
             "function-length": 9,
             "import-shadowing": 1,
             "indent-error-flow": 2,
@@ -496,6 +438,11 @@
             "unchecked-type-assertion": 3,
             "use-waitgroup-go": 1
           }
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "b183b767652cae417b328df9db95de02c0bc8f0aa134aa4192a9a4372f48c020",
+          "findings": 22
         }
       }
     },
@@ -503,23 +450,10 @@
       "name": "golang-set",
       "revision": "da03b7639be5170e7b8fc7183b2d4663a4133419",
       "operations": {
-        "analyze": {
+        "check": {
           "exit_code": 1,
-          "digest": "6f5acffd49bbcebf769b964a56664c32e90b7f166bb5c12f0e1e9315ee351758",
-          "findings": 4,
-          "by_code": {
-            "overwritten-before-use": 4
-          }
-        },
-        "format": {
-          "exit_code": 1,
-          "digest": "4796cca63c9ba382c3a5af01de6f30467504daee931f85a67c2560476f2e8110",
-          "findings": 14
-        },
-        "lint": {
-          "exit_code": 1,
-          "digest": "5d8ae8ef11a9078e172ba4811947b77537ff56e06f66e03f24bc44baf2bb7ab9",
-          "findings": 438,
+          "digest": "6681ebf144239aa7857a7927de0cf59aaaf841dc81c862d5f7dd8f3025eb922b",
+          "findings": 456,
           "by_code": {
             "add-constant": 35,
             "bare-return": 2,
@@ -533,6 +467,7 @@
             "error-strings": 73,
             "exported": 77,
             "flag-parameter": 2,
+            "format": 14,
             "indent-error-flow": 1,
             "line-length-limit": 81,
             "marshal-receiver": 1,
@@ -541,6 +476,7 @@
             "no-else-after-return": 1,
             "no-naked-return": 2,
             "optimize-operands-order": 27,
+            "overwritten-before-use": 4,
             "package-comments": 6,
             "package-directory-mismatch": 15,
             "range-val-in-closure": 1,
@@ -553,6 +489,11 @@
             "use-errors-new": 1,
             "use-waitgroup-go": 14
           }
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "4796cca63c9ba382c3a5af01de6f30467504daee931f85a67c2560476f2e8110",
+          "findings": 14
         }
       }
     },
@@ -560,24 +501,10 @@
       "name": "copier",
       "revision": "c6b47b092d9840406d0abc347e68a28a7b812643",
       "operations": {
-        "analyze": {
+        "check": {
           "exit_code": 1,
-          "digest": "e0e7beaaa71aac413f117806b92be92a398c4b795be138bbe6eaa0b9a994b771",
-          "findings": 3,
-          "by_code": {
-            "identical-binary-operands": 2,
-            "possible-nil-dereference": 1
-          }
-        },
-        "format": {
-          "exit_code": 1,
-          "digest": "d53bae24ae2b909eb2be4d2055aea3d7209b14db695f29b41b4e59c76b0fa39c",
-          "findings": 11
-        },
-        "lint": {
-          "exit_code": 1,
-          "digest": "afeb0e258d7ac76ea20b8009dc2ac45c427d69e252606ad413d6b34f4307ecbe",
-          "findings": 669,
+          "digest": "43be45650bc55484d700e0cf9cfd2f1e6f5a7ee744366e12bb15eac954eea64f",
+          "findings": 683,
           "by_code": {
             "add-constant": 47,
             "bare-return": 15,
@@ -590,7 +517,9 @@
             "error-strings": 74,
             "exported": 101,
             "flag-parameter": 2,
+            "format": 11,
             "function-length": 8,
+            "identical-binary-operands": 2,
             "indent-error-flow": 4,
             "line-length-limit": 116,
             "max-control-nesting": 17,
@@ -605,6 +534,7 @@
             "package-comments": 2,
             "package-directory-mismatch": 8,
             "package-naming": 8,
+            "possible-nil-dereference": 1,
             "range-val-address": 2,
             "superfluous-else": 4,
             "time-equal": 3,
@@ -617,6 +547,11 @@
             "use-any": 41,
             "var-naming": 1
           }
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "d53bae24ae2b909eb2be4d2055aea3d7209b14db695f29b41b4e59c76b0fa39c",
+          "findings": 11
         }
       }
     },
@@ -624,26 +559,10 @@
       "name": "kubernetes",
       "revision": "bd1a1b897340ef91595c36439fed49b9072f8b1d",
       "operations": {
-        "analyze": {
+        "check": {
           "exit_code": 1,
-          "digest": "88cf94660dceb8f94e89178e35f64946d9a1a5d49480b8f2c1f6d3f978e5eb28",
-          "findings": 215,
-          "by_code": {
-            "context-stored-in-struct": 3,
-            "deprecated-api-usage": 176,
-            "overwritten-before-use": 12,
-            "possible-nil-dereference": 24
-          }
-        },
-        "format": {
-          "exit_code": 1,
-          "digest": "c8c36419a9da2530c64a9a67f6ba5a07225d24dd69982ecb9b559a089d3b24ca",
-          "findings": 657
-        },
-        "lint": {
-          "exit_code": 1,
-          "digest": "9a6cd82ba1301599632e6dda651c2ea1f8dedfd5b67f07e47f3c26390befbe16",
-          "findings": 49702,
+          "digest": "52ae4168a8a0324bdde63c425e0b90cf0a7885b3b7424ec8a3e33ad70bae69c5",
+          "findings": 50574,
           "by_code": {
             "add-constant": 3608,
             "argument-limit": 17,
@@ -655,10 +574,12 @@
             "confusing-naming": 53,
             "confusing-results": 23,
             "context-as-argument": 5,
+            "context-stored-in-struct": 3,
             "cyclomatic": 426,
             "cyclomatic-complexity": 426,
             "datarace": 837,
             "deep-exit": 4,
+            "deprecated-api-usage": 176,
             "early-return": 15,
             "empty-block": 5,
             "empty-lines": 1413,
@@ -667,6 +588,7 @@
             "exported": 2436,
             "flag-parameter": 97,
             "forbidden-call-in-wg-go": 1,
+            "format": 657,
             "function-length": 758,
             "function-result-limit": 24,
             "identical-switch-branches": 2,
@@ -689,8 +611,10 @@
             "no-naked-return": 58,
             "no-package-var": 833,
             "optimize-operands-order": 407,
+            "overwritten-before-use": 12,
             "package-comments": 468,
             "package-directory-mismatch": 8,
+            "possible-nil-dereference": 24,
             "range-val-address": 226,
             "range-val-in-closure": 837,
             "receiver-naming": 21,
@@ -714,6 +638,11 @@
             "var-declaration": 2,
             "var-naming": 31
           }
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "c8c36419a9da2530c64a9a67f6ba5a07225d24dd69982ecb9b559a089d3b24ca",
+          "findings": 657
         }
       }
     }

@@ -21,4 +21,4 @@ for _, value := range values { use(func(current int) func() { return func() { pr
 
 ## Enable
 
-This extended rule runs when selected with `--only range-val-in-closure`, enabled in `strider.toml`, or included with `--all-rules`. The default severity is `warning`.
+This optional check runs when selected with `--only range-val-in-closure`, enabled in `strider.toml`, or included with `--all`. The default severity is `warning`.

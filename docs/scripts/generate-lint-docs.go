@@ -77,11 +77,11 @@ func main() {
 
 func render(code, summary, explanation, bad, good, severity string, defaultEnabled bool) string {
 	enablement := fmt.Sprintf(
-		"This extended rule runs when selected with `--only %s`, enabled in `strider.toml`, or included with `--all-rules`.",
+		"This optional check runs when selected with `--only %s`, enabled in `strider.toml`, or included with `--all`.",
 		code,
 	)
 	if defaultEnabled {
-		enablement = "This rule is enabled in Strider's default lint profile."
+		enablement = "This check is enabled in Strider's default check profile."
 	}
 	return fmt.Sprintf(
 		`---

@@ -21,4 +21,4 @@ if err := file.Close(); err != nil { return err }
 
 ## Enable
 
-This extended rule runs when selected with `--only unhandled-error`, enabled in `strider.toml`, or included with `--all-rules`. The default severity is `warning`.
+This optional check runs when selected with `--only unhandled-error`, enabled in `strider.toml`, or included with `--all`. The default severity is `warning`.

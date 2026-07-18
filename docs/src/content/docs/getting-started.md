@@ -1,6 +1,6 @@
 ---
 title: Getting started
-description: Build Strider and run its formatter, linter, and analyzer.
+description: Build Strider, check a project, and format Go source.
 ---
 
 ## Build
@@ -23,85 +23,83 @@ Create `strider.toml` at the repository root. Strider discovers it from the
 current directory or any parent:
 
 ```toml
-version = 1
+version = 2
 
 [formatter]
 print-width = 100
 max-empty-lines = 1
 
-[linter.rules.line-length-limit]
+[checks.rules.line-length-limit]
 enabled = true
 
-[analyzer.rules.possible-nil-dereference]
+[checks.rules.possible-nil-dereference]
 severity = "error"
 ```
 
-See [Configuration](/configuration/) for every formatter, tool, rule, path,
-and baseline setting.
+See [Configuration](/configuration/) for every formatter, check, path, and
+baseline setting.
+
+## Check a project
+
+Run the configured check profile recursively from the current directory:
+
+```sh
+strider check
+```
+
+The default profile contains 94 checks, including formatting. Select individual
+codes when investigating a finding or adopting Strider incrementally:
+
+```sh
+strider check --only format,no-init,invalid-regexp ./...
+```
+
+Enable the complete 203-check catalog with:
+
+```sh
+strider check --all ./...
+```
+
+`check` is read-only. If the `format` check reports a file, format it with:
+
+```sh
+strider fmt path/to/file.go
+```
 
 ## Format a project
 
-Run the formatter without paths to recursively format the current directory:
+Run the formatter without paths to recursively write the current directory:
 
 ```sh
 strider fmt
 ```
 
-Use check mode in CI to report differences without writing:
+Inspect formatting changes without writing them:
 
 ```sh
-strider fmt --check
-```
-
-## Lint a project
-
-Run every enabled rule recursively from the current directory:
-
-```sh
-strider lint
-```
-
-Limit a run to one or more rule codes when investigating or adopting Strider:
-
-```sh
-strider lint --only no-init,no-package-var ./...
-```
-
-## Analyze a project
-
-Run the package-aware checks, including type checking and SSA construction:
-
-```sh
-strider analyze ./...
-```
-
-Select one analyzer while investigating a finding:
-
-```sh
-strider analyze --only invalid-regexp ./...
+strider fmt --diff
 ```
 
 ## Adopt existing findings
 
-If an established repository has a backlog, generate separate lint and
-analysis baselines. Existing matches are suppressed while new findings remain
-visible:
+If an established repository has a backlog, generate one check baseline.
+Existing matches are suppressed while new findings remain visible:
 
 ```sh
-strider lint --generate-baseline --baseline lint-baseline.toml ./...
-strider analyze --generate-baseline --baseline analysis-baseline.toml ./...
+strider check --generate-baseline --baseline strider-baseline.toml ./...
 ```
 
-Commit the files and configure their paths. See [Baselines](/baselines/) before
-regenerating or pruning them.
+Formatting findings are not captured. Commit the baseline and configure its
+path under `[checks]`. See [Baselines](/baselines/) before regenerating or
+pruning it.
 
 ## Exit status
 
 | Code | Meaning |
 | --- | --- |
-| `0` | The command succeeded with no findings or formatting differences. |
-| `1` | Lint or analysis findings, or formatting differences were found. |
-| `2` | A command, parsing, unsupported-syntax, configuration, or I/O error occurred. |
+| `0` | The command succeeded with no visible findings, or a baseline update completed. |
+| `1` | One or more visible check findings were reported. |
+| `2` | A command, parsing, package-loading, unsupported-syntax, configuration, baseline, or I/O error occurred. |
 
-Source output is written to standard output. Operational errors are written to
-standard error.
+Reports and formatted source are written to standard output. Operational errors
+are written to standard error.

@@ -31,36 +31,26 @@ func (unexportedSerializationFieldsRule) Meta() Meta {
 
 func (unexportedSerializationFieldsRule) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
-	for _, function := range pass.Functions {
-		for _, block := range function.Blocks {
-			for _, instruction := range block.Instrs {
-				call, ok := instruction.(ssa.CallInstruction)
-				if !ok {
-					continue
-				}
-				descriptor, ok := serializationDescriptor(call)
-				if !ok || len(call.Common().Args) <= descriptor.ssaArgument {
-					continue
-				}
-				value := unwrapSSAValue(call.Common().Args[descriptor.ssaArgument])
-				if !serializationFieldsInvisible(value.Type(), descriptor) {
-					continue
-				}
-				node := explicitCallArgument(
-					calls[call.Pos()],
-					descriptor.sourceArgument,
-					call.Pos(),
-				)
-				pass.Report(
-					node,
-					fmt.Sprintf(
-						"%s %s sees no exported fields in %s and no custom serialization method",
-						descriptor.format,
-						descriptor.direction,
-						types.TypeString(value.Type(), types.RelativeTo(pass.Types)),
-					),
-				)
+	for _, packagePath := range[]string{"encoding/json", "encoding/xml"} {
+		for _, call := range pass.staticCallsInPackage(packagePath) {
+			descriptor, ok := serializationDescriptor(call)
+			if !ok || len(call.Common().Args) <= descriptor.ssaArgument {
+				continue
 			}
+			value := unwrapSSAValue(call.Common().Args[descriptor.ssaArgument])
+			if !serializationFieldsInvisible(value.Type(), descriptor) {
+				continue
+			}
+			node := explicitCallArgument(calls[call.Pos()], descriptor.sourceArgument, call.Pos())
+			pass.Report(
+				node,
+				fmt.Sprintf(
+					"%s %s sees no exported fields in %s and no custom serialization method",
+					descriptor.format,
+					descriptor.direction,
+					types.TypeString(value.Type(), types.RelativeTo(pass.Types)),
+				),
+			)
 		}
 	}
 }

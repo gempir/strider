@@ -27,25 +27,20 @@ func (invalidListenAddressRule) Meta() Meta {
 
 func (invalidListenAddressRule) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
-	for _, function := range pass.Functions {
-		for _, block := range function.Blocks {
-			for _, instruction := range block.Instrs {
-				call, ok := instruction.(ssa.CallInstruction)
-				if !ok || !isHTTPListenCall(call) || len(call.Common().Args) == 0 {
-					continue
-				}
-				address := ssaConstant(call.Common().Args[0])
-				if address == nil || address.Value == nil || address.Value.Kind() != constant.String {
-					continue
-				}
-				value := constant.StringVal(address.Value)
-				if validListenAddress(value) {
-					continue
-				}
-				node := explicitCallArgument(calls[call.Pos()], 0, call.Pos())
-				pass.Report(node, fmt.Sprintf("%q is not a valid host:port listen address", value))
-			}
+	for _, call := range pass.staticCallsInPackage("net/http") {
+		if !isHTTPListenCall(call) || len(call.Common().Args) == 0 {
+			continue
 		}
+		address := ssaConstant(call.Common().Args[0])
+		if address == nil || address.Value == nil || address.Value.Kind() != constant.String {
+			continue
+		}
+		value := constant.StringVal(address.Value)
+		if validListenAddress(value) {
+			continue
+		}
+		node := explicitCallArgument(calls[call.Pos()], 0, call.Pos())
+		pass.Report(node, fmt.Sprintf("%q is not a valid host:port listen address", value))
 	}
 }
 

@@ -30,29 +30,28 @@ func (overlappingEncodeBuffersRule) Meta() Meta {
 
 func (overlappingEncodeBuffersRule) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
-	for _, function := range pass.Functions {
-		for _, block := range function.Blocks {
-			for _, instruction := range block.Instrs {
-				call, ok := instruction.(ssa.CallInstruction)
-				if !ok {
-					continue
-				}
-				descriptor, ok := encodeBufferDescriptor(call)
-				if !ok || len(call.Common().Args) <= descriptor.sourceSSA {
-					continue
-				}
-				destination := call.Common().Args[descriptor.destinationSSA]
-				source := call.Common().Args[descriptor.sourceSSA]
-				if !encodeBuffersOverlap(destination, source) {
-					continue
-				}
-				node := explicitCallArgument(
-					calls[call.Pos()],
-					descriptor.destinationSource,
-					call.Pos(),
-				)
-				pass.Report(node, "encoding destination overlaps the source buffer")
+	for _, packagePath := range[]string{
+		"encoding/ascii85",
+		"encoding/base32",
+		"encoding/base64",
+		"encoding/hex",
+	} {
+		for _, call := range pass.staticCallsInPackage(packagePath) {
+			descriptor, ok := encodeBufferDescriptor(call)
+			if !ok || len(call.Common().Args) <= descriptor.sourceSSA {
+				continue
 			}
+			destination := call.Common().Args[descriptor.destinationSSA]
+			source := call.Common().Args[descriptor.sourceSSA]
+			if !encodeBuffersOverlap(destination, source) {
+				continue
+			}
+			node := explicitCallArgument(
+				calls[call.Pos()],
+				descriptor.destinationSource,
+				call.Pos(),
+			)
+			pass.Report(node, "encoding destination overlaps the source buffer")
 		}
 	}
 }

@@ -6,7 +6,7 @@ description: Detect uses of deprecated packages and APIs.
 **Default severity:** `warning`
 
 Go documentation can mark packages, functions, methods, fields, variables,
-constants, and types with a `Deprecated:` paragraph. This analyzer reads those
+constants, and types with a `Deprecated:` paragraph. This check reads those
 markers from loaded dependencies and reports resolved uses from other
 packages, including deprecated struct fields.
 

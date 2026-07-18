@@ -6,8 +6,10 @@ import (
 	"go/types"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
+	"sync"
 
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/go/ssa"
@@ -17,11 +19,32 @@ import (
 	"github.com/gempir/strider/internal/source"
 )
 
-const loadMode = packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles | packages.NeedImports | packages.NeedDeps | packages.NeedTypes | packages.NeedTypesSizes | packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedModule
+const loadMode = packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles | packages.NeedImports | packages.NeedTypes | packages.NeedTypesSizes | packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedModule
 
 type target struct {
 	path string
 	recursive bool
+}
+
+type analysisTask struct {
+	pass *Pass
+	rule Rule
+}
+
+type analysisFinding struct {
+	key string
+	diagnostic diagnostic.Diagnostic
+}
+
+type analysisFileInfo struct {
+	filename string
+	display string
+	eligible bool
+}
+
+type analysisFileInfoCacheEntry struct {
+	once sync.Once
+	info analysisFileInfo
 }
 
 // Run loads the requested packages, executes the selected rules, and returns
@@ -39,55 +62,61 @@ func Run(paths []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
 	if err := packageError(loaded); err != nil {
 		return nil, err
 	}
+	initial := selectInitialPackages(loaded)
 	var deprecatedObjects map[types.Object]string
 	var deprecatedPackages map[*types.Package]string
 	if registry.hasRule("deprecated-api-usage") {
 		deprecatedObjects, deprecatedPackages = collectDeprecations(loaded)
 	}
-	builderMode := ssa.InstantiateGenerics
-	if registry.hasRule("overwritten-before-use") || registry.hasRule("unchanged-loop-condition") || registry.hasRule(
-		"never-nil-comparison",
-	) {
-		builderMode |= ssa.GlobalDebug
-	}
-	ssaProgram, ssaPackages := ssautil.Packages(loaded, builderMode)
-	ssaProgram.Build()
-	functionsByPackage := collectPackageFunctions(ssaProgram, ssaPackages)
-	seenFunctions := make(map[*ssa.Function]bool)
-	for _, functions := range functionsByPackage {
-		for _, function := range functions {
-			seenFunctions[function] = true
+	var ssaProgram *ssa.Program
+	ssaPackages := make([]*ssa.Package, len(initial))
+	functionsByPackage := make(map[*ssa.Package][]*ssa.Function)
+	needsSSA := registry.needsSSA()
+	if needsSSA {
+		builderMode := ssa.InstantiateGenerics
+		if registry.hasRule("overwritten-before-use") || registry.hasRule(
+			"unchanged-loop-condition",
+		) || registry.hasRule("never-nil-comparison") {
+			builderMode |= ssa.GlobalDebug
 		}
-	}
-	for function := range ssautil.AllFunctions(ssaProgram) {
-		if function.Pkg != nil && !seenFunctions[function] {
-			seenFunctions[function] = true
-			functionsByPackage[function.Pkg] = append(functionsByPackage[function.Pkg], function)
+		ssaProgram, ssaPackages = ssautil.Packages(initial, builderMode)
+		ssaProgram.Build()
+		functionsByPackage = collectPackageFunctions(ssaProgram, ssaPackages)
+		seenFunctions := make(map[*ssa.Function]bool)
+		for _, functions := range functionsByPackage {
+			for _, function := range functions {
+				seenFunctions[function] = true
+			}
+		}
+		for function := range ssautil.AllFunctions(ssaProgram) {
+			if function.Pkg != nil && !seenFunctions[function] {
+				seenFunctions[function] = true
+				functionsByPackage[function.Pkg] = append(
+					functionsByPackage[function.Pkg],
+					function,
+				)
+			}
 		}
 	}
 
-	diagnostics := make([]diagnostic.Diagnostic, 0)
 	seenPackages := make(map[string]bool)
-	seenDiagnostics := make(map[string]bool)
-	generated := make(map[string]bool)
-	generatedKnown := make(map[string]bool)
-	for packageIndex, pkg := range loaded {
+	passes := make([]*Pass, 0, len(initial))
+	for packageIndex, pkg := range initial {
 		if seenPackages[pkg.ID] {
 			continue
 		}
 		seenPackages[pkg.ID] = true
 		ssaPackage := ssaPackages[packageIndex]
-		if ssaPackage == nil {
+		if needsSSA && ssaPackage == nil {
 			continue
 		}
-		for _, rule := range registry.rules {
-			meta := rule.Meta()
-			severity := registry.Severity(meta.Code)
-			goVersion := ""
-			if pkg.Module != nil {
-				goVersion = pkg.Module.GoVersion
-			}
-			pass := &Pass{
+		goVersion := ""
+		if pkg.Module != nil {
+			goVersion = pkg.Module.GoVersion
+		}
+		passes = append(
+			passes,
+			&Pass{
 				PackagePath: pkg.PkgPath,
 				GoVersion: goVersion,
 				Files: pkg.Syntax,
@@ -98,59 +127,146 @@ func Run(paths []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
 				SSAProgram: ssaProgram,
 				SSAPackage: ssaPackage,
 				Functions: functionsByPackage[ssaPackage],
+				facts: &packageFacts{},
 
 				deprecatedObjects: deprecatedObjects,
 				deprecatedPackages: deprecatedPackages,
+			},
+		)
+	}
+
+	fileInfoCache := sync.Map{}
+	fileInfoFor := func(filename string) analysisFileInfo {
+		cached, ok := fileInfoCache.Load(filename)
+		if !ok {
+			cached, _ = fileInfoCache.LoadOrStore(filename, &analysisFileInfoCacheEntry{})
+		}
+		entry := cached.(*analysisFileInfoCacheEntry)
+		entry.once.Do(
+			func() {
+				canonical,
+				pathErr := canonicalPath(filename)
+				if pathErr == nil && matchesTarget(canonical, targets) {
+					generated,
+					_ := source.IsGenerated(canonical)
+					if !generated {
+						entry.info = analysisFileInfo{
+							filename: canonical,
+							display: source.DisplayPath(canonical),
+							eligible: true,
+						}
+					}
+				}
+			},
+		)
+		return entry.info
+	}
+
+	taskCount := len(passes) * len(registry.rules)
+	jobs := make(chan analysisTask, taskCount)
+	results := make(chan[]analysisFinding, taskCount)
+	workers := min(runtime.GOMAXPROCS(0), max(1, taskCount))
+	var group sync.WaitGroup
+	for range workers {
+		group.Add(1)
+		go func() {
+			defer group.Done()
+			for task := range jobs {
+				results <- runAnalysisTask(task, registry, fileInfoFor)
 			}
-			pass.report = func(node ast.Node, message string) {
-				position := pkg.Fset.Position(node.Pos())
-				filename, pathErr := canonicalPath(position.Filename)
-				if pathErr != nil || !matchesTarget(filename, targets) {
-					return
-				}
-				if !generatedKnown[filename] {
-					generated[filename], _ = source.IsGenerated(filename)
-					generatedKnown[filename] = true
-				}
-				if generated[filename] {
-					return
-				}
-				if registry.Excluded(meta.Code, filename) {
-					return
-				}
-				end := pkg.Fset.Position(node.End())
-				display := source.DisplayPath(filename)
-				position.Filename = display
-				end.Filename = display
-				key := fmt.Sprintf(
+		}()
+	}
+	for _, pass := range passes {
+		for _, rule := range registry.rules {
+			jobs <- analysisTask{pass: pass, rule: rule}
+		}
+	}
+	close(jobs)
+
+	diagnostics := make([]diagnostic.Diagnostic, 0)
+	seenDiagnostics := make(map[string]bool)
+	for range taskCount {
+		for _, finding := range <- results {
+			if seenDiagnostics[finding.key] {
+				continue
+			}
+			seenDiagnostics[finding.key] = true
+			diagnostics = append(diagnostics, finding.diagnostic)
+		}
+	}
+	group.Wait()
+	close(results)
+	sortDiagnostics(diagnostics)
+	return diagnostics, nil
+}
+
+// selectInitialPackages avoids analyzing production syntax twice when
+// packages.Load returns both the ordinary package and a test-augmented package
+// with the same import path. The augmented variant is the one with more syntax
+// files; external test packages have a distinct import path and remain
+// separate. Diagnostics from synthetic test-main packages are filtered by the
+// requested source targets later in the pipeline.
+func selectInitialPackages(loaded []*packages.Package) []*packages.Package {
+	bestByPath := make(map[string]*packages.Package)
+	for _, pkg := range loaded {
+		if current := bestByPath[pkg.PkgPath]; current == nil || len(pkg.Syntax) > len(
+			current.Syntax,
+		) {
+			bestByPath[pkg.PkgPath] = pkg
+		}
+	}
+	result := make([]*packages.Package, 0, len(loaded))
+	for _, pkg := range loaded {
+		if bestByPath[pkg.PkgPath] != pkg {
+			continue
+		}
+		result = append(result, pkg)
+	}
+	return result
+}
+
+func runAnalysisTask(
+	task analysisTask,
+	registry *Registry,
+	fileInfoFor func(string) analysisFileInfo,
+) []analysisFinding {
+	meta := task.rule.Meta()
+	severity := registry.Severity(meta.Code)
+	pass := *task.pass
+	findings := []analysisFinding{}
+	pass.report = func(node ast.Node, message string) {
+		position := pass.FileSet.Position(node.Pos())
+		info := fileInfoFor(position.Filename)
+		if !info.eligible || registry.Excluded(meta.Code, info.filename) {
+			return
+		}
+		end := pass.FileSet.Position(node.End())
+		position.Filename = info.display
+		end.Filename = info.display
+		findings = append(
+			findings,
+			analysisFinding{
+				key: fmt.Sprintf(
 					"%s:%d:%d:%s:%s",
-					filename,
+					info.filename,
 					position.Offset,
 					end.Offset,
 					meta.Code,
 					message,
-				)
-				if seenDiagnostics[key] {
-					return
-				}
-				seenDiagnostics[key] = true
-				diagnostics = append(
-					diagnostics,
-					diagnostic.Diagnostic{
-						Code: meta.Code,
-						Message: message,
-						Severity: severity,
-						File: display,
-						Start: position,
-						End: end,
-					},
-				)
-			}
-			rule.Run(pass)
-		}
+				),
+				diagnostic: diagnostic.Diagnostic{
+					Code: meta.Code,
+					Message: message,
+					Severity: severity,
+					File: info.display,
+					Start: position,
+					End: end,
+				},
+			},
+		)
 	}
-	sortDiagnostics(diagnostics)
-	return diagnostics, nil
+	task.rule.Run(&pass)
+	return findings
 }
 
 func collectPackageFunctions(program *ssa.Program, ssaPackages []*ssa.Package) map[*ssa.Package][]*ssa.Function {

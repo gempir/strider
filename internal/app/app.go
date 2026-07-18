@@ -8,8 +8,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/gempir/strider/internal/analyze"
 	"github.com/gempir/strider/internal/baseline"
@@ -399,29 +401,12 @@ func formatPaths(options formatOptions, stdout, stderr io.Writer) int {
 		return exitError
 	}
 	files = filterFiles(files, options.root, options.excludes)
-	formatted := make([]formattedFile, 0, len(files))
-	for _, filename := range files {
-		original, readErr := os.ReadFile(filename)
-		if readErr != nil {
-			printCommandError(
-				stderr,
-				options.colorMode,
-				"strider fmt",
-				"%s: %v",
-				source.DisplayPath(filename),
-				readErr,
-			)
-			return exitError
-		}
-		result, formatErr := formatter.FormatWithOptions(filename, original, options.formatter)
+	formatted, formatErrors := formatFiles(files, options.formatter)
+	for _, formatErr := range formatErrors {
 		if formatErr != nil {
 			printCommandError(stderr, options.colorMode, "strider fmt", "%v", formatErr)
 			return exitError
 		}
-		formatted = append(
-			formatted,
-			formattedFile{filename: filename, original: original, result: result},
-		)
 	}
 	changed := reportFormatChanges(formatted, options, stdout)
 	if options.write {
@@ -435,6 +420,49 @@ func formatPaths(options formatOptions, stdout, stderr io.Writer) int {
 		return exitFindings
 	}
 	return exitSuccess
+}
+
+func formatFiles(files []string, options formatter.Options) ([]formattedFile, []error) {
+	formatted := make([]formattedFile, len(files))
+	errorsByFile := make([]error, len(files))
+	if len(files) == 0 {
+		return formatted, errorsByFile
+	}
+
+	session := formatter.NewSession()
+	jobs := make(chan int)
+	workers := min(runtime.GOMAXPROCS(0), len(files))
+	var group sync.WaitGroup
+	for range workers {
+		group.Add(1)
+		go func() {
+			defer group.Done()
+			for index := range jobs {
+				filename := files[index]
+				original, err := os.ReadFile(filename)
+				if err != nil {
+					errorsByFile[index] = fmt.Errorf("%s: %w", source.DisplayPath(filename), err)
+					continue
+				}
+				result, err := session.FormatWithOptions(filename, original, options)
+				if err != nil {
+					errorsByFile[index] = err
+					continue
+				}
+				formatted[index] = formattedFile{
+					filename: filename,
+					original: original,
+					result: result,
+				}
+			}
+		}()
+	}
+	for index := range files {
+		jobs <- index
+	}
+	close(jobs)
+	group.Wait()
+	return formatted, errorsByFile
 }
 
 func reportFormatChanges(files []formattedFile, options formatOptions, stdout io.Writer) bool {

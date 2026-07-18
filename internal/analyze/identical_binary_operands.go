@@ -22,7 +22,7 @@ func (identicalBinaryOperandsRule) Meta() Meta {
 }
 
 func (identicalBinaryOperandsRule) Run(pass *Pass) {
-	parents := analysisParents(pass.Files)
+	parents := pass.analysisParents()
 	for _, file := range pass.Files {
 		ast.Inspect(
 			file,
@@ -103,26 +103,31 @@ func isComparableAssertion(binary *ast.BinaryExpr, parents map[ast.Node]ast.Node
 	return false
 }
 
-func analysisParents(files []*ast.File) map[ast.Node]ast.Node {
-	parents := make(map[ast.Node]ast.Node)
-	for _, file := range files {
-		stack := make([]ast.Node, 0)
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				if node == nil {
-					if len(stack) != 0 {
-						stack = stack[:len(stack) - 1]
-					}
-					return true
-				}
-				if len(stack) != 0 {
-					parents[node] = stack[len(stack) - 1]
-				}
-				stack = append(stack, node)
-				return true
-			},
-		)
-	}
-	return parents
+func (pass *Pass) analysisParents() map[ast.Node]ast.Node {
+	pass.facts.parentsOnce.Do(
+		func() {
+			pass.facts.parents = make(map[ast.Node]ast.Node)
+			for _,
+			file := range pass.Files {
+				stack := make([]ast.Node, 0)
+				ast.Inspect(
+					file,
+					func(node ast.Node) bool {
+						if node == nil {
+							if len(stack) != 0 {
+								stack = stack[:len(stack) - 1]
+							}
+							return true
+						}
+						if len(stack) != 0 {
+							pass.facts.parents[node] = stack[len(stack) - 1]
+						}
+						stack = append(stack, node)
+						return true
+					},
+				)
+			}
+		},
+	)
+	return pass.facts.parents
 }

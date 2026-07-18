@@ -1,23 +1,18 @@
 package formatter
 
 import (
-	"bufio"
+	"bytes"
 	"go/token"
 	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"unicode/utf8"
 
 	"github.com/gempir/strider/internal/cst"
 )
-
-type concreteTokenKey struct {
-	offset int
-	kind token.Token
-	source string
-}
 
 type concreteGroup struct {
 	close int
@@ -27,21 +22,21 @@ type concreteGroup struct {
 type concreteLayout struct {
 	tree *cst.Tree
 	tokens []cst.Token
-	indices map[concreteTokenKey]int
-	hardOpen map[int]int
-	hardClose map[int]bool
-	softOpen map[int]int
-	softClose map[int]bool
-	softSemis map[int]bool
-	topSemis map[int]bool
-	spacedOps map[int]bool
-	spaceBefore map[int]bool
-	unaryOps map[int]bool
-	channelArrows map[int]bool
-	spacedAfter map[int]bool
-	labelColons map[int]bool
-	caseTokens map[int]bool
-	caseColons map[int]bool
+	indices map[cst.Token]int
+	hardOpen []int
+	hardClose []bool
+	softOpen []int
+	softClose []bool
+	softSemis []bool
+	topSemis []bool
+	spacedOps []bool
+	spaceBefore []bool
+	unaryOps []bool
+	channelArrows []bool
+	spacedAfter []bool
+	labelColons []bool
+	caseTokens []bool
+	caseColons []bool
 	importStart int
 	importEnd int
 	imports []concreteImport
@@ -64,14 +59,15 @@ type concreteWriter struct {
 	maxEmptyLines int
 }
 
-func renderConcrete(filename string, tree *cst.Tree, options Options) string {
-	layout := newConcreteLayout(filename, tree)
+func renderConcreteWithModule(tree *cst.Tree, options Options, module string) string {
+	layout := newConcreteLayout(tree, module)
 	writer := concreteWriter{
 		lineStart: true,
 		indentWidth: options.IndentWidth,
 		maxEmptyLines: options.MaxEmptyLines,
 	}
-	source := tree.Source()
+	source := tree.Bytes()
+	writer.output.Grow(len(source))
 	comments := tree.Comments()
 	commentIndex := 0
 	groups := []concreteGroup{}
@@ -237,32 +233,35 @@ func concreteSourceEnd(current cst.Token) int {
 	return end
 }
 
-func newConcreteLayout(filename string, tree *cst.Tree) *concreteLayout {
+func newConcreteLayout(tree *cst.Tree, module string) *concreteLayout {
 	tokens := tree.Tokens()
+	tokenCount := len(tokens)
+	integerStorage := make([]int, tokenCount * 2)
+	booleanStorage := make([]bool, tokenCount * 12)
 	layout := &concreteLayout{
 		tree: tree,
 		tokens: tokens,
-		indices: make(map[concreteTokenKey]int, len(tokens)),
-		hardOpen: make(map[int]int),
-		hardClose: make(map[int]bool),
-		softOpen: make(map[int]int),
-		softClose: make(map[int]bool),
-		softSemis: make(map[int]bool),
-		topSemis: make(map[int]bool),
-		spacedOps: make(map[int]bool),
-		spaceBefore: make(map[int]bool),
-		unaryOps: make(map[int]bool),
-		channelArrows: make(map[int]bool),
-		spacedAfter: make(map[int]bool),
-		labelColons: make(map[int]bool),
-		caseTokens: make(map[int]bool),
-		caseColons: make(map[int]bool),
+		indices: make(map[cst.Token]int, tokenCount),
+		hardOpen: integerStorage[:tokenCount],
+		hardClose: booleanStorage[:tokenCount],
+		softOpen: integerStorage[tokenCount:],
+		softClose: booleanStorage[tokenCount:2 * tokenCount],
+		softSemis: booleanStorage[2 * tokenCount:3 * tokenCount],
+		topSemis: booleanStorage[3 * tokenCount:4 * tokenCount],
+		spacedOps: booleanStorage[4 * tokenCount:5 * tokenCount],
+		spaceBefore: booleanStorage[5 * tokenCount:6 * tokenCount],
+		unaryOps: booleanStorage[6 * tokenCount:7 * tokenCount],
+		channelArrows: booleanStorage[7 * tokenCount:8 * tokenCount],
+		spacedAfter: booleanStorage[8 * tokenCount:9 * tokenCount],
+		labelColons: booleanStorage[9 * tokenCount:10 * tokenCount],
+		caseTokens: booleanStorage[10 * tokenCount:11 * tokenCount],
+		caseColons: booleanStorage[11 * tokenCount:],
 		importStart: -1,
 		importEnd: -1,
-		module: findModulePath(filename),
+		module: module,
 	}
 	for index, current := range tokens {
-		layout.indices[layout.key(current)] = index
+		layout.indices[current] = index
 		switch current.Ch() {
 		case token.ASSIGN, token.DEFINE, token.ADD_ASSIGN, token.SUB_ASSIGN, token.MUL_ASSIGN, token.QUO_ASSIGN, token.REM_ASSIGN, token.AND_ASSIGN, token.OR_ASSIGN, token.XOR_ASSIGN, token.SHL_ASSIGN, token.SHR_ASSIGN, token.AND_NOT_ASSIGN:
 			layout.spacedOps[index] = true
@@ -399,7 +398,7 @@ func (l *concreteLayout) indexTree() {
 	)
 }
 
-func (l *concreteLayout) markAnyDelimited(node cst.Node, opens map[int]int, closes map[int]bool) {
+func (l *concreteLayout) markAnyDelimited(node cst.Node, opens []int, closes []bool) {
 	tokens := cst.NodeTokens(node)
 	if len(tokens) < 2 {
 		return
@@ -414,8 +413,8 @@ func (l *concreteLayout) markDelimited(
 	node cst.Node,
 	openKind,
 	closeKind token.Token,
-	opens map[int]int,
-	closes map[int]bool,
+	opens []int,
+	closes []bool,
 ) {
 	open, close := -1, -1
 	for _, child := range cst.Children(node) {
@@ -440,7 +439,7 @@ func (l *concreteLayout) markDelimited(
 	}
 }
 
-func (l *concreteLayout) markTokens(node cst.Node, wanted token.Token, target map[int]bool) {
+func (l *concreteLayout) markTokens(node cst.Node, wanted token.Token, target []bool) {
 	for _, child := range cst.Children(node) {
 		current, ok := child.(cst.Token)
 		if !ok {
@@ -452,13 +451,13 @@ func (l *concreteLayout) markTokens(node cst.Node, wanted token.Token, target ma
 	}
 }
 
-func (l *concreteLayout) markToken(current cst.Token, target map[int]bool) {
+func (l *concreteLayout) markToken(current cst.Token, target []bool) {
 	if index, ok := l.tokenIndex(current); ok {
 		target[index] = true
 	}
 }
 
-func (l *concreteLayout) markFirstToken(node cst.Node, target map[int]bool) {
+func (l *concreteLayout) markFirstToken(node cst.Node, target []bool) {
 	if node == nil {
 		return
 	}
@@ -469,19 +468,11 @@ func (l *concreteLayout) markFirstToken(node cst.Node, target map[int]bool) {
 }
 
 func (l *concreteLayout) tokenIndex(current cst.Token) (int, bool) {
-	index, ok := l.indices[l.key(current)]
-	return index, ok
-}
-
-func (l *concreteLayout) key(current cst.Token) concreteTokenKey {
 	if !current.IsValid() {
-		return concreteTokenKey{}
+		return 0, false
 	}
-	return concreteTokenKey{
-		offset: current.Position().Offset,
-		kind: current.Ch(),
-		source: current.Src(),
-	}
+	index, ok := l.indices[current]
+	return index, ok
 }
 
 func (l *concreteLayout) indexImports() {
@@ -606,7 +597,15 @@ func importText(item concreteImport) string {
 	return item.name + " " + item.path
 }
 
-func findModulePath(filename string) string {
+type modulePathCache struct {
+	entries sync.Map
+}
+
+type cachedModulePath struct {
+	path string
+}
+
+func (c *modulePathCache) find(filename string) string {
 	if filename == "" || strings.HasPrefix(filename, "<") {
 		return ""
 	}
@@ -614,26 +613,54 @@ func findModulePath(filename string) string {
 	if err != nil {
 		return ""
 	}
+	visited := []string{}
 	for {
-		file, err := os.Open(filepath.Join(directory, "go.mod"))
-		if err == nil {
-			scanner := bufio.NewScanner(file)
-			for scanner.Scan() {
-				fields := strings.Fields(scanner.Text())
-				if len(fields) == 2 && fields[0] == "module" {
-					_ = file.Close()
-					return fields[1]
-				}
-			}
-			_ = file.Close()
-			return ""
+		if cached, ok := c.entries.Load(directory); ok {
+			path := cached.(cachedModulePath).path
+			c.store(visited, path)
+			return path
+		}
+		visited = append(visited, directory)
+		if path, found := modulePathIn(directory); found {
+			c.store(visited, path)
+			return path
 		}
 		parent := filepath.Dir(directory)
 		if parent == directory {
+			c.store(visited, "")
 			return ""
 		}
 		directory = parent
 	}
+}
+
+func (c *modulePathCache) store(directories []string, path string) {
+	entry := cachedModulePath{path: path}
+	for _, directory := range directories {
+		c.entries.LoadOrStore(directory, entry)
+	}
+}
+
+func modulePathIn(directory string) (string, bool) {
+	content, err := os.ReadFile(filepath.Join(directory, "go.mod"))
+	if err != nil {
+		return "", false
+	}
+	for len(content) != 0 {
+		lineEnd := bytes.IndexByte(content, '\n')
+		if lineEnd < 0 {
+			lineEnd = len(content)
+		}
+		fields := bytes.Fields(content[:lineEnd])
+		if len(fields) == 2 && bytes.Equal(fields[0], []byte("module")) {
+			return string(fields[1]), true
+		}
+		if lineEnd == len(content) {
+			break
+		}
+		content = content[lineEnd + 1:]
+	}
+	return "", true
 }
 
 func (l *concreteLayout) shouldBreak(

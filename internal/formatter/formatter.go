@@ -48,70 +48,83 @@ type Result struct {
 	Ignored bool
 }
 
+// Session reuses formatter metadata across a batch of files. A Session is safe
+// for concurrent use by independent formatting calls.
+type Session struct {
+	modules modulePathCache
+}
+
+func NewSession() *Session {
+	return &Session{}
+}
+
 func Format(filename string, source []byte) (Result, error) {
 	return FormatWithOptions(filename, source, DefaultOptions())
 }
 
 func FormatWithOptions(filename string, source []byte, options Options) (Result, error) {
+	return NewSession().FormatWithOptions(filename, source, options)
+}
+
+func (s *Session) FormatWithOptions(filename string, source []byte, options Options) (Result, error) {
 	if bytes.Contains(source, []byte("//strider:format-ignore")) {
 		copyOfSource := append([]byte(nil), source...)
 		return Result{Source: copyOfSource, Ignored: true}, nil
 	}
 
-	formatted, err := formatInternal(filename, source, options)
+	originalTree, hasImports, err := parseConcrete(filename, source)
 	if err != nil {
 		return Result{}, err
 	}
-	if err := equivalent(filename, source, formatted); err != nil {
+	module := ""
+	if hasImports {
+		module = s.modules.find(filename)
+	}
+	formatted := []byte(renderConcreteWithModule(originalTree, options, module))
+	formattedTree, err := cst.Parse(filename, formatted)
+	if err != nil {
+		return Result{}, fmt.Errorf("formatter safety check: formatted output does not parse: %w", err)
+	}
+	if err := equivalentTrees(originalTree, formattedTree); err != nil {
 		return Result{}, fmt.Errorf("formatter safety check: %w", err)
 	}
-	second, err := formatInternal(filename, formatted, options)
-	if err != nil {
+	if _, err := validateConcreteSyntax(filename, formattedTree); err != nil {
 		return Result{}, fmt.Errorf("formatter idempotence check: %w", err)
 	}
+	second := []byte(renderConcreteWithModule(formattedTree, options, module))
 	if !bytes.Equal(formatted, second) {
 		return Result{}, fmt.Errorf("formatter idempotence check failed for %s", filename)
 	}
 	return Result{Source: formatted, Changed: !bytes.Equal(source, formatted)}, nil
 }
 
-func formatInternal(filename string, source []byte, options Options) ([]byte, error) {
+func parseConcrete(filename string, source []byte) (*cst.Tree, bool, error) {
 	concreteTree, err := cst.Parse(filename, source)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	if err := validateConcreteSyntax(filename, concreteTree); err != nil {
-		return nil, err
+	hasImports, err := validateConcreteSyntax(filename, concreteTree)
+	if err != nil {
+		return nil, false, err
 	}
-	return []byte(renderConcrete(filename, concreteTree, options)), nil
+	return concreteTree, hasImports, nil
 }
 
-func validateConcreteSyntax(filename string, tree *cst.Tree) error {
-	var unsupported cst.Node
-	feature := ""
-	cst.Walk(tree.Root(), func(node cst.Node) bool {
-		if unsupported != nil {
-			return false
-		}
-		switch current := node.(type) {
-		case cst.Token:
-			switch current.Ch() {
-			case token.GOTO, token.FALLTHROUGH:
-				unsupported = node
-				feature = strings.ToLower(current.Ch().String()) + " statements"
+func validateConcreteSyntax(filename string, tree *cst.Tree) (bool, error) {
+	hasImports := false
+	for _, current := range tree.Tokens() {
+		switch current.Ch() {
+		case token.IMPORT:
+			hasImports = true
+		case token.GOTO, token.FALLTHROUGH:
+			position := current.Position()
+			return false, &UnsupportedError{
+				Filename: filename,
+				Line:     position.Line,
+				Column:   position.Column,
+				Feature:  strings.ToLower(current.Ch().String()) + " statements",
 			}
 		}
-		return unsupported == nil
-	})
-	if unsupported == nil {
-		return nil
 	}
-	start, _ := cst.Range(unsupported)
-	position := tree.Position(start)
-	return &UnsupportedError{
-		Filename: filename,
-		Line:     position.Line,
-		Column:   position.Column,
-		Feature:  feature,
-	}
+	return hasImports, nil
 }

@@ -24,7 +24,7 @@ func (invalidTimeParseRule) Meta() Meta {
 }
 
 func (invalidTimeParseRule) Run(pass *Pass) {
-	calls := firstArgumentsByCallPosition(pass.Files)
+	calls := pass.firstArgumentsByCallPosition()
 	for _, function := range pass.Functions {
 		for _, block := range function.Blocks {
 			for _, instruction := range block.Instrs {

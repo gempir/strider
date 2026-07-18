@@ -1,36 +1,47 @@
 package formatter
 
 import (
+	"bytes"
 	"errors"
-	"fmt"
 	"go/token"
+	"slices"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/gempir/strider/internal/cst"
 )
 
-func equivalent(filename string, original, formatted []byte) error {
-	originalTree, err := cst.Parse(filename, original)
-	if err != nil {
-		return err
-	}
-	formattedTree, err := cst.Parse(filename, formatted)
-	if err != nil {
-		return fmt.Errorf("formatted output does not parse: %w", err)
-	}
-	if concreteFingerprint(originalTree) != concreteFingerprint(formattedTree) {
+func equivalentTrees(originalTree, formattedTree *cst.Tree) error {
+	original := concreteFingerprint(originalTree)
+	formatted := concreteFingerprint(formattedTree)
+	if !slices.Equal(original.imports, formatted.imports) || !bytes.Equal(
+		original.syntax,
+		formatted.syntax,
+	) {
 		return errors.New("formatted output changed the concrete syntax tree")
 	}
-	if concreteCommentFingerprint(originalTree) != concreteCommentFingerprint(formattedTree) {
+	originalComments := originalTree.Comments()
+	formattedComments := formattedTree.Comments()
+	if len(originalComments) != len(formattedComments) {
 		return errors.New("formatted output changed comment contents or ordering")
+	}
+	for index, comment := range originalComments {
+		if comment.Text != formattedComments[index].Text {
+			return errors.New("formatted output changed comment contents or ordering")
+		}
 	}
 	return nil
 }
 
-func concreteFingerprint(tree *cst.Tree) string {
+type syntaxFingerprint struct {
+	imports []string
+	syntax []byte
+}
+
+func concreteFingerprint(tree *cst.Tree) syntaxFingerprint {
 	imports := []string{}
-	var output strings.Builder
+	output := make([]byte, 0, len(tree.Bytes()))
 	var visit func(cst.Node)
 	visit = func(node cst.Node) {
 		if cst.Kind(node) == "ImportDeclList" {
@@ -63,27 +74,22 @@ func concreteFingerprint(tree *cst.Tree) string {
 		}
 		if current, ok := node.(cst.Token); ok {
 			if current.Ch() != token.SEMICOLON && current.Ch() != token.COMMA {
-				fmt.Fprintf(&output, "T%d:%q;", current.Ch(), current.Src())
+				output = append(output, 'T')
+				output = strconv.AppendInt(output, int64(current.Ch()), 10)
+				output = append(output, ':')
+				output = strconv.AppendQuote(output, current.Src())
+				output = append(output, ';')
 			}
 			return
 		}
-		output.WriteByte('(')
-		output.WriteString(strings.TrimRight(cst.Kind(node), "0123456789"))
+		output = append(output, '(')
+		output = append(output, strings.TrimRight(cst.Kind(node), "0123456789")...)
 		for _, child := range cst.Children(node) {
 			visit(child)
 		}
-		output.WriteByte(')')
+		output = append(output, ')')
 	}
 	visit(tree.Root())
 	sort.Strings(imports)
-	return "imports:" + strings.Join(imports, "\x01") + "\n" + output.String()
-}
-
-func concreteCommentFingerprint(tree *cst.Tree) string {
-	comments := tree.Comments()
-	texts := make([]string, 0, len(comments))
-	for _, comment := range comments {
-		texts = append(texts, comment.Text)
-	}
-	return strings.Join(texts, "\x00")
+	return syntaxFingerprint{imports: imports, syntax: output}
 }

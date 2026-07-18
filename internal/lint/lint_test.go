@@ -779,8 +779,25 @@ func TestLintRuleConfigurationCanExcludePaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if diagnostics == nil {
+		t.Fatal("clean single-file lint returned a nil diagnostics slice")
+	}
 	if len(diagnostics) != 0 {
 		t.Fatalf("excluded rule reported diagnostics: %#v", diagnostics)
+	}
+}
+
+func TestRunWithoutFilesReturnsEmptyDiagnostics(t *testing.T) {
+	registry, err := NewRegistry(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	diagnostics, err := Run(nil, registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if diagnostics == nil || len(diagnostics) != 0 {
+		t.Fatalf("got %#v, want a non-nil empty diagnostics slice", diagnostics)
 	}
 }
 

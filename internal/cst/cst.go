@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"sync"
 
 	gc "modernc.org/gc/v3"
 )
@@ -95,6 +96,13 @@ type Tree struct {
 	filename string
 	root *gc.AST
 	source []byte
+
+	tokensOnce sync.Once
+	tokens []Token
+	commentsOnce sync.Once
+	comments []Comment
+	linesOnce sync.Once
+	lines []int
 }
 
 // Comment is a concrete source comment and its exact byte range.
@@ -112,7 +120,10 @@ func Parse(filename string, source []byte) (*Tree, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Tree{filename: filename, root: root, source: append([]byte(nil), source...)}, nil
+	// modernc's parser takes ownership of source and its tokens retain offsets
+	// into that buffer. Keeping the same immutable slice avoids a redundant
+	// full-file copy while preserving the parser's existing ownership contract.
+	return &Tree{filename: filename, root: root, source: source}, nil
 }
 
 // Root returns the source-file production. The EOF token is available through
@@ -132,38 +143,54 @@ func (t *Tree) Source() []byte {
 	return append([]byte(nil), t.source...)
 }
 
+// Bytes returns the original source without copying it. The returned slice is
+// owned by the tree and must be treated as read-only.
+func (t *Tree) Bytes() []byte {
+	if t == nil {
+		return nil
+	}
+	return t.source
+}
+
 // Comments returns all comments in source order without grouping or rewriting
-// their original spelling.
+// their original spelling. The returned slice is owned by the tree and must be
+// treated as read-only.
 func (t *Tree) Comments() []Comment {
 	if t == nil {
 		return nil
 	}
-	fset := token.NewFileSet()
-	file := fset.AddFile(t.filename, -1, len(t.source))
-	var lexer scanner.Scanner
-	lexer.Init(file, t.source, nil, scanner.ScanComments)
-	result := []Comment{}
-	for {
-		position, kind, literal := lexer.Scan()
-		if kind == token.EOF {
-			return result
-		}
-		if kind != token.COMMENT {
-			continue
-		}
-		start := file.Offset(position)
-		location := file.Position(position)
-		result = append(
-			result,
-			Comment{
-				Text: literal,
-				Start: start,
-				End: start + len(literal),
-				Line: location.Line,
-				Column: location.Column,
-			},
-		)
-	}
+	t.commentsOnce.Do(
+		func() {
+			fset := token.NewFileSet()
+			file := fset.AddFile(t.filename, -1, len(t.source))
+			var lexer scanner.Scanner
+			lexer.Init(file, t.source, nil, scanner.ScanComments)
+			for {
+				position,
+				kind,
+				literal := lexer.Scan()
+				if kind == token.EOF {
+					break
+				}
+				if kind != token.COMMENT {
+					continue
+				}
+				start := file.Offset(position)
+				location := file.Position(position)
+				t.comments = append(
+					t.comments,
+					Comment{
+						Text: literal,
+						Start: start,
+						End: start + len(literal),
+						Line: location.Line,
+						Column: location.Column,
+					},
+				)
+			}
+		},
+	)
+	return t.comments
 }
 
 // Text reconstructs a node with all of its original whitespace and comments.
@@ -178,13 +205,22 @@ func Text(node Node) string {
 // whitespace trivia.
 func Spelling(node Node) string {
 	var result strings.Builder
-	for _, current := range NodeTokens(node) {
+	first, last, ok := nodeTokenBounds(node, false)
+	if !ok {
+		return ""
+	}
+	for current := first; current.IsValid(); current = current.Next() {
 		if concreteToken(current) {
 			result.WriteString(current.Src())
+		}
+		if current == last {
+			break
 		}
 	}
 	return result.String()
 }
+
+var kindCache sync.Map
 
 // Kind returns a stable production name without the implementation's Node
 // suffix. Tokens use the spelling from go/token, such as "func" or IDENT.
@@ -199,27 +235,21 @@ func Kind(node Node) string {
 	for valueType.Kind() == reflect.Pointer {
 		valueType = valueType.Elem()
 	}
-	return strings.TrimSuffix(valueType.Name(), "Node")
+	if cached, ok := kindCache.Load(valueType); ok {
+		return cached.(string)
+	}
+	kind := strings.TrimSuffix(valueType.Name(), "Node")
+	kindCache.Store(valueType, kind)
+	return kind
 }
 
 // Range returns the byte range occupied by a node's syntax, excluding leading
 // trivia. End is exclusive. Empty implicit tokens do not extend the range.
 func Range(node Node) (start, end int) {
-	tokens := NodeTokens(node)
-	for _, current := range tokens {
-		if !concreteToken(current) {
-			continue
-		}
-		start = current.Position().Offset
-		break
-	}
-	for index := len(tokens) - 1; index >= 0; index-- {
-		current := tokens[index]
-		if !concreteToken(current) {
-			continue
-		}
-		end = current.Position().Offset + len(current.Src())
-		break
+	first, last, ok := nodeTokenBounds(node, true)
+	if ok {
+		start = first.Position().Offset
+		end = last.Position().Offset + len(last.Src())
 	}
 	return start, end
 }
@@ -237,49 +267,85 @@ func (t *Tree) Position(offset int) token.Position {
 	if t == nil || t.root == nil {
 		return token.Position{}
 	}
-	for _, current := range t.Tokens() {
-		position := current.Position()
-		if position.Offset >= offset {
-			if position.Offset == offset {
-				return position
-			}
-			break
+	if offset < 0 {
+		offset = 0
+	}
+	if offset > len(t.source) {
+		offset = len(t.source)
+	}
+	tokens := t.Tokens()
+	index := sort.Search(
+		len(tokens),
+		func(index int) bool {
+			return tokens[index].Position().Offset >= offset
+		},
+	)
+	if index < len(tokens) {
+		position := tokens[index].Position()
+		if position.Offset == offset {
+			return position
 		}
 	}
-	return positionAt(t.source, offset)
+	t.linesOnce.Do(
+		func() {
+			t.lines = make([]int, 1, len(t.source) / 40 + 1)
+			for index,
+			current := range t.source {
+				if current == '\n' {
+					t.lines = append(t.lines, index + 1)
+				}
+			}
+		},
+	)
+	lineIndex := sort.Search(len(t.lines), func(index int) bool {
+		return t.lines[index] > offset
+	}) - 1
+	if lineIndex < 0 {
+		lineIndex = 0
+	}
+	return token.Position{
+		Filename: t.filename,
+		Offset: offset,
+		Line: lineIndex + 1,
+		Column: offset - t.lines[lineIndex] + 1,
+	}
 }
 
 // Tokens returns every token in source order, including the EOF token. Trivia
 // is stored in the following token, so the EOF token retains trailing trivia.
+// The returned slice is owned by the tree and must be treated as read-only.
 func (t *Tree) Tokens() []Token {
 	if t == nil || t.root == nil || t.root.SourceFile == nil || t.root.SourceFile.PackageClause == nil {
 		return nil
 	}
-	current := t.root.SourceFile.PackageClause.PACKAGE
-	result := []Token{}
-	for current.IsValid() {
-		result = append(result, current)
-		if current.Ch() == token.EOF {
-			break
-		}
-		current = current.Next()
-	}
-	return result
+	t.tokensOnce.Do(
+		func() {
+			current := t.root.SourceFile.PackageClause.PACKAGE
+			for current.IsValid() {
+				t.tokens = append(t.tokens, current)
+				if current.Ch() == token.EOF {
+					break
+				}
+				current = current.Next()
+			}
+		},
+	)
+	return t.tokens
 }
 
 // NodeTokens returns all tokens belonging to node in source order.
 func NodeTokens(node Node) []Token {
-	if isNilNode(node) {
+	first, last, ok := nodeTokenBounds(node, false)
+	if !ok {
 		return nil
 	}
-	result := []Token{}
-	collectTokens(reflect.ValueOf(node), &result)
-	sort.SliceStable(
-		result,
-		func(i, j int) bool {
-			return result[i].Position().Offset < result[j].Position().Offset
-		},
-	)
+	result := make([]Token, 0, 8)
+	for current := first; current.IsValid(); current = current.Next() {
+		result = append(result, current)
+		if current == last {
+			break
+		}
+	}
 	return result
 }
 
@@ -300,11 +366,47 @@ func Children(node Node) []Node {
 // Walk visits node and its concrete children in source order. Returning false
 // skips the current node's descendants.
 func Walk(node Node, visit func(Node) bool) {
-	if isNilNode(node) || visit == nil || !visit(node) {
+	if isNilNode(node) || visit == nil {
 		return
 	}
-	for _, child := range Children(node) {
-		Walk(child, visit)
+	stack := []Node{node}
+	for len(stack) != 0 {
+		last := len(stack) - 1
+		current := stack[last]
+		stack = stack[:last]
+		if visit(current) {
+			stack = appendChildrenReverse(stack, current)
+		}
+	}
+}
+
+// WalkWithAncestors visits a tree in source order and supplies the current
+// node's ancestors from the root down. The ancestor slice is reused and must
+// not be retained by the visitor.
+func WalkWithAncestors(node Node, visit func(Node, []Node) bool) {
+	if isNilNode(node) || visit == nil {
+		return
+	}
+	type item struct {
+		node Node
+		exit bool
+	}
+	stack := []item{{node: node}}
+	ancestors := []Node{}
+	for len(stack) != 0 {
+		last := len(stack) - 1
+		current := stack[last]
+		stack = stack[:last]
+		if current.exit {
+			ancestors = ancestors[:len(ancestors) - 1]
+			continue
+		}
+		if !visit(current.node, ancestors) {
+			continue
+		}
+		stack = append(stack, item{exit: true})
+		ancestors = append(ancestors, current.node)
+		stack = appendChildItemsReverse(stack, current.node)
 	}
 }
 
@@ -312,18 +414,13 @@ func collectChildren(value reflect.Value, result *[]Node) {
 	if !value.IsValid() || value.Kind() != reflect.Struct {
 		return
 	}
-	valueType := value.Type()
-	for index := 0; index < value.NumField(); index++ {
-		fieldInfo := valueType.Field(index)
-		if !fieldInfo.IsExported() {
-			continue
-		}
-		field := value.Field(index)
+	for _, plan := range childFields(value.Type()) {
+		field := value.Field(plan.index)
 		if child, ok := nodeValue(field); ok {
 			*result = append(*result, child)
 			continue
 		}
-		if field.Kind() == reflect.Slice {
+		if plan.slice {
 			for item := 0; item < field.Len(); item++ {
 				if child, ok := nodeValue(field.Index(item)); ok {
 					*result = append(*result, child)
@@ -333,13 +430,119 @@ func collectChildren(value reflect.Value, result *[]Node) {
 	}
 }
 
-func collectTokens(value reflect.Value, result *[]Token) {
+type childField struct {
+	index int
+	slice bool
+}
+
+var childFieldsCache sync.Map
+
+func childFields(valueType reflect.Type) []childField {
+	if cached, ok := childFieldsCache.Load(valueType); ok {
+		return cached.([]childField)
+	}
+	fields := make([]childField, 0, valueType.NumField())
+	for index := 0; index < valueType.NumField(); index++ {
+		field := valueType.Field(index)
+		if !field.IsExported() {
+			continue
+		}
+		fields = append(fields, childField{index: index, slice: field.Type.Kind() == reflect.Slice})
+	}
+	childFieldsCache.Store(valueType, fields)
+	return fields
+}
+
+func appendChildrenReverse(stack []Node, node Node) []Node {
+	if _, ok := node.(Token); ok {
+		return stack
+	}
+	value := indirect(reflect.ValueOf(node))
+	if !value.IsValid() || value.Kind() != reflect.Struct {
+		return stack
+	}
+	fields := childFields(value.Type())
+	for fieldIndex := len(fields) - 1; fieldIndex >= 0; fieldIndex-- {
+		plan := fields[fieldIndex]
+		field := value.Field(plan.index)
+		if child, ok := nodeValue(field); ok {
+			stack = append(stack, child)
+			continue
+		}
+		if plan.slice {
+			for item := field.Len() - 1; item >= 0; item-- {
+				if child, ok := nodeValue(field.Index(item)); ok {
+					stack = append(stack, child)
+				}
+			}
+		}
+	}
+	return stack
+}
+
+func appendChildItemsReverse[T ~struct {
+	node Node
+	exit bool
+}](stack []T, node Node) []T {
+	if _, ok := node.(Token); ok {
+		return stack
+	}
+	value := indirect(reflect.ValueOf(node))
+	if !value.IsValid() || value.Kind() != reflect.Struct {
+		return stack
+	}
+	fields := childFields(value.Type())
+	for fieldIndex := len(fields) - 1; fieldIndex >= 0; fieldIndex-- {
+		plan := fields[fieldIndex]
+		field := value.Field(plan.index)
+		if child, ok := nodeValue(field); ok {
+			stack = append(stack, T{node: child})
+			continue
+		}
+		if plan.slice {
+			for item := field.Len() - 1; item >= 0; item-- {
+				if child, ok := nodeValue(field.Index(item)); ok {
+					stack = append(stack, T{node: child})
+				}
+			}
+		}
+	}
+	return stack
+}
+
+type bounds struct {
+	first Token
+	last Token
+	firstOffset int
+	lastOffset int
+	found bool
+}
+
+func nodeTokenBounds(node Node, concreteOnly bool) (Token, Token, bool) {
+	if isNilNode(node) {
+		return Token{}, Token{}, false
+	}
+	result := bounds{}
+	collectTokenBounds(reflect.ValueOf(node), concreteOnly, &result)
+	return result.first, result.last, result.found
+}
+
+func collectTokenBounds(value reflect.Value, concreteOnly bool, result *bounds) {
 	if !value.IsValid() {
 		return
 	}
 	if current, ok := tokenValue(value); ok {
-		if current.IsValid() {
-			*result = append(*result, current)
+		if current.IsValid() && (!concreteOnly || concreteToken(current)) {
+			offset := current.Position().Offset
+			if !result.found || offset < result.firstOffset {
+				result.first = current
+				result.firstOffset = offset
+			}
+			if !result.found || offset >= result.lastOffset {
+				result.last = current
+				result.lastOffset = offset
+			}
+			result.found = true
 		}
 		return
 	}
@@ -349,17 +552,14 @@ func collectTokens(value reflect.Value, result *[]Token) {
 	}
 	switch value.Kind() {
 	case reflect.Interface, reflect.Pointer:
-		collectTokens(value.Elem(), result)
+		collectTokenBounds(value.Elem(), concreteOnly, result)
 	case reflect.Struct:
-		valueType := value.Type()
-		for index := 0; index < value.NumField(); index++ {
-			if valueType.Field(index).IsExported() {
-				collectTokens(value.Field(index), result)
-			}
+		for _, field := range childFields(value.Type()) {
+			collectTokenBounds(value.Field(field.index), concreteOnly, result)
 		}
 	case reflect.Slice:
 		for index := 0; index < value.Len(); index++ {
-			collectTokens(value.Index(index), result)
+			collectTokenBounds(value.Index(index), concreteOnly, result)
 		}
 	}
 }
@@ -403,22 +603,4 @@ func isNilNode(node Node) bool {
 
 func nilable(kind reflect.Kind) bool {
 	return kind == reflect.Chan || kind == reflect.Func || kind == reflect.Interface || kind == reflect.Map || kind == reflect.Pointer || kind == reflect.Slice
-}
-
-func positionAt(source []byte, offset int) token.Position {
-	if offset < 0 {
-		offset = 0
-	}
-	if offset > len(source) {
-		offset = len(source)
-	}
-	line, column := 1, 1
-	for _, current := range source[:offset] {
-		if current == '\n' {
-			line, column = line + 1, 1
-			continue
-		}
-		column++
-	}
-	return token.Position{Offset: offset, Line: line, Column: column}
 }

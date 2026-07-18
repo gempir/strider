@@ -2,9 +2,8 @@
 package lint
 
 import (
+	"bytes"
 	"fmt"
-	"go/scanner"
-	"go/token"
 	"os"
 	"runtime"
 	"sort"
@@ -143,6 +142,7 @@ func (r *Registry) activeRules(filename string) []builtinrules.Rule {
 
 type Context struct {
 	filename string
+	displayFilename string
 	diagnostics []diagnostic.Diagnostic
 	concreteIgnores map[string]bool
 	concreteNodes []concreteSuppression
@@ -161,6 +161,20 @@ type fileResult struct {
 }
 
 func Run(files []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
+	if len(files) == 0 {
+		return[]diagnostic.Diagnostic{}, nil
+	}
+	if len(files) == 1 {
+		diagnostics, err := lintFile(files[0], registry)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", source.DisplayPath(files[0]), err)
+		}
+		if diagnostics == nil {
+			diagnostics = []diagnostic.Diagnostic{}
+		}
+		sortDiagnostics(diagnostics)
+		return diagnostics, nil
+	}
 	workers := min(runtime.GOMAXPROCS(0), max(1, len(files)))
 	jobs := make(chan string)
 	results := make(chan fileResult, len(files))
@@ -237,6 +251,10 @@ func sortDiagnostics(diagnostics []diagnostic.Diagnostic) {
 }
 
 func lintFile(filename string, registry *Registry) ([]diagnostic.Diagnostic, error) {
+	activeRules := registry.activeRules(filename)
+	if len(activeRules) == 0 {
+		return nil, nil
+	}
 	content, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -245,13 +263,13 @@ func lintFile(filename string, registry *Registry) ([]diagnostic.Diagnostic, err
 	if err != nil {
 		return nil, err
 	}
-	concreteIgnores, concreteNodes := concreteSuppressions(filename, concreteTree)
+	concreteIgnores, concreteNodes := concreteSuppressions(concreteTree)
 	context := &Context{
 		filename: filename,
+		displayFilename: source.DisplayPath(filename),
 		concreteIgnores: concreteIgnores,
 		concreteNodes: concreteNodes,
 	}
-	activeRules := registry.activeRules(filename)
 	builtinrules.AnalyzeCST(
 		builtinrules.CSTInput{
 			Filename: filename,
@@ -279,7 +297,7 @@ func (c *Context) reportConcrete(
 	}
 	start := tree.Position(startOffset)
 	end := tree.Position(endOffset)
-	display := source.DisplayPath(c.filename)
+	display := c.displayFilename
 	start.Filename = display
 	end.Filename = display
 	c.diagnostics = append(
@@ -309,26 +327,17 @@ func (c *Context) suppressedRange(code string, start, end int) bool {
 	return false
 }
 
-func concreteSuppressions(filename string, tree *cst.Tree) (map[string]bool, []concreteSuppression) {
+func concreteSuppressions(tree *cst.Tree) (map[string]bool, []concreteSuppression) {
+	if !bytes.Contains(tree.Bytes(), []byte("strider:ignore")) {
+		return nil, nil
+	}
 	fileIgnores := make(map[string]bool)
 	candidates := concreteSuppressionCandidates(tree)
 	packageStart, _ := cst.Range(tree.Root())
-	sourceBytes := tree.Source()
-	fset := token.NewFileSet()
-	tokenFile := fset.AddFile(filename, -1, len(sourceBytes))
-	var lexer scanner.Scanner
-	lexer.Init(tokenFile, sourceBytes, nil, scanner.ScanComments)
 	result := []concreteSuppression{}
-	for {
-		position, kind, literal := lexer.Scan()
-		if kind == token.EOF {
-			break
-		}
-		if kind != token.COMMENT {
-			continue
-		}
-		start := tokenFile.Offset(position)
-		end := start + len(literal)
+	for _, comment := range tree.Comments() {
+		literal := comment.Text
+		end := comment.End
 		if codes, ok := directiveCodes(literal, "strider:ignore-file"); ok && end < packageStart {
 			for _, code := range codes {
 				fileIgnores[code] = true

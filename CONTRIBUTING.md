@@ -39,10 +39,10 @@ git diff -- benchmarks/baseline.json docs/public/benchmark-report/
 ```
 
 This also regenerates one detailed report per project under
-`docs/public/benchmark-report/projects/`. Each report combines lint and analysis
-diagnostics with source context resolved from the pinned checkout. Keep the
-matching Starlight project page under `docs/src/content/docs/benchmarks/` when
-changing the corpus manifest.
+`docs/public/benchmark-report/projects/`. Each report combines operation timings
+with lint and analysis diagnostics and source context resolved from the pinned
+checkout. Keep the matching Starlight project page under
+`docs/src/content/docs/benchmarks/` when changing the corpus manifest.
 
 Do not accept a baseline just to make CI green. Unexpected changes often reveal
 ordering bugs, rule regressions, or formatter compatibility issues.

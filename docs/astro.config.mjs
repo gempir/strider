@@ -42,6 +42,7 @@ export default defineConfig({
         },
         {
           label: 'Benchmarks',
+          collapsed: true,
           items: [{ autogenerate: { directory: 'benchmarks' } }],
         },
         {

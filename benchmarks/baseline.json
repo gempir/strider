@@ -595,6 +595,830 @@
           }
         }
       }
+    },
+    {
+      "name": "httprouter",
+      "revision": "484018016424d215c0b87c42f4c9b57d980fbd00",
+      "operations": {
+        "analyze": {
+          "exit_code": 0,
+          "digest": "7c98e54fe62d0828cc096acf2baff9b0cdd5a4059053acf1d0e50112ff8612ce",
+          "findings": 0
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "7e20d1fe96e54559e37c6ae0c5ba358ee6f307148cfd72ed8cd80af3ef71bc16",
+          "findings": 6
+        },
+        "lint": {
+          "exit_code": 1,
+          "digest": "05ad0d4800de1f94ea2c0687104d77d8fa947f8c2e7b9e5c3653c8c427813ba7",
+          "findings": 372,
+          "by_code": {
+            "add-constant": 64,
+            "bare-return": 12,
+            "bool-literal-in-expr": 2,
+            "cognitive-complexity": 17,
+            "cyclomatic": 11,
+            "cyclomatic-complexity": 11,
+            "datarace": 1,
+            "early-return": 2,
+            "empty-lines": 37,
+            "error-strings": 31,
+            "exported": 18,
+            "flag-parameter": 1,
+            "function-length": 10,
+            "get-return": 1,
+            "indent-error-flow": 3,
+            "line-length-limit": 42,
+            "max-control-nesting": 13,
+            "modifies-parameter": 18,
+            "modifies-value-receiver": 1,
+            "multiline-if-init": 1,
+            "nested-structs": 5,
+            "no-else-after-return": 3,
+            "no-naked-return": 12,
+            "no-package-var": 4,
+            "optimize-operands-order": 23,
+            "package-comments": 2,
+            "range-val-in-closure": 1,
+            "redefines-builtin-id": 3,
+            "superfluous-else": 4,
+            "unhandled-error": 1,
+            "unnecessary-stmt": 6,
+            "unused-parameter": 4,
+            "unused-receiver": 4,
+            "use-any": 4
+          }
+        }
+      }
+    },
+    {
+      "name": "ksuid",
+      "revision": "d33724947fcfba7949906c2b1821e96a1c8d06e7",
+      "operations": {
+        "analyze": {
+          "exit_code": 1,
+          "digest": "e32a46e35ce2c8299185f9ae11d229da4d2b0653876ed4d512e56f00f946415e",
+          "findings": 1,
+          "by_code": {
+            "ineffective-bitwise-zero": 1
+          }
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "d4fcd98f254af5254700ace49e700802666adf67df8bd1f8e2dec8386e17acd2",
+          "findings": 11
+        },
+        "lint": {
+          "exit_code": 1,
+          "digest": "9d7860d2a3c6b4a555ea5ec07ddfaa21d074b6ead229ecfcf6f8db3d8aec4c5f",
+          "findings": 238,
+          "by_code": {
+            "add-constant": 8,
+            "bare-return": 14,
+            "cognitive-complexity": 11,
+            "confusing-naming": 2,
+            "cyclomatic": 1,
+            "cyclomatic-complexity": 1,
+            "datarace": 5,
+            "empty-lines": 7,
+            "epoch-naming": 1,
+            "error-strings": 11,
+            "exported": 34,
+            "import-alias-naming": 1,
+            "line-length-limit": 25,
+            "marshal-receiver": 2,
+            "modifies-parameter": 32,
+            "nested-structs": 11,
+            "no-init": 1,
+            "no-naked-return": 14,
+            "no-package-var": 15,
+            "optimize-operands-order": 3,
+            "package-comments": 7,
+            "range-val-in-closure": 5,
+            "receiver-naming": 2,
+            "redefines-builtin-id": 9,
+            "time-equal": 1,
+            "unchecked-type-assertion": 1,
+            "unhandled-error": 3,
+            "unnecessary-stmt": 6,
+            "use-any": 3,
+            "use-fmt-print": 1,
+            "use-slices-sort": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "ulid",
+      "revision": "96c4edf226ef639c92f96f42c7c2a161ae0e1a66",
+      "operations": {
+        "analyze": {
+          "exit_code": 0,
+          "digest": "7c98e54fe62d0828cc096acf2baff9b0cdd5a4059053acf1d0e50112ff8612ce",
+          "findings": 0
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "f5cb25520c24bb245918ced2cf9efddb6e3bb2bd813b5f4ffa7492b7e14bb0d0",
+          "findings": 3
+        },
+        "lint": {
+          "exit_code": 1,
+          "digest": "951840233457ee9ce25120b72f56d1e5c747ca145512a32c0c36b725a4a11e10",
+          "findings": 204,
+          "by_code": {
+            "add-constant": 3,
+            "cognitive-complexity": 3,
+            "confusing-naming": 1,
+            "cyclomatic": 2,
+            "cyclomatic-complexity": 2,
+            "datarace": 5,
+            "deep-exit": 2,
+            "empty-lines": 8,
+            "epoch-naming": 4,
+            "error-strings": 2,
+            "exported": 40,
+            "flag-parameter": 4,
+            "import-shadowing": 1,
+            "indent-error-flow": 1,
+            "line-length-limit": 19,
+            "marshal-receiver": 2,
+            "modifies-parameter": 43,
+            "nested-structs": 5,
+            "no-else-after-return": 1,
+            "no-package-var": 11,
+            "optimize-operands-order": 29,
+            "package-comments": 2,
+            "package-directory-mismatch": 1,
+            "package-naming": 1,
+            "range-val-in-closure": 5,
+            "superfluous-else": 1,
+            "time-equal": 1,
+            "unnecessary-stmt": 3,
+            "use-any": 2
+          }
+        }
+      }
+    },
+    {
+      "name": "godotenv",
+      "revision": "97a2850142438b3c357c1d3439e325181afdcc1d",
+      "operations": {
+        "analyze": {
+          "exit_code": 0,
+          "digest": "7c98e54fe62d0828cc096acf2baff9b0cdd5a4059053acf1d0e50112ff8612ce",
+          "findings": 0
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "53089d3fa7105a9ee97a7321745d4ff0d6f2d1c043a0015ac840ab6998e00769",
+          "findings": 3
+        },
+        "lint": {
+          "exit_code": 1,
+          "digest": "611e3c399576abadeb4c93e2dfa94cfdf394b610f3188fb2adea9d75deb27054",
+          "findings": 179,
+          "by_code": {
+            "add-constant": 24,
+            "bare-return": 7,
+            "cognitive-complexity": 6,
+            "comment-spacings": 7,
+            "cyclomatic": 2,
+            "cyclomatic-complexity": 2,
+            "datarace": 5,
+            "empty-lines": 9,
+            "error-strings": 21,
+            "exported": 8,
+            "flag-parameter": 2,
+            "function-length": 1,
+            "indent-error-flow": 1,
+            "line-length-limit": 34,
+            "modifies-parameter": 11,
+            "nested-structs": 5,
+            "no-else-after-return": 1,
+            "no-init": 1,
+            "no-naked-return": 7,
+            "no-package-var": 7,
+            "optimize-operands-order": 4,
+            "package-comments": 3,
+            "range-val-in-closure": 5,
+            "superfluous-else": 1,
+            "unchecked-type-assertion": 2,
+            "unhandled-error": 2,
+            "unnecessary-stmt": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "envconfig",
+      "revision": "7834011875d613aec60c606b52c2b0fe8949fe91",
+      "operations": {
+        "analyze": {
+          "exit_code": 0,
+          "digest": "7c98e54fe62d0828cc096acf2baff9b0cdd5a4059053acf1d0e50112ff8612ce",
+          "findings": 0
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "d5cfc3a5266afe0b34ee770e9de99db89edb4d7b304c9ed728fff915c4de0c33",
+          "findings": 5
+        },
+        "lint": {
+          "exit_code": 1,
+          "digest": "8b0f292c1b025617d881e315b8ec7766c752cab6545195d2ceb09a882c68e843",
+          "findings": 315,
+          "by_code": {
+            "add-constant": 43,
+            "bool-literal-in-expr": 1,
+            "cognitive-complexity": 8,
+            "cyclomatic": 6,
+            "cyclomatic-complexity": 6,
+            "deep-exit": 5,
+            "empty-lines": 8,
+            "error-strings": 6,
+            "exported": 15,
+            "filename-format": 1,
+            "function-length": 3,
+            "line-length-limit": 38,
+            "modifies-parameter": 3,
+            "nested-structs": 6,
+            "no-package-var": 13,
+            "optimize-operands-order": 19,
+            "package-comments": 4,
+            "range-val-address": 1,
+            "redundant-test-main-exit": 1,
+            "time-equal": 1,
+            "unhandled-error": 112,
+            "unnecessary-stmt": 1,
+            "unsecure-url-scheme": 1,
+            "unused-parameter": 1,
+            "use-any": 12
+          }
+        }
+      }
+    },
+    {
+      "name": "env",
+      "revision": "a3a36cc60fa222b41957573b94fefa5624dd6365",
+      "operations": {
+        "analyze": {
+          "exit_code": 0,
+          "digest": "7c98e54fe62d0828cc096acf2baff9b0cdd5a4059053acf1d0e50112ff8612ce",
+          "findings": 0
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "cb63b60e2a176205fe5d0dfcc7d67d97b67e7d1632973f0991ab1c4737ab2764",
+          "findings": 6
+        },
+        "lint": {
+          "exit_code": 1,
+          "digest": "e5bd49db6af327594762debac359a7a69d9e70bd5475bf3be7e726927bf8544b",
+          "findings": 655,
+          "by_code": {
+            "add-constant": 51,
+            "cognitive-complexity": 9,
+            "cyclomatic": 5,
+            "cyclomatic-complexity": 5,
+            "datarace": 4,
+            "empty-lines": 25,
+            "exported": 101,
+            "flag-parameter": 2,
+            "function-length": 1,
+            "line-length-limit": 104,
+            "max-public-structs": 64,
+            "modifies-parameter": 4,
+            "multiline-if-init": 7,
+            "nested-structs": 17,
+            "no-package-var": 1,
+            "optimize-operands-order": 7,
+            "package-comments": 3,
+            "range-val-in-closure": 4,
+            "unchecked-type-assertion": 2,
+            "unhandled-error": 186,
+            "unnecessary-stmt": 4,
+            "unused-receiver": 1,
+            "use-any": 46,
+            "use-errors-new": 2
+          }
+        }
+      }
+    },
+    {
+      "name": "jwt",
+      "revision": "1a11d3724e63105d751decf9adbdc90165137b45",
+      "operations": {
+        "analyze": {
+          "exit_code": 0,
+          "digest": "7c98e54fe62d0828cc096acf2baff9b0cdd5a4059053acf1d0e50112ff8612ce",
+          "findings": 0
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "543f1e912ce3b65acb1d3baf87bed07ab4d901becff35502e228268ccc10e55f",
+          "findings": 39
+        },
+        "lint": {
+          "exit_code": 1,
+          "digest": "86b6b1098a571badafcb19ef43685bbf9316094525f96f7f101e3ebd45be15e1",
+          "findings": 1017,
+          "by_code": {
+            "add-constant": 37,
+            "bare-return": 4,
+            "cognitive-complexity": 23,
+            "cyclomatic": 9,
+            "cyclomatic-complexity": 9,
+            "datarace": 22,
+            "deep-exit": 8,
+            "early-return": 6,
+            "empty-lines": 65,
+            "error-naming": 1,
+            "error-strings": 33,
+            "exported": 143,
+            "flag-parameter": 8,
+            "function-length": 3,
+            "indent-error-flow": 8,
+            "line-length-limit": 359,
+            "marshal-receiver": 2,
+            "modifies-parameter": 2,
+            "modifies-value-receiver": 1,
+            "nested-structs": 25,
+            "no-else-after-return": 8,
+            "no-init": 9,
+            "no-naked-return": 4,
+            "no-package-var": 94,
+            "optimize-operands-order": 9,
+            "package-comments": 26,
+            "package-directory-mismatch": 12,
+            "package-naming": 12,
+            "range-val-in-closure": 22,
+            "superfluous-else": 11,
+            "unchecked-type-assertion": 2,
+            "unhandled-error": 8,
+            "unnecessary-stmt": 6,
+            "unsecure-url-scheme": 6,
+            "unused-parameter": 4,
+            "unused-receiver": 9,
+            "use-errors-new": 6,
+            "var-declaration": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "groupcache",
+      "revision": "2c02b8208cf8c02a3e358cb1d9b60950647543fc",
+      "operations": {
+        "analyze": {
+          "exit_code": 1,
+          "digest": "0e61ff712569c615f8b042fc315ff8896aaa429b1dc9b4f31bf8b476356e24aa",
+          "findings": 5,
+          "by_code": {
+            "deprecated-api-usage": 5
+          }
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "d53b1bbf677f4db3b08f4440a392b18b1f021194996a65aa38b13bd27270cd0a",
+          "findings": 16
+        },
+        "lint": {
+          "exit_code": 1,
+          "digest": "a040b2140af87592f8a77aba0f88e2a904b125758a1b62ee56fb342b30ed93e1",
+          "findings": 344,
+          "by_code": {
+            "add-constant": 13,
+            "bare-return": 13,
+            "cognitive-complexity": 8,
+            "confusing-naming": 1,
+            "cyclomatic": 1,
+            "cyclomatic-complexity": 1,
+            "deep-exit": 2,
+            "empty-lines": 10,
+            "error-strings": 10,
+            "exported": 103,
+            "filename-format": 2,
+            "import-shadowing": 4,
+            "line-length-limit": 61,
+            "max-public-structs": 1,
+            "modifies-parameter": 1,
+            "nested-structs": 3,
+            "no-init": 2,
+            "no-naked-return": 13,
+            "no-package-var": 18,
+            "optimize-operands-order": 1,
+            "package-comments": 6,
+            "range-val-address": 1,
+            "redefines-builtin-id": 1,
+            "redundant-import-alias": 7,
+            "unchecked-type-assertion": 14,
+            "unhandled-error": 4,
+            "unnecessary-stmt": 1,
+            "unsecure-url-scheme": 2,
+            "unused-parameter": 2,
+            "use-any": 28,
+            "use-waitgroup-go": 1,
+            "var-naming": 9
+          }
+        }
+      }
+    },
+    {
+      "name": "btree",
+      "revision": "aeba20f7a1e1315badec4eca4fdc9f754f5f880a",
+      "operations": {
+        "analyze": {
+          "exit_code": 0,
+          "digest": "7c98e54fe62d0828cc096acf2baff9b0cdd5a4059053acf1d0e50112ff8612ce",
+          "findings": 0
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "fa8155c827f84360460abb383fb0a1003a88a4579d5a328bbcff30509a808647",
+          "findings": 5
+        },
+        "lint": {
+          "exit_code": 1,
+          "digest": "33e4292417b9c7ce39bea68f04c14a50533c229ba05349f4ccb46294adb106fe",
+          "findings": 354,
+          "by_code": {
+            "add-constant": 7,
+            "bare-return": 26,
+            "call-to-gc": 2,
+            "cognitive-complexity": 23,
+            "confusing-results": 2,
+            "cyclomatic": 6,
+            "cyclomatic-complexity": 6,
+            "early-return": 2,
+            "empty-lines": 12,
+            "epoch-naming": 1,
+            "exported": 66,
+            "flag-parameter": 7,
+            "function-length": 2,
+            "increment-decrement": 2,
+            "indent-error-flow": 6,
+            "line-length-limit": 46,
+            "max-parameters": 4,
+            "modifies-parameter": 24,
+            "modifies-value-receiver": 2,
+            "no-else-after-return": 6,
+            "no-init": 1,
+            "no-naked-return": 26,
+            "no-package-var": 7,
+            "optimize-operands-order": 3,
+            "package-comments": 1,
+            "redefines-builtin-id": 8,
+            "redundant-build-tag": 3,
+            "superfluous-else": 6,
+            "unchecked-type-assertion": 34,
+            "unnecessary-stmt": 6,
+            "use-any": 1,
+            "use-waitgroup-go": 6
+          }
+        }
+      }
+    },
+    {
+      "name": "golang-lru",
+      "revision": "6699eecd8340679399f4c1d62654e51eee683061",
+      "operations": {
+        "analyze": {
+          "exit_code": 0,
+          "digest": "7c98e54fe62d0828cc096acf2baff9b0cdd5a4059053acf1d0e50112ff8612ce",
+          "findings": 0
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "ff418447e2f41d8255d1fd4ea8e29a9809355acec3b5b70ddaffe7a10dc8c85f",
+          "findings": 11
+        },
+        "lint": {
+          "exit_code": 1,
+          "digest": "48d8416904e7f5e708c127717922131b18cb9ea9d545c19d2d20def069d8f066",
+          "findings": 317,
+          "by_code": {
+            "add-constant": 26,
+            "bare-return": 16,
+            "bool-literal-in-expr": 4,
+            "cognitive-complexity": 24,
+            "confusing-naming": 2,
+            "cyclomatic": 15,
+            "cyclomatic-complexity": 15,
+            "empty-lines": 11,
+            "error-strings": 8,
+            "exported": 31,
+            "flag-parameter": 2,
+            "function-length": 4,
+            "line-length-limit": 28,
+            "modifies-parameter": 20,
+            "nested-structs": 39,
+            "no-init": 1,
+            "no-naked-return": 16,
+            "optimize-operands-order": 22,
+            "package-comments": 6,
+            "package-directory-mismatch": 6,
+            "redefines-builtin-id": 1,
+            "unhandled-error": 17,
+            "unnecessary-stmt": 2,
+            "unused-receiver": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "bigcache",
+      "revision": "532eb6410aefb749509084c74f56b8313e200f4a",
+      "operations": {
+        "analyze": {
+          "exit_code": 1,
+          "digest": "58eca24d781dd9ec764cb63fe952008634819f2c7438ffabd61a96717d5a74b4",
+          "findings": 1,
+          "by_code": {
+            "dynamic-printf": 1
+          }
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "1365a88c2ab8a2d4606f5a07fc6a4806e80f99b930276c8a667b2a2a03e47bb6",
+          "findings": 25
+        },
+        "lint": {
+          "exit_code": 1,
+          "digest": "145e4cdf4b6a84d23bb01747afc68eedf9ba904600723a478bfb8d4f3bd9972f",
+          "findings": 402,
+          "by_code": {
+            "add-constant": 38,
+            "cognitive-complexity": 11,
+            "comment-spacings": 9,
+            "confusing-naming": 7,
+            "cyclomatic": 1,
+            "cyclomatic-complexity": 1,
+            "datarace": 7,
+            "deep-exit": 3,
+            "empty-lines": 22,
+            "epoch-naming": 1,
+            "error-strings": 28,
+            "exported": 18,
+            "flag-parameter": 1,
+            "get-return": 2,
+            "increment-decrement": 2,
+            "indent-error-flow": 1,
+            "line-length-limit": 150,
+            "modifies-parameter": 4,
+            "modifies-value-receiver": 2,
+            "nested-structs": 6,
+            "no-else-after-return": 1,
+            "no-init": 1,
+            "no-package-var": 14,
+            "optimize-operands-order": 1,
+            "package-comments": 19,
+            "package-directory-mismatch": 1,
+            "package-naming": 1,
+            "range-val-in-closure": 7,
+            "redefines-builtin-id": 8,
+            "redundant-build-tag": 1,
+            "superfluous-else": 2,
+            "unhandled-error": 6,
+            "unnecessary-stmt": 4,
+            "unsecure-url-scheme": 1,
+            "unused-parameter": 7,
+            "unused-receiver": 3,
+            "use-any": 9,
+            "use-waitgroup-go": 2
+          }
+        }
+      }
+    },
+    {
+      "name": "conc",
+      "revision": "5f936abd7ae87036af1f75c95fb9d0daaf00116b",
+      "operations": {
+        "analyze": {
+          "exit_code": 1,
+          "digest": "d71d78dbe1e93ec8c3dab4a254b15b7dc66c9b4f29511ec29457f2b10aad840d",
+          "findings": 1,
+          "by_code": {
+            "context-stored-in-struct": 1
+          }
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "b183b767652cae417b328df9db95de02c0bc8f0aa134aa4192a9a4372f48c020",
+          "findings": 22
+        },
+        "lint": {
+          "exit_code": 1,
+          "digest": "f509280e9deff8408c29efccc8dc5519f293803f7a490cbc8a85a3faf53ea79d",
+          "findings": 261,
+          "by_code": {
+            "add-constant": 1,
+            "cognitive-complexity": 5,
+            "datarace": 8,
+            "empty-lines": 34,
+            "error-naming": 1,
+            "error-strings": 8,
+            "exported": 64,
+            "flag-parameter": 2,
+            "forbidden-call-in-wg-go": 37,
+            "function-length": 9,
+            "import-shadowing": 1,
+            "indent-error-flow": 2,
+            "line-length-limit": 26,
+            "modifies-value-receiver": 2,
+            "nested-structs": 6,
+            "no-else-after-return": 2,
+            "no-package-var": 2,
+            "optimize-operands-order": 1,
+            "package-comments": 11,
+            "package-directory-mismatch": 12,
+            "package-naming": 12,
+            "range-val-in-closure": 8,
+            "redefines-builtin-id": 1,
+            "superfluous-else": 2,
+            "unchecked-type-assertion": 3,
+            "use-waitgroup-go": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "golang-set",
+      "revision": "da03b7639be5170e7b8fc7183b2d4663a4133419",
+      "operations": {
+        "analyze": {
+          "exit_code": 1,
+          "digest": "6f5acffd49bbcebf769b964a56664c32e90b7f166bb5c12f0e1e9315ee351758",
+          "findings": 4,
+          "by_code": {
+            "overwritten-before-use": 4
+          }
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "4796cca63c9ba382c3a5af01de6f30467504daee931f85a67c2560476f2e8110",
+          "findings": 14
+        },
+        "lint": {
+          "exit_code": 1,
+          "digest": "5d8ae8ef11a9078e172ba4811947b77537ff56e06f66e03f24bc44baf2bb7ab9",
+          "findings": 438,
+          "by_code": {
+            "add-constant": 35,
+            "bare-return": 2,
+            "cognitive-complexity": 6,
+            "comment-spacings": 1,
+            "confusing-naming": 3,
+            "cyclomatic": 2,
+            "cyclomatic-complexity": 2,
+            "datarace": 1,
+            "empty-lines": 4,
+            "error-strings": 73,
+            "exported": 77,
+            "flag-parameter": 2,
+            "indent-error-flow": 1,
+            "line-length-limit": 81,
+            "marshal-receiver": 1,
+            "modifies-parameter": 1,
+            "nested-structs": 16,
+            "no-else-after-return": 1,
+            "no-naked-return": 2,
+            "optimize-operands-order": 27,
+            "package-comments": 6,
+            "package-directory-mismatch": 15,
+            "range-val-in-closure": 1,
+            "redundant-build-tag": 3,
+            "superfluous-else": 1,
+            "unchecked-type-assertion": 22,
+            "unhandled-error": 18,
+            "unused-parameter": 18,
+            "use-any": 1,
+            "use-errors-new": 1,
+            "use-waitgroup-go": 14
+          }
+        }
+      }
+    },
+    {
+      "name": "copier",
+      "revision": "c6b47b092d9840406d0abc347e68a28a7b812643",
+      "operations": {
+        "analyze": {
+          "exit_code": 1,
+          "digest": "e0e7beaaa71aac413f117806b92be92a398c4b795be138bbe6eaa0b9a994b771",
+          "findings": 3,
+          "by_code": {
+            "identical-binary-operands": 2,
+            "possible-nil-dereference": 1
+          }
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "d53bae24ae2b909eb2be4d2055aea3d7209b14db695f29b41b4e59c76b0fa39c",
+          "findings": 11
+        },
+        "lint": {
+          "exit_code": 1,
+          "digest": "afeb0e258d7ac76ea20b8009dc2ac45c427d69e252606ad413d6b34f4307ecbe",
+          "findings": 669,
+          "by_code": {
+            "add-constant": 47,
+            "bare-return": 15,
+            "bool-literal-in-expr": 1,
+            "cognitive-complexity": 15,
+            "confusing-naming": 5,
+            "cyclomatic": 13,
+            "cyclomatic-complexity": 13,
+            "empty-lines": 26,
+            "error-strings": 74,
+            "exported": 101,
+            "flag-parameter": 2,
+            "function-length": 8,
+            "indent-error-flow": 4,
+            "line-length-limit": 116,
+            "max-control-nesting": 17,
+            "max-public-structs": 46,
+            "modifies-parameter": 6,
+            "multiline-if-init": 3,
+            "nested-structs": 7,
+            "no-else-after-return": 4,
+            "no-naked-return": 15,
+            "no-package-var": 8,
+            "optimize-operands-order": 29,
+            "package-comments": 2,
+            "package-directory-mismatch": 8,
+            "package-naming": 8,
+            "range-val-address": 2,
+            "superfluous-else": 4,
+            "time-equal": 3,
+            "unchecked-type-assertion": 19,
+            "unexported-naming": 1,
+            "unhandled-error": 1,
+            "unnecessary-stmt": 2,
+            "unused-parameter": 1,
+            "unused-receiver": 1,
+            "use-any": 41,
+            "var-naming": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "goquery",
+      "revision": "50e9856dda907f3e559a3bdcdf6121244bc75a98",
+      "operations": {
+        "analyze": {
+          "exit_code": 0,
+          "digest": "7c98e54fe62d0828cc096acf2baff9b0cdd5a4059053acf1d0e50112ff8612ce",
+          "findings": 0
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "a090524247be55aad68a7f9409bbf74cb43cae1729b801a5164e3a97605d1305",
+          "findings": 25
+        },
+        "lint": {
+          "exit_code": 1,
+          "digest": "99bc858f44dcd88a0f9a9c0232e27c7ea9bdd5f56c0824ac98699ac53543b34c",
+          "findings": 658,
+          "by_code": {
+            "add-constant": 134,
+            "bare-return": 9,
+            "cognitive-complexity": 11,
+            "comment-spacings": 4,
+            "confusing-naming": 2,
+            "cyclomatic": 1,
+            "cyclomatic-complexity": 1,
+            "datarace": 1,
+            "deep-exit": 8,
+            "empty-lines": 44,
+            "error-strings": 40,
+            "exported": 186,
+            "flag-parameter": 4,
+            "import-shadowing": 2,
+            "indent-error-flow": 1,
+            "line-length-limit": 140,
+            "modifies-parameter": 21,
+            "nested-structs": 4,
+            "no-else-after-return": 1,
+            "no-naked-return": 9,
+            "no-package-var": 8,
+            "optimize-operands-order": 4,
+            "package-comments": 10,
+            "package-directory-mismatch": 1,
+            "package-naming": 1,
+            "range-val-address": 1,
+            "range-val-in-closure": 1,
+            "superfluous-else": 1,
+            "unhandled-error": 3,
+            "unnecessary-stmt": 1,
+            "unsecure-url-scheme": 1,
+            "unused-parameter": 3
+          }
+        }
+      }
     }
   ]
 }

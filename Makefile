@@ -17,4 +17,5 @@ corpus-check: build
 
 corpus-update: build
 	go run ./scripts/corpus --mode update --strider "$(STRIDER)" \
-		--html docs/public/benchmark-report/index.html $(CORPUS_FLAGS)
+		--html target/corpus/index.html \
+		--project-html docs/public/benchmark-report/projects $(CORPUS_FLAGS)

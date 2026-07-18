@@ -63,6 +63,26 @@ func TestHTMLRendersEmptyReport(t *testing.T) {
 	}
 }
 
+func TestHTMLRendersOperationTimings(t *testing.T) {
+	var output bytes.Buffer
+	options := HTMLOptions{
+		Title: "Benchmark report",
+		Timings: []HTMLTiming{
+			{Name: "format", DurationMS: 14},
+			{Name: "lint", DurationMS: 287},
+			{Name: "analyze", DurationMS: 903},
+		},
+	}
+	if err := HTMLWithOptions(&output, options, nil); err != nil {
+		t.Fatal(err)
+	}
+	for _, wanted := range[]string{"Operation timings", "format", "14 <small>ms</small>", "903 <small>ms</small>"} {
+		if !strings.Contains(output.String(), wanted) {
+			t.Fatalf("HTML output missing timing %q: %s", wanted, output.String())
+		}
+	}
+}
+
 func TestHTMLResolvesRelativeSourcesAgainstRoot(t *testing.T) {
 	root := t.TempDir()
 	if err := os.WriteFile(

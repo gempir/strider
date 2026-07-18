@@ -90,6 +90,7 @@ type options struct {
 	cachePath string
 	jsonPath string
 	htmlPath string
+	projectHTMLPath string
 }
 
 func main() {
@@ -114,6 +115,12 @@ func parseFlags() options {
 	flag.StringVar(&result.cachePath, "cache", ".benchmark-cache", "checkout cache")
 	flag.StringVar(&result.jsonPath, "json", "target/corpus/report.json", "JSON report output")
 	flag.StringVar(&result.htmlPath, "html", "target/corpus/index.html", "HTML report output")
+	flag.StringVar(
+		&result.projectHTMLPath,
+		"project-html",
+		"",
+		"project HTML report directory (defaults beside --html)",
+	)
 	flag.Parse()
 	return result
 }
@@ -144,6 +151,10 @@ func run(options options) error {
 	started := time.Now()
 	results := report{Passed: true}
 	actual := baseline{Version: schemaVersion}
+	projectHTMLPath := options.projectHTMLPath
+	if projectHTMLPath == "" {
+		projectHTMLPath = filepath.Join(filepath.Dir(options.htmlPath), "projects")
+	}
 	for _, item := range configuration.Projects {
 		checkout, checkoutErr := prepareProject(options.cachePath, item)
 		projectReport := projectResult{
@@ -181,7 +192,7 @@ func run(options options) error {
 				projectReport.Operations = append(projectReport.Operations, observed)
 				projectBaseline.Operations[operation] = observed.signature()
 			}
-			if err := writeProjectReport(options.htmlPath, projectReport, checkout); err != nil {
+			if err := writeProjectReport(projectHTMLPath, projectReport, checkout); err != nil {
 				return err
 			}
 		}
@@ -224,9 +235,9 @@ func readManifest(path string) (manifest, error) {
 	if result.Version != schemaVersion {
 		return result, fmt.Errorf("manifest version %d is unsupported", result.Version)
 	}
-	if len(result.Projects) != 10 {
+	if len(result.Projects) != 25 {
 		return result, fmt.Errorf(
-			"manifest must contain exactly 10 projects, got %d",
+			"manifest must contain exactly 25 projects, got %d",
 			len(result.Projects),
 		)
 	}
@@ -402,9 +413,14 @@ func runOperation(strider, checkout, operation string, budget int) operationResu
 	return result
 }
 
-func writeProjectReport(htmlPath string, project projectResult, sourceRoot string) error {
+func writeProjectReport(htmlRoot string, project projectResult, sourceRoot string) error {
 	diagnostics := make([]diagnosticmodel.Diagnostic, 0)
+	timings := make([]reporter.HTMLTiming, 0, len(project.Operations))
 	for _, operation := range project.Operations {
+		timings = append(
+			timings,
+			reporter.HTMLTiming{Name: operation.Name, DurationMS: operation.DurationMS},
+		)
 		if operation.Name != "lint" && operation.Name != "analyze" {
 			continue
 		}
@@ -413,7 +429,7 @@ func writeProjectReport(htmlPath string, project projectResult, sourceRoot strin
 			diagnostics = append(diagnostics, item)
 		}
 	}
-	path := filepath.Join(filepath.Dir(htmlPath), "projects", project.Name, "index.html")
+	path := filepath.Join(htmlRoot, project.Name, "index.html")
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
@@ -424,7 +440,11 @@ func writeProjectReport(htmlPath string, project projectResult, sourceRoot strin
 	defer file.Close()
 	return reporter.HTMLWithOptions(
 		file,
-		reporter.HTMLOptions{Title: "Strider corpus: " + project.Name, SourceRoot: sourceRoot},
+		reporter.HTMLOptions{
+			Title: "Strider corpus: " + project.Name,
+			SourceRoot: sourceRoot,
+			Timings: timings,
+		},
 		diagnostics,
 	)
 }

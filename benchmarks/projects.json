@@ -60,6 +60,96 @@
       "repository": "https://github.com/hashicorp/go-retryablehttp.git",
       "revision": "fd004584a46724fae09e2f21d7c382e15c893f42",
       "budgets_ms": { "format": 3000, "lint": 5000, "analyze": 15000 }
+    },
+    {
+      "name": "httprouter",
+      "repository": "https://github.com/julienschmidt/httprouter.git",
+      "revision": "484018016424d215c0b87c42f4c9b57d980fbd00",
+      "budgets_ms": { "format": 3000, "lint": 8000, "analyze": 15000 }
+    },
+    {
+      "name": "ksuid",
+      "repository": "https://github.com/segmentio/ksuid.git",
+      "revision": "d33724947fcfba7949906c2b1821e96a1c8d06e7",
+      "budgets_ms": { "format": 3000, "lint": 8000, "analyze": 15000 }
+    },
+    {
+      "name": "ulid",
+      "repository": "https://github.com/oklog/ulid.git",
+      "revision": "96c4edf226ef639c92f96f42c7c2a161ae0e1a66",
+      "budgets_ms": { "format": 3000, "lint": 8000, "analyze": 15000 }
+    },
+    {
+      "name": "godotenv",
+      "repository": "https://github.com/joho/godotenv.git",
+      "revision": "97a2850142438b3c357c1d3439e325181afdcc1d",
+      "budgets_ms": { "format": 3000, "lint": 8000, "analyze": 15000 }
+    },
+    {
+      "name": "envconfig",
+      "repository": "https://github.com/kelseyhightower/envconfig.git",
+      "revision": "7834011875d613aec60c606b52c2b0fe8949fe91",
+      "budgets_ms": { "format": 3000, "lint": 8000, "analyze": 15000 }
+    },
+    {
+      "name": "env",
+      "repository": "https://github.com/caarlos0/env.git",
+      "revision": "a3a36cc60fa222b41957573b94fefa5624dd6365",
+      "budgets_ms": { "format": 3000, "lint": 8000, "analyze": 15000 }
+    },
+    {
+      "name": "jwt",
+      "repository": "https://github.com/golang-jwt/jwt.git",
+      "revision": "1a11d3724e63105d751decf9adbdc90165137b45",
+      "budgets_ms": { "format": 3000, "lint": 10000, "analyze": 15000 }
+    },
+    {
+      "name": "groupcache",
+      "repository": "https://github.com/golang/groupcache.git",
+      "revision": "2c02b8208cf8c02a3e358cb1d9b60950647543fc",
+      "budgets_ms": { "format": 5000, "lint": 12000, "analyze": 20000 }
+    },
+    {
+      "name": "btree",
+      "repository": "https://github.com/google/btree.git",
+      "revision": "aeba20f7a1e1315badec4eca4fdc9f754f5f880a",
+      "budgets_ms": { "format": 3000, "lint": 8000, "analyze": 15000 }
+    },
+    {
+      "name": "golang-lru",
+      "repository": "https://github.com/hashicorp/golang-lru.git",
+      "revision": "6699eecd8340679399f4c1d62654e51eee683061",
+      "budgets_ms": { "format": 3000, "lint": 8000, "analyze": 15000 }
+    },
+    {
+      "name": "bigcache",
+      "repository": "https://github.com/allegro/bigcache.git",
+      "revision": "532eb6410aefb749509084c74f56b8313e200f4a",
+      "budgets_ms": { "format": 5000, "lint": 12000, "analyze": 20000 }
+    },
+    {
+      "name": "conc",
+      "repository": "https://github.com/sourcegraph/conc.git",
+      "revision": "5f936abd7ae87036af1f75c95fb9d0daaf00116b",
+      "budgets_ms": { "format": 3000, "lint": 8000, "analyze": 15000 }
+    },
+    {
+      "name": "golang-set",
+      "repository": "https://github.com/deckarep/golang-set.git",
+      "revision": "da03b7639be5170e7b8fc7183b2d4663a4133419",
+      "budgets_ms": { "format": 3000, "lint": 8000, "analyze": 15000 }
+    },
+    {
+      "name": "copier",
+      "repository": "https://github.com/jinzhu/copier.git",
+      "revision": "c6b47b092d9840406d0abc347e68a28a7b812643",
+      "budgets_ms": { "format": 3000, "lint": 10000, "analyze": 15000 }
+    },
+    {
+      "name": "goquery",
+      "repository": "https://github.com/PuerkitoBio/goquery.git",
+      "revision": "50e9856dda907f3e559a3bdcdf6121244bc75a98",
+      "budgets_ms": { "format": 5000, "lint": 10000, "analyze": 20000 }
     }
   ]
 }

@@ -4,6 +4,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	diagnosticmodel "github.com/gempir/strider/internal/diagnostic"
 )
 
 func TestDigestNormalizesLineEndings(t *testing.T) {
@@ -14,6 +16,32 @@ func TestDigestNormalizesLineEndings(t *testing.T) {
 	}
 	if unix == digest(0, []byte("one\ntwo\n"), []byte("warning\n")) {
 		t.Fatal("exit code did not change digest")
+	}
+}
+
+func TestWriteProjectReportLimitsDetailedDiagnostics(t *testing.T) {
+	root := t.TempDir()
+	diagnostics := make([]diagnosticmodel.Diagnostic, projectReportDiagnosticLimit + 1)
+	for index := range diagnostics {
+		diagnostics[index] = diagnosticmodel.Diagnostic{Code: "example", Message: "finding"}
+	}
+	result := projectResult{
+		Name: "example",
+		Operations: []operationResult{{Name: "lint", Diagnostics: diagnostics}},
+	}
+	if err := writeProjectReport(root, result, ""); err != nil {
+		t.Fatal(err)
+	}
+	contents, err := os.ReadFile(root + "/example/index.html")
+	if err != nil {
+		t.Fatal(err)
+	}
+	page := string(contents)
+	if got := strings.Count(page, `<details class="diagnostic"`); got != projectReportDiagnosticLimit {
+		t.Fatalf("rendered %d diagnostic details, want %d", got, projectReportDiagnosticLimit)
+	}
+	if !strings.Contains(page, "Showing 1000 of 1001 detailed findings") {
+		t.Fatal("project report did not preserve the full diagnostic total")
 	}
 }
 

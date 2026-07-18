@@ -1,0 +1,11 @@
+---
+interface Props {
+  html: string;
+}
+
+const { html } = Astro.props;
+---
+
+<div class="land-terminal">
+  <pre><code set:html={html} /></pre>
+</div>

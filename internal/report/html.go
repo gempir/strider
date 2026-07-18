@@ -172,12 +172,7 @@ func htmlLocation(item diagnostic.Diagnostic) string {
 	return location
 }
 
-func htmlSourceContext(
-	item diagnostic.Diagnostic,
-	root string,
-	cache map[string][]string,
-	missing map[string]bool,
-) []htmlSourceLine {
+func htmlSourceContext(item diagnostic.Diagnostic, root string, cache map[string][]string, missing map[string]bool) []htmlSourceLine {
 	if item.Start.Line <= 0 {
 		return nil
 	}

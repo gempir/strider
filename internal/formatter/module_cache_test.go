@@ -9,11 +9,7 @@ import (
 
 func TestModulePathCacheReusesPositiveLookupConcurrently(t *testing.T) {
 	root := t.TempDir()
-	if err := os.WriteFile(
-		filepath.Join(root, "go.mod"),
-		[]byte("module example.com/first\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/first\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	filename := filepath.Join(root, "nested", "package", "file.go")
@@ -21,11 +17,7 @@ func TestModulePathCacheReusesPositiveLookupConcurrently(t *testing.T) {
 	if got := cache.find(filename); got != "example.com/first" {
 		t.Fatalf("module path = %q, want example.com/first", got)
 	}
-	if err := os.WriteFile(
-		filepath.Join(root, "go.mod"),
-		[]byte("module example.com/changed\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/changed\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -54,11 +46,7 @@ func TestModulePathCacheReusesNegativeLookup(t *testing.T) {
 	if got := cache.find(filename); got != "" {
 		t.Fatalf("module path = %q, want empty", got)
 	}
-	if err := os.WriteFile(
-		filepath.Join(root, "go.mod"),
-		[]byte("module example.com/created-later\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/created-later\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if got := cache.find(filename); got != "" {

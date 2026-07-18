@@ -30,10 +30,7 @@ func TestParseIsLossless(t *testing.T) {
 }
 
 func TestWalkIncludesProductionsAndTokens(t *testing.T) {
-	tree, err := Parse(
-		"fixture.go",
-		[]byte("package p\nfunc F(ok bool) { if ok { return } else { panic(ok) } }\n"),
-	)
+	tree, err := Parse("fixture.go", []byte("package p\nfunc F(ok bool) { if ok { return } else { panic(ok) } }\n"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -147,34 +144,17 @@ func F[T ~int](values []T) (total T) {
 		wantChildren := referenceChildren(node)
 		gotChildren := Children(node)
 		if !slices.Equal(gotChildren, wantChildren) {
-			t.Fatalf(
-				"%s children differ: got %d, want %d",
-				Kind(node),
-				len(gotChildren),
-				len(wantChildren),
-			)
+			t.Fatalf("%s children differ: got %d, want %d", Kind(node), len(gotChildren), len(wantChildren))
 		}
 		wantTokens := referenceNodeTokens(node)
 		gotTokens := NodeTokens(node)
 		if !slices.Equal(gotTokens, wantTokens) {
-			t.Fatalf(
-				"%s tokens differ: got %d, want %d",
-				Kind(node),
-				len(gotTokens),
-				len(wantTokens),
-			)
+			t.Fatalf("%s tokens differ: got %d, want %d", Kind(node), len(gotTokens), len(wantTokens))
 		}
 		wantStart, wantEnd := referenceRange(wantTokens)
 		gotStart, gotEnd := Range(node)
 		if gotStart != wantStart || gotEnd != wantEnd {
-			t.Fatalf(
-				"%s range = %d:%d, want %d:%d",
-				Kind(node),
-				gotStart,
-				gotEnd,
-				wantStart,
-				wantEnd,
-			)
+			t.Fatalf("%s range = %d:%d, want %d:%d", Kind(node), gotStart, gotEnd, wantStart, wantEnd)
 		}
 	}
 
@@ -191,13 +171,10 @@ func F[T ~int](values []T) (total T) {
 	}
 	collectSkipped(tree.Root())
 	gotSkipped := []Node{}
-	Walk(
-		tree.Root(),
-		func(node Node) bool {
-			gotSkipped = append(gotSkipped, node)
-			return Kind(node) != "IfElseStmt"
-		},
-	)
+	Walk(tree.Root(), func(node Node) bool {
+		gotSkipped = append(gotSkipped, node)
+		return Kind(node) != "IfElseStmt"
+	})
 	if !slices.Equal(gotSkipped, wantSkipped) {
 		t.Fatal("walk descendant skipping differs from reflection traversal")
 	}
@@ -278,14 +255,7 @@ var (
 					wantStart,
 					wantEnd := referenceRange(referenceNodeTokens(node))
 					if gotStart != wantStart || gotEnd != wantEnd {
-						t.Fatalf(
-							"%s range = %d:%d, want %d:%d",
-							Kind(node),
-							gotStart,
-							gotEnd,
-							wantStart,
-							wantEnd,
-						)
+						t.Fatalf("%s range = %d:%d, want %d:%d", Kind(node), gotStart, gotEnd, wantStart, wantEnd)
 					}
 				}
 			},
@@ -311,10 +281,7 @@ func TestWalkWithAncestors(t *testing.T) {
 			ancestor := range ancestors {
 				kinds[index] = Kind(ancestor)
 			}
-			if len(kinds) == 0 || kinds[0] != "SourceFile" || !slices.Contains(
-				kinds,
-				"FunctionDecl",
-			) {
+			if len(kinds) == 0 || kinds[0] != "SourceFile" || !slices.Contains(kinds, "FunctionDecl") {
 				t.Fatalf("unexpected ancestors: %v", kinds)
 			}
 			return true
@@ -339,21 +306,15 @@ func TestWalkWithAncestors(t *testing.T) {
 	}
 	collect(tree.Root(), nil)
 	got := []visitRecord{}
-	WalkWithAncestors(
-		tree.Root(),
-		func(node Node, ancestors []Node) bool {
-			got = append(got, visitRecord{node: node, ancestors: append([]Node(nil), ancestors...)})
-			return true
-		},
-	)
+	WalkWithAncestors(tree.Root(), func(node Node, ancestors []Node) bool {
+		got = append(got, visitRecord{node: node, ancestors: append([]Node(nil), ancestors...)})
+		return true
+	})
 	if len(got) != len(want) {
 		t.Fatalf("ancestor walk visits = %d, want %d", len(got), len(want))
 	}
 	for index := range want {
-		if got[index].node != want[index].node || !slices.Equal(
-			got[index].ancestors,
-			want[index].ancestors,
-		) {
+		if got[index].node != want[index].node || !slices.Equal(got[index].ancestors, want[index].ancestors) {
 			t.Fatalf("ancestor walk differs at visit %d (%s)", index, Kind(want[index].node))
 		}
 	}
@@ -370,30 +331,16 @@ func TestWalkWithAncestors(t *testing.T) {
 			if referenceTokenNode(node) {
 				t.Fatalf("production walk visited token %s", Kind(node))
 			}
-			gotProductions = append(
-				gotProductions,
-				visitRecord{node: node, ancestors: append([]Node(nil), ancestors...)},
-			)
+			gotProductions = append(gotProductions, visitRecord{node: node, ancestors: append([]Node(nil), ancestors...)})
 			return true
 		},
 	)
 	if len(gotProductions) != len(wantProductions) {
-		t.Fatalf(
-			"production ancestor walk visits = %d, want %d",
-			len(gotProductions),
-			len(wantProductions),
-		)
+		t.Fatalf("production ancestor walk visits = %d, want %d", len(gotProductions), len(wantProductions))
 	}
 	for index := range wantProductions {
-		if gotProductions[index].node != wantProductions[index].node || !slices.Equal(
-			gotProductions[index].ancestors,
-			wantProductions[index].ancestors,
-		) {
-			t.Fatalf(
-				"production ancestor walk differs at visit %d (%s)",
-				index,
-				Kind(wantProductions[index].node),
-			)
+		if gotProductions[index].node != wantProductions[index].node || !slices.Equal(gotProductions[index].ancestors, wantProductions[index].ancestors) {
+			t.Fatalf("production ancestor walk differs at visit %d (%s)", index, Kind(wantProductions[index].node))
 		}
 	}
 }
@@ -511,12 +458,9 @@ func Sum[T ~int](values []T) (total T) {
 func referenceNodeTokens(node Node) []Token {
 	result := []Token{}
 	referenceCollectTokens(reflect.ValueOf(node), &result)
-	sort.SliceStable(
-		result,
-		func(i, j int) bool {
-			return result[i].Position().Offset < result[j].Position().Offset
-		},
-	)
+	sort.SliceStable(result, func(i, j int) bool {
+		return result[i].Position().Offset < result[j].Position().Offset
+	})
 	return result
 }
 

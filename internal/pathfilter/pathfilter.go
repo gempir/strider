@@ -26,8 +26,8 @@ func Matches(root, filename string, patterns []string) bool {
 	for _, pattern := range patterns {
 		pattern = strings.TrimPrefix(filepath.ToSlash(filepath.Clean(pattern)), "./")
 		if strings.ContainsAny(pattern, "*?[") {
-			matched, _ := doublestar.Match(pattern, relative)
-			if matched {
+			matched, matchErr := doublestar.Match(pattern, relative)
+			if matchErr == nil && matched {
 				return true
 			}
 			continue

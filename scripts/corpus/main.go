@@ -23,7 +23,7 @@ import (
 	reporter "github.com/gempir/strider/internal/report"
 )
 
-const schemaVersion = 2
+const schemaVersion = 1
 
 const projectReportDiagnosticLimit = 1000
 
@@ -110,21 +110,11 @@ func parseFlags() options {
 	flag.StringVar(&result.mode, "mode", "check", "check or update the reviewed baseline")
 	flag.StringVar(&result.strider, "strider", "./strider", "path to the Strider binary")
 	flag.StringVar(&result.manifestPath, "manifest", "benchmarks/projects.json", "corpus manifest")
-	flag.StringVar(
-		&result.baselinePath,
-		"baseline",
-		"benchmarks/baseline.json",
-		"reviewed baseline",
-	)
+	flag.StringVar(&result.baselinePath, "baseline", "benchmarks/baseline.json", "reviewed baseline")
 	flag.StringVar(&result.cachePath, "cache", ".benchmark-cache", "checkout cache")
 	flag.StringVar(&result.jsonPath, "json", "target/corpus/report.json", "JSON report output")
 	flag.StringVar(&result.htmlPath, "html", "target/corpus/index.html", "HTML report output")
-	flag.StringVar(
-		&result.projectHTMLPath,
-		"project-html",
-		"",
-		"project HTML report directory (defaults beside --html)",
-	)
+	flag.StringVar(&result.projectHTMLPath, "project-html", "", "project HTML report directory (defaults beside --html)")
 	flag.Parse()
 	return result
 }
@@ -161,35 +151,16 @@ func run(options options) error {
 	}
 	for _, item := range configuration.Projects {
 		checkout, checkoutErr := prepareProject(options.cachePath, item)
-		projectReport := projectResult{
-			Name: item.Name,
-			Repository: item.Repository,
-			Revision: item.Revision,
-		}
-		projectBaseline := baselineProject{
-			Name: item.Name,
-			Revision: item.Revision,
-			Operations: map[string]signature{},
-		}
+		projectReport := projectResult{Name: item.Name, Repository: item.Repository, Revision: item.Revision}
+		projectBaseline := baselineProject{Name: item.Name, Revision: item.Revision, Operations: map[string]signature{}}
 		if checkoutErr != nil {
 			results.Passed = false
-			projectReport.Operations = append(
-				projectReport.Operations,
-				operationResult{Name: "prepare", Error: checkoutErr.Error()},
-			)
+			projectReport.Operations = append(projectReport.Operations, operationResult{Name: "prepare", Error: checkoutErr.Error()})
 		} else {
 			for _, operation := range[]string{"format", "check"} {
 				observed := runOperation(strider, checkout, operation, item)
-				expectedSignature, found := findExpected(
-					expected,
-					item.Name,
-					item.Revision,
-					operation,
-				)
-				observed.BaselineMatch = options.mode == "update" || (found && reflect.DeepEqual(
-					expectedSignature,
-					observed.signature(),
-				))
+				expectedSignature, found := findExpected(expected, item.Name, item.Revision, operation)
+				observed.BaselineMatch = options.mode == "update" || (found && reflect.DeepEqual(expectedSignature, observed.signature()))
 				if observed.Error != "" || !observed.WithinBudget || !observed.BaselineMatch {
 					results.Passed = false
 				}
@@ -240,10 +211,7 @@ func readManifest(path string) (manifest, error) {
 		return result, fmt.Errorf("manifest version %d is unsupported", result.Version)
 	}
 	if len(result.Projects) != 11 {
-		return result, fmt.Errorf(
-			"manifest must contain exactly 11 projects, got %d",
-			len(result.Projects),
-		)
+		return result, fmt.Errorf("manifest must contain exactly 11 projects, got %d", len(result.Projects))
 	}
 	seen := map[string]bool{}
 	for _, item := range result.Projects {
@@ -290,40 +258,19 @@ func prepareProject(cacheRoot string, item project) (string, error) {
 		return "", err
 	}
 	if _, statErr := os.Stat(filepath.Join(checkout, ".git")); os.IsNotExist(statErr) {
-		if err := command(
-			"",
-			"git",
-			"clone",
-			"--quiet",
-			"--filter=blob:none",
-			"--no-checkout",
-			item.Repository,
-			checkout,
-		); err != nil {
+		if err := command("", "git", "clone", "--quiet", "--filter=blob:none", "--no-checkout", item.Repository, checkout); err != nil {
 			return "", err
 		}
 	}
 	if err := command(checkout, "git", "cat-file", "-e", item.Revision + "^{commit}"); err != nil {
-		if err := command(
-			checkout,
-			"git",
-			"fetch",
-			"--quiet",
-			"--depth",
-			"1",
-			"origin",
-			item.Revision,
-		); err != nil {
+		if err := command(checkout, "git", "fetch", "--quiet", "--depth", "1", "origin", item.Revision); err != nil {
 			return "", err
 		}
 	}
 	if err := command(checkout, "git", "checkout", "--quiet", "--detach", item.Revision); err != nil {
 		return "", err
 	}
-	if err := os.Remove(filepath.Join(checkout, ".strider-corpus.toml")); err != nil && !errors.Is(
-		err,
-		os.ErrNotExist,
-	) {
+	if err := os.Remove(filepath.Join(checkout, ".strider-corpus.toml")); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return "", err
 	}
 	if dirty, err := commandOutput(checkout, "git", "status", "--porcelain"); err != nil {
@@ -342,13 +289,7 @@ func prepareProject(cacheRoot string, item project) (string, error) {
 func command(directory, name string, arguments... string) error {
 	output, err := commandOutput(directory, name, arguments...)
 	if err != nil {
-		return fmt.Errorf(
-			"%s %s: %w\n%s",
-			name,
-			strings.Join(arguments, " "),
-			err,
-			bytes.TrimSpace(output),
-		)
+		return fmt.Errorf("%s %s: %w\n%s", name, strings.Join(arguments, " "), err, bytes.TrimSpace(output))
 	}
 	return nil
 }
@@ -361,27 +302,16 @@ func commandOutput(directory, name string, arguments... string) ([]byte, error) 
 }
 
 func runOperation(strider, checkout, operation string, item project) operationResult {
-	arguments := map[string][]string{
-		"format": {"--no-config", "fmt", "--check"},
-		"check": {"--no-config", "check", "--all", "--format", "json"},
-	}[operation]
+	arguments := map[string][]string{"format": {"--no-config", "fmt", "--check"}, "check": {"--no-config", "check", "--all", "--minimum-severity", "note", "--format", "json"}}[operation]
 	if len(item.FormatExcludes) != 0 {
 		configPath := filepath.Join(checkout, ".strider-corpus.toml")
 		encoded, err := json.Marshal(item.FormatExcludes)
 		if err != nil {
-			return operationResult{
-				Name: operation,
-				BudgetMS: item.BudgetsMS[operation],
-				Error: err.Error(),
-			}
+			return operationResult{Name: operation, BudgetMS: item.BudgetsMS[operation], Error: err.Error()}
 		}
-		contents := []byte("version = 2\n[formatter]\nexcludes = " + string(encoded) + "\n")
+		contents := []byte("version = 1\n[formatter]\nexcludes = " + string(encoded) + "\n")
 		if err := os.WriteFile(configPath, contents, 0o600); err != nil {
-			return operationResult{
-				Name: operation,
-				BudgetMS: item.BudgetsMS[operation],
-				Error: err.Error(),
-			}
+			return operationResult{Name: operation, BudgetMS: item.BudgetsMS[operation], Error: err.Error()}
 		}
 		defer os.Remove(configPath)
 		arguments = append([]string{"--config", configPath}, arguments[1:]...)
@@ -407,21 +337,10 @@ func runOperation(strider, checkout, operation string, item project) operationRe
 		if errors.As(err, &exitError) {
 			exitCode = exitError.ExitCode()
 		} else {
-			return operationResult{
-				Name: operation,
-				DurationMS: duration,
-				BudgetMS: budget,
-				Error: err.Error(),
-			}
+			return operationResult{Name: operation, DurationMS: duration, BudgetMS: budget, Error: err.Error()}
 		}
 	}
-	result := operationResult{
-		Name: operation,
-		ExitCode: exitCode,
-		DurationMS: duration,
-		BudgetMS: budget,
-		WithinBudget: duration <= int64(budget),
-	}
+	result := operationResult{Name: operation, ExitCode: exitCode, DurationMS: duration, BudgetMS: budget, WithinBudget: duration <= int64(budget)}
 	if exitCode > 1 {
 		result.Error = strings.TrimSpace(stderr.String())
 		if result.Error == "" {
@@ -453,10 +372,7 @@ func writeProjectReport(htmlRoot string, project projectResult, sourceRoot strin
 	diagnostics := make([]diagnosticmodel.Diagnostic, 0)
 	timings := make([]reporter.HTMLTiming, 0, len(project.Operations))
 	for _, operation := range project.Operations {
-		timings = append(
-			timings,
-			reporter.HTMLTiming{Name: operation.Name, DurationMS: operation.DurationMS},
-		)
+		timings = append(timings, reporter.HTMLTiming{Name: operation.Name, DurationMS: operation.DurationMS})
 		if operation.Name != "check" {
 			continue
 		}
@@ -473,12 +389,7 @@ func writeProjectReport(htmlRoot string, project projectResult, sourceRoot strin
 	defer file.Close()
 	return reporter.HTMLWithOptions(
 		file,
-		reporter.HTMLOptions{
-			Title: "Strider corpus: " + project.Name,
-			SourceRoot: sourceRoot,
-			Timings: timings,
-			MaxDiagnostics: projectReportDiagnosticLimit,
-		},
+		reporter.HTMLOptions{Title: "Strider corpus: " + project.Name, SourceRoot: sourceRoot, Timings: timings, MaxDiagnostics: projectReportDiagnosticLimit},
 		diagnostics,
 	)
 }
@@ -503,12 +414,7 @@ func nonEmptyLines(value string) int {
 }
 
 func (result operationResult) signature() signature {
-	return signature{
-		ExitCode: result.ExitCode,
-		Digest: result.Digest,
-		Findings: result.Findings,
-		ByCode: result.ByCode,
-	}
+	return signature{ExitCode: result.ExitCode, Digest: result.Digest, Findings: result.Findings, ByCode: result.ByCode}
 }
 
 func findExpected(data baseline, name, revision, operation string) (signature, bool) {
@@ -545,14 +451,8 @@ func writeJSON(path string, value any) error {
 }
 
 func writeConsole(writer io.Writer, results report) {
-	fmt.Fprintln(
-		writer,
-		"Project         Operation  Findings   Time / Budget  Baseline  Performance",
-	)
-	fmt.Fprintln(
-		writer,
-		"--------------- ---------- -------- ---------------- --------- -----------",
-	)
+	fmt.Fprintln(writer, "Project         Operation  Findings   Time / Budget  Baseline  Performance")
+	fmt.Fprintln(writer, "--------------- ---------- -------- ---------------- --------- -----------")
 	for _, project := range results.Projects {
 		for _, operation := range project.Operations {
 			baselineState, performanceState := "PASS", "PASS"
@@ -589,10 +489,7 @@ func writeGitHubSummary(path string, results report) error {
 	defer file.Close()
 	fmt.Fprintln(file, "## Strider open-source corpus")
 	fmt.Fprintln(file)
-	fmt.Fprintln(
-		file,
-		"| Project | Operation | Findings | Time | Budget | Baseline | Performance |",
-	)
+	fmt.Fprintln(file, "| Project | Operation | Findings | Time | Budget | Baseline | Performance |")
 	fmt.Fprintln(file, "| --- | --- | ---: | ---: | ---: | --- | --- |")
 	for _, project := range results.Projects {
 		for _, operation := range project.Operations {

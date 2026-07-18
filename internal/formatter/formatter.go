@@ -9,7 +9,7 @@ import (
 	"github.com/gempir/strider/internal/cst"
 )
 
-const PrintWidth = 100
+const PrintWidth = 180
 
 type Options struct {
 	PrintWidth    int

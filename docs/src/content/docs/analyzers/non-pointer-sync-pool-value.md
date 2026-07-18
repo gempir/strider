@@ -1,9 +1,13 @@
 ---
 title: non-pointer-sync-pool-value
 description: Detect sync.Pool values that allocate while being stored.
+sidebar:
+  badge:
+    text: warning
+    class: severity-indicator severity-warning
 ---
 
-**Default severity:** `warning`
+**Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
 `sync.Pool.Put` accepts an interface. Storing a concrete non-pointer value
 requires boxing it on the heap, adding the allocation the pool is intended to

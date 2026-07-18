@@ -1,9 +1,14 @@
 ---
 title: cyclomatic-complexity
 description: Limit branching complexity in declared functions.
+sidebar:
+  badge:
+    text: note
+    class: severity-indicator severity-note
 ---
 
-**Default severity:** `warning`  
+**Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
+
 **Maximum:** `10`  
 **Configuration:** `enabled`, `severity`, and path `excludes`; maximum remains `10`
 

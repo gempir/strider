@@ -29,16 +29,22 @@ strider check ./...
 strider check --format json ./...
 strider check --format html ./... > check-report.html
 strider check --only format,no-init,invalid-regexp ./...
+strider check --minimum-severity warning ./...
+strider check --summary-only ./...
 strider check --watch ./...
 strider check --list-checks
 strider check --explain invalid-regexp
 ```
 
-The default profile contains 94 checks: formatting, seven style and
-maintainability checks, and 86 correctness and data-flow checks. Use
-`strider check --all` to enable the complete 203-check catalog. `--only` selects
-exactly the named codes and avoids building program information that those
-checks do not need.
+Long options always require two dashes. Every option also has a scoped
+one-character alias, such as `-s warning` for `--minimum-severity warning` and
+`-w` for `--watch`.
+
+The built-in profile selects 118 checks. With the default warning severity
+floor, 96 warning and error checks run; use `--minimum-severity note` to include
+the profile's notes. `strider check --all --minimum-severity note` enables the
+complete 227-check catalog. `--only` selects exactly the named codes and avoids
+building program information that those checks do not need.
 
 Formatting is the `format` check. It reports an unformatted file without
 modifying it and suggests `strider fmt` as the remedy. Strider internally
@@ -70,20 +76,21 @@ current syntax boundary.
 ## Configuration
 
 Strider discovers the nearest `strider.toml` from the current directory upward.
-Version 2 uses one `[checks]` namespace. Every check supports `enabled`,
+Version 1 uses one `[checks]` namespace. Every check supports `enabled`,
 `severity`, and path `excludes`; the formatter exposes print width, visual
 indentation width, line endings, and filesystem exclusions.
 
 ```toml
-version = 2
+version = 1
 color = "auto"
 
 [formatter]
-print-width = 100
+print-width = 180
 max-empty-lines = 1
 
 [checks]
 baseline = "strider-baseline.toml"
+minimum-severity = "warning"
 
 [checks.rules.line-length-limit]
 enabled = true
@@ -93,6 +100,11 @@ severity = "warning"
 severity = "error"
 excludes = ["internal/legacy/**"]
 ```
+
+Checks resolve their built-in or configured severity before applying
+`minimum-severity`. The order is `note < warning < error`, so a rule promoted
+to `error` still runs in an error-only profile and one demoted to `note` does
+not. `--minimum-severity` overrides the configured threshold for one run.
 
 Use `strider --config PATH COMMAND` to select a file explicitly or
 `strider --no-config COMMAND` to run with built-in defaults. Rich terminal

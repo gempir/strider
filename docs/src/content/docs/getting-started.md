@@ -23,11 +23,14 @@ Create `strider.toml` at the repository root. Strider discovers it from the
 current directory or any parent:
 
 ```toml
-version = 2
+version = 1
 
 [formatter]
-print-width = 100
+print-width = 180
 max-empty-lines = 1
+
+[checks]
+minimum-severity = "warning"
 
 [checks.rules.line-length-limit]
 enabled = true
@@ -47,17 +50,21 @@ Run the configured check profile recursively from the current directory:
 strider check
 ```
 
-The default profile contains 94 checks, including formatting. Select individual
-codes when investigating a finding or adopting Strider incrementally:
+The built-in profile selects 118 checks. Its default warning floor runs 96;
+select individual codes when investigating a finding or adopting Strider
+incrementally:
 
 ```sh
 strider check --only format,no-init,invalid-regexp ./...
 ```
 
-Enable the complete 203-check catalog with:
+Use `--minimum-severity warning` or `--minimum-severity error` to run only the
+corresponding policy layers without changing individual rules.
+
+Enable the complete 227-check catalog, including notes, with:
 
 ```sh
-strider check --all ./...
+strider check --all --minimum-severity note ./...
 ```
 
 `check` is read-only. If the `format` check reports a file, format it with:

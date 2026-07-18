@@ -4,15 +4,15 @@ description: Configure Strider's formatter, unified checks, exclusions, severiti
 ---
 
 Strider reads project settings from one strict TOML file named `strider.toml`.
-Version 2 has one `[checks]` namespace for formatting, maintainability, and
+Version 1 has one `[checks]` namespace for formatting, maintainability, and
 correctness diagnostics, while `[formatter]` controls rendered source.
 
 ```toml
-version = 2
+version = 1
 color = "auto"
 
 [formatter]
-print-width = 100
+print-width = 180
 indent-width = 4
 max-empty-lines = 1
 end-of-line = "lf"
@@ -22,6 +22,7 @@ excludes = ["internal/generated/**"]
 excludes = ["testdata/**"]
 baseline = "strider-baseline.toml"
 baseline-variant = "loose"
+minimum-severity = "warning"
 
 [checks.rules.format]
 severity = "warning"
@@ -65,9 +66,8 @@ discovery quietly falls back to defaults when no file exists.
 
 ## Version and strict validation
 
-The canonical configuration version is `2`. New files should declare it
-explicitly. Earlier version-1 files remain readable for compatibility, but a
-document cannot mix sections from different versions.
+The configuration version is `1`; new files should declare it explicitly.
+There is no alternate or legacy schema.
 
 Strider rejects malformed TOML, unsupported versions, unknown section keys,
 unknown check names, invalid severities, invalid baseline variants, and
@@ -156,7 +156,7 @@ Formatter settings live under `[formatter]`.
 
 | Setting | Type | Default | Accepted values and effect |
 | --- | --- | --- | --- |
-| `print-width` | integer | `100` | Wrap target from `40` through `500` columns. |
+| `print-width` | integer | `180` | Wrap target from `40` through `500` columns. |
 | `indent-width` | integer | `4` | Display width of an indentation tab, from `1` through `16`; output indentation remains tabs. |
 | `max-empty-lines` | integer | `1` | Preserve at most this many consecutive empty lines; any nonnegative value is accepted. |
 | `end-of-line` | string | `"lf"` | `"lf"` or `"crlf"`. |
@@ -176,12 +176,14 @@ Tool-wide settings live under `[checks]`.
 | `excludes` | string list | `[]` | Skip matching files for all checks. |
 | `baseline` | string | unset | Apply this baseline unless the CLI overrides or ignores it. Relative paths resolve from `strider.toml`. |
 | `baseline-variant` | string | `"loose"` | Shape used the next time a baseline is generated: `"loose"` or `"strict"`. |
+| `minimum-severity` | string | `"warning"` | Run only checks whose effective severity is at least `"note"`, `"warning"`, or `"error"`. |
 | `rules` | table | `{}` | Common configuration keyed by any registered check code. |
 
-The default profile contains 94 checks: `format`, seven style and
-maintainability checks, and all 86 package-aware correctness checks. The other
-109 style and maintainability checks are optional. `strider check --all` enables
-all 203 checks.
+The built-in profile selects 118 checks: `format`, seven style and
+maintainability checks, and all 110 package-aware correctness checks. The
+default warning floor runs 96 of them. The other 109 style and maintainability
+checks are optional. `strider check --all --minimum-severity note` enables all
+227 checks.
 
 Every code accepts the same three options:
 
@@ -208,6 +210,12 @@ enabled = false
 Changing the severity of an optional check does not implicitly enable it. Set
 `enabled = true` as well, or select it on the CLI. Behavioral thresholds remain
 part of each check's contract and are not yet generally configurable.
+
+Strider resolves selection and each rule's severity before applying
+`minimum-severity`, using `note < warning < error`. A note promoted to error is
+therefore included in an error-only run; an error demoted to note is excluded
+from a warning-only run. Explicit `--only` and `--all` selection still respects
+the minimum. Override it for one command with `--minimum-severity`.
 
 Strider may satisfy selected checks from source text, syntax, type information,
 or control-flow data. These capabilities are internal scheduling details: they

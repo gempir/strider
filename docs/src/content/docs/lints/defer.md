@@ -1,10 +1,16 @@
 ---
 title: defer
 description: Detect call and return-value mistakes in defer statements.
+sidebar:
+  badge:
+    text: error
+    class: severity-indicator severity-error
 ---
 
 Purpose: detect defer expressions whose evaluation or return values do not
 behave as intended.
+
+**Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
 ## Behavior
 

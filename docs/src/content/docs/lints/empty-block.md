@@ -1,7 +1,13 @@
 ---
 title: empty-block
 description: Detect empty statement blocks that need removal or explanation.
+sidebar:
+  badge:
+    text: warning
+    class: severity-indicator severity-warning
 ---
+
+**Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
 Purpose: catch empty `if` and `else` branches that are usually unfinished code
 or accidental no-ops.

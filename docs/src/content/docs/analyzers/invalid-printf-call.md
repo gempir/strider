@@ -1,9 +1,13 @@
 ---
 title: invalid-printf-call
 description: Detect malformed printf formats and mismatched arguments.
+sidebar:
+  badge:
+    text: error
+    class: severity-indicator severity-error
 ---
 
-**Default severity:** `error`
+**Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
 Printf-style calls interpret a small language of verbs, argument indexes,
 widths, and precisions. This check validates constant formats against the

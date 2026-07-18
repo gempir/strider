@@ -1,9 +1,13 @@
 ---
 title: unchecked-rows-error
 description: Detect sql.Rows iteration without an Err check.
+sidebar:
+  badge:
+    text: error
+    class: severity-indicator severity-error
 ---
 
-**Default severity:** `warning`
+**Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
 `Rows.Next` returns false both when iteration finishes successfully and when an
 iteration error occurs. Check `Rows.Err` after the loop so driver, network, and

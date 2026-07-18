@@ -73,9 +73,7 @@ func main() {
 }
 
 func generate() ([]byte, error) {
-	configuration := &packages.Config{
-		Mode: packages.NeedName | packages.NeedTypes | packages.NeedTypesSizes | packages.NeedModule,
-	}
+	configuration := &packages.Config{Mode: packages.NeedName | packages.NeedTypes | packages.NeedTypesSizes | packages.NeedModule}
 	loaded, err := packages.Load(configuration, parserPackage)
 	if err != nil {
 		return nil, err
@@ -133,11 +131,7 @@ func generate() ([]byte, error) {
 	return formatted, nil
 }
 
-func discoverNodes(pkg *types.Package, nodeInterface *types.Interface, tokenType types.Type) (
-	[]nodeType,
-	string,
-	error,
-) {
+func discoverNodes(pkg *types.Package, nodeInterface *types.Interface, tokenType types.Type) ([]nodeType, string, error) {
 	names := pkg.Scope().Names()
 	sort.Strings(names)
 	nodes := make([]nodeType, 0, len(names))
@@ -167,55 +161,28 @@ func discoverNodes(pkg *types.Package, nodeInterface *types.Interface, tokenType
 			if name != "nonode" || structure.NumFields() != 0 {
 				return nil, "", fmt.Errorf("unnameable Node implementation %s.%s", pkg.Path(), name)
 			}
-			fmt.Fprintf(
-				&schema,
-				"unexported:%s:value=%t:pointer=%t\n",
-				name,
-				valueImplementation,
-				pointerImplementation,
-			)
+			fmt.Fprintf(&schema, "unexported:%s:value=%t:pointer=%t\n", name, valueImplementation, pointerImplementation)
 			continue
 		}
 
 		current := nodeType{name: name, value: valueImplementation, pointer: pointerImplementation}
-		fmt.Fprintf(
-			&schema,
-			"type:%s:value=%t:pointer=%t\n",
-			name,
-			valueImplementation,
-			pointerImplementation,
-		)
+		fmt.Fprintf(&schema, "type:%s:value=%t:pointer=%t\n", name, valueImplementation, pointerImplementation)
 		for index := 0; index < structure.NumFields(); index++ {
 			field := structure.Field(index)
 			if !field.Exported() {
 				continue
 			}
 			kind := classifyField(field.Type(), nodeInterface, tokenType)
-			typeName := types.TypeString(
-				field.Type(),
-				func(imported *types.Package) string {
-					if imported.Path() == parserPackage {
-						return "gc"
-					}
-					return imported.Name()
-				},
-			)
-			current.fields = append(
-				current.fields,
-				nodeField{name: field.Name(), typeName: typeName, kind: kind},
-			)
+			typeName := types.TypeString(field.Type(), func(imported *types.Package) string {
+				if imported.Path() == parserPackage {
+					return "gc"
+				}
+				return imported.Name()
+			})
+			current.fields = append(current.fields, nodeField{name: field.Name(), typeName: typeName, kind: kind})
 			fmt.Fprintf(&schema, "field:%s:%s:%d\n", field.Name(), typeName, kind)
-			if kind == fieldOpaque && containsNode(
-				field.Type(),
-				nodeInterface,
-				map[types.Type]bool{},
-			) {
-				return nil, "", fmt.Errorf(
-					"unsupported Node-containing field %s.%s (%s)",
-					name,
-					field.Name(),
-					typeName,
-				)
+			if kind == fieldOpaque && containsNode(field.Type(), nodeInterface, map[types.Type]bool{}) {
+				return nil, "", fmt.Errorf("unsupported Node-containing field %s.%s (%s)", name, field.Name(), typeName)
 			}
 		}
 		nodes = append(nodes, current)
@@ -267,11 +234,7 @@ func containsNode(current types.Type, nodeInterface *types.Interface, seen map[t
 		return true
 	case *types.Struct:
 		for index := 0; index < value.NumFields(); index++ {
-			if value.Field(index).Exported() && containsNode(
-				value.Field(index).Type(),
-				nodeInterface,
-				seen,
-			) {
+			if value.Field(index).Exported() && containsNode(value.Field(index).Type(), nodeInterface, seen) {
 				return true
 			}
 		}
@@ -355,10 +318,7 @@ func emitChildren(output *bytes.Buffer, nodes []nodeType, items bool) {
 		fmt.Fprintln(output, "\texit bool")
 		fmt.Fprintln(output, "}](stack []T, node Node, includeTokens bool) ([]T, bool) {")
 	} else {
-		fmt.Fprintln(
-			output,
-			"func appendGeneratedChildren(stack []Node, node Node, reverse bool) ([]Node, bool) {",
-		)
+		fmt.Fprintln(output, "func appendGeneratedChildren(stack []Node, node Node, reverse bool) ([]Node, bool) {")
 	}
 	fmt.Fprintln(output, "\tswitch current := node.(type) {")
 	for _, current := range nodes {
@@ -384,10 +344,7 @@ func emitChildren(output *bytes.Buffer, nodes []nodeType, items bool) {
 }
 
 func emitTokenItems(output *bytes.Buffer, nodes []nodeType) {
-	fmt.Fprintln(
-		output,
-		"func appendGeneratedTokenItemsReverse(stack []tokenWalkItem, node Node) ([]tokenWalkItem, bool) {",
-	)
+	fmt.Fprintln(output, "func appendGeneratedTokenItemsReverse(stack []tokenWalkItem, node Node) ([]tokenWalkItem, bool) {")
 	fmt.Fprintln(output, "\tswitch current := node.(type) {")
 	for _, current := range nodes {
 		if current.value {
@@ -423,11 +380,7 @@ func emitTokenField(output *bytes.Buffer, field nodeField) {
 	switch field.kind {
 	case fieldToken:
 		fmt.Fprintf(output, "\t\tif %s.IsValid() {\n", expression)
-		fmt.Fprintf(
-			output,
-			"\t\t\tstack = append(stack, tokenWalkItem{token: %s, isToken: true})\n",
-			expression,
-		)
+		fmt.Fprintf(output, "\t\t\tstack = append(stack, tokenWalkItem{token: %s, isToken: true})\n", expression)
 		fmt.Fprintln(output, "\t\t}")
 	case fieldTokenPointer:
 		// A pointer to Token is a structural child for compatibility, but its
@@ -503,12 +456,7 @@ func emitField(output *bytes.Buffer, field nodeField, reverse, items bool) {
 		fmt.Fprintln(output, "\t\t}")
 	case fieldInterface:
 		if items {
-			fmt.Fprintf(
-				output,
-				"\t\tif nodePresent(%s) && (includeTokens || !tokenNode(%s)) {\n",
-				expression,
-				expression,
-			)
+			fmt.Fprintf(output, "\t\tif nodePresent(%s) && (includeTokens || !tokenNode(%s)) {\n", expression, expression)
 		} else {
 			fmt.Fprintf(output, "\t\tif nodePresent(%s) {\n", expression)
 		}
@@ -522,10 +470,7 @@ func emitField(output *bytes.Buffer, field nodeField, reverse, items bool) {
 			fmt.Fprintf(output, "\t\tfor _, child := range %s {\n", expression)
 		}
 		if items {
-			fmt.Fprintln(
-				output,
-				"\t\t\tif nodePresent(child) && (includeTokens || !tokenNode(child)) {",
-			)
+			fmt.Fprintln(output, "\t\t\tif nodePresent(child) && (includeTokens || !tokenNode(child)) {")
 		} else {
 			fmt.Fprintln(output, "\t\t\tif nodePresent(child) {")
 		}

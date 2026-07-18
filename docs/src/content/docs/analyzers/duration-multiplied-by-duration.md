@@ -1,9 +1,13 @@
 ---
 title: duration-multiplied-by-duration
 description: Detect multiplication of two time.Duration values.
+sidebar:
+  badge:
+    text: warning
+    class: severity-indicator severity-warning
 ---
 
-**Default severity:** `warning`
+**Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
 `time.Duration` is a scalar count of nanoseconds. Multiplying two duration
 values produces squared time units, which is almost never meaningful. This

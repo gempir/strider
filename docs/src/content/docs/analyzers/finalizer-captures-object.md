@@ -1,9 +1,13 @@
 ---
 title: finalizer-captures-object
 description: Detect finalizers that retain the object they should release.
+sidebar:
+  badge:
+    text: error
+    class: severity-indicator severity-error
 ---
 
-**Default severity:** `warning`
+**Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
 A finalizer closure that captures the finalized object keeps that object
 reachable. The garbage collector can never make the object eligible for

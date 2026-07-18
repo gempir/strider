@@ -1,9 +1,14 @@
 ---
 title: max-parameters
 description: Limit declared functions to five parameters.
+sidebar:
+  badge:
+    text: note
+    class: severity-indicator severity-note
 ---
 
-**Default severity:** `warning`  
+**Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
+
 **Maximum:** `5`  
 **Configuration:** `enabled`, `severity`, and path `excludes`; maximum remains `5`
 

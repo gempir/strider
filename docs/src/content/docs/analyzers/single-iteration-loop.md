@@ -1,9 +1,13 @@
 ---
 title: single-iteration-loop
 description: Detect loops that always exit during their first iteration.
+sidebar:
+  badge:
+    text: warning
+    class: severity-indicator severity-warning
 ---
 
-**Default severity:** `warning`
+**Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
 A loop whose top-level control flow always returns or breaks after a
 conditional branch cannot begin a second iteration. This usually means the

@@ -12,6 +12,39 @@ const (
 	SeverityError Severity = "error"
 )
 
+// ValidSeverity reports whether severity is one of Strider's supported
+// diagnostic levels.
+func ValidSeverity(severity Severity) bool {
+	switch severity {
+	case SeverityNote, SeverityWarning, SeverityError:
+		return true
+	default:
+		return false
+	}
+}
+
+// AtLeast reports whether severity meets minimum. Diagnostic severity is
+// ordered note < warning < error.
+func (severity Severity) AtLeast(minimum Severity) bool {
+	if !ValidSeverity(severity) || !ValidSeverity(minimum) {
+		return false
+	}
+	return severityRank(severity) >= severityRank(minimum)
+}
+
+func severityRank(severity Severity) uint8 {
+	switch severity {
+	case SeverityNote:
+		return 1
+	case SeverityWarning:
+		return 2
+	case SeverityError:
+		return 3
+	default:
+		return 0
+	}
+}
+
 type Safety string
 
 const (

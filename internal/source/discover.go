@@ -128,10 +128,7 @@ func IsGenerated(filename string) (bool, error) {
 	scanner := bufio.NewScanner(limited)
 	for scanner.Scan() {
 		line := bytes.TrimSpace(scanner.Bytes())
-		if bytes.HasPrefix(line, []byte("// Code generated ")) && bytes.HasSuffix(
-			line,
-			[]byte(" DO NOT EDIT."),
-		) {
+		if bytes.HasPrefix(line, []byte("// Code generated ")) && bytes.HasSuffix(line, []byte(" DO NOT EDIT.")) {
 			return true, nil
 		}
 	}

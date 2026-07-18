@@ -61,11 +61,7 @@ type concreteWriter struct {
 
 func renderConcreteWithModule(tree *cst.Tree, options Options, module string) string {
 	layout := newConcreteLayout(tree, module)
-	writer := concreteWriter{
-		lineStart: true,
-		indentWidth: options.IndentWidth,
-		maxEmptyLines: options.MaxEmptyLines,
-	}
+	writer := concreteWriter{lineStart: true, indentWidth: options.IndentWidth, maxEmptyLines: options.MaxEmptyLines}
 	source := tree.Bytes()
 	writer.output.Grow(len(source))
 	comments := tree.Comments()
@@ -77,25 +73,11 @@ func renderConcreteWithModule(tree *cst.Tree, options Options, module string) st
 	for index := 0; index < len(layout.tokens); index++ {
 		current := layout.tokens[index]
 		if current.Ch() == token.EOF {
-			layout.renderCommentsBefore(
-				&writer,
-				comments,
-				&commentIndex,
-				source,
-				&sourceEnd,
-				len(source) + 1,
-			)
+			layout.renderCommentsBefore(&writer, comments, &commentIndex, source, &sourceEnd, len(source) + 1)
 			break
 		}
 		position := current.Position()
-		layout.renderCommentsBefore(
-			&writer,
-			comments,
-			&commentIndex,
-			source,
-			&sourceEnd,
-			position.Offset,
-		)
+		layout.renderCommentsBefore(&writer, comments, &commentIndex, source, &sourceEnd, position.Offset)
 
 		if layout.importStart >= 0 && index == layout.importStart {
 			layout.renderImports(&writer)
@@ -139,15 +121,7 @@ func renderConcreteWithModule(tree *cst.Tree, options Options, module string) st
 			}
 			writer.write(current.Src(), -1)
 			close := layout.softOpen[index]
-			broken := layout.shouldBreak(
-				index,
-				close,
-				writer.column,
-				options.PrintWidth,
-				comments,
-				source,
-				options.MaxEmptyLines > 0,
-			)
+			broken := layout.shouldBreak(index, close, writer.column, options.PrintWidth, comments, source, options.MaxEmptyLines > 0)
 			groups = append(groups, concreteGroup{close:
 			close, broken:
 			broken})
@@ -409,13 +383,7 @@ func (l *concreteLayout) markAnyDelimited(node cst.Node, opens []int, closes []b
 	}
 }
 
-func (l *concreteLayout) markDelimited(
-	node cst.Node,
-	openKind,
-	closeKind token.Token,
-	opens []int,
-	closes []bool,
-) {
+func (l *concreteLayout) markDelimited(node cst.Node, openKind, closeKind token.Token, opens []int, closes []bool) {
 	open, close := -1, -1
 	for _, child := range cst.Children(node) {
 		current, ok := child.(cst.Token)
@@ -512,10 +480,7 @@ func (l *concreteLayout) indexImports() {
 					case spec.PackageName.IsValid():
 						name = spec.PackageName.Src()
 					}
-					l.imports = append(
-						l.imports,
-						concreteImport{name: name, path: spec.ImportPath.Src()},
-					)
+					l.imports = append(l.imports, concreteImport{name: name, path: spec.ImportPath.Src()})
 					return false
 				},
 			)
@@ -663,15 +628,7 @@ func modulePathIn(directory string) (string, bool) {
 	return "", true
 }
 
-func (l *concreteLayout) shouldBreak(
-	open,
-	close,
-	column,
-	width int,
-	comments []cst.Comment,
-	source []byte,
-	preserveEmptyLines bool,
-) bool {
+func (l *concreteLayout) shouldBreak(open, close, column, width int, comments []cst.Comment, source []byte, preserveEmptyLines bool) bool {
 	if close <= open + 1 {
 		return false
 	}
@@ -699,11 +656,7 @@ func (l *concreteLayout) shouldBreak(
 		if current.Ch() == token.SEMICOLON {
 			continue
 		}
-		if l.softOpen[index] == 0 && concreteNeedsSpace(
-			previous,
-			current.Ch(),
-			l.spacedOps[index] || l.spaceBefore[index],
-		) {
+		if l.softOpen[index] == 0 && concreteNeedsSpace(previous, current.Ch(), l.spacedOps[index] || l.spaceBefore[index]) {
 			length++
 		}
 		length += utf8.RuneCountInString(current.Src())
@@ -715,14 +668,7 @@ func (l *concreteLayout) shouldBreak(
 	return column + length > width
 }
 
-func (l *concreteLayout) renderCommentsBefore(
-	writer *concreteWriter,
-	comments []cst.Comment,
-	commentIndex *int,
-	source []byte,
-	sourceEnd *int,
-	beforeOffset int,
-) {
+func (l *concreteLayout) renderCommentsBefore(writer *concreteWriter, comments []cst.Comment, commentIndex *int, source []byte, sourceEnd *int, beforeOffset int) {
 	previousBuildConstraint := false
 	for *commentIndex < len(comments) && comments[*commentIndex].Start < beforeOffset {
 		comment := comments[*commentIndex]

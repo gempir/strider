@@ -1,9 +1,13 @@
 ---
 title: failed-assertion-shadow-read
 description: Detect reads of a shadowing failed type assertion result.
+sidebar:
+  badge:
+    text: warning
+    class: severity-indicator severity-warning
 ---
 
-**Default severity:** `warning`
+**Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
 An `if` initializer such as `if value, ok := value.(T); ok` declares a new
 `value` that remains in scope in the `else` branch. When the assertion fails,

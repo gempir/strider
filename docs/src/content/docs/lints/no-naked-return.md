@@ -1,9 +1,14 @@
 ---
 title: no-naked-return
 description: Require explicit values when returning from named-result functions.
+sidebar:
+  badge:
+    text: note
+    class: severity-indicator severity-note
 ---
 
-**Default severity:** `warning`  
+**Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
+
 **Configuration:** `enabled`, `severity`, and path `excludes`
 
 Reports a bare `return` when the nearest function declaration or function

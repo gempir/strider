@@ -1,9 +1,14 @@
 ---
 title: no-else-after-return
 description: Remove unnecessary nesting after a terminal return.
+sidebar:
+  badge:
+    text: note
+    class: severity-indicator severity-note
 ---
 
-**Default severity:** `warning`  
+**Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
+
 **Configuration:** `enabled`, `severity`, and path `excludes`
 
 Reports an `else` when the final direct statement of the corresponding `if`

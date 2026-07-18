@@ -1,9 +1,13 @@
 ---
 title: decimal-file-mode
 description: Detect decimal file modes that look like octal permissions.
+sidebar:
+  badge:
+    text: warning
+    class: severity-indicator severity-warning
 ---
 
-**Default severity:** `warning`
+**Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
 Unix permission modes are conventionally written in octal. A three-digit
 decimal literal such as `644` passed as `os.FileMode` evaluates to a different

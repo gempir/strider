@@ -16,16 +16,16 @@ changing its public code.
 
 ## Run checks
 
-Run the configured profile, which contains 94 checks by default:
+Run the configured profile. Its default warning floor runs 96 checks:
 
 ```sh
 strider check [PATH]...
 ```
 
-Run the complete 203-check catalog:
+Run the complete 227-check catalog, including notes:
 
 ```sh
-strider check --all [PATH]...
+strider check --all --minimum-severity note [PATH]...
 ```
 
 Run exactly a subset of codes:
@@ -41,8 +41,20 @@ strider check --only format,no-init,invalid-regexp [PATH]...
 ```
 
 Explicit selection is case-insensitive and overrides configured `enabled`
-states while retaining configured severities and path exclusions. It also lets
-Strider avoid preparing capabilities the selected checks do not need.
+states while retaining configured severities, the minimum-severity threshold,
+and path exclusions. It also lets Strider avoid preparing capabilities the
+selected checks do not need.
+
+Run only checks whose effective severity is warning or higher:
+
+```sh
+strider check --minimum-severity warning ./...
+```
+
+Selection happens first, then per-rule severity overrides, then the minimum
+threshold (`note < warning < error`). `--only` and `--all` do not bypass the
+threshold. Checks filtered this way are omitted before Strider plans CST, type,
+or SSA work.
 
 Keep an incremental text-mode session open while editing:
 
@@ -67,7 +79,7 @@ strider check --explain invalid-regexp
 ```
 
 Strider includes one reserved `format` check, 116 style and maintainability
-checks, and 86 correctness and data-flow checks. The reference groups them by
+checks, and 110 correctness and data-flow checks. The reference groups them by
 purpose for browsing:
 
 - [Style and maintainability checks](/lints/)
@@ -76,14 +88,17 @@ purpose for browsing:
 ## Configure checks
 
 Every check code accepts `enabled`, `severity`, and path `excludes` under the
-version-2 `[checks.rules]` namespace:
+version-1 `[checks.rules]` namespace:
 
 ```toml
-version = 2
+version = 1
+
+[checks]
+minimum-severity = "warning"
 
 [checks.rules.format]
 enabled = true
-severity = "warning"
+severity = "note"
 
 [checks.rules.line-length-limit]
 enabled = true
@@ -94,14 +109,15 @@ excludes = ["testdata/golden/**"]
 severity = "error"
 ```
 
-Tool-wide exclusions and the default baseline live under `[checks]`. Formatter
-layout and formatter-only exclusions remain under `[formatter]`. See
+The tool-wide minimum severity, exclusions, and default baseline live under
+`[checks]`. Formatter layout and formatter-only exclusions remain under
+`[formatter]`. See
 [Configuration](/configuration/#checks) for the complete contract.
 
 ## Formatting findings
 
 Formatting participates as code `format`. An unformatted file produces a normal
-warning at the start of the file and suggests the write-focused formatter:
+note at the start of the file and suggests the write-focused formatter:
 
 ```text
 warning[format]: file is not formatted
@@ -118,13 +134,13 @@ by baselines.
 Text is the default human-readable report format:
 
 ```text
-warning[no-init]: replace init with explicit initialization
+note[no-init]: replace init with explicit initialization
   ┌─ main.go:12:1
   │
 12 │ func init() {
    │ ^^^^^^^^^^^^^
 
-found 1 issue: 1 warning
+found 1 issue: 1 note
 ```
 
 Use JSON for integrations or HTML for a self-contained artifact:

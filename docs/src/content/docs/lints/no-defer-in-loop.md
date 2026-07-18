@@ -1,9 +1,14 @@
 ---
 title: no-defer-in-loop
 description: Avoid accumulating deferred calls across loop iterations.
+sidebar:
+  badge:
+    text: warning
+    class: severity-indicator severity-warning
 ---
 
-**Default severity:** `warning`  
+**Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
+
 **Configuration:** `enabled`, `severity`, and path `excludes`
 
 Reports `defer` statements nested inside `for` or `range` loops. Deferred calls

@@ -8,8 +8,8 @@ Run the unit, integration, and package tests with:
 make test
 ```
 
-The open-source corpus checks 10 pinned Go projects with all three Strider
-engines:
+The open-source corpus checks 11 pinned Go projects with Strider's formatter
+and unified check engine:
 
 ```sh
 make corpus-check
@@ -20,9 +20,8 @@ their Go modules outside the timed section, and then runs these commands with
 `GOMAXPROCS=2` and project configuration disabled:
 
 ```sh
-strider fmt --check .
-strider lint --all-rules --format json .
-strider analyze --format json .
+strider --no-config fmt --check .
+strider --no-config check --all --format json .
 ```
 
 Exit codes 0 and 1 are valid outcomes: formatting differences and diagnostics
@@ -49,7 +48,7 @@ ordering bugs, rule regressions, or formatter compatibility issues.
 
 ## Performance budgets
 
-Each project has separate format, lint, and analyze budgets in
+Each project has separate format and check budgets in
 `benchmarks/projects.json`. The corpus check fails when an operation exceeds its
 budget. GitHub Actions writes every measurement and threshold to the job summary
 and uploads the JSON and HTML reports for 30 days.

@@ -65,23 +65,11 @@ func TestHTMLRendersEmptyReport(t *testing.T) {
 
 func TestHTMLRendersOperationTimings(t *testing.T) {
 	var output bytes.Buffer
-	options := HTMLOptions{
-		Title: "Benchmark report",
-		Timings: []HTMLTiming{
-			{Name: "format", DurationMS: 14},
-			{Name: "lint", DurationMS: 287},
-			{Name: "analyze", DurationMS: 903},
-		},
-	}
+	options := HTMLOptions{Title: "Benchmark report", Timings: []HTMLTiming{{Name: "format", DurationMS: 14}, {Name: "lint", DurationMS: 287}, {Name: "analyze", DurationMS: 903}}}
 	if err := HTMLWithOptions(&output, options, nil); err != nil {
 		t.Fatal(err)
 	}
-	for _, wanted := range[]string{
-		"Operation timings",
-		"format",
-		"14 <small>ms</small>",
-		"903 <small>ms</small>",
-	} {
+	for _, wanted := range[]string{"Operation timings", "format", "14 <small>ms</small>", "903 <small>ms</small>"} {
 		if !strings.Contains(output.String(), wanted) {
 			t.Fatalf("HTML output missing timing %q: %s", wanted, output.String())
 		}
@@ -90,11 +78,7 @@ func TestHTMLRendersOperationTimings(t *testing.T) {
 
 func TestHTMLResolvesRelativeSourcesAgainstRoot(t *testing.T) {
 	root := t.TempDir()
-	if err := os.WriteFile(
-		filepath.Join(root, "main.go"),
-		[]byte("package p\nvar answer = 42\nfunc use() {}\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "main.go"), []byte("package p\nvar answer = 42\nfunc use() {}\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	diagnostics := []diagnostic.Diagnostic{
@@ -125,11 +109,7 @@ func TestHTMLLimitsDetailsButSummarizesAllDiagnostics(t *testing.T) {
 		{Code: "rare-rule", Message: "rare one", Severity: diagnostic.SeverityError},
 	}
 	var output bytes.Buffer
-	if err := HTMLWithOptions(
-		&output,
-		HTMLOptions{Title: "Limited report", MaxDiagnostics: 2},
-		diagnostics,
-	); err != nil {
+	if err := HTMLWithOptions(&output, HTMLOptions{Title: "Limited report", MaxDiagnostics: 2}, diagnostics); err != nil {
 		t.Fatal(err)
 	}
 	page := output.String()
@@ -151,10 +131,7 @@ func TestHTMLLimitsDetailsButSummarizesAllDiagnostics(t *testing.T) {
 	if strings.Contains(page, "common two") {
 		t.Fatal("report rendered a diagnostic beyond the detail limit")
 	}
-	if strings.Index(page, "common-rule</code></td><td>2") > strings.Index(
-		page,
-		"rare-rule</code></td><td>1",
-	) {
+	if strings.Index(page, "common-rule</code></td><td>2") > strings.Index(page, "rare-rule</code></td><td>1") {
 		t.Fatal("rule summary was not sorted by descending finding count")
 	}
 }

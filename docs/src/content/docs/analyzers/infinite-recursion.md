@@ -1,9 +1,13 @@
 ---
 title: infinite-recursion
 description: Detect recursive calls with no path to a function exit.
+sidebar:
+  badge:
+    text: error
+    class: severity-indicator severity-error
 ---
 
-**Default severity:** `warning`
+**Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
 A recursive call must have a path that reaches a function exit without making
 that call. Otherwise recursion continues until the goroutine stack exhausts

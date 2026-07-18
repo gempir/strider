@@ -1,9 +1,13 @@
 ---
 title: context-key-type
 description: Detect unsafe context.WithValue key types.
+sidebar:
+  badge:
+    text: warning
+    class: severity-indicator severity-warning
 ---
 
-**Default severity:** `warning`
+**Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
 Context keys must be comparable and should use a dedicated named type to avoid
 collisions between packages. Built-in types and anonymous empty structs risk

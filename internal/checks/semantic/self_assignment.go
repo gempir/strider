@@ -1,0 +1,123 @@
+package semantic
+
+import (
+	"fmt"
+	"go/ast"
+	"go/token"
+	"go/types"
+	"reflect"
+
+	"golang.org/x/tools/go/ssa"
+
+	"github.com/gempir/strider/internal/diagnostic"
+)
+
+type selfAssignmentRule struct {}
+
+func (selfAssignmentRule) Meta() Meta {
+	return Meta{
+		Code: "self-assignment",
+		Summary: "detect assignments that store an expression back into itself",
+		Explanation: "Assigning a side-effect-free expression to the identical destination does nothing and usually indicates a mistaken variable on one side. Expressions with effectful calls or receives are excluded.",
+		GoodExample: "current = next",
+		BadExample: "current = current",
+		DefaultSeverity: diagnostic.SeverityWarning,
+	}
+}
+
+func (selfAssignmentRule) Run(pass *Pass) {
+	purity := newPurityChecker(pass)
+	functions := functionsByObject(pass.Functions)
+	for _, file := range pass.Files {
+		ast.Inspect(
+			file,
+			func(node ast.Node) bool {
+				assignment,
+				ok := node.(*ast.AssignStmt)
+				if !ok || assignment.Tok != token.ASSIGN || len(assignment.Lhs) != len(assignment.Rhs) {
+					return true
+				}
+				for index,
+				left := range assignment.Lhs {
+					right := assignment.Rhs[index]
+					if reflect.TypeOf(left) != reflect.TypeOf(right) || renderAnalysisExpression(pass, left) != renderAnalysisExpression(pass, right) || !sideEffectFreeExpression(
+						pass,
+						purity,
+						functions,
+						left,
+					) || !sideEffectFreeExpression(pass, purity, functions, right) {
+						continue
+					}
+					text := renderAnalysisExpression(pass, left)
+					pass.Report(assignment, fmt.Sprintf("self-assignment of %s has no effect", text))
+				}
+				return true
+			},
+		)
+	}
+}
+
+func functionsByObject(functions []*ssa.Function) map[*types.Func]*ssa.Function {
+	byObject := make(map[*types.Func]*ssa.Function)
+	for _, function := range functions {
+		if function == nil {
+			continue
+		}
+		object, ok := function.Object().(*types.Func)
+		if ok && function.Synthetic == "" {
+			byObject[object] = function
+		}
+	}
+	return byObject
+}
+
+func sideEffectFreeExpression(pass *Pass, purity *purityChecker, functions map[*types.Func]*ssa.Function, expression ast.Expr) bool {
+	safe := true
+	ast.Inspect(
+		expression,
+		func(node ast.Node) bool {
+			if !safe {
+				return false
+			}
+			switch node := node.(type) {
+			case *ast.UnaryExpr:
+				if node.Op == token.ARROW {
+					safe = false
+					return false
+				}
+			case *ast.CallExpr:
+				if pass.TypesInfo.Types[node.Fun].IsType() || pureBuiltinCall(node) {
+					return true
+				}
+				function := calledFunction(pass.TypesInfo, node.Fun)
+				if function == nil {
+					safe = false
+					return false
+				}
+				if knownPureFunction(function) {
+					return true
+				}
+				ssaFunction := functions[function]
+				if ssaFunction == nil || !purity.pure(ssaFunction) {
+					safe = false
+					return false
+				}
+			}
+			return true
+		},
+	)
+	return safe
+}
+
+func pureBuiltinCall(call *ast.CallExpr) bool {
+	identifier, ok := call.Fun.(*ast.Ident)
+	if !ok {
+		return false
+	}
+	switch identifier.Name {
+	case "len", "cap", "real", "imag", "complex", "min", "max":
+		return true
+	default:
+		return false
+	}
+}

@@ -115,18 +115,15 @@ func (file *File) Bytes() ([]byte, error) {
 		}
 		return file.snapshot.source, nil
 	}
-	file.bytesOnce.Do(
-		func() {
-			contents,
-			err := os.ReadFile(file.path)
-			file.bytesMu.Lock()
-			if !file.bytesReleased {
-				file.bytes = contents
-				file.bytesErr = err
-			}
-			file.bytesMu.Unlock()
-		},
-	)
+	file.bytesOnce.Do(func() {
+		contents, err := os.ReadFile(file.path)
+		file.bytesMu.Lock()
+		if !file.bytesReleased {
+			file.bytes = contents
+			file.bytesErr = err
+		}
+		file.bytesMu.Unlock()
+	})
 	file.bytesMu.RLock()
 	defer file.bytesMu.RUnlock()
 	if file.bytesReleased {

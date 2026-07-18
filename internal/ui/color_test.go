@@ -40,4 +40,10 @@ func TestPalettePaintsSemanticStyles(t *testing.T) {
 	if got := palette.Error("error"); got != "\x1b[1;31merror\x1b[0m" {
 		t.Fatalf("unexpected error style %q", got)
 	}
+	if got := palette.Warning("warning"); got != "\x1b[1;33mwarning\x1b[0m" {
+		t.Fatalf("unexpected warning style %q", got)
+	}
+	if got := palette.Note("note"); got != "\x1b[1;34mnote\x1b[0m" {
+		t.Fatalf("unexpected note style %q", got)
+	}
 }

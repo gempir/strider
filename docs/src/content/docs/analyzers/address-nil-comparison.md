@@ -1,9 +1,13 @@
 ---
 title: address-nil-comparison
 description: Detect comparisons between a freshly taken address and nil.
+sidebar:
+  badge:
+    text: warning
+    class: severity-indicator severity-warning
 ---
 
-**Default severity:** `warning`
+**Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
 Taking the address of an addressable value produces a non-nil pointer whenever
 evaluation completes, so comparing that address with `nil` has a fixed result.

@@ -1,12 +1,17 @@
 ---
 title: Formatter
 description: Strider's strict formatting profile, write workflows, and safety model.
+sidebar:
+  badge:
+    text: warning
+    class: severity-indicator severity-warning
 ---
 
-The formatter renders Go source directly from a lossless parse at a configured
-width of 100 columns by default. It is intentionally independent from `gofmt`:
-output remains valid and semantically equivalent Go, but byte-for-byte `gofmt`
-compatibility is not a goal.
+**Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
+
+Gofmt is not strict enough in my opinion, the goal of strider's formatter is decide almost every choice of formatting for you.
+No discussion in the team about it, just accept the formatting. 
+Goal is to be compatible with gofmt as much as possible.
 
 ## Workflows
 
@@ -40,7 +45,7 @@ as every other check.
 ## Style
 
 Strider uses tabs for indentation, LF line endings, one final newline, and a
-100-column print width by default. Imports are sorted into standard-library,
+180-column print width by default. Imports are sorted into standard-library,
 third-party, and current-module groups. Lists that break across lines use one
 item per line and a trailing comma.
 
@@ -52,7 +57,7 @@ Configure the wrap target, visual indentation width, preserved empty-line cap,
 line endings, and excluded filesystem paths in `strider.toml`:
 
 ```toml
-version = 2
+version = 1
 
 [formatter]
 print-width = 120

@@ -8,14 +8,7 @@ import (
 )
 
 func TestGeneratedAccessorsAreCurrent(t *testing.T) {
-	command := exec.Command(
-		"go",
-		"run",
-		"./cmd/gencst",
-		"-check",
-		"-output",
-		"zz_nodes_generated.go",
-	)
+	command := exec.Command("go", "run", "./cmd/gencst", "-check", "-output", "zz_nodes_generated.go")
 	if output, err := command.CombinedOutput(); err != nil {
 		t.Fatalf("generated accessors are stale: %v\n%s", err, output)
 	}
@@ -52,9 +45,7 @@ func TestGeneratedAccessorsPreserveNilAndFallbackBehavior(t *testing.T) {
 	if got, want := NodeTokens(wrapper), NodeTokens(tree.Root()); !slices.Equal(got, want) {
 		t.Fatalf("fallback tokens = %d, want %d", len(got), len(want))
 	}
-	if gotStart, gotEnd := Range(wrapper); gotStart != 0 || gotEnd != len(
-		"package p\nvar value = 1",
-	) {
+	if gotStart, gotEnd := Range(wrapper); gotStart != 0 || gotEnd != len("package p\nvar value = 1") {
 		t.Fatalf("fallback range = %d:%d", gotStart, gotEnd)
 	}
 }
@@ -70,24 +61,16 @@ func TestProductionWalkSkipsTokenValuesAndPointers(t *testing.T) {
 	tests := []struct {
 		name string
 		node Node
-	}{
-		{name: "valid-value", node: valid},
-		{name: "zero-value", node: zero},
-		{name: "valid-pointer", node: &valid},
-		{name: "nil-pointer", node: nilPointer},
-	}
+	}{{name: "valid-value", node: valid}, {name: "zero-value", node: zero}, {name: "valid-pointer", node: &valid}, {name: "nil-pointer", node: nilPointer}}
 	for _, test := range tests {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
 				visited := false
-				WalkProductionsWithAncestors(
-					test.node,
-					func(Node, []Node) bool {
-						visited = true
-						return true
-					},
-				)
+				WalkProductionsWithAncestors(test.node, func(Node, []Node) bool {
+					visited = true
+					return true
+				})
 				if visited {
 					t.Fatal("production walk visited a token")
 				}
@@ -97,13 +80,10 @@ func TestProductionWalkSkipsTokenValuesAndPointers(t *testing.T) {
 
 	wrapper := &fallbackNode{Child: &valid}
 	visits := []Node{}
-	WalkProductionsWithAncestors(
-		wrapper,
-		func(node Node, _ []Node) bool {
-			visits = append(visits, node)
-			return true
-		},
-	)
+	WalkProductionsWithAncestors(wrapper, func(node Node, _ []Node) bool {
+		visits = append(visits, node)
+		return true
+	})
 	if !slices.Equal(visits, []Node{wrapper}) {
 		t.Fatalf("fallback production visits = %#v", visits)
 	}

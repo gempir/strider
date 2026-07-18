@@ -31,12 +31,7 @@ import (
 )
 
 // VeryLongFunctionName formats a value.
-func VeryLongFunctionName(
-	firstParameter string,
-	secondParameter string,
-	thirdParameter string,
-	fourthParameter string,
-) string {
+func VeryLongFunctionName(firstParameter string, secondParameter string, thirdParameter string, fourthParameter string) string {
 	// retain this comment
 	value := strings.TrimSpace(firstParameter)
 	if value == "" {
@@ -79,6 +74,9 @@ func TestFormatOptionsControlWidthAndLineEndings(t *testing.T) {
 }
 
 func TestFormatCapsPreservedEmptyLines(t *testing.T) {
+	if got := DefaultOptions().PrintWidth; got != 180 {
+		t.Fatalf("default print width = %d, want 180", got)
+	}
 	if got := DefaultOptions().MaxEmptyLines; got != 1 {
 		t.Fatalf("default max empty lines = %d, want 1", got)
 	}
@@ -225,7 +223,7 @@ func New(cfg *config.Config, configService app_config.ConfigProvider) (Client, e
 	}
 	formatted := string(result.Source)
 	for _, want := range []string{
-		"\tPushNewBulk(\n\t\tctx context.Context,",
+		"\tPushNewBulk(ctx context.Context, ssoIDs []int32, pushTitle string, pushMessage string, pushAction string, pushAttachmentURL *string, pushExpires *time.Time) (",
 		"\tGet(ctx context.Context) (*Data, error)",
 		"func New(cfg *config.Config, configService app_config.ConfigProvider) (Client, error) {",
 	} {

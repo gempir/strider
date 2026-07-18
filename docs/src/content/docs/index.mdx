@@ -1,0 +1,60 @@
+---
+title: Strider
+description: A strict formatter and unified code checker for Go, in one static binary.
+template: splash
+head:
+  - tag: style
+    content: 'body { overflow-x: hidden; }'
+hero:
+  title: Strider
+  tagline: The ranger for your Go code. One fast, self-contained binary that formats source and hunts down 227 kinds of trouble — before they reach review.
+  image:
+    file: ../../assets/strider.png
+    alt: Strider, the gopher ranger
+  actions:
+    - text: Get started
+      link: /getting-started/
+      icon: right-arrow
+      variant: primary
+    - text: Browse all 227 checks
+      link: /checks/
+      variant: minimal
+---
+
+import Terminal from '../../components/Terminal.astro';
+
+export const checkDemo = `<span class="t-dim">$</span> <span class="t-cmd">strider check ./...</span>
+<span class="t-warn">warning[no-defer-in-loop]</span>: <strong>avoid defer inside loops</strong>
+  <span class="t-path">┌─ internal/server/pool.go:88:9</span>
+   <span class="t-path">│</span>
+88 <span class="t-path">│</span>         defer rows.Close()
+   <span class="t-path">│</span>         <span class="t-warn">^^^^^^^^^^^^^^^^^^</span>
+
+<span class="t-err">error[possible-nil-dereference]</span>: <strong>conn may be nil on this path</strong>
+  <span class="t-path">┌─ internal/server/pool.go:41:2</span>
+   <span class="t-path">│</span>
+41 <span class="t-path">│</span>  conn.Close()
+   <span class="t-path">│</span>  <span class="t-err">^^^^^^^^^^^^</span>
+
+<span class="t-warn">no-defer-in-loop</span>          <span class="t-warn">1</span>
+<span class="t-err">possible-nil-dereference</span>  <span class="t-err">1</span>
+<strong>found 2 issues:</strong> <span class="t-err">1 error</span><strong>,</strong> <span class="t-warn">1 warning</span>`;
+
+<div class="land">
+
+<div class="land-stats">
+  <div class="land-stat"><strong>227</strong><span>checks in one catalog</span></div>
+  <div class="land-stat"><strong>1</strong><span>static binary, zero deps</span></div>
+  <div class="land-stat"><strong><em>458</em> ms</strong><span>to format Kubernetes</span></div>
+  <div class="land-stat"><strong><em>5.7</em> s</strong><span>to check Kubernetes</span></div>
+</div>
+
+<h2 class="land-heading"><span class="land-kicker">One command</span>Diagnostics with the code that caused them</h2>
+
+`strider check` folds formatting drift, style policy, and package-aware
+correctness analysis into a single read-only diagnostic pass. No plugin zoo, no
+tool matrix — files are parsed once and shared across every selected check.
+
+<Terminal html={checkDemo} />
+
+</div>

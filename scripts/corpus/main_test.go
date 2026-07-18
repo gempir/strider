@@ -25,10 +25,7 @@ func TestWriteProjectReportLimitsDetailedDiagnostics(t *testing.T) {
 	for index := range diagnostics {
 		diagnostics[index] = diagnosticmodel.Diagnostic{Code: "example", Message: "finding"}
 	}
-	result := projectResult{
-		Name: "example",
-		Operations: []operationResult{{Name: "check", Diagnostics: diagnostics}},
-	}
+	result := projectResult{Name: "example", Operations: []operationResult{{Name: "check", Diagnostics: diagnostics}}}
 	if err := writeProjectReport(root, result, ""); err != nil {
 		t.Fatal(err)
 	}
@@ -53,13 +50,7 @@ func TestNonEmptyLines(t *testing.T) {
 
 func TestWriteProjectReportIncludesOperationTimings(t *testing.T) {
 	root := t.TempDir()
-	result := projectResult{
-		Name: "example",
-		Operations: []operationResult{
-			{Name: "format", DurationMS: 14},
-			{Name: "check", DurationMS: 1190},
-		},
-	}
+	result := projectResult{Name: "example", Operations: []operationResult{{Name: "format", DurationMS: 14}, {Name: "check", DurationMS: 1190}}}
 	if err := writeProjectReport(root, result, ""); err != nil {
 		t.Fatal(err)
 	}
@@ -78,12 +69,9 @@ func TestManifestRequiresElevenPinnedProjectsAndBudgets(t *testing.T) {
 	path := t.TempDir() + "/projects.json"
 	projects := make([]string, 11)
 	for index := range projects {
-		projects[index] = `{"name":"project-` + string(rune('a' + index)) + `","repository":"https://example.com/project.git","revision":"` + strings.Repeat(
-			"a",
-			40,
-		) + `","budgets_ms":{"format":1,"check":1}}`
+		projects[index] = `{"name":"project-` + string(rune('a' + index)) + `","repository":"https://example.com/project.git","revision":"` + strings.Repeat("a", 40) + `","budgets_ms":{"format":1,"check":1}}`
 	}
-	contents := `{"version":2,"projects":[` + strings.Join(projects, ",") + `]}`
+	contents := `{"version":1,"projects":[` + strings.Join(projects, ",") + `]}`
 	if err := os.WriteFile(path, []byte(contents), 0o600); err != nil {
 		t.Fatal(err)
 	}

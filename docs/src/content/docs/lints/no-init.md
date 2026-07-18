@@ -1,9 +1,14 @@
 ---
 title: no-init
 description: Avoid implicit package initialization.
+sidebar:
+  badge:
+    text: note
+    class: severity-indicator severity-note
 ---
 
-**Default severity:** `warning`  
+**Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
+
 **Configuration:** `enabled`, `severity`, and path `excludes`
 
 Reports package `init` functions. Initialization functions hide side effects

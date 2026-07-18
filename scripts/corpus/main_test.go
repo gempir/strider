@@ -47,9 +47,9 @@ func TestWriteProjectReportIncludesOperationTimings(t *testing.T) {
 	}
 }
 
-func TestManifestRequiresTwentyFivePinnedProjectsAndBudgets(t *testing.T) {
+func TestManifestRequiresTwentySixPinnedProjectsAndBudgets(t *testing.T) {
 	path := t.TempDir() + "/projects.json"
-	projects := make([]string, 25)
+	projects := make([]string, 26)
 	for index := range projects {
 		projects[index] = `{"name":"project-` + string(rune('a' + index)) + `","repository":"https://example.com/project.git","revision":"` + strings.Repeat(
 			"a",

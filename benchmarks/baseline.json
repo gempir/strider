@@ -1419,6 +1419,103 @@
           }
         }
       }
+    },
+    {
+      "name": "kubernetes",
+      "revision": "bd1a1b897340ef91595c36439fed49b9072f8b1d",
+      "operations": {
+        "analyze": {
+          "exit_code": 1,
+          "digest": "88cf94660dceb8f94e89178e35f64946d9a1a5d49480b8f2c1f6d3f978e5eb28",
+          "findings": 215,
+          "by_code": {
+            "context-stored-in-struct": 3,
+            "deprecated-api-usage": 176,
+            "overwritten-before-use": 12,
+            "possible-nil-dereference": 24
+          }
+        },
+        "format": {
+          "exit_code": 1,
+          "digest": "c8c36419a9da2530c64a9a67f6ba5a07225d24dd69982ecb9b559a089d3b24ca",
+          "findings": 657
+        },
+        "lint": {
+          "exit_code": 1,
+          "digest": "9a6cd82ba1301599632e6dda651c2ea1f8dedfd5b67f07e47f3c26390befbe16",
+          "findings": 49702,
+          "by_code": {
+            "add-constant": 3608,
+            "argument-limit": 17,
+            "bare-return": 58,
+            "blank-imports": 1,
+            "bool-literal-in-expr": 13,
+            "cognitive-complexity": 1048,
+            "comment-spacings": 77,
+            "confusing-naming": 53,
+            "confusing-results": 23,
+            "context-as-argument": 5,
+            "cyclomatic": 426,
+            "cyclomatic-complexity": 426,
+            "datarace": 837,
+            "deep-exit": 4,
+            "early-return": 15,
+            "empty-block": 5,
+            "empty-lines": 1413,
+            "error-naming": 2,
+            "error-strings": 1767,
+            "exported": 2436,
+            "flag-parameter": 97,
+            "forbidden-call-in-wg-go": 1,
+            "function-length": 758,
+            "function-result-limit": 24,
+            "identical-switch-branches": 2,
+            "import-alias-naming": 1,
+            "import-shadowing": 351,
+            "increment-decrement": 12,
+            "indent-error-flow": 79,
+            "inefficient-map-lookup": 30,
+            "line-length-limit": 26513,
+            "max-control-nesting": 13,
+            "max-parameters": 145,
+            "max-public-structs": 53,
+            "modifies-parameter": 483,
+            "modifies-value-receiver": 38,
+            "multiline-if-init": 58,
+            "nested-structs": 935,
+            "no-defer-in-loop": 8,
+            "no-else-after-return": 79,
+            "no-init": 19,
+            "no-naked-return": 58,
+            "no-package-var": 833,
+            "optimize-operands-order": 407,
+            "package-comments": 468,
+            "package-directory-mismatch": 8,
+            "range-val-address": 226,
+            "range-val-in-closure": 837,
+            "receiver-naming": 21,
+            "redefines-builtin-id": 89,
+            "redundant-import-alias": 224,
+            "superfluous-else": 84,
+            "time-equal": 4,
+            "unchecked-type-assertion": 1141,
+            "unexported-return": 32,
+            "unhandled-error": 153,
+            "unnecessary-format": 1,
+            "unnecessary-stmt": 131,
+            "unsecure-url-scheme": 32,
+            "unused-parameter": 1700,
+            "unused-receiver": 773,
+            "use-any": 251,
+            "use-errors-new": 211,
+            "use-slices-sort": 43,
+            "use-waitgroup-go": 7,
+            "useless-fallthrough": 2,
+            "var-declaration": 2,
+            "var-naming": 31
+          }
+        }
+      }
     }
   ]
 }

@@ -35,6 +35,8 @@ type project struct {
 	Repository string `json:"repository"`
 	Revision string `json:"revision"`
 	BudgetsMS map[string]int `json:"budgets_ms"`
+	Paths []string `json:"paths,omitempty"`
+	FormatExcludes []string `json:"format_excludes,omitempty"`
 }
 
 type baseline struct {
@@ -175,7 +177,7 @@ func run(options options) error {
 			)
 		} else {
 			for _, operation := range[]string{"format", "lint", "analyze"} {
-				observed := runOperation(strider, checkout, operation, item.BudgetsMS[operation])
+				observed := runOperation(strider, checkout, operation, item)
 				expectedSignature, found := findExpected(
 					expected,
 					item.Name,
@@ -235,9 +237,9 @@ func readManifest(path string) (manifest, error) {
 	if result.Version != schemaVersion {
 		return result, fmt.Errorf("manifest version %d is unsupported", result.Version)
 	}
-	if len(result.Projects) != 25 {
+	if len(result.Projects) != 26 {
 		return result, fmt.Errorf(
-			"manifest must contain exactly 25 projects, got %d",
+			"manifest must contain exactly 26 projects, got %d",
 			len(result.Projects),
 		)
 	}
@@ -316,6 +318,12 @@ func prepareProject(cacheRoot string, item project) (string, error) {
 	if err := command(checkout, "git", "checkout", "--quiet", "--detach", item.Revision); err != nil {
 		return "", err
 	}
+	if err := os.Remove(filepath.Join(checkout, ".strider-corpus.toml")); err != nil && !errors.Is(
+		err,
+		os.ErrNotExist,
+	) {
+		return "", err
+	}
 	if dirty, err := commandOutput(checkout, "git", "status", "--porcelain"); err != nil {
 		return "", err
 	} else if len(bytes.TrimSpace(dirty)) != 0 {
@@ -350,12 +358,31 @@ func commandOutput(directory, name string, arguments... string) ([]byte, error) 
 	return cmd.CombinedOutput()
 }
 
-func runOperation(strider, checkout, operation string, budget int) operationResult {
+func runOperation(strider, checkout, operation string, item project) operationResult {
 	arguments := map[string][]string{
-		"format": {"--no-config", "fmt", "--check", "."},
-		"lint": {"--no-config", "lint", "--all-rules", "--format", "json", "."},
-		"analyze": {"--no-config", "analyze", "--format", "json", "."},
+		"format": {"--no-config", "fmt", "--check"},
+		"lint": {"--no-config", "lint", "--all-rules", "--format", "json"},
+		"analyze": {"--no-config", "analyze", "--format", "json"},
 	}[operation]
+	if operation == "format" && len(item.FormatExcludes) != 0 {
+		configPath := filepath.Join(checkout, ".strider-corpus.toml")
+		encoded, err := json.Marshal(item.FormatExcludes)
+		if err != nil {
+			return operationResult{Name: operation, BudgetMS: item.BudgetsMS[operation], Error: err.Error()}
+		}
+		contents := []byte("version = 1\n[formatter]\nexcludes = " + string(encoded) + "\n")
+		if err := os.WriteFile(configPath, contents, 0o600); err != nil {
+			return operationResult{Name: operation, BudgetMS: item.BudgetsMS[operation], Error: err.Error()}
+		}
+		defer os.Remove(configPath)
+		arguments = append([]string{"--config", configPath}, arguments[1:]...)
+	}
+	paths := item.Paths
+	if len(paths) == 0 {
+		paths = []string{"."}
+	}
+	arguments = append(arguments, paths...)
+	budget := item.BudgetsMS[operation]
 	cmd := exec.Command(strider, arguments...)
 	cmd.Dir = checkout
 	cmd.Env = append(os.Environ(), "GOMAXPROCS=2", "GOWORK=off")

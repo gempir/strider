@@ -3,7 +3,7 @@ title: gorilla/websocket
 description: Detailed Strider findings for gorilla/websocket.
 tableOfContents: false
 sidebar:
-  order: 8
+  order: 3
 ---
 
 Pinned [`gorilla/websocket`](https://github.com/gorilla/websocket) results.

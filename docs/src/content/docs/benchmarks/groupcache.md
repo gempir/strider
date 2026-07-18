@@ -3,7 +3,7 @@ title: golang/groupcache
 description: Detailed Strider findings for golang/groupcache.
 tableOfContents: false
 sidebar:
-  order: 18
+  order: 6
 ---
 
 Pinned [`golang/groupcache`](https://github.com/golang/groupcache) results. Expand any

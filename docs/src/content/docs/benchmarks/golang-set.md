@@ -3,7 +3,7 @@ title: deckarep/golang-set
 description: Detailed Strider findings for deckarep/golang-set.
 tableOfContents: false
 sidebar:
-  order: 23
+  order: 9
 ---
 
 Pinned [`deckarep/golang-set`](https://github.com/deckarep/golang-set) results.

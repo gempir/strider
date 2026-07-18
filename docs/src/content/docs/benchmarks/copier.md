@@ -3,7 +3,7 @@ title: jinzhu/copier
 description: Detailed Strider findings for jinzhu/copier.
 tableOfContents: false
 sidebar:
-  order: 24
+  order: 10
 ---
 
 Pinned [`jinzhu/copier`](https://github.com/jinzhu/copier) results. Expand any finding

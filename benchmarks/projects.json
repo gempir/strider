@@ -14,45 +14,9 @@
       "budgets_ms": { "format": 5000, "lint": 15000, "analyze": 20000 }
     },
     {
-      "name": "mux",
-      "repository": "https://github.com/gorilla/mux.git",
-      "revision": "db9d1d0073d27a0a2d9a8c1bc52aa0af4374d265",
-      "budgets_ms": { "format": 3000, "lint": 6000, "analyze": 15000 }
-    },
-    {
-      "name": "fsnotify",
-      "repository": "https://github.com/fsnotify/fsnotify.git",
-      "revision": "20b1e15ef3c70caeb37ea2bd184f48ef8382669e",
-      "budgets_ms": { "format": 3000, "lint": 5000, "analyze": 15000 }
-    },
-    {
-      "name": "uuid",
-      "repository": "https://github.com/google/uuid.git",
-      "revision": "2d3c2a9cc518326daf99a383f07c4d3c44317e4d",
-      "budgets_ms": { "format": 3000, "lint": 5000, "analyze": 15000 }
-    },
-    {
-      "name": "semver",
-      "repository": "https://github.com/Masterminds/semver.git",
-      "revision": "8b89c86cb53c57cfd5d07c13de12bc4d78954e99",
-      "budgets_ms": { "format": 3000, "lint": 5000, "analyze": 15000 }
-    },
-    {
-      "name": "decimal",
-      "repository": "https://github.com/shopspring/decimal.git",
-      "revision": "3090cc487febd78d6016c2859c66308328a40e99",
-      "budgets_ms": { "format": 3000, "lint": 12000, "analyze": 15000 }
-    },
-    {
       "name": "websocket",
       "repository": "https://github.com/gorilla/websocket.git",
       "revision": "e064f32e3674d9d79a8fd417b5bc06fa5c6cad8f",
-      "budgets_ms": { "format": 3000, "lint": 5000, "analyze": 15000 }
-    },
-    {
-      "name": "color",
-      "repository": "https://github.com/fatih/color.git",
-      "revision": "53d4ce9d5df3891799a447e772308c76e70bad50",
       "budgets_ms": { "format": 3000, "lint": 5000, "analyze": 15000 }
     },
     {
@@ -62,64 +26,16 @@
       "budgets_ms": { "format": 3000, "lint": 5000, "analyze": 15000 }
     },
     {
-      "name": "httprouter",
-      "repository": "https://github.com/julienschmidt/httprouter.git",
-      "revision": "484018016424d215c0b87c42f4c9b57d980fbd00",
-      "budgets_ms": { "format": 3000, "lint": 8000, "analyze": 15000 }
-    },
-    {
       "name": "ksuid",
       "repository": "https://github.com/segmentio/ksuid.git",
       "revision": "d33724947fcfba7949906c2b1821e96a1c8d06e7",
       "budgets_ms": { "format": 3000, "lint": 8000, "analyze": 15000 }
     },
     {
-      "name": "ulid",
-      "repository": "https://github.com/oklog/ulid.git",
-      "revision": "96c4edf226ef639c92f96f42c7c2a161ae0e1a66",
-      "budgets_ms": { "format": 3000, "lint": 8000, "analyze": 15000 }
-    },
-    {
-      "name": "godotenv",
-      "repository": "https://github.com/joho/godotenv.git",
-      "revision": "97a2850142438b3c357c1d3439e325181afdcc1d",
-      "budgets_ms": { "format": 3000, "lint": 8000, "analyze": 15000 }
-    },
-    {
-      "name": "envconfig",
-      "repository": "https://github.com/kelseyhightower/envconfig.git",
-      "revision": "7834011875d613aec60c606b52c2b0fe8949fe91",
-      "budgets_ms": { "format": 3000, "lint": 8000, "analyze": 15000 }
-    },
-    {
-      "name": "env",
-      "repository": "https://github.com/caarlos0/env.git",
-      "revision": "a3a36cc60fa222b41957573b94fefa5624dd6365",
-      "budgets_ms": { "format": 3000, "lint": 8000, "analyze": 15000 }
-    },
-    {
-      "name": "jwt",
-      "repository": "https://github.com/golang-jwt/jwt.git",
-      "revision": "1a11d3724e63105d751decf9adbdc90165137b45",
-      "budgets_ms": { "format": 3000, "lint": 10000, "analyze": 15000 }
-    },
-    {
       "name": "groupcache",
       "repository": "https://github.com/golang/groupcache.git",
       "revision": "2c02b8208cf8c02a3e358cb1d9b60950647543fc",
       "budgets_ms": { "format": 5000, "lint": 12000, "analyze": 20000 }
-    },
-    {
-      "name": "btree",
-      "repository": "https://github.com/google/btree.git",
-      "revision": "aeba20f7a1e1315badec4eca4fdc9f754f5f880a",
-      "budgets_ms": { "format": 3000, "lint": 8000, "analyze": 15000 }
-    },
-    {
-      "name": "golang-lru",
-      "repository": "https://github.com/hashicorp/golang-lru.git",
-      "revision": "6699eecd8340679399f4c1d62654e51eee683061",
-      "budgets_ms": { "format": 3000, "lint": 8000, "analyze": 15000 }
     },
     {
       "name": "bigcache",
@@ -144,12 +60,6 @@
       "repository": "https://github.com/jinzhu/copier.git",
       "revision": "c6b47b092d9840406d0abc347e68a28a7b812643",
       "budgets_ms": { "format": 3000, "lint": 10000, "analyze": 15000 }
-    },
-    {
-      "name": "goquery",
-      "repository": "https://github.com/PuerkitoBio/goquery.git",
-      "revision": "50e9856dda907f3e559a3bdcdf6121244bc75a98",
-      "budgets_ms": { "format": 5000, "lint": 10000, "analyze": 20000 }
     },
     {
       "name": "kubernetes",

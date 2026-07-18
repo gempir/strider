@@ -237,9 +237,9 @@ func readManifest(path string) (manifest, error) {
 	if result.Version != schemaVersion {
 		return result, fmt.Errorf("manifest version %d is unsupported", result.Version)
 	}
-	if len(result.Projects) != 26 {
+	if len(result.Projects) != 11 {
 		return result, fmt.Errorf(
-			"manifest must contain exactly 26 projects, got %d",
+			"manifest must contain exactly 11 projects, got %d",
 			len(result.Projects),
 		)
 	}

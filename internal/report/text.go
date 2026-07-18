@@ -16,13 +16,39 @@ import (
 
 // Text writes rich, source-annotated diagnostics and a severity summary.
 func Text(writer io.Writer, diagnostics []diagnostic.Diagnostic, colorMode ui.ColorMode) error {
+	return TextWithOptions(writer, diagnostics, colorMode, TextOptions{})
+}
+
+// TextOptions controls which parts of a text report are emitted.
+type TextOptions struct {
+	SummaryOnly bool
+}
+
+// TextWithOptions writes diagnostics according to options.
+func TextWithOptions(
+	writer io.Writer,
+	diagnostics []diagnostic.Diagnostic,
+	colorMode ui.ColorMode,
+	options TextOptions,
+) error {
 	palette := ui.NewPalette(writer, colorMode)
 	sources := make(map[string][]string)
 	missing := make(map[string]bool)
 	counts := make(map[diagnostic.Severity]int)
+	for _, item := range diagnostics {
+		counts[item.Severity]++
+	}
+	if options.SummaryOnly {
+		if len(diagnostics) != 0 {
+			if err := writeCheckCounts(writer, diagnostics, palette, false); err != nil {
+				return err
+			}
+		}
+		_, err := fmt.Fprintln(writer, summary(diagnostics, counts, palette))
+		return err
+	}
 
 	for index, item := range diagnostics {
-		counts[item.Severity]++
 		if index != 0 {
 			if _, err := fmt.Fprintln(writer); err != nil {
 				return err
@@ -36,7 +62,7 @@ func Text(writer io.Writer, diagnostics []diagnostic.Diagnostic, colorMode ui.Co
 		_, err := fmt.Fprintln(writer, summary(diagnostics, counts, palette))
 		return err
 	}
-	if err := writeCheckCounts(writer, diagnostics, palette); err != nil {
+	if err := writeCheckCounts(writer, diagnostics, palette, true); err != nil {
 		return err
 	}
 	_, err := fmt.Fprintln(writer, summary(diagnostics, counts, palette))
@@ -49,7 +75,12 @@ type checkCount struct {
 	severity diagnostic.Severity
 }
 
-func writeCheckCounts(writer io.Writer, diagnostics []diagnostic.Diagnostic, palette ui.Palette) error {
+func writeCheckCounts(
+	writer io.Writer,
+	diagnostics []diagnostic.Diagnostic,
+	palette ui.Palette,
+	leadingBlank bool,
+) error {
 	byCode := make(map[string]checkCount)
 	codeWidth := 0
 	for _, item := range diagnostics {
@@ -75,13 +106,20 @@ func writeCheckCounts(writer io.Writer, diagnostics []diagnostic.Diagnostic, pal
 			return entries[left].code < entries[right].code
 		},
 	)
-	if _, err := fmt.Fprintln(writer); err != nil {
-		return err
+	if leadingBlank {
+		if _, err := fmt.Fprintln(writer); err != nil {
+			return err
+		}
 	}
 	for _, entry := range entries {
 		code := fmt.Sprintf("%-*s", codeWidth, entry.code)
 		count := styledSeverity(entry.severity, fmt.Sprintf("%d ×", entry.count), palette)
-		if _, err := fmt.Fprintf(writer, "%s  %s\n", palette.Code(code), count); err != nil {
+		if _, err := fmt.Fprintf(
+			writer,
+			"%s  %s\n",
+			styledSeverity(entry.severity, code, palette),
+			count,
+		); err != nil {
 			return err
 		}
 	}
@@ -96,7 +134,7 @@ func writeDiagnostic(
 	missing map[string]bool,
 ) error {
 	severity := styledSeverity(item.Severity, string(item.Severity), palette)
-	code := palette.Code("[" + item.Code + "]")
+	code := styledSeverity(item.Severity, "[" + item.Code + "]", palette)
 	if _, err := fmt.Fprintf(writer, "%s%s: %s\n", severity, code, palette.Bold(item.Message)); err != nil {
 		return err
 	}

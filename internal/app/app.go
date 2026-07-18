@@ -1034,21 +1034,19 @@ func runLint(
 
 func listLintRules(registry *syntax.Registry, colorMode ui.ColorMode, stdout io.Writer) int {
 	palette := ui.NewPalette(stdout, colorMode)
-	rules := registry.Rules()
-	sort.Slice(rules, func(i, j int) bool {
-		return rules[i].Meta().Code < rules[j].Meta().Code
-	})
-	for _, rule := range rules {
+	entries := make([]ruleListEntry, 0, len(registry.Rules()))
+	for _, rule := range registry.Rules() {
 		meta := rule.Meta()
-		severity := registry.Severity(meta.Code)
-		fmt.Fprintf(
-			stdout,
-			"%s\t%s\t%s\n",
-			palette.Code(meta.Code),
-			colorSeverity(severity, palette),
-			meta.Summary,
+		entries = append(
+			entries,
+			ruleListEntry{
+				code: meta.Code,
+				severity: registry.Severity(meta.Code),
+				summary: meta.Summary,
+			},
 		)
 	}
+	writeRuleList(stdout, palette, entries)
 	return exitSuccess
 }
 
@@ -1068,7 +1066,7 @@ func explainLintRule(
 		fmt.Fprintf(
 			stdout,
 			"%s (%s)\n\n%s\n\n%s\n%s\n\n%s\n%s\n",
-			palette.Code(meta.Code),
+			colorSeverityText(registry.Severity(meta.Code), meta.Code, palette),
 			colorSeverity(registry.Severity(meta.Code), palette),
 			meta.Explanation,
 			palette.Success("Good:"),
@@ -1295,21 +1293,19 @@ func runAnalyze(
 
 func listAnalyzeRules(registry *semantic.Registry, colorMode ui.ColorMode, stdout io.Writer) int {
 	palette := ui.NewPalette(stdout, colorMode)
-	rules := registry.Rules()
-	sort.Slice(rules, func(i, j int) bool {
-		return rules[i].Meta().Code < rules[j].Meta().Code
-	})
-	for _, rule := range rules {
+	entries := make([]ruleListEntry, 0, len(registry.Rules()))
+	for _, rule := range registry.Rules() {
 		meta := rule.Meta()
-		severity := registry.Severity(meta.Code)
-		fmt.Fprintf(
-			stdout,
-			"%s\t%s\t%s\n",
-			palette.Code(meta.Code),
-			colorSeverity(severity, palette),
-			meta.Summary,
+		entries = append(
+			entries,
+			ruleListEntry{
+				code: meta.Code,
+				severity: registry.Severity(meta.Code),
+				summary: meta.Summary,
+			},
 		)
 	}
+	writeRuleList(stdout, palette, entries)
 	return exitSuccess
 }
 
@@ -1329,7 +1325,7 @@ func explainAnalyzeRule(
 		fmt.Fprintf(
 			stdout,
 			"%s (%s)\n\n%s\n\n%s\n%s\n\n%s\n%s\n",
-			palette.Code(meta.Code),
+			colorSeverityText(registry.Severity(meta.Code), meta.Code, palette),
 			colorSeverity(registry.Severity(meta.Code), palette),
 			meta.Explanation,
 			palette.Success("Good:"),
@@ -1392,13 +1388,44 @@ func analyzePaths(
 }
 
 func colorSeverity(severity diagnostic.Severity, palette ui.Palette) string {
+	return colorSeverityText(severity, string(severity), palette)
+}
+
+func colorSeverityText(severity diagnostic.Severity, text string, palette ui.Palette) string {
 	switch severity {
 	case diagnostic.SeverityError:
-		return palette.Error(string(severity))
+		return palette.Error(text)
 	case diagnostic.SeverityNote:
-		return palette.Note(string(severity))
+		return palette.Note(text)
 	default:
-		return palette.Warning(string(severity))
+		return palette.Warning(text)
+	}
+}
+
+type ruleListEntry struct {
+	code string
+	severity diagnostic.Severity
+	summary string
+}
+
+func writeRuleList(writer io.Writer, palette ui.Palette, entries []ruleListEntry) {
+	sort.Slice(entries, func(left, right int) bool {
+		return entries[left].code < entries[right].code
+	})
+	codeWidth := 0
+	for _, entry := range entries {
+		codeWidth = max(codeWidth, len(entry.code))
+	}
+	for _, entry := range entries {
+		code := fmt.Sprintf("%-*s", codeWidth, entry.code)
+		severity := fmt.Sprintf("%-7s", entry.severity)
+		fmt.Fprintf(
+			writer,
+			"%s  %s  %s\n",
+			colorSeverityText(entry.severity, code, palette),
+			colorSeverityText(entry.severity, severity, palette),
+			entry.summary,
+		)
 	}
 }
 

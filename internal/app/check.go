@@ -30,6 +30,7 @@ func runCheck(
 	aliases := map[string]string{
 		"format": "f",
 		"minimum-severity": "s",
+		"summary-only": "q",
 		"watch": "w",
 		"list-checks": "l",
 		"list-rules": "l",
@@ -52,6 +53,13 @@ func runCheck(
 		"s",
 		"",
 		"minimum effective severity: note, warning, or error",
+	)
+	summaryOnly := boolOption(
+		flags,
+		"summary-only",
+		"q",
+		false,
+		"only print per-check counts and the aggregate issue summary",
 	)
 	watch := boolOption(flags, "watch", "w", false, "rerun checks when source changes")
 	listChecks := boolOption(flags, "list-checks", "l", false, "list enabled checks")
@@ -123,6 +131,15 @@ func runCheck(
 	}
 	if *watch && *reportFormat != "text" {
 		printCommandError(stderr, colorMode, "strider check", "--watch requires text report format")
+		return exitError
+	}
+	if *summaryOnly && *reportFormat != "text" {
+		printCommandError(
+			stderr,
+			colorMode,
+			"strider check",
+			"--summary-only requires text report format",
+		)
 		return exitError
 	}
 	if *watch && (*generateBaseline || *removeOutdated || *backupBaseline) {
@@ -212,6 +229,7 @@ func runCheck(
 			registry,
 			runOptions,
 			baselineConfig,
+			*summaryOnly,
 			colorMode,
 			stdout,
 			stderr,
@@ -244,7 +262,7 @@ func runCheck(
 	if handled {
 		return exitSuccess
 	}
-	err = reportCheckDiagnostics(stdout, diagnostics, *reportFormat, colorMode)
+	err = reportCheckDiagnostics(stdout, diagnostics, *reportFormat, *summaryOnly, colorMode)
 	if err != nil {
 		printCommandError(stderr, colorMode, "strider check", "%v", err)
 		return exitError
@@ -263,6 +281,7 @@ type checkWatcher struct {
 	cache *workspace.Cache
 	session *checkengine.Session
 	baseline baselineOptions
+	summaryOnly bool
 	colorMode ui.ColorMode
 	stdout io.Writer
 	stderr io.Writer
@@ -276,6 +295,7 @@ func runCheckWatch(
 	registry *checkengine.Registry,
 	runOptions checkengine.RunOptions,
 	baselineConfig baselineOptions,
+	summaryOnly bool,
 	colorMode ui.ColorMode,
 	stdout,
 	stderr io.Writer,
@@ -290,6 +310,7 @@ func runCheckWatch(
 		cache: workspace.NewCache(workspace.CacheOptions{}),
 		session: session,
 		baseline: baselineConfig,
+		summaryOnly: summaryOnly,
 		colorMode: colorMode,
 		stdout: stdout,
 		stderr: stderr,
@@ -346,10 +367,16 @@ func (watcher *checkWatcher) run() error {
 	}
 	watcher.iteration++
 	fmt.Fprintf(watcher.stdout, "== strider check #%d ==\n", watcher.iteration)
-	if err := reportCheckDiagnostics(watcher.stdout, diagnostics, "text", watcher.colorMode); err != nil {
+	if err := reportCheckDiagnostics(
+		watcher.stdout,
+		diagnostics,
+		"text",
+		watcher.summaryOnly,
+		watcher.colorMode,
+	); err != nil {
 		return err
 	}
-	if len(diagnostics) == 0 {
+	if len(diagnostics) == 0 && !watcher.summaryOnly {
 		fmt.Fprintln(watcher.stdout, "No findings.")
 	}
 	return nil
@@ -371,6 +398,7 @@ func reportCheckDiagnostics(
 	stdout io.Writer,
 	diagnostics []diagnostic.Diagnostic,
 	reportFormat string,
+	summaryOnly bool,
 	colorMode ui.ColorMode,
 ) error {
 	if reportFormat == "json" {
@@ -379,21 +407,27 @@ func reportCheckDiagnostics(
 	if reportFormat == "html" {
 		return checkengine.ReportHTML(stdout, diagnostics)
 	}
+	if summaryOnly {
+		return checkengine.ReportSummary(stdout, diagnostics, colorMode)
+	}
 	return checkengine.ReportText(stdout, diagnostics, colorMode)
 }
 
 func listChecksInRegistry(registry *checkengine.Registry, colorMode ui.ColorMode, stdout io.Writer) int {
 	palette := ui.NewPalette(stdout, colorMode)
+	entries := make([]ruleListEntry, 0, len(registry.Rules()))
 	for _, rule := range registry.Rules() {
 		meta := rule.Meta()
-		fmt.Fprintf(
-			stdout,
-			"%s\t%s\t%s\n",
-			palette.Code(meta.Code),
-			colorSeverity(registry.Severity(meta.Code), palette),
-			meta.Summary,
+		entries = append(
+			entries,
+			ruleListEntry{
+				code: meta.Code,
+				severity: registry.Severity(meta.Code),
+				summary: meta.Summary,
+			},
 		)
 	}
+	writeRuleList(stdout, palette, entries)
 	return exitSuccess
 }
 
@@ -413,7 +447,7 @@ func explainCheck(
 		fmt.Fprintf(
 			stdout,
 			"%s (%s)\n\n%s\n\n%s\n%s\n\n%s\n%s\n",
-			palette.Code(meta.Code),
+			colorSeverityText(registry.Severity(meta.Code), meta.Code, palette),
 			colorSeverity(registry.Severity(meta.Code), palette),
 			meta.Explanation,
 			palette.Success("Good:"),

@@ -38,7 +38,7 @@ func TestTextRendersSourceAnnotationAndSummary(t *testing.T) {
 	for _, wanted := range[]string{
 		"\x1b[",
 		"warning",
-		"[no-init]",
+		"\x1b[1;33m[no-init]\x1b[0m",
 		"┌─",
 		"func init() {}",
 		"^^^^^^^^^^^^^^",
@@ -51,6 +51,21 @@ func TestTextRendersSourceAnnotationAndSummary(t *testing.T) {
 		if !strings.Contains(output.String(), wanted) {
 			t.Fatalf("output missing %q:\n%s", wanted, output.String())
 		}
+	}
+}
+
+func TestTextSummaryOnlySuppressesDetailsAndCheckCounts(t *testing.T) {
+	diagnostics := []diagnostic.Diagnostic{
+		{Code: "note-rule", Message: "detail one", Severity: diagnostic.SeverityNote},
+		{Code: "error-rule", Message: "detail two", Severity: diagnostic.SeverityError},
+	}
+	var output bytes.Buffer
+	if err := TextWithOptions(&output, diagnostics, ui.ColorNever, TextOptions{SummaryOnly: true}); err != nil {
+		t.Fatal(err)
+	}
+	want := "error-rule  1 ×\nnote-rule   1 ×\nfound 2 issues: 1 error, 1 note\n"
+	if output.String() != want {
+		t.Fatalf("summary-only output = %q", output.String())
 	}
 }
 

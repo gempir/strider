@@ -1,5 +1,7 @@
 # Repository instructions
 
+Our own codebase must pass `strider check` without any errors or warnings.
+
 ## JavaScript tooling
 
 - Use Bun exclusively for JavaScript and TypeScript dependencies and scripts.

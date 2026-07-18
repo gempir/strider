@@ -13,6 +13,23 @@ import (
 	"github.com/gempir/strider/internal/workspace"
 )
 
+func listedSeverity(output, code string) (string, bool) {
+	for _, line := range strings.Split(output, "\n") {
+		fields := strings.Fields(line)
+		if len(fields) >= 2 && fields[0] == code {
+			return fields[1], true
+		}
+	}
+	return "", false
+}
+
+func stripTerminalStyles(output string) string {
+	for _, sequence := range[]string{"\x1b[0m", "\x1b[1;31m", "\x1b[1;33m", "\x1b[1;34m"} {
+		output = strings.ReplaceAll(output, sequence, "")
+	}
+	return output
+}
+
 func TestVersion(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	if code := Run([]string{"version"}, strings.NewReader(""), &stdout, &stderr); code != exitSuccess {
@@ -358,10 +375,89 @@ func TestCheckListsOneUnifiedCatalog(t *testing.T) {
 	if got := strings.Count(strings.TrimSpace(stdout.String()), "\n") + 1; got != 227 {
 		t.Fatalf("listed %d checks; want 227", got)
 	}
-	for _, wanted := range[]string{"format\t", "no-init\t", "invalid-regexp\t"} {
-		if !strings.Contains(stdout.String(), wanted) {
+	for _, wanted := range[]string{"format", "no-init", "invalid-regexp"} {
+		if _, ok := listedSeverity(stdout.String(), wanted); !ok {
 			t.Fatalf("unified catalog missing %q", wanted)
 		}
+	}
+}
+
+func TestCheckListAlignsAndColorsRulesBySeverity(t *testing.T) {
+	t.Setenv("FORCE_COLOR", "")
+	t.Setenv("NO_COLOR", "")
+	var stdout, stderr bytes.Buffer
+	code := Run(
+		[]string{
+			"--color",
+			"always",
+			"--no-config",
+			"check",
+			"--minimum-severity",
+			"note",
+			"--only",
+			"address-nil-comparison,format,invalid-regexp",
+			"--list-checks",
+		},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitSuccess || stderr.Len() != 0 {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	for _, wanted := range[]string{
+		"\x1b[1;33maddress-nil-comparison",
+		"\x1b[1;34mformat",
+		"\x1b[1;31minvalid-regexp",
+	} {
+		if !strings.Contains(stdout.String(), wanted) {
+			t.Fatalf("severity color missing %q: %q", wanted, stdout.String())
+		}
+	}
+	plain := strings.TrimSpace(stripTerminalStyles(stdout.String()))
+	severityColumn := -1
+	for _, line := range strings.Split(plain, "\n") {
+		fields := strings.Fields(line)
+		if len(fields) < 3 {
+			t.Fatalf("malformed list row %q", line)
+		}
+		column := strings.Index(line, fields[1])
+		if severityColumn == -1 {
+			severityColumn = column
+		} else if column != severityColumn {
+			t.Fatalf("severity columns do not align:\n%s", plain)
+		}
+	}
+}
+
+func TestCheckSummaryOnly(t *testing.T) {
+	root := t.TempDir()
+	filename := filepath.Join(root, "sample.go")
+	if err := os.WriteFile(filename, []byte("package sample\nfunc init() {}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	code := Run(
+		[]string{"--no-config", "check", "-s", "note", "-o", "no-init", "-q", filename},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitFindings || stdout.String() != "no-init  1 ×\nfound 1 issue: 1 note\n" || stderr.Len() != 0 {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+}
+
+func TestCheckSummaryOnlyRejectsStructuredReports(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(
+		[]string{"--no-config", "check", "--summary-only", "--format", "json"},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitError || !strings.Contains(stderr.String(), "--summary-only requires text") {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 }
 
@@ -373,10 +469,9 @@ func TestCheckDefaultsToWarningMinimumSeverity(t *testing.T) {
 		&stdout,
 		&stderr,
 	)
-	if code != exitSuccess || stderr.Len() != 0 || strings.Contains(stdout.String(), "no-init\t") || !strings.Contains(
-		stdout.String(),
-		"invalid-regexp\terror\t",
-	) {
+	invalidSeverity, invalidListed := listedSeverity(stdout.String(), "invalid-regexp")
+	_, noInitListed := listedSeverity(stdout.String(), "no-init")
+	if code != exitSuccess || stderr.Len() != 0 || noInitListed || !invalidListed || invalidSeverity != "error" {
 		t.Fatalf(
 			"default severity floor: exit %d, stdout %q, stderr %q",
 			code,
@@ -488,13 +583,12 @@ enabled = false
 	if code != exitSuccess || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
-	if strings.Contains(stdout.String(), "format\t") || strings.Contains(
-		stdout.String(),
-		"invalid-regexp\t",
-	) {
+	_, formatListed := listedSeverity(stdout.String(), "format")
+	_, regexpListed := listedSeverity(stdout.String(), "invalid-regexp")
+	if formatListed || regexpListed {
 		t.Fatalf("disabled checks are still listed: %s", stdout.String())
 	}
-	if !strings.Contains(stdout.String(), "no-init\terror\t") {
+	if severity, ok := listedSeverity(stdout.String(), "no-init"); !ok || severity != "error" {
 		t.Fatalf("configured severity is missing: %s", stdout.String())
 	}
 }
@@ -530,10 +624,9 @@ severity = "warning"
 	if code != exitSuccess || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "no-init\terror\t") || strings.Contains(
-		stdout.String(),
-		"suspicious-sleep\t",
-	) {
+	noInitSeverity, noInitListed := listedSeverity(stdout.String(), "no-init")
+	_, sleepListed := listedSeverity(stdout.String(), "suspicious-sleep")
+	if !noInitListed || noInitSeverity != "error" || sleepListed {
 		t.Fatalf("canonical minimum severity selected the wrong checks: %q", stdout.String())
 	}
 
@@ -553,10 +646,9 @@ severity = "warning"
 		&stdout,
 		&stderr,
 	)
-	if code != exitSuccess || !strings.Contains(stdout.String(), "no-init\terror\t") || !strings.Contains(
-		stdout.String(),
-		"suspicious-sleep\twarning\t",
-	) {
+	noInitSeverity, noInitListed = listedSeverity(stdout.String(), "no-init")
+	sleepSeverity, sleepListed := listedSeverity(stdout.String(), "suspicious-sleep")
+	if code != exitSuccess || !noInitListed || noInitSeverity != "error" || !sleepListed || sleepSeverity != "warning" {
 		t.Fatalf(
 			"CLI minimum override: exit %d, stdout %q, stderr %q",
 			code,
@@ -582,11 +674,22 @@ severity = "warning"
 	}
 	for name, test := range map[string]struct {
 		command string
-		included string
-		excluded string
+		includedCode string
+		includedSeverity string
+		excludedCode string
 	}{
-		"lint": {command: "lint", included: "no-init\terror\t", excluded: "invalid-regexp\t"},
-		"analyze": {command: "analyze", included: "invalid-regexp\twarning\t", excluded: "no-init\t"},
+		"lint": {
+			command: "lint",
+			includedCode: "no-init",
+			includedSeverity: "error",
+			excludedCode: "invalid-regexp",
+		},
+		"analyze": {
+			command: "analyze",
+			includedCode: "invalid-regexp",
+			includedSeverity: "warning",
+			excludedCode: "no-init",
+		},
 	} {
 		t.Run(
 			name,
@@ -607,10 +710,11 @@ severity = "warning"
 						stderr.String(),
 					)
 				}
-				if !strings.Contains(stdout.String(), test.included) || strings.Contains(
-					stdout.String(),
-					test.excluded,
-				) {
+				severity,
+				included := listedSeverity(stdout.String(), test.includedCode)
+				_,
+				excluded := listedSeverity(stdout.String(), test.excludedCode)
+				if !included || severity != test.includedSeverity || excluded {
 					t.Fatalf("canonical settings were not scoped: %q", stdout.String())
 				}
 			},
@@ -993,10 +1097,9 @@ func TestLintAllRulesListsCompleteRegistry(t *testing.T) {
 	if got := strings.Count(strings.TrimSpace(stdout.String()), "\n") + 1; got != 116 {
 		t.Fatalf("listed %d rules; want 116", got)
 	}
-	if !strings.Contains(stdout.String(), "marshal-receiver\t") || !strings.Contains(
-		stdout.String(),
-		"multiline-if-init\t",
-	) {
+	_, marshalListed := listedSeverity(stdout.String(), "marshal-receiver")
+	_, multilineListed := listedSeverity(stdout.String(), "multiline-if-init")
+	if !marshalListed || !multilineListed {
 		t.Fatalf("complete registry is missing extended rules: %s", stdout.String())
 	}
 }
@@ -1059,7 +1162,8 @@ func TestAnalyzeInvalidRegexpJSONAndExitCode(t *testing.T) {
 func TestAnalyzeListsRules(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run([]string{"analyze", "--list-rules"}, strings.NewReader(""), &stdout, &stderr)
-	if code != exitSuccess || !strings.Contains(stdout.String(), "invalid-regexp\terror\t") {
+	severity, listed := listedSeverity(stdout.String(), "invalid-regexp")
+	if code != exitSuccess || !listed || severity != "error" {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 }

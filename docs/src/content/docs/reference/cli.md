@@ -61,6 +61,7 @@ warning floor runs 96. `--all --minimum-severity note` enables the complete
 | `-o, --only CODE` | Run exactly these check codes. Repeatable, comma-separated, and case-insensitive. |
 | `-a, --all` | Enable every built-in check. Mutually exclusive with `--only`. |
 | `-s, --minimum-severity note\|warning\|error` | Run only checks at or above this effective severity; overrides configuration. |
+| `-q, --summary-only` | Print only per-check counts and the final aggregate issue summary. Text reports only. |
 | `-l, --list-checks` | List the effective selected registry and severity, then exit. |
 | `-e, --explain CODE` | Explain one selected check and show its effective severity, then exit. |
 | `-w, --watch` | Keep a text-mode incremental session open and rerun changed generations. |
@@ -134,6 +135,9 @@ Text diagnostics use a rich, source-annotated layout with a severity-colored
 heading, file location, source line, underlined span, notes or suggested
 remedies, and an aggregate severity summary. Redirected output remains plain
 under the default `auto` mode.
+
+Severity-bearing rule codes use the same color as their severity: red for
+errors, yellow for warnings, and blue for notes.
 
 ## Exit codes
 

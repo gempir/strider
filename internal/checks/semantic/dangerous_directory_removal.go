@@ -8,15 +8,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type dangerousDirectoryRemovalRule struct {}
+type dangerousDirectoryRemovalRule struct{}
 
 func (dangerousDirectoryRemovalRule) Meta() Meta {
 	return Meta{
-		Code: "dangerous-directory-removal",
-		Summary: "detect removal of whole system or user directories",
-		Explanation: "Passing the direct result of os.TempDir or a user directory helper to os.RemoveAll deletes the entire shared directory rather than an application-owned child. This is commonly caused by confusing TempDir with a directory-creation helper or forgetting to append a suffix.",
-		GoodExample: "directory, err := os.MkdirTemp(os.TempDir(), `app-*`); defer os.RemoveAll(directory)",
-		BadExample: "directory := os.TempDir(); defer os.RemoveAll(directory)",
+		Code:            "dangerous-directory-removal",
+		Summary:         "detect removal of whole system or user directories",
+		Explanation:     "Passing the direct result of os.TempDir or a user directory helper to os.RemoveAll deletes the entire shared directory rather than an application-owned child. This is commonly caused by confusing TempDir with a directory-creation helper or forgetting to append a suffix.",
+		GoodExample:     "directory, err := os.MkdirTemp(os.TempDir(), `app-*`); defer os.RemoveAll(directory)",
+		BadExample:      "directory := os.TempDir(); defer os.RemoveAll(directory)",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }

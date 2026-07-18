@@ -33,7 +33,7 @@ func equivalentTrees(originalTree, formattedTree *cst.Tree) error {
 
 type syntaxFingerprint struct {
 	imports []string
-	syntax []byte
+	syntax  []byte
 }
 
 func concreteFingerprint(tree *cst.Tree) syntaxFingerprint {
@@ -52,7 +52,7 @@ func concreteFingerprint(tree *cst.Tree) syntaxFingerprint {
 				declaration,
 				func(child cst.Node) bool {
 					spec,
-					isSpec := child.(*cst.ImportSpec)
+						isSpec := child.(*cst.ImportSpec)
 					if !isSpec {
 						return true
 					}
@@ -63,7 +63,7 @@ func concreteFingerprint(tree *cst.Tree) syntaxFingerprint {
 					case spec.PackageName.IsValid():
 						name = spec.PackageName.Src()
 					}
-					imports = append(imports, name + "\x00" + spec.ImportPath.Src())
+					imports = append(imports, name+"\x00"+spec.ImportPath.Src())
 					return false
 				},
 			)

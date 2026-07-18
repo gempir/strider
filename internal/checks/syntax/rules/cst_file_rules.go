@@ -15,7 +15,7 @@ import (
 
 var (
 	validFilenamePattern = regexp.MustCompile(`^[_A-Za-z0-9][_A-Za-z0-9-]*\.go$`)
-	validPackagePattern = regexp.MustCompile(`^[a-z][a-z0-9]*$`)
+	validPackagePattern  = regexp.MustCompile(`^[a-z][a-z0-9]*$`)
 )
 
 func (a *cstAnalyzer) checkFilenameAndPackage() {
@@ -92,7 +92,7 @@ func concreteImportHasComment(tree *cst.Tree, spec *cst.ImportSpec) bool {
 	endPosition := tree.Position(end)
 	source := tree.Bytes()
 	for _, comment := range tree.Comments() {
-		if comment.Line == endPosition.Line || (comment.End <= start && strings.Count(string(source[comment.End:start]), "\n") <= 1 && comment.Line + 1 >= startPosition.Line) {
+		if comment.Line == endPosition.Line || (comment.End <= start && strings.Count(string(source[comment.End:start]), "\n") <= 1 && comment.Line+1 >= startPosition.Line) {
 			return true
 		}
 	}
@@ -111,7 +111,7 @@ func (a *cstAnalyzer) checkLinesAndComments() {
 				a.reportRange(
 					"bidirectional-control-character",
 					offset,
-					offset + width,
+					offset+width,
 					fmt.Sprintf("source contains invisible bidirectional control character U+%04X", character),
 				)
 			}
@@ -123,7 +123,7 @@ func (a *cstAnalyzer) checkLinesAndComments() {
 		for _, line := range lines {
 			count := utf8.RuneCount(line)
 			if count > 80 {
-				a.reportRange("line-length-limit", offset, offset + len(line), fmt.Sprintf("line has %d runes; maximum is 80", count))
+				a.reportRange("line-length-limit", offset, offset+len(line), fmt.Sprintf("line has %d runes; maximum is 80", count))
 			}
 			offset += len(line) + 1
 		}
@@ -165,7 +165,7 @@ func (a *cstAnalyzer) checkPackageComment(comments []cst.Comment) {
 		}
 		text := strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(comment.Text, "//"), "/*"))
 		text = strings.TrimSpace(strings.TrimSuffix(text, "*/"))
-		if strings.HasPrefix(text, "Package " + nameToken.Src()) || strings.HasPrefix(strings.TrimPrefix(text, "Package "), nameToken.Src()) {
+		if strings.HasPrefix(text, "Package "+nameToken.Src()) || strings.HasPrefix(strings.TrimPrefix(text, "Package "), nameToken.Src()) {
 			return
 		}
 	}

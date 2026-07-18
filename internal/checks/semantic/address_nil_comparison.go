@@ -8,15 +8,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type addressNilComparisonRule struct {}
+type addressNilComparisonRule struct{}
 
 func (addressNilComparisonRule) Meta() Meta {
 	return Meta{
-		Code: "address-nil-comparison",
-		Summary: "detect comparisons between a freshly taken address and nil",
-		Explanation: "Taking the address of an addressable value produces a non-nil pointer whenever evaluation completes, so comparing that address with nil has a fixed result.",
-		GoodExample: "if pointer == nil { handle() }",
-		BadExample: "if &value == nil { handle() }",
+		Code:            "address-nil-comparison",
+		Summary:         "detect comparisons between a freshly taken address and nil",
+		Explanation:     "Taking the address of an addressable value produces a non-nil pointer whenever evaluation completes, so comparing that address with nil has a fixed result.",
+		GoodExample:     "if pointer == nil { handle() }",
+		BadExample:      "if &value == nil { handle() }",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -27,7 +27,7 @@ func (addressNilComparisonRule) Run(pass *Pass) {
 			file,
 			func(node ast.Node) bool {
 				binary,
-				ok := node.(*ast.BinaryExpr)
+					ok := node.(*ast.BinaryExpr)
 				if !ok || binary.Op != token.EQL && binary.Op != token.NEQ {
 					return true
 				}
@@ -38,7 +38,7 @@ func (addressNilComparisonRule) Run(pass *Pass) {
 				if binary.Op == token.NEQ {
 					result = "true"
 				}
-				pass.Report(binary, "address cannot be nil; this comparison is always " + result)
+				pass.Report(binary, "address cannot be nil; this comparison is always "+result)
 				return true
 			},
 		)

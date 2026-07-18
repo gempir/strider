@@ -9,15 +9,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type inefficientSprintfRule struct {}
+type inefficientSprintfRule struct{}
 
 func (inefficientSprintfRule) Meta() Meta {
 	return Meta{
-		Code: "inefficient-sprintf",
-		Summary: "detect fmt.Sprintf calls used only for simple conversions",
-		Explanation: "fmt.Sprintf parses a format string and uses reflection. For a single string, boolean, or base-10 integer conversion, direct strings or strconv functions preserve the output with substantially less machinery.",
-		GoodExample: "text := strconv.Itoa(number)",
-		BadExample: `text := fmt.Sprintf("%d", number)`,
+		Code:            "inefficient-sprintf",
+		Summary:         "detect fmt.Sprintf calls used only for simple conversions",
+		Explanation:     "fmt.Sprintf parses a format string and uses reflection. For a single string, boolean, or base-10 integer conversion, direct strings or strconv functions preserve the output with substantially less machinery.",
+		GoodExample:     "text := strconv.Itoa(number)",
+		BadExample:      `text := fmt.Sprintf("%d", number)`,
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -28,7 +28,7 @@ func (inefficientSprintfRule) Run(pass *Pass) {
 			file,
 			func(node ast.Node) bool {
 				call,
-				ok := node.(*ast.CallExpr)
+					ok := node.(*ast.CallExpr)
 				if !ok || call.Ellipsis.IsValid() || len(call.Args) != 2 || !isPackageFunction(pass.TypesInfo, call.Fun, "fmt", "Sprintf") {
 					return true
 				}
@@ -61,7 +61,7 @@ func simpleSprintfReplacement(format string, valueType types.Type) string {
 
 	switch format {
 	case "%s":
-		if basic.Info() & types.IsString != 0 {
+		if basic.Info()&types.IsString != 0 {
 			return "the string value directly"
 		}
 	case "%t":
@@ -72,22 +72,22 @@ func simpleSprintfReplacement(format string, valueType types.Type) string {
 		switch {
 		case basic.Kind() == types.Int || basic.Kind() == types.UntypedInt:
 			return "strconv.Itoa"
-		case basic.Info() & types.IsInteger != 0 && basic.Info() & types.IsUnsigned != 0:
+		case basic.Info()&types.IsInteger != 0 && basic.Info()&types.IsUnsigned != 0:
 			return "strconv.FormatUint with base 10"
-		case basic.Info() & types.IsInteger != 0:
+		case basic.Info()&types.IsInteger != 0:
 			return "strconv.FormatInt with base 10"
 		}
 	case "%v":
 		switch {
-		case basic.Info() & types.IsString != 0:
+		case basic.Info()&types.IsString != 0:
 			return "the string value directly"
 		case basic.Kind() == types.Bool || basic.Kind() == types.UntypedBool:
 			return "strconv.FormatBool"
 		case basic.Kind() == types.Int || basic.Kind() == types.UntypedInt:
 			return "strconv.Itoa"
-		case basic.Info() & types.IsInteger != 0 && basic.Info() & types.IsUnsigned != 0:
+		case basic.Info()&types.IsInteger != 0 && basic.Info()&types.IsUnsigned != 0:
 			return "strconv.FormatUint with base 10"
-		case basic.Info() & types.IsInteger != 0:
+		case basic.Info()&types.IsInteger != 0:
 			return "strconv.FormatInt with base 10"
 		}
 	}

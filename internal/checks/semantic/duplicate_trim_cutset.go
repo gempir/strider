@@ -9,15 +9,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type duplicateTrimCutsetRule struct {}
+type duplicateTrimCutsetRule struct{}
 
 func (duplicateTrimCutsetRule) Meta() Meta {
 	return Meta{
-		Code: "duplicate-trim-cutset",
-		Summary: "detect duplicate characters in string trim cutsets",
-		Explanation: "strings.Trim, TrimLeft, and TrimRight interpret their second argument as a set of runes, not as a prefix or suffix. Duplicate runes have no effect and often reveal that a prefix-removal operation was intended.",
-		GoodExample: `strings.TrimPrefix(value, "prefix")`,
-		BadExample: `strings.TrimLeft(value, "letter")`,
+		Code:            "duplicate-trim-cutset",
+		Summary:         "detect duplicate characters in string trim cutsets",
+		Explanation:     "strings.Trim, TrimLeft, and TrimRight interpret their second argument as a set of runes, not as a prefix or suffix. Duplicate runes have no effect and often reveal that a prefix-removal operation was intended.",
+		GoodExample:     `strings.TrimPrefix(value, "prefix")`,
+		BadExample:      `strings.TrimLeft(value, "letter")`,
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }

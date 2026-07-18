@@ -8,15 +8,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type ipByteComparisonRule struct {}
+type ipByteComparisonRule struct{}
 
 func (ipByteComparisonRule) Meta() Meta {
 	return Meta{
-		Code: "ip-byte-comparison",
-		Summary: "detect bytes.Equal comparisons between IP addresses",
-		Explanation: "An IPv4 address stored in net.IP may use either a 4-byte or 16-byte representation. bytes.Equal treats those representations as different; net.IP.Equal compares their address values correctly.",
-		GoodExample: "left.Equal(right)",
-		BadExample: "bytes.Equal(left, right)",
+		Code:            "ip-byte-comparison",
+		Summary:         "detect bytes.Equal comparisons between IP addresses",
+		Explanation:     "An IPv4 address stored in net.IP may use either a 4-byte or 16-byte representation. bytes.Equal treats those representations as different; net.IP.Equal compares their address values correctly.",
+		GoodExample:     "left.Equal(right)",
+		BadExample:      "bytes.Equal(left, right)",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }

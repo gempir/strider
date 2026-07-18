@@ -7,15 +7,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type nilContextRule struct {}
+type nilContextRule struct{}
 
 func (nilContextRule) Meta() Meta {
 	return Meta{
-		Code: "nil-context",
-		Summary: "detect nil context.Context arguments",
-		Explanation: "A context.Context must not be nil. Pass context.TODO when the appropriate parent is not yet known, or context.Background for an explicit root context.",
-		GoodExample: "load(context.TODO())",
-		BadExample: "load(nil)",
+		Code:            "nil-context",
+		Summary:         "detect nil context.Context arguments",
+		Explanation:     "A context.Context must not be nil. Pass context.TODO when the appropriate parent is not yet known, or context.Background for an explicit root context.",
+		GoodExample:     "load(context.TODO())",
+		BadExample:      "load(nil)",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -26,7 +26,7 @@ func (nilContextRule) Run(pass *Pass) {
 			file,
 			func(node ast.Node) bool {
 				call,
-				ok := node.(*ast.CallExpr)
+					ok := node.(*ast.CallExpr)
 				if !ok || len(call.Args) == 0 || !isNilIdentifier(call.Args[0]) {
 					return true
 				}
@@ -35,11 +35,14 @@ func (nilContextRule) Run(pass *Pass) {
 					return true
 				}
 				signature,
-				ok := function.Type().(*types.Signature)
+					ok := function.Type().(*types.Signature)
 				if !ok || signature.Params().Len() == 0 || !isContextType(signature.Params().At(0).Type()) {
 					return true
 				}
-				pass.Report(call.Args[0], "do not pass a nil Context, even if a function permits it; pass context.TODO if you are unsure about which Context to use")
+				pass.Report(
+					call.Args[0],
+					"do not pass a nil Context, even if a function permits it; pass context.TODO if you are unsure about which Context to use",
+				)
 				return true
 			},
 		)

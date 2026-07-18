@@ -12,10 +12,10 @@ import (
 
 // Registry is an immutable selection of analysis rules.
 type Registry struct {
-	rules []Rule
-	settings map[string]configuredRule
+	rules      []Rule
+	settings   map[string]configuredRule
 	knownCodes map[string]bool
-	root string
+	root       string
 }
 
 type configuredRule struct {
@@ -25,9 +25,9 @@ type configuredRule struct {
 
 // RegistryOptions selects and configures package-aware rules.
 type RegistryOptions struct {
-	Only []string
-	Settings map[string]config.RuleConfig
-	Root string
+	Only            []string
+	Settings        map[string]config.RuleConfig
+	Root            string
 	MinimumSeverity diagnostic.Severity
 }
 
@@ -58,7 +58,7 @@ const (
 
 // Has reports whether all wanted facts are included in the set.
 func (facts FactSet) Has(wanted FactSet) bool {
-	return facts & wanted == wanted
+	return facts&wanted == wanted
 }
 
 // SSAFeatureSet identifies optional SSA metadata that is expensive enough to
@@ -71,19 +71,19 @@ const (
 
 // Requirements describes the internal data dependencies of one rule.
 type Requirements struct {
-	Stage AnalysisStage
-	Facts FactSet
-	SSAFeatures SSAFeatureSet
+	Stage              AnalysisStage
+	Facts              FactSet
+	SSAFeatures        SSAFeatureSet
 	staticCallPackages []string
 }
 
 type ruleDefinition struct {
-	rule Rule
+	rule         Rule
 	requirements Requirements
 }
 
 type executionPlan struct {
-	requirements Requirements
+	requirements       Requirements
 	staticCallPackages map[string]bool
 }
 
@@ -254,8 +254,8 @@ func ssaDefinition(rule Rule, facts FactSet, features SSAFeatureSet) ruleDefinit
 	return ruleDefinition{rule: rule, requirements: Requirements{Stage: AnalysisStageSSA, Facts: facts, SSAFeatures: features}}
 }
 
-func ssaStaticCallDefinition(rule Rule, facts FactSet, packagePaths... string) ruleDefinition {
-	definition := ssaDefinition(rule, facts | FactStaticCalls, 0)
+func ssaStaticCallDefinition(rule Rule, facts FactSet, packagePaths ...string) ruleDefinition {
+	definition := ssaDefinition(rule, facts|FactStaticCalls, 0)
 	definition.requirements.staticCallPackages = append([]string(nil), packagePaths...)
 	return definition
 }

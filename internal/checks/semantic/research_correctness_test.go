@@ -18,8 +18,8 @@ import (
 
 func TestResearchCorrectnessRuleMetadata(t *testing.T) {
 	tests := []struct {
-		rule Rule
-		code string
+		rule     Rule
+		code     string
 		severity diagnostic.Severity
 	}{
 		{nilErrorReturnRule{}, "nil-error-return", diagnostic.SeverityError},
@@ -563,7 +563,7 @@ func good(source *State) { pointer(source) }
 
 type researchCorrectnessReport struct {
 	position token.Position
-	message string
+	message  string
 }
 
 func runResearchCorrectnessRule(t *testing.T, rule Rule, source string) []researchCorrectnessReport {
@@ -586,14 +586,14 @@ func runResearchCorrectnessRule(t *testing.T, rule Rule, source string) []resear
 	reports := make([]researchCorrectnessReport, 0)
 	pass := &Pass{
 		PackagePath: "example.com/researchfixture",
-		Files: []*ast.File{file},
-		FileSet: fileSet,
-		Types: ssaPackage.Pkg,
-		TypesSizes: types.SizesFor("gc", runtime.GOARCH),
-		TypesInfo: typeInfo,
-		SSAProgram: ssaPackage.Prog,
-		SSAPackage: ssaPackage,
-		Functions: collectPackageFunctions(ssaPackage.Prog, []*ssa.Package{ssaPackage})[ssaPackage],
+		Files:       []*ast.File{file},
+		FileSet:     fileSet,
+		Types:       ssaPackage.Pkg,
+		TypesSizes:  types.SizesFor("gc", runtime.GOARCH),
+		TypesInfo:   typeInfo,
+		SSAProgram:  ssaPackage.Prog,
+		SSAPackage:  ssaPackage,
+		Functions:   collectPackageFunctions(ssaPackage.Prog, []*ssa.Package{ssaPackage})[ssaPackage],
 	}
 	pass.report = func(node ast.Node, message string) {
 		reports = append(reports, researchCorrectnessReport{position: fileSet.Position(node.Pos()), message: message})
@@ -619,7 +619,7 @@ func assertResearchMessagesContain(t *testing.T, reports []researchCorrectnessRe
 	}
 }
 
-func assertResearchReportNeedles(t *testing.T, reports []researchCorrectnessReport, source string, needles... string) {
+func assertResearchReportNeedles(t *testing.T, reports []researchCorrectnessReport, source string, needles ...string) {
 	t.Helper()
 	want := make(map[int]bool, len(needles))
 	for _, needle := range needles {
@@ -627,7 +627,7 @@ func assertResearchReportNeedles(t *testing.T, reports []researchCorrectnessRepo
 		if index < 0 {
 			t.Fatalf("test source does not contain %q", needle)
 		}
-		want[1 + strings.Count(source[:index], "\n")] = true
+		want[1+strings.Count(source[:index], "\n")] = true
 	}
 	for _, report := range reports {
 		if !want[report.position.Line] {

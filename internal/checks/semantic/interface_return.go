@@ -11,15 +11,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type interfaceReturnRule struct {}
+type interfaceReturnRule struct{}
 
 func (interfaceReturnRule) Meta() Meta {
 	return Meta{
-		Code: "interface-return",
-		Summary: "detect constructors that hide a single concrete result",
-		Explanation: "Callers can define the small interface they need when constructors return concrete types. This conservative check only reports exported New-style constructors whose non-nil returns consistently reveal one local concrete implementation of a non-empty local interface; error, any, standard-library interfaces, and polymorphic results are ignored.",
-		GoodExample: "func NewStore() *memoryStore { return &memoryStore{} }",
-		BadExample: "func NewStore() Store { return &memoryStore{} }",
+		Code:            "interface-return",
+		Summary:         "detect constructors that hide a single concrete result",
+		Explanation:     "Callers can define the small interface they need when constructors return concrete types. This conservative check only reports exported New-style constructors whose non-nil returns consistently reveal one local concrete implementation of a non-empty local interface; error, any, standard-library interfaces, and polymorphic results are ignored.",
+		GoodExample:     "func NewStore() *memoryStore { return &memoryStore{} }",
+		BadExample:      "func NewStore() Store { return &memoryStore{} }",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -98,11 +98,11 @@ func consistentConcreteReturns(pass *Pass, body *ast.BlockStmt, signature *types
 				return false
 			}
 			if _,
-			nested := node.(*ast.FuncLit); nested {
+				nested := node.(*ast.FuncLit); nested {
 				return false
 			}
 			statement,
-			ok := node.(*ast.ReturnStmt)
+				ok := node.(*ast.ReturnStmt)
 			if !ok {
 				return true
 			}

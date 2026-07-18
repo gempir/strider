@@ -26,91 +26,91 @@ type Token = gc.Token
 // Grammar node aliases keep consumers coupled to Strider's CST vocabulary
 // rather than to the parser implementation package.
 type (
-	AliasDecl = gc.AliasDeclNode
-	Assignment = gc.AssignmentNode
-	Arguments = gc.ArgumentsNode
-	Arguments1 = gc.Arguments1Node
-	Arguments2 = gc.Arguments2Node
-	Arguments3 = gc.Arguments3Node
-	BasicLit = gc.BasicLitNode
-	BinaryExpression = gc.BinaryExpressionNode
-	Block = gc.BlockNode
-	BreakStmt = gc.BreakStmtNode
-	CommCase = gc.CommCaseNode
-	CommClause = gc.CommClauseNode
-	CommClauseList = gc.CommClauseListNode
-	ConstSpec = gc.ConstSpecNode
-	ConstSpec2 = gc.ConstSpec2Node
-	DeferStmt = gc.DeferStmtNode
-	ExprSwitchCase = gc.ExprSwitchCaseNode
-	ExprSwitchCase2 = gc.ExprSwitchCase2Node
-	ExprCaseClause = gc.ExprCaseClauseListNode
-	ExprSwitchStmt = gc.ExprSwitchStmtNode
-	ExpressionList = gc.ExpressionListNode
-	FallthroughStmt = gc.FallthroughStmtNode
-	FieldDecl = gc.FieldDeclNode
-	ForStmt = gc.ForStmtNode
-	FunctionBody = gc.FunctionBodyNode
-	FunctionDecl = gc.FunctionDeclNode
-	FunctionLit = gc.FunctionLitNode
-	IdentifierList = gc.IdentifierListNode
-	IfElseStmt = gc.IfElseStmtNode
-	IfStmt = gc.IfStmtNode
-	ImportDecl = gc.ImportDeclNode
-	ImportSpec = gc.ImportSpecNode
-	IncDecStmt = gc.IncDecStmtNode
-	InterfaceType = gc.InterfaceTypeNode
-	MethodDecl = gc.MethodDeclNode
-	ParameterDecl = gc.ParameterDeclNode
+	AliasDecl         = gc.AliasDeclNode
+	Assignment        = gc.AssignmentNode
+	Arguments         = gc.ArgumentsNode
+	Arguments1        = gc.Arguments1Node
+	Arguments2        = gc.Arguments2Node
+	Arguments3        = gc.Arguments3Node
+	BasicLit          = gc.BasicLitNode
+	BinaryExpression  = gc.BinaryExpressionNode
+	Block             = gc.BlockNode
+	BreakStmt         = gc.BreakStmtNode
+	CommCase          = gc.CommCaseNode
+	CommClause        = gc.CommClauseNode
+	CommClauseList    = gc.CommClauseListNode
+	ConstSpec         = gc.ConstSpecNode
+	ConstSpec2        = gc.ConstSpec2Node
+	DeferStmt         = gc.DeferStmtNode
+	ExprSwitchCase    = gc.ExprSwitchCaseNode
+	ExprSwitchCase2   = gc.ExprSwitchCase2Node
+	ExprCaseClause    = gc.ExprCaseClauseListNode
+	ExprSwitchStmt    = gc.ExprSwitchStmtNode
+	ExpressionList    = gc.ExpressionListNode
+	FallthroughStmt   = gc.FallthroughStmtNode
+	FieldDecl         = gc.FieldDeclNode
+	ForStmt           = gc.ForStmtNode
+	FunctionBody      = gc.FunctionBodyNode
+	FunctionDecl      = gc.FunctionDeclNode
+	FunctionLit       = gc.FunctionLitNode
+	IdentifierList    = gc.IdentifierListNode
+	IfElseStmt        = gc.IfElseStmtNode
+	IfStmt            = gc.IfStmtNode
+	ImportDecl        = gc.ImportDeclNode
+	ImportSpec        = gc.ImportSpecNode
+	IncDecStmt        = gc.IncDecStmtNode
+	InterfaceType     = gc.InterfaceTypeNode
+	MethodDecl        = gc.MethodDeclNode
+	ParameterDecl     = gc.ParameterDeclNode
 	ParameterDeclList = gc.ParameterDeclListNode
-	Parameters = gc.ParametersNode
+	Parameters        = gc.ParametersNode
 	ParenthesizedExpr = gc.ParenthesizedExpressionNode
-	PrimaryExpr = gc.PrimaryExprNode
-	RangeClause = gc.RangeClauseNode
-	ReturnStmt = gc.ReturnStmtNode
-	Result = gc.ResultNode
-	SelectStmt = gc.SelectStmtNode
-	Selector = gc.SelectorNode
-	ShortVarDecl = gc.ShortVarDeclNode
-	Signature = gc.SignatureNode
-	StatementList = gc.StatementListNode
-	StructType = gc.StructTypeNode
-	Tag = gc.TagNode
-	TypeDef = gc.TypeDefNode
-	TypeElemList = gc.TypeElemListNode
-	TypeParamDecl = gc.TypeParamDeclNode
-	TypeSwitchCase = gc.TypeSwitchCaseNode
-	TypeSwitchStmt = gc.TypeSwitchStmtNode
-	TypeArgs = gc.TypeArgsNode
-	TypeAssertion = gc.TypeAssertionNode
-	TypeCaseClause = gc.TypeCaseClauseNode
-	TypeParameters = gc.TypeParametersNode
-	UnaryExpr = gc.UnaryExprNode
-	VarDecl = gc.VarDeclNode
-	VarSpec = gc.VarSpecNode
-	VarSpec2 = gc.VarSpec2Node
+	PrimaryExpr       = gc.PrimaryExprNode
+	RangeClause       = gc.RangeClauseNode
+	ReturnStmt        = gc.ReturnStmtNode
+	Result            = gc.ResultNode
+	SelectStmt        = gc.SelectStmtNode
+	Selector          = gc.SelectorNode
+	ShortVarDecl      = gc.ShortVarDeclNode
+	Signature         = gc.SignatureNode
+	StatementList     = gc.StatementListNode
+	StructType        = gc.StructTypeNode
+	Tag               = gc.TagNode
+	TypeDef           = gc.TypeDefNode
+	TypeElemList      = gc.TypeElemListNode
+	TypeParamDecl     = gc.TypeParamDeclNode
+	TypeSwitchCase    = gc.TypeSwitchCaseNode
+	TypeSwitchStmt    = gc.TypeSwitchStmtNode
+	TypeArgs          = gc.TypeArgsNode
+	TypeAssertion     = gc.TypeAssertionNode
+	TypeCaseClause    = gc.TypeCaseClauseNode
+	TypeParameters    = gc.TypeParametersNode
+	UnaryExpr         = gc.UnaryExprNode
+	VarDecl           = gc.VarDeclNode
+	VarSpec           = gc.VarSpecNode
+	VarSpec2          = gc.VarSpec2Node
 )
 
 // Tree owns one parsed source file and its lossless concrete representation.
 type Tree struct {
 	filename string
-	root *gc.AST
-	source []byte
+	root     *gc.AST
+	source   []byte
 
-	tokensOnce sync.Once
-	tokens []Token
+	tokensOnce   sync.Once
+	tokens       []Token
 	commentsOnce sync.Once
-	comments []Comment
-	linesOnce sync.Once
-	lines []int
+	comments     []Comment
+	linesOnce    sync.Once
+	lines        []int
 }
 
 // Comment is a concrete source comment and its exact byte range.
 type Comment struct {
-	Text string
-	Start int
-	End int
-	Line int
+	Text   string
+	Start  int
+	End    int
+	Line   int
 	Column int
 }
 
@@ -167,8 +167,8 @@ func (t *Tree) Comments() []Comment {
 			lexer.Init(file, t.source, nil, scanner.ScanComments)
 			for {
 				position,
-				kind,
-				literal := lexer.Scan()
+					kind,
+					literal := lexer.Scan()
 				if kind == token.EOF {
 					break
 				}
@@ -278,10 +278,10 @@ func (t *Tree) Position(offset int) token.Position {
 		}
 	}
 	t.linesOnce.Do(func() {
-		t.lines = make([]int, 1, len(t.source) / 40 + 1)
+		t.lines = make([]int, 1, len(t.source)/40+1)
 		for index, current := range t.source {
 			if current == '\n' {
-				t.lines = append(t.lines, index + 1)
+				t.lines = append(t.lines, index+1)
 			}
 		}
 	})
@@ -389,7 +389,7 @@ func WalkWithAncestors(node Node, visit func(Node, []Node) bool) {
 		current := stack[last]
 		stack = stack[:last]
 		if current.exit {
-			ancestors = ancestors[:len(ancestors) - 1]
+			ancestors = ancestors[:len(ancestors)-1]
 			continue
 		}
 		if !visit(current.node, ancestors) {
@@ -423,7 +423,7 @@ func WalkProductionsWithAncestors(node Node, visit func(Node, []Node) bool) {
 		current := stack[last]
 		stack = stack[:last]
 		if current.exit {
-			ancestors = ancestors[:len(ancestors) - 1]
+			ancestors = ancestors[:len(ancestors)-1]
 			continue
 		}
 		if !visit(current.node, ancestors) {
@@ -577,16 +577,16 @@ func appendProductionChildItemsReverse[T ~struct {
 }
 
 type bounds struct {
-	first Token
-	last Token
+	first       Token
+	last        Token
 	firstOffset int
-	lastOffset int
-	found bool
+	lastOffset  int
+	found       bool
 }
 
 type tokenWalkItem struct {
-	node Node
-	token Token
+	node    Node
+	token   Token
 	isToken bool
 }
 

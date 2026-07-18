@@ -11,15 +11,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type overwrittenBeforeUseRule struct {}
+type overwrittenBeforeUseRule struct{}
 
 func (overwrittenBeforeUseRule) Meta() Meta {
 	return Meta{
-		Code: "overwritten-before-use",
-		Summary: "detect assigned values that are replaced before being used",
-		Explanation: "A non-constant value assigned to a local variable but never read is often a forgotten error check or dead computation. The analyzer follows SSA phi nodes so values flowing across control-flow joins still count as used.",
-		GoodExample: "result := calculate(); use(result); result = calculateAgain()",
-		BadExample: "result := calculate(); result = calculateAgain()",
+		Code:            "overwritten-before-use",
+		Summary:         "detect assigned values that are replaced before being used",
+		Explanation:     "A non-constant value assigned to a local variable but never read is often a forgotten error check or dead computation. The analyzer follows SSA phi nodes so values flowing across control-flow joins still count as used.",
+		GoodExample:     "result := calculate(); use(result); result = calculateAgain()",
+		BadExample:      "result := calculate(); result = calculateAgain()",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -74,12 +74,12 @@ func functionSwitchTags(function *ssa.Function, syntax ast.Node) map[ssa.Value]b
 		syntax,
 		func(node ast.Node) bool {
 			switchStatement,
-			ok := node.(*ast.SwitchStmt)
+				ok := node.(*ast.SwitchStmt)
 			if !ok || switchStatement.Tag == nil {
 				return true
 			}
 			value,
-			_ := function.ValueForExpr(switchStatement.Tag)
+				_ := function.ValueForExpr(switchStatement.Tag)
 			if value != nil {
 				tags[value] = true
 			}

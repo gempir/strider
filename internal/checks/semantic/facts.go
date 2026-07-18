@@ -14,9 +14,9 @@ const syntaxFacts = FactCallArguments | FactFirstCallArgument | FactParents
 const ssaFacts = FactStaticCalls
 
 type packageFactData struct {
-	arguments map[token.Pos][]ast.Node
+	arguments      map[token.Pos][]ast.Node
 	firstArguments map[token.Pos]ast.Node
-	parents map[ast.Node]ast.Node
+	parents        map[ast.Node]ast.Node
 }
 
 type packageFactBuilder func([]*ast.File, FactSet) packageFactData
@@ -28,17 +28,17 @@ type packageSSAFactData struct {
 type packageSSAFactBuilder func([]*ssa.Function, FactSet) packageSSAFactData
 
 type packageFacts struct {
-	required FactSet
+	required           FactSet
 	staticCallPackages map[string]bool
-	syntaxOnce sync.Once
-	ssaOnce sync.Once
-	builder packageFactBuilder
-	ssaBuilder packageSSAFactBuilder
-	data packageFactData
-	ssaData packageSSAFactData
+	syntaxOnce         sync.Once
+	ssaOnce            sync.Once
+	builder            packageFactBuilder
+	ssaBuilder         packageSSAFactBuilder
+	data               packageFactData
+	ssaData            packageSSAFactData
 }
 
-func newPackageFacts(required FactSet, staticCallPackages... map[string]bool) *packageFacts {
+func newPackageFacts(required FactSet, staticCallPackages ...map[string]bool) *packageFacts {
 	required &= syntaxFacts | ssaFacts
 	if required == 0 {
 		return nil
@@ -103,13 +103,13 @@ func buildPackageFacts(files []*ast.File, required FactSet) packageFactData {
 			func(node ast.Node) bool {
 				if node == nil {
 					if wantParents && len(stack) != 0 {
-						stack = stack[:len(stack) - 1]
+						stack = stack[:len(stack)-1]
 					}
 					return true
 				}
 				if wantParents {
 					if len(stack) != 0 {
-						result.parents[node] = stack[len(stack) - 1]
+						result.parents[node] = stack[len(stack)-1]
 					}
 					stack = append(stack, node)
 				}
@@ -117,14 +117,13 @@ func buildPackageFacts(files []*ast.File, required FactSet) packageFactData {
 					return true
 				}
 				call,
-				ok := node.(*ast.CallExpr)
+					ok := node.(*ast.CallExpr)
 				if !ok {
 					return true
 				}
 				if wantArguments {
 					arguments := make([]ast.Node, len(call.Args))
-					for index,
-					argument := range call.Args {
+					for index, argument := range call.Args {
 						arguments[index] = argument
 					}
 					result.arguments[call.Pos()] = arguments
@@ -145,7 +144,7 @@ func buildPackageFacts(files []*ast.File, required FactSet) packageFactData {
 // indexes only statically resolved calls: every consumer already rejects
 // dynamic calls, and grouping by package keeps each rule's candidate set
 // small without changing its matching logic.
-func buildPackageSSAFacts(functions []*ssa.Function, required FactSet, staticCallPackages... map[string]bool) packageSSAFactData {
+func buildPackageSSAFacts(functions []*ssa.Function, required FactSet, staticCallPackages ...map[string]bool) packageSSAFactData {
 	result := packageSSAFactData{}
 	if !required.Has(FactStaticCalls) {
 		return result

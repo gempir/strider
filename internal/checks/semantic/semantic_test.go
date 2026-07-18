@@ -255,7 +255,7 @@ func check(dynamic string) {
 	exec.Command("ls -la")
 	exec.Command("ls", "-la")
 	exec.Command("/Applications/My Program/tool")
-	exec.Command(` + "`C:\\Program Files\\tool.exe`" + `)
+	exec.Command(`+"`C:\\Program Files\\tool.exe`"+`)
 	exec.Command(dynamic)
 }
 `,
@@ -798,13 +798,17 @@ func use(value legacy.Generic[int]) int {
 	if err := os.MkdirAll(legacy, 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(legacy, "legacy.go"), []byte(`package legacy
+	if err := os.WriteFile(
+		filepath.Join(legacy, "legacy.go"),
+		[]byte(`package legacy
 
 type Generic[T any] struct {
 	// Deprecated: use NewField instead.
 	OldField T
 }
-`), 0o600); err != nil {
+`),
+		0o600,
+	); err != nil {
 		t.Fatal(err)
 	}
 	registry, err := NewRegistry([]string{"deprecated-api-usage"})
@@ -1035,7 +1039,7 @@ import (
 
 type payload struct {
 	Callback func()
-	Ignored chan int ` + "`json:\"-\" xml:\"-\"`" + `
+	Ignored chan int `+"`json:\"-\" xml:\"-\"`"+`
 }
 
 type custom chan int
@@ -2865,8 +2869,8 @@ func TestEveryAnalyzerAcceptsCommonConfiguration(t *testing.T) {
 func TestAnalyzerRegistryFiltersByEffectiveSeverityBeforePlanning(t *testing.T) {
 	registry, err := NewRegistryWithOptions(
 		RegistryOptions{
-			Only: []string{"regexp-match-in-loop", "invalid-template"},
-			Settings: map[string]config.RuleConfig{"regexp-match-in-loop": {Severity: "warning"}, "invalid-template": {Severity: "error"}},
+			Only:            []string{"regexp-match-in-loop", "invalid-template"},
+			Settings:        map[string]config.RuleConfig{"regexp-match-in-loop": {Severity: "warning"}, "invalid-template": {Severity: "error"}},
 			MinimumSeverity: diagnostic.SeverityError,
 		},
 	)
@@ -2882,8 +2886,8 @@ func TestAnalyzerRegistryFiltersByEffectiveSeverityBeforePlanning(t *testing.T) 
 
 	registry, err = NewRegistryWithOptions(
 		RegistryOptions{
-			Only: []string{"regexp-match-in-loop", "invalid-template"},
-			Settings: map[string]config.RuleConfig{"regexp-match-in-loop": {Severity: "error"}, "invalid-template": {Severity: "warning"}},
+			Only:            []string{"regexp-match-in-loop", "invalid-template"},
+			Settings:        map[string]config.RuleConfig{"regexp-match-in-loop": {Severity: "error"}, "invalid-template": {Severity: "warning"}},
 			MinimumSeverity: diagnostic.SeverityError,
 		},
 	)
@@ -2912,8 +2916,8 @@ func TestAnalyzerRegistryRejectsInvalidMinimumSeverity(t *testing.T) {
 func TestAnalyzerRegistrySkipsLoadingWhenSeverityFilterIsEmpty(t *testing.T) {
 	registry, err := NewRegistryWithOptions(
 		RegistryOptions{
-			Only: []string{"suspicious-sleep"},
-			Settings: map[string]config.RuleConfig{"suspicious-sleep": {Severity: "warning"}},
+			Only:            []string{"suspicious-sleep"},
+			Settings:        map[string]config.RuleConfig{"suspicious-sleep": {Severity: "warning"}},
 			MinimumSeverity: diagnostic.SeverityError,
 		},
 	)
@@ -2940,7 +2944,7 @@ func analysisModule(t *testing.T, source string) string {
 func analysisModuleVersion(t *testing.T, goVersion, source string) string {
 	t.Helper()
 	root := t.TempDir()
-	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/analysis\n\ngo " + goVersion + "\n"), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/analysis\n\ngo "+goVersion+"\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(root, "main.go"), []byte(source), 0o600); err != nil {

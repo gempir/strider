@@ -125,7 +125,7 @@ import (
 
 var packageValue = 1
 type Exported struct {
-	bad_name string ` + "`json:\"name,,unknown\"`" + `
+	bad_name string `+"`json:\"name,,unknown\"`"+`
 	fmt int
 }
 
@@ -172,14 +172,13 @@ func GetThing(first, second, third, fourth, fifth, sixth int, flag bool, unused 
 			code,
 			func(t *testing.T) {
 				rules,
-				selectErr := Select([]string{code}, false)
+					selectErr := Select([]string{code}, false)
 				if selectErr != nil {
 					t.Fatal(selectErr)
 				}
 				gotFindings := analyzeCSTFindings("bad_file.go", tree, rules)
 				got := make([]string, 0, len(gotFindings))
-				for _,
-				finding := range gotFindings {
+				for _, finding := range gotFindings {
 					got = append(got, findingKey(finding))
 				}
 				sort.Strings(got)
@@ -208,13 +207,13 @@ func (value *item) UnmarshalJSON([]byte) error { return nil }
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, code := range[]string{"receiver-naming", "marshal-receiver"} {
+	for _, code := range []string{"receiver-naming", "marshal-receiver"} {
 		code := code
 		t.Run(
 			code,
 			func(t *testing.T) {
 				rules,
-				selectErr := Select([]string{code}, false)
+					selectErr := Select([]string{code}, false)
 				if selectErr != nil {
 					t.Fatal(selectErr)
 				}
@@ -222,8 +221,7 @@ func (value *item) UnmarshalJSON([]byte) error { return nil }
 				if len(findings) == 0 {
 					t.Fatalf("%s produced no findings", code)
 				}
-				for _,
-				finding := range findings {
+				for _, finding := range findings {
 					if finding.Code != code {
 						t.Fatalf("%s run reported %s", code, finding.Code)
 					}

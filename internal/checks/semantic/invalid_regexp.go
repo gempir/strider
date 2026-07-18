@@ -10,15 +10,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type invalidRegexpRule struct {}
+type invalidRegexpRule struct{}
 
 func (invalidRegexpRule) Meta() Meta {
 	return Meta{
-		Code: "invalid-regexp",
-		Summary: "detect invalid regular expressions",
-		Explanation: "Regular expressions passed as compile-time constants to regexp compilation and matching functions must be valid Go regular expressions.",
-		GoodExample: "regexp.MustCompile(`[a-z]+`)",
-		BadExample: "regexp.MustCompile(`[a-z`)",
+		Code:            "invalid-regexp",
+		Summary:         "detect invalid regular expressions",
+		Explanation:     "Regular expressions passed as compile-time constants to regexp compilation and matching functions must be valid Go regular expressions.",
+		GoodExample:     "regexp.MustCompile(`[a-z]+`)",
+		BadExample:      "regexp.MustCompile(`[a-z`)",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }

@@ -13,9 +13,6 @@ color = "auto"
 
 [formatter]
 print-width = 180
-indent-width = 4
-max-empty-lines = 1
-end-of-line = "lf"
 excludes = ["internal/generated/**"]
 
 [checks]
@@ -157,9 +154,6 @@ Formatter settings live under `[formatter]`.
 | Setting | Type | Default | Accepted values and effect |
 | --- | --- | --- | --- |
 | `print-width` | integer | `180` | Wrap target from `40` through `500` columns. |
-| `indent-width` | integer | `4` | Display width of an indentation tab, from `1` through `16`; output indentation remains tabs. |
-| `max-empty-lines` | integer | `1` | Preserve at most this many consecutive empty lines; any nonnegative value is accepted. |
-| `end-of-line` | string | `"lf"` | `"lf"` or `"crlf"`. |
 | `excludes` | string list | `[]` | Plain paths or globs skipped by filesystem formatting and the `format` check. |
 
 The formatter remains intentionally opinionated. Imports are sorted into

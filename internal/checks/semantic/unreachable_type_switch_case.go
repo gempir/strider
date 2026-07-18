@@ -8,15 +8,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type unreachableTypeSwitchCaseRule struct {}
+type unreachableTypeSwitchCaseRule struct{}
 
 func (unreachableTypeSwitchCaseRule) Meta() Meta {
 	return Meta{
-		Code: "unreachable-type-switch-case",
-		Summary: "detect type-switch cases hidden by earlier interfaces",
-		Explanation: "Type-switch cases are evaluated in source order. A later concrete type or narrower interface is unreachable when it necessarily implements an interface listed by an earlier case.",
-		GoodExample: "switch value.(type) { case io.ReadCloser: use(); case io.Reader: use() }",
-		BadExample: "switch value.(type) { case io.Reader: use(); case io.ReadCloser: use() }",
+		Code:            "unreachable-type-switch-case",
+		Summary:         "detect type-switch cases hidden by earlier interfaces",
+		Explanation:     "Type-switch cases are evaluated in source order. A later concrete type or narrower interface is unreachable when it necessarily implements an interface listed by an earlier case.",
+		GoodExample:     "switch value.(type) { case io.ReadCloser: use(); case io.Reader: use() }",
+		BadExample:      "switch value.(type) { case io.Reader: use(); case io.ReadCloser: use() }",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -27,24 +27,26 @@ func (unreachableTypeSwitchCaseRule) Run(pass *Pass) {
 			file,
 			func(node ast.Node) bool {
 				switchStatement,
-				ok := node.(*ast.TypeSwitchStmt)
+					ok := node.(*ast.TypeSwitchStmt)
 				if !ok {
 					return true
 				}
 				cases := typeSwitchCases(pass, switchStatement)
-				for earlierIndex,
-				earlier := range cases {
-					for _,
-					later := range cases[earlierIndex + 1:] {
+				for earlierIndex, earlier := range cases {
+					for _, later := range cases[earlierIndex+1:] {
 						first,
-						hidden,
-						ok := subsumingCaseTypes(earlier.types, later.types)
+							hidden,
+							ok := subsumingCaseTypes(earlier.types, later.types)
 						if !ok {
 							continue
 						}
 						pass.Report(
 							later.clause,
-							fmt.Sprintf("unreachable type-switch case: %s always matches before %s", conciseAnalysisType(pass, first), conciseAnalysisType(pass, hidden)),
+							fmt.Sprintf(
+								"unreachable type-switch case: %s always matches before %s",
+								conciseAnalysisType(pass, first),
+								conciseAnalysisType(pass, hidden),
+							),
 						)
 					}
 				}
@@ -65,7 +67,7 @@ func conciseAnalysisType(pass *Pass, valueType types.Type) string {
 
 type typedCaseClause struct {
 	clause *ast.CaseClause
-	types []types.Type
+	types  []types.Type
 }
 
 func typeSwitchCases(pass *Pass, statement *ast.TypeSwitchStmt) []typedCaseClause {

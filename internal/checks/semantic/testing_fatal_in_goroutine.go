@@ -9,15 +9,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type testingFatalInGoroutineRule struct {}
+type testingFatalInGoroutineRule struct{}
 
 func (testingFatalInGoroutineRule) Meta() Meta {
 	return Meta{
-		Code: "testing-fatal-in-goroutine",
-		Summary: "detect test termination methods called from child goroutines",
-		Explanation: "testing.T and testing.B methods that terminate or skip execution must run in the same goroutine as the test. Calling Fatal, FailNow, Skip, or related methods from a child goroutine does not stop the test correctly.",
-		GoodExample: "if err := work(); err != nil { t.Fatal(err) }",
-		BadExample: "go func() { t.Fatal(\"failed\") }()",
+		Code:            "testing-fatal-in-goroutine",
+		Summary:         "detect test termination methods called from child goroutines",
+		Explanation:     "testing.T and testing.B methods that terminate or skip execution must run in the same goroutine as the test. Calling Fatal, FailNow, Skip, or related methods from a child goroutine does not stop the test correctly.",
+		GoodExample:     "if err := work(); err != nil { t.Fatal(err) }",
+		BadExample:      "go func() { t.Fatal(\"failed\") }()",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }

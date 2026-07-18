@@ -30,7 +30,10 @@ func (a *cstAnalyzer) checkConcreteExportedFunction(name cst.Token, node cst.Nod
 	if !token.IsExported(name.Src()) || a.packageName == "main" {
 		return
 	}
-	if strings.HasSuffix(a.filename, "_test.go") && (strings.HasPrefix(name.Src(), "Test") || strings.HasPrefix(name.Src(), "Benchmark") || strings.HasPrefix(name.Src(), "Example")) {
+	if strings.HasSuffix(a.filename, "_test.go") && (strings.HasPrefix(name.Src(), "Test") || strings.HasPrefix(name.Src(), "Benchmark") || strings.HasPrefix(
+		name.Src(),
+		"Example",
+	)) {
 		return
 	}
 	if method {

@@ -25,7 +25,7 @@ func (a *cstAnalyzer) checkBinaryExpression(binary *cst.BinaryExpression) {
 	}
 	if binary.Op.Ch() == token.LAND || binary.Op.Ch() == token.LOR {
 		if value, ok := concreteStaticBool(binary.LHS); ok {
-			if(binary.Op.Ch() == token.LAND && !value) || (binary.Op.Ch() == token.LOR && value) {
+			if (binary.Op.Ch() == token.LAND && !value) || (binary.Op.Ch() == token.LOR && value) {
 				a.report("constant-logical-expr", binary, "logical expression always has the same value")
 			}
 		}

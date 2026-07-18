@@ -234,7 +234,7 @@ func use() item { return current }
 
 func TestAdditionalResearchRuleSeverities(t *testing.T) {
 	tests := []struct {
-		rule Rule
+		rule     Rule
 		severity diagnostic.Severity
 	}{
 		{discardedErrorResultRule{}, diagnostic.SeverityError},

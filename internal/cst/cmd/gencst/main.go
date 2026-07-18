@@ -18,16 +18,16 @@ import (
 const parserPackage = "modernc.org/gc/v3"
 
 type nodeType struct {
-	name string
-	value bool
+	name    string
+	value   bool
 	pointer bool
-	fields []nodeField
+	fields  []nodeField
 }
 
 type nodeField struct {
-	name string
+	name     string
 	typeName string
-	kind fieldKind
+	kind     fieldKind
 }
 
 type fieldKind uint8
@@ -296,10 +296,10 @@ func emitKind(output *bytes.Buffer, nodes []nodeType) {
 	for _, current := range nodes {
 		cases := make([]string, 0, 2)
 		if current.value {
-			cases = append(cases, "gc." + current.name)
+			cases = append(cases, "gc."+current.name)
 		}
 		if current.pointer {
-			cases = append(cases, "*gc." + current.name)
+			cases = append(cases, "*gc."+current.name)
 		}
 		fmt.Fprintf(output, "\tcase %s:\n", strings.Join(cases, ", "))
 		fmt.Fprintf(output, "\t\treturn %q, true\n", strings.TrimSuffix(current.name, "Node"))

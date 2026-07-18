@@ -2,11 +2,32 @@ package formatter
 
 import (
 	"bytes"
+	goformat "go/format"
 	"strings"
 	"testing"
 
 	"github.com/gempir/strider/internal/cst"
 )
+
+func TestFormatOutputIsGofmtStable(t *testing.T) {
+	input := []byte(`package p
+import "fmt"
+func f(value int){
+if value > 0 { fmt.Println(value) }
+}
+`)
+	result, err := Format("fixture.go", input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gofmt, err := goformat.Source(result.Source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(result.Source, gofmt) {
+		t.Fatalf("formatter output is not gofmt-stable:\n%s\ngofmt:\n%s", result.Source, gofmt)
+	}
+}
 
 func TestFormatTypicalApplicationCode(t *testing.T) {
 	input := `// Package p does things.
@@ -54,71 +75,37 @@ func VeryLongFunctionName(firstParameter string, secondParameter string, thirdPa
 	}
 }
 
-func TestFormatOptionsControlWidthAndLineEndings(t *testing.T) {
+func TestFormatOptionsControlWidth(t *testing.T) {
 	source := []byte("package p\nfunc f(){call(alpha,beta,gamma,delta,epsilon)}\n")
 	wide, err := FormatWithOptions("fixture.go", source, Options{
-		PrintWidth: 100, IndentWidth: 4, MaxEmptyLines: 1, EndOfLine: "lf",
+		PrintWidth: 100,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	narrow, err := FormatWithOptions("fixture.go", source, Options{
-		PrintWidth: 40, IndentWidth: 8, MaxEmptyLines: 1, EndOfLine: "crlf",
+		PrintWidth: 40,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if bytes.Equal(wide.Source, narrow.Source) || !bytes.Contains(narrow.Source, []byte("\r\n")) {
+	if bytes.Equal(wide.Source, narrow.Source) {
 		t.Fatalf("formatter options had no effect:\n%s", narrow.Source)
 	}
 }
 
-func TestFormatCapsPreservedEmptyLines(t *testing.T) {
+func TestFormatUsesCanonicalEmptyLines(t *testing.T) {
 	if got := DefaultOptions().PrintWidth; got != 180 {
 		t.Fatalf("default print width = %d, want 180", got)
 	}
-	if got := DefaultOptions().MaxEmptyLines; got != 1 {
-		t.Fatalf("default max empty lines = %d, want 1", got)
-	}
 	input := []byte("package p\n\n\n\nfunc F() {\n\tfirst()\n\n\n\n\tsecond()\n}\n")
-	tests := []struct {
-		name    string
-		maximum int
-		want    string
-	}{
-		{
-			name:    "none",
-			maximum: 0,
-			want:    "package p\nfunc F() {\n\tfirst()\n\tsecond()\n}\n",
-		},
-		{
-			name:    "default",
-			maximum: 1,
-			want:    "package p\n\nfunc F() {\n\tfirst()\n\n\tsecond()\n}\n",
-		},
-		{
-			name:    "two",
-			maximum: 2,
-			want:    "package p\n\n\nfunc F() {\n\tfirst()\n\n\n\tsecond()\n}\n",
-		},
-		{
-			name:    "more than source",
-			maximum: 5,
-			want:    string(input),
-		},
+	result, err := Format("empty_lines.go", input)
+	if err != nil {
+		t.Fatal(err)
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			options := DefaultOptions()
-			options.MaxEmptyLines = test.maximum
-			result, err := FormatWithOptions("empty_lines.go", input, options)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if got := string(result.Source); got != test.want {
-				t.Fatalf("formatted source:\n%s\nwant:\n%s", got, test.want)
-			}
-		})
+	want := "package p\n\nfunc F() {\n\tfirst()\n\n\tsecond()\n}\n"
+	if got := string(result.Source); got != want {
+		t.Fatalf("formatted source:\n%s\nwant:\n%s", got, want)
 	}
 }
 
@@ -133,7 +120,7 @@ func TestFormatGotoAndFallthrough(t *testing.T) {
 		},
 		"goto": {
 			input: "package p\nfunc F() { goto done; done: return }\n",
-			want:  "package p\n\nfunc F() {\n\tgoto done\n\tdone:\n\treturn\n}\n",
+			want:  "package p\n\nfunc F() {\n\tgoto done\ndone:\n\treturn\n}\n",
 		},
 	}
 	for name, test := range tests {
@@ -159,7 +146,7 @@ var _=Map[string,int]
 	want := `package p
 
 type Pair[Left, Right any] struct {
-	First Left
+	First  Left
 	Second Right
 }
 
@@ -189,7 +176,7 @@ var _ = Map[string, int]
 func TestFormatBreaksLongGenericLists(t *testing.T) {
 	input := []byte("package p\nfunc Transform[VeryLongInputType any,VeryLongOutputType comparable](value VeryLongInputType)VeryLongOutputType{return Convert[VeryLongInputType,VeryLongOutputType](value)}\n")
 	result, err := FormatWithOptions("generics.go", input, Options{
-		PrintWidth: 40, IndentWidth: 4, MaxEmptyLines: 1, EndOfLine: "lf",
+		PrintWidth: 40,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -253,15 +240,6 @@ func TestFormatPreservesBuildConstraintSeparation(t *testing.T) {
 	wantPrefix := "//go:build linux\n\n// Package p is a fixture.\npackage p\n"
 	if !strings.HasPrefix(string(result.Source), wantPrefix) {
 		t.Fatalf("build constraint moved:\n%s", result.Source)
-	}
-	options := DefaultOptions()
-	options.MaxEmptyLines = 0
-	result, err = FormatWithOptions("constraint.go", input, options)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.HasPrefix(string(result.Source), wantPrefix) {
-		t.Fatalf("build constraint separation removed:\n%s", result.Source)
 	}
 }
 
@@ -333,7 +311,7 @@ func TestFormatLabeledLoop(t *testing.T) {
 	input := []byte(`package p
 
 func F(values [][]int) {
-	outer:
+outer:
 	for _, values := range values {
 		for _, value := range values {
 			if value == 0 {
@@ -395,7 +373,7 @@ func(v *values) first() []int { if result:=v.Items;len(result)>0{return result};
 
 const (
 	alpha = 1
-	beta = 2
+	beta  = 2
 )
 
 type values struct {

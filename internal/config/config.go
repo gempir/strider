@@ -19,39 +19,36 @@ const Filename = "strider.toml"
 
 // Config is the complete project configuration document.
 type Config struct {
-	Version int `toml:"version"`
-	Color string `toml:"color"`
+	Version   int             `toml:"version"`
+	Color     string          `toml:"color"`
 	Formatter FormatterConfig `toml:"formatter"`
-	Checks ToolConfig `toml:"checks"`
+	Checks    ToolConfig      `toml:"checks"`
 
 	Path string `toml:"-"`
 	Root string `toml:"-"`
 }
 
 type FormatterConfig struct {
-	PrintWidth int `toml:"print-width"`
-	IndentWidth int `toml:"indent-width"`
-	MaxEmptyLines int `toml:"max-empty-lines"`
-	EndOfLine string `toml:"end-of-line"`
-	Excludes []string `toml:"excludes"`
+	PrintWidth int      `toml:"print-width"`
+	Excludes   []string `toml:"excludes"`
 }
 
 type ToolConfig struct {
-	Excludes []string `toml:"excludes"`
-	Baseline string `toml:"baseline"`
-	BaselineVariant string `toml:"baseline-variant"`
-	MinimumSeverity string `toml:"minimum-severity"`
-	Rules map[string]RuleConfig `toml:"rules"`
+	Excludes        []string              `toml:"excludes"`
+	Baseline        string                `toml:"baseline"`
+	BaselineVariant string                `toml:"baseline-variant"`
+	MinimumSeverity string                `toml:"minimum-severity"`
+	Rules           map[string]RuleConfig `toml:"rules"`
 }
 
 type RuleConfig struct {
-	Enabled *bool `toml:"enabled"`
-	Severity string `toml:"severity"`
+	Enabled  *bool    `toml:"enabled"`
+	Severity string   `toml:"severity"`
 	Excludes []string `toml:"excludes"`
 }
 
 func Defaults() Config {
-	return Config{Version: 1, Color: string(ui.ColorAuto), Formatter: FormatterConfig{PrintWidth: 180, IndentWidth: 4, MaxEmptyLines: 1, EndOfLine: "lf"}, Checks: defaultToolConfig()}
+	return Config{Version: 1, Color: string(ui.ColorAuto), Formatter: FormatterConfig{PrintWidth: 180}, Checks: defaultToolConfig()}
 }
 
 func defaultToolConfig() ToolConfig {
@@ -134,15 +131,6 @@ func (configuration Config) validate() error {
 	}
 	if configuration.Formatter.PrintWidth < 40 || configuration.Formatter.PrintWidth > 500 {
 		return fmt.Errorf("formatter.print-width must be between 40 and 500")
-	}
-	if configuration.Formatter.IndentWidth < 1 || configuration.Formatter.IndentWidth > 16 {
-		return fmt.Errorf("formatter.indent-width must be between 1 and 16")
-	}
-	if configuration.Formatter.MaxEmptyLines < 0 {
-		return fmt.Errorf("formatter.max-empty-lines must be zero or greater")
-	}
-	if configuration.Formatter.EndOfLine != "lf" && configuration.Formatter.EndOfLine != "crlf" {
-		return fmt.Errorf("formatter.end-of-line must be \"lf\" or \"crlf\"")
 	}
 	return validateTool("checks", configuration.Checks)
 }

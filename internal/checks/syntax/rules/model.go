@@ -7,11 +7,11 @@ import (
 
 // Meta describes one built-in syntax check.
 type Meta struct {
-	Code string `json:"code"`
-	Summary string `json:"summary"`
-	Explanation string `json:"explanation"`
-	GoodExample string `json:"good_example"`
-	BadExample string `json:"bad_example"`
+	Code            string              `json:"code"`
+	Summary         string              `json:"summary"`
+	Explanation     string              `json:"explanation"`
+	GoodExample     string              `json:"good_example"`
+	BadExample      string              `json:"bad_example"`
 	DefaultSeverity diagnostic.Severity `json:"default_severity"`
 }
 
@@ -23,7 +23,7 @@ type Rule interface {
 }
 
 type definition struct {
-	meta Meta
+	meta        Meta
 	defaultRule bool
 }
 
@@ -38,18 +38,18 @@ func (rule definition) defaultEnabled() bool {
 // Finding is a rule result before the syntax package converts source positions
 // and applies suppression directives.
 type Finding struct {
-	ConcreteNode cst.Node
-	ConcreteStart int
-	ConcreteEnd int
+	ConcreteNode     cst.Node
+	ConcreteStart    int
+	ConcreteEnd      int
 	HasConcreteRange bool
-	Code string
-	Message string
+	Code             string
+	Message          string
 }
 
 // CSTInput contains everything needed for the concrete-syntax lint pass.
 type CSTInput struct {
 	Filename string
-	Tree *cst.Tree
-	Rules []Rule
-	Report func(Finding)
+	Tree     *cst.Tree
+	Rules    []Rule
+	Report   func(Finding)
 }

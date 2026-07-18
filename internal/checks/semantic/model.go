@@ -13,11 +13,11 @@ import (
 
 // Meta describes one built-in semantic check.
 type Meta struct {
-	Code string `json:"code"`
-	Summary string `json:"summary"`
-	Explanation string `json:"explanation"`
-	GoodExample string `json:"good_example"`
-	BadExample string `json:"bad_example"`
+	Code            string              `json:"code"`
+	Summary         string              `json:"summary"`
+	Explanation     string              `json:"explanation"`
+	GoodExample     string              `json:"good_example"`
+	BadExample      string              `json:"bad_example"`
 	DefaultSeverity diagnostic.Severity `json:"default_severity"`
 }
 
@@ -30,18 +30,18 @@ type Rule interface {
 // Pass contains the syntax and type information for one loaded Go package.
 type Pass struct {
 	PackagePath string
-	GoVersion string
-	Files []*ast.File
-	FileSet *token.FileSet
-	Types *types.Package
-	TypesSizes types.Sizes
-	TypesInfo *types.Info
-	SSAProgram *ssa.Program
-	SSAPackage *ssa.Package
-	Functions []*ssa.Function
-	facts *packageFacts
+	GoVersion   string
+	Files       []*ast.File
+	FileSet     *token.FileSet
+	Types       *types.Package
+	TypesSizes  types.Sizes
+	TypesInfo   *types.Info
+	SSAProgram  *ssa.Program
+	SSAPackage  *ssa.Package
+	Functions   []*ssa.Function
+	facts       *packageFacts
 
-	deprecatedObjects map[types.Object]string
+	deprecatedObjects  map[types.Object]string
 	deprecatedPackages map[*types.Package]string
 
 	report func(ast.Node, string)

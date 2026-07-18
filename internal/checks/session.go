@@ -24,9 +24,9 @@ type SessionOptions struct {
 
 // SessionStats reports reuse across completed workspace generations.
 type SessionStats struct {
-	ConcreteHits uint64
+	ConcreteHits   uint64
 	ConcreteMisses uint64
-	Analysis semantic.SessionStats
+	Analysis       semantic.SessionStats
 }
 
 // Session executes a fixed check registry and option set across immutable
@@ -37,14 +37,14 @@ type Session struct {
 	mu sync.Mutex
 
 	registry *Registry
-	options RunOptions
+	options  RunOptions
 	analyzer *semantic.Session
 
 	hasConcrete bool
 	concreteKey [sha256.Size]byte
-	concrete Result
-	hits uint64
-	misses uint64
+	concrete    Result
+	hits        uint64
+	misses      uint64
 }
 
 // NewSession constructs a bounded incremental check session. The registry and
@@ -131,7 +131,7 @@ func concreteFingerprint(shared *workspace.Workspace, includeFormatterContext bo
 		writeBytes(digest, []byte(file.Path()))
 		identity, err := file.Identity()
 		if err != nil {
-			return[sha256.Size]byte{}, err
+			return [sha256.Size]byte{}, err
 		}
 		_, _ = digest.Write(identity[:])
 	}
@@ -144,7 +144,7 @@ func concreteFingerprint(shared *workspace.Workspace, includeFormatterContext bo
 }
 
 type moduleFileState struct {
-	exists bool
+	exists   bool
 	contents []byte
 }
 

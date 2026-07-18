@@ -7,15 +7,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type caseInsensitiveStringComparisonRule struct {}
+type caseInsensitiveStringComparisonRule struct{}
 
 func (caseInsensitiveStringComparisonRule) Meta() Meta {
 	return Meta{
-		Code: "case-insensitive-string-comparison",
-		Summary: "detect allocating case conversions used only for comparison",
-		Explanation: "Converting both strings with strings.ToLower or strings.ToUpper allocates intermediate strings and processes each input fully. strings.EqualFold compares incrementally without those allocations and can stop at the first mismatch.",
-		GoodExample: "if strings.EqualFold(left, right) { use() }",
-		BadExample: "if strings.ToLower(left) == strings.ToLower(right) { use() }",
+		Code:            "case-insensitive-string-comparison",
+		Summary:         "detect allocating case conversions used only for comparison",
+		Explanation:     "Converting both strings with strings.ToLower or strings.ToUpper allocates intermediate strings and processes each input fully. strings.EqualFold compares incrementally without those allocations and can stop at the first mismatch.",
+		GoodExample:     "if strings.EqualFold(left, right) { use() }",
+		BadExample:      "if strings.ToLower(left) == strings.ToLower(right) { use() }",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -26,17 +26,17 @@ func (caseInsensitiveStringComparisonRule) Run(pass *Pass) {
 			file,
 			func(node ast.Node) bool {
 				comparison,
-				ok := node.(*ast.BinaryExpr)
+					ok := node.(*ast.BinaryExpr)
 				if !ok || (comparison.Op != token.EQL && comparison.Op != token.NEQ) {
 					return true
 				}
 				left,
-				ok := comparison.X.(*ast.CallExpr)
+					ok := comparison.X.(*ast.CallExpr)
 				if !ok || len(left.Args) != 1 {
 					return true
 				}
 				right,
-				ok := comparison.Y.(*ast.CallExpr)
+					ok := comparison.Y.(*ast.CallExpr)
 				if !ok || len(right.Args) != 1 {
 					return true
 				}

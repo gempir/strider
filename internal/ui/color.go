@@ -11,9 +11,9 @@ import (
 type ColorMode string
 
 const (
-	ColorAuto ColorMode = "auto"
+	ColorAuto   ColorMode = "auto"
 	ColorAlways ColorMode = "always"
-	ColorNever ColorMode = "never"
+	ColorNever  ColorMode = "never"
 )
 
 // ValidColorMode reports whether value is an accepted color mode.
@@ -55,7 +55,7 @@ func colorsEnabled(writer io.Writer, mode ColorMode) bool {
 			return false
 		}
 		info, err := file.Stat()
-		return err == nil && info.Mode() & os.ModeCharDevice != 0
+		return err == nil && info.Mode()&os.ModeCharDevice != 0
 	}
 }
 

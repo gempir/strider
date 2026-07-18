@@ -10,15 +10,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type invalidTemplateRule struct {}
+type invalidTemplateRule struct{}
 
 func (invalidTemplateRule) Meta() Meta {
 	return Meta{
-		Code: "invalid-template",
-		Summary: "detect invalid templates",
-		Explanation: "Constant text/template and html/template strings parsed directly from template.New must use valid template syntax.",
-		GoodExample: "template.New(\"greeting\").Parse(`Hello, {{.Name}}`)",
-		BadExample: "template.New(\"greeting\").Parse(`Hello, {{.Name}`)",
+		Code:            "invalid-template",
+		Summary:         "detect invalid templates",
+		Explanation:     "Constant text/template and html/template strings parsed directly from template.New must use valid template syntax.",
+		GoodExample:     "template.New(\"greeting\").Parse(`Hello, {{.Name}}`)",
+		BadExample:      "template.New(\"greeting\").Parse(`Hello, {{.Name}`)",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -29,12 +29,12 @@ func (invalidTemplateRule) Run(pass *Pass) {
 			file,
 			func(node ast.Node) bool {
 				call,
-				ok := node.(*ast.CallExpr)
+					ok := node.(*ast.CallExpr)
 				if !ok || len(call.Args) == 0 {
 					return true
 				}
 				selector,
-				ok := call.Fun.(*ast.SelectorExpr)
+					ok := call.Fun.(*ast.SelectorExpr)
 				if !ok {
 					return true
 				}

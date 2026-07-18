@@ -19,10 +19,10 @@ import (
 )
 
 type Registry struct {
-	rules []builtinrules.Rule
-	settings map[string]configuredRule
+	rules      []builtinrules.Rule
+	settings   map[string]configuredRule
 	knownCodes map[string]bool
-	root string
+	root       string
 }
 
 type configuredRule struct {
@@ -32,10 +32,10 @@ type configuredRule struct {
 
 // RegistryOptions selects and configures concrete-syntax rules.
 type RegistryOptions struct {
-	Only []string
-	EnableAll bool
-	Settings map[string]config.RuleConfig
-	Root string
+	Only            []string
+	EnableAll       bool
+	Settings        map[string]config.RuleConfig
+	Root            string
 	MinimumSeverity diagnostic.Severity
 }
 
@@ -190,28 +190,28 @@ func (r *Registry) Applies(filename string) bool {
 }
 
 type Context struct {
-	filename string
+	filename        string
 	displayFilename string
-	diagnostics []diagnostic.Diagnostic
+	diagnostics     []diagnostic.Diagnostic
 	concreteIgnores map[string]bool
-	concreteNodes []concreteSuppression
+	concreteNodes   []concreteSuppression
 }
 
 type concreteSuppression struct {
 	start int
-	end int
+	end   int
 	codes map[string]bool
 }
 
 type fileResult struct {
-	filename string
+	filename    string
 	diagnostics []diagnostic.Diagnostic
-	err error
+	err         error
 }
 
 func Run(files []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
 	if len(files) == 0 {
-		return[]diagnostic.Diagnostic{}, nil
+		return []diagnostic.Diagnostic{}, nil
 	}
 	if len(files) == 1 {
 		diagnostics, err := lintFile(files[0], registry)
@@ -270,8 +270,8 @@ func sortDiagnostics(diagnostics []diagnostic.Diagnostic) {
 		diagnostics,
 		func(i, j int) bool {
 			left,
-			right := diagnostics[i],
-			diagnostics[j]
+				right := diagnostics[i],
+				diagnostics[j]
 			if left.File != right.File {
 				return left.File < right.File
 			}
@@ -326,8 +326,8 @@ func analyzeTree(filename string, concreteTree *cst.Tree, activeRules []builtinr
 	builtinrules.AnalyzeCST(
 		builtinrules.CSTInput{
 			Filename: filename,
-			Tree: concreteTree,
-			Rules: activeRules,
+			Tree:     concreteTree,
+			Rules:    activeRules,
 			Report: func(finding builtinrules.Finding) {
 				context.reportConcrete(concreteTree, finding, registry.Severity(finding.Code))
 			},
@@ -410,7 +410,7 @@ func concreteSuppressionCandidates(tree *cst.Tree) []concreteSuppression {
 				return true
 			}
 			start,
-			end := cst.Range(node)
+				end := cst.Range(node)
 			if end > start {
 				result = append(result, concreteSuppression{start: start, end: end})
 			}
@@ -431,7 +431,7 @@ func directiveCodes(comment, directive string) ([]string, bool) {
 	if index < 0 {
 		return nil, false
 	}
-	remainder := comment[index + len(directive):]
+	remainder := comment[index+len(directive):]
 	if remainder != "" && remainder[0] != ' ' && remainder[0] != '\t' && remainder[0] != '*' && remainder[0] != '/' {
 		return nil, false
 	}

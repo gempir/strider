@@ -15,14 +15,14 @@ import (
 )
 
 const (
-	defaultCacheEntries = 2048
-	defaultCacheBytes = 256 << 20
+	defaultCacheEntries   = 2048
+	defaultCacheBytes     = 256 << 20
 	defaultCacheTreeBytes = 256 << 20
 	// modernc's pointer-rich CST can be much larger than its source. The
 	// estimate intentionally favors a bounded watch heap over retaining every
 	// parsed file; live generations remain valid after cache eviction.
 	cstEstimateMultiplier = 128
-	cstEstimateFloor = 128 << 10
+	cstEstimateFloor      = 128 << 10
 )
 
 // ContentIdentity is a collision-resistant identity for one complete source
@@ -35,8 +35,8 @@ type ContentIdentity [sha256.Size]byte
 // bounds a conservative estimate of retained CST heap, and MaxEntries bounds
 // snapshots independently. Non-positive values select conservative defaults.
 type CacheOptions struct {
-	MaxEntries int
-	MaxBytes int64
+	MaxEntries   int
+	MaxBytes     int64
 	MaxTreeBytes int64
 }
 
@@ -45,59 +45,59 @@ type CacheOptions struct {
 // source size; TreeBytes is the conservative CST estimate used for eviction.
 type CacheStats struct {
 	Generations uint64
-	Hits uint64
-	Misses uint64
-	Evictions uint64
-	Entries int
-	Bytes int64
-	TreeBytes int64
+	Hits        uint64
+	Misses      uint64
+	Evictions   uint64
+	Entries     int
+	Bytes       int64
+	TreeBytes   int64
 }
 
 // Cache creates immutable workspace generations and shares unchanged source
 // snapshots and their lazily parsed CSTs between them. Open calls are
 // serialized so generation publication and LRU order are deterministic.
 type Cache struct {
-	openMu sync.Mutex
-	mu sync.Mutex
-	maxEntries int
-	maxBytes int64
+	openMu       sync.Mutex
+	mu           sync.Mutex
+	maxEntries   int
+	maxBytes     int64
 	maxTreeBytes int64
-	generation uint64
-	clock uint64
-	entries map[cacheKey]*cacheEntry
-	bytes int64
-	treeBytes int64
-	hits uint64
-	misses uint64
-	evictions uint64
+	generation   uint64
+	clock        uint64
+	entries      map[cacheKey]*cacheEntry
+	bytes        int64
+	treeBytes    int64
+	hits         uint64
+	misses       uint64
+	evictions    uint64
 }
 
 type cacheKey struct {
-	path string
+	path     string
 	identity ContentIdentity
 }
 
 type cacheEntry struct {
-	snapshot *fileSnapshot
-	lastUsed uint64
+	snapshot  *fileSnapshot
+	lastUsed  uint64
 	treeBytes int64
 }
 
 type fileSnapshot struct {
-	path string
+	path     string
 	identity ContentIdentity
-	source []byte
+	source   []byte
 	treeOnce sync.Once
-	tree *cst.Tree
-	treeErr error
-	onTree func(int64)
+	tree     *cst.Tree
+	treeErr  error
+	onTree   func(int64)
 }
 
 func (snapshot *fileSnapshot) CST() (*cst.Tree, error) {
 	snapshot.treeOnce.Do(
 		func() {
 			snapshot.tree,
-			snapshot.treeErr = cst.Parse(snapshot.path, snapshot.source)
+				snapshot.treeErr = cst.Parse(snapshot.path, snapshot.source)
 			if snapshot.tree != nil && snapshot.onTree != nil {
 				snapshot.onTree(estimatedCSTBytes(snapshot.source))
 			}
@@ -143,7 +143,7 @@ func (cache *Cache) Open(paths []string, options Options) (*Workspace, error) {
 		return nil, err
 	}
 	type capturedFile struct {
-		path string
+		path     string
 		contents []byte
 		identity ContentIdentity
 	}
@@ -200,12 +200,12 @@ func (cache *Cache) Stats() CacheStats {
 	defer cache.mu.Unlock()
 	return CacheStats{
 		Generations: cache.generation,
-		Hits: cache.hits,
-		Misses: cache.misses,
-		Evictions: cache.evictions,
-		Entries: len(cache.entries),
-		Bytes: cache.bytes,
-		TreeBytes: cache.treeBytes,
+		Hits:        cache.hits,
+		Misses:      cache.misses,
+		Evictions:   cache.evictions,
+		Entries:     len(cache.entries),
+		Bytes:       cache.bytes,
+		TreeBytes:   cache.treeBytes,
 	}
 }
 

@@ -197,7 +197,7 @@ func TestCacheContentIdentityInvalidatesSameSizeSource(t *testing.T) {
 
 func TestCacheDeterministicallyEvictsLeastRecentlyUsedSnapshot(t *testing.T) {
 	directory := t.TempDir()
-	for _, name := range[]string{"a.go", "b.go", "c.go"} {
+	for _, name := range []string{"a.go", "b.go", "c.go"} {
 		if err := os.WriteFile(filepath.Join(directory, name), []byte("package p\n"), 0o600); err != nil {
 			t.Fatal(err)
 		}
@@ -214,14 +214,14 @@ func TestCacheDeterministicallyEvictsLeastRecentlyUsedSnapshot(t *testing.T) {
 		t.Fatal(err)
 	}
 	afterC := cache.Stats()
-	if afterC.Hits != stats.Hits + 1 {
+	if afterC.Hits != stats.Hits+1 {
 		t.Fatalf("lexically last retained entry missed: before %#v, after %#v", stats, afterC)
 	}
 	if _, err := cache.Open([]string{filepath.Join(directory, "a.go")}, Options{}); err != nil {
 		t.Fatal(err)
 	}
 	afterA := cache.Stats()
-	if afterA.Misses != afterC.Misses + 1 || afterA.Entries != 2 {
+	if afterA.Misses != afterC.Misses+1 || afterA.Entries != 2 {
 		t.Fatalf("least-recently-used entry was not evicted: %#v", afterA)
 	}
 }

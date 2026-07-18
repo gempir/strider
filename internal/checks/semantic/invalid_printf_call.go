@@ -12,22 +12,22 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type invalidPrintfCallRule struct {}
+type invalidPrintfCallRule struct{}
 
 type printfUse struct {
-	raw string
-	verb rune
+	raw   string
+	verb  rune
 	value int
 	stars []int
 }
 
 func (invalidPrintfCallRule) Meta() Meta {
 	return Meta{
-		Code: "invalid-printf-call",
-		Summary: "detect malformed printf formats and mismatched arguments",
-		Explanation: "Printf-style calls interpret a small language of verbs, argument indexes, widths, and precisions. A malformed format, missing or extra argument, non-integer star argument, unsupported wrapping verb, or incompatible value type produces broken output at runtime.",
-		GoodExample: `fmt.Printf("%d %s", count, name)`,
-		BadExample: `fmt.Printf("%d %s", name, count)`,
+		Code:            "invalid-printf-call",
+		Summary:         "detect malformed printf formats and mismatched arguments",
+		Explanation:     "Printf-style calls interpret a small language of verbs, argument indexes, widths, and precisions. A malformed format, missing or extra argument, non-integer star argument, unsupported wrapping verb, or incompatible value type produces broken output at runtime.",
+		GoodExample:     `fmt.Printf("%d %s", count, name)`,
+		BadExample:      `fmt.Printf("%d %s", name, count)`,
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -38,12 +38,12 @@ func (invalidPrintfCallRule) Run(pass *Pass) {
 			file,
 			func(node ast.Node) bool {
 				call,
-				ok := node.(*ast.CallExpr)
+					ok := node.(*ast.CallExpr)
 				if !ok || call.Ellipsis.IsValid() {
 					return true
 				}
 				formatIndex,
-				ok := dynamicPrintfFormatIndex(pass, call)
+					ok := dynamicPrintfFormatIndex(pass, call)
 				if !ok || formatIndex >= len(call.Args) {
 					return true
 				}
@@ -53,13 +53,13 @@ func (invalidPrintfCallRule) Run(pass *Pass) {
 				}
 				formatText := constant.StringVal(formatValue)
 				uses,
-				indexed,
-				err := parsePrintfUses(formatText)
+					indexed,
+					err := parsePrintfUses(formatText)
 				if err != nil {
 					pass.Report(call.Args[formatIndex], err.Error())
 					return true
 				}
-				arguments := call.Args[formatIndex + 1:]
+				arguments := call.Args[formatIndex+1:]
 				name := printfCallName(pass, call)
 				if message := validatePrintfUses(pass, name, uses, arguments, indexed); message != "" {
 					pass.Report(call.Args[formatIndex], message)
@@ -178,7 +178,7 @@ func printfIndex(formatText string, offset int) (int, int, bool, error) {
 		return 0, offset, false, fmt.Errorf("printf format has an argument index without a closing bracket")
 	}
 	end += offset
-	number := formatText[offset + 1:end]
+	number := formatText[offset+1 : end]
 	index, err := strconv.Atoi(number)
 	if err != nil || index <= 0 {
 		return 0, offset, false, fmt.Errorf("printf format has invalid argument index [%s]", number)
@@ -198,7 +198,7 @@ func validatePrintfUses(pass *Pass, callName string, uses []printfUse, arguments
 		}
 		for _, index := range use.stars {
 			if index >= len(arguments) {
-				return fmt.Sprintf("%s format %s reads argument %d, but call has %d values", callName, use.raw, index + 1, len(arguments))
+				return fmt.Sprintf("%s format %s reads argument %d, but call has %d values", callName, use.raw, index+1, len(arguments))
 			}
 			if index > highest {
 				highest = index
@@ -211,18 +211,18 @@ func validatePrintfUses(pass *Pass, callName string, uses []printfUse, arguments
 			continue
 		}
 		if use.value >= len(arguments) {
-			return fmt.Sprintf("%s format %s reads argument %d, but call has %d values", callName, use.raw, use.value + 1, len(arguments))
+			return fmt.Sprintf("%s format %s reads argument %d, but call has %d values", callName, use.raw, use.value+1, len(arguments))
 		}
 		if use.value > highest {
 			highest = use.value
 		}
 		valueType := pass.TypesInfo.TypeOf(arguments[use.value])
 		if !printfVerbAccepts(use.verb, valueType) {
-			return fmt.Sprintf("%s format %s has argument %d of incompatible type %s", callName, use.raw, use.value + 1, types.TypeString(valueType, nil))
+			return fmt.Sprintf("%s format %s has argument %d of incompatible type %s", callName, use.raw, use.value+1, types.TypeString(valueType, nil))
 		}
 	}
-	if !indexed && highest + 1 < len(arguments) {
-		return fmt.Sprintf("%s call needs %d values but has %d", callName, highest + 1, len(arguments))
+	if !indexed && highest+1 < len(arguments) {
+		return fmt.Sprintf("%s call needs %d values but has %d", callName, highest+1, len(arguments))
 	}
 	return ""
 }
@@ -254,7 +254,7 @@ func printfVerbAcceptsRecursive(verb rune, valueType types.Type, top bool, seen 
 	if verb == 'v' || verb == 'T' {
 		return true
 	}
-	if(verb == 's' || verb == 'q' || verb == 'x' || verb == 'X') && (hasStringMethod(valueType) || implementsError(valueType)) {
+	if (verb == 's' || verb == 'q' || verb == 'x' || verb == 'X') && (hasStringMethod(valueType) || implementsError(valueType)) {
 		return true
 	}
 
@@ -275,7 +275,7 @@ func printfVerbAcceptsRecursive(verb rune, valueType types.Type, top bool, seen 
 		}
 		return printfVerbAcceptsRecursive(verb, aggregate.Elem(), false, seen)
 	case *types.Array:
-		if(verb == 's' || verb == 'q' || verb == 'x' || verb == 'X') && isByteType(aggregate.Elem()) {
+		if (verb == 's' || verb == 'q' || verb == 'x' || verb == 'X') && isByteType(aggregate.Elem()) {
 			return true
 		}
 		return printfVerbAcceptsRecursive(verb, aggregate.Elem(), false, seen)
@@ -300,15 +300,15 @@ func printfVerbAcceptsRecursive(verb rune, valueType types.Type, top bool, seen 
 	case 'c', 'd', 'o', 'O', 'U':
 		return printfBasicInfo(valueType, types.IsInteger) || printfPointerLike(valueType)
 	case 'e', 'E', 'f', 'F', 'g', 'G':
-		return printfBasicInfo(valueType, types.IsFloat | types.IsComplex)
+		return printfBasicInfo(valueType, types.IsFloat|types.IsComplex)
 	case 'b':
-		return printfBasicInfo(valueType, types.IsInteger | types.IsFloat | types.IsComplex) || printfPointerLike(valueType)
+		return printfBasicInfo(valueType, types.IsInteger|types.IsFloat|types.IsComplex) || printfPointerLike(valueType)
 	case 's':
 		return printfStringType(valueType)
 	case 'q':
 		return printfStringType(valueType) || printfBasicInfo(valueType, types.IsInteger)
 	case 'x', 'X':
-		return printfStringType(valueType) || printfBasicInfo(valueType, types.IsInteger | types.IsFloat | types.IsComplex) || printfPointerLike(valueType)
+		return printfStringType(valueType) || printfBasicInfo(valueType, types.IsInteger|types.IsFloat|types.IsComplex) || printfPointerLike(valueType)
 	case 'p':
 		return printfPointerLike(valueType)
 	default:
@@ -323,7 +323,7 @@ func isByteType(valueType types.Type) bool {
 
 func printfBasicInfo(valueType types.Type, wanted types.BasicInfo) bool {
 	basic, ok := valueType.Underlying().(*types.Basic)
-	return ok && basic.Info() & wanted != 0
+	return ok && basic.Info()&wanted != 0
 }
 
 func printfIntegerType(valueType types.Type) bool {

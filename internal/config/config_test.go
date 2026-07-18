@@ -12,7 +12,7 @@ func TestDefaultsUseVersionOneAndWideFormatting(t *testing.T) {
 	if defaults.Version != 1 {
 		t.Fatalf("default version = %d, want 1", defaults.Version)
 	}
-	if defaults.Formatter.PrintWidth != 180 || defaults.Formatter.MaxEmptyLines != 1 {
+	if defaults.Formatter.PrintWidth != 180 {
 		t.Fatalf("unexpected formatter defaults: %#v", defaults.Formatter)
 	}
 	if defaults.Checks.MinimumSeverity != "warning" {
@@ -29,7 +29,6 @@ func TestLoadDiscoversVersionOneChecks(t *testing.T) {
 	contents := `version = 1
 [formatter]
 print-width = 120
-max-empty-lines = 3
 [checks]
 excludes = ["generated/**"]
 baseline = "strider-baseline.toml"
@@ -48,7 +47,7 @@ excludes = ["legacy/**"]
 	if err != nil {
 		t.Fatal(err)
 	}
-	if configuration.Formatter.PrintWidth != 120 || configuration.Formatter.IndentWidth != 4 || configuration.Formatter.MaxEmptyLines != 3 {
+	if configuration.Formatter.PrintWidth != 120 {
 		t.Fatalf("unexpected formatter config: %#v", configuration.Formatter)
 	}
 	if configuration.Checks.Baseline != "strider-baseline.toml" || configuration.Checks.BaselineVariant != "strict" || configuration.Checks.MinimumSeverity != "warning" {
@@ -73,18 +72,20 @@ excludes = ["legacy/**"]
 func TestLoadRejectsUnknownAndInvalidSettings(t *testing.T) {
 	for name, test := range map[string]struct {
 		contents string
-		wanted string
+		wanted   string
 	}{
-		"unknown": {"version = 1\nunknown = true\n", "unknown configuration key"},
-		"version": {"version = 9\n", "expected 1"},
-		"width": {"version = 1\n[formatter]\nprint-width = 20\n", "print-width"},
-		"empty": {"version = 1\n[formatter]\nmax-empty-lines = -1\n", "max-empty-lines"},
-		"severity": {"version = 1\n[checks.rules.no-init]\nseverity = \"fatal\"\n", "severity"},
+		"unknown":          {"version = 1\nunknown = true\n", "unknown configuration key"},
+		"version":          {"version = 9\n", "expected 1"},
+		"width":            {"version = 1\n[formatter]\nprint-width = 20\n", "print-width"},
+		"indent-width":     {"version = 1\n[formatter]\nindent-width = 4\n", "unknown configuration key"},
+		"end-of-line":      {"version = 1\n[formatter]\nend-of-line = \"crlf\"\n", "unknown configuration key"},
+		"max-empty-lines":  {"version = 1\n[formatter]\nmax-empty-lines = 1\n", "unknown configuration key"},
+		"severity":         {"version = 1\n[checks.rules.no-init]\nseverity = \"fatal\"\n", "severity"},
 		"minimum-severity": {"version = 1\n[checks]\nminimum-severity = \"fatal\"\n", "minimum-severity"},
-		"checks-unknown": {"version = 1\n[checks]\nunknown = true\n", "unknown configuration key"},
-		"legacy-linter": {"version = 1\n[linter]\n", "unknown configuration key"},
-		"legacy-analyzer": {"version = 1\n[analyzer]\n", "unknown configuration key"},
-		"color": {"version = 1\ncolor = \"sometimes\"\n", "color"},
+		"checks-unknown":   {"version = 1\n[checks]\nunknown = true\n", "unknown configuration key"},
+		"legacy-linter":    {"version = 1\n[linter]\n", "unknown configuration key"},
+		"legacy-analyzer":  {"version = 1\n[analyzer]\n", "unknown configuration key"},
+		"color":            {"version = 1\ncolor = \"sometimes\"\n", "color"},
 	} {
 		t.Run(
 			name,
@@ -94,7 +95,7 @@ func TestLoadRejectsUnknownAndInvalidSettings(t *testing.T) {
 					t.Fatal(err)
 				}
 				_,
-				err := Load(path, false)
+					err := Load(path, false)
 				if err == nil || !strings.Contains(err.Error(), test.wanted) {
 					t.Fatalf("got %v, want error containing %q", err, test.wanted)
 				}

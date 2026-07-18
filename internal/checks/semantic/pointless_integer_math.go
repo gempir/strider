@@ -9,15 +9,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type pointlessIntegerMathRule struct {}
+type pointlessIntegerMathRule struct{}
 
 func (pointlessIntegerMathRule) Meta() Meta {
 	return Meta{
-		Code: "pointless-integer-math",
-		Summary: "detect floating-point helpers applied to converted integers",
-		Explanation: "An integer converted to floating point is already integral and finite. Rounding it or asking whether it is NaN or infinite cannot provide useful information.",
-		GoodExample: "rounded := math.Ceil(measurement)",
-		BadExample: "rounded := math.Ceil(float64(count))",
+		Code:            "pointless-integer-math",
+		Summary:         "detect floating-point helpers applied to converted integers",
+		Explanation:     "An integer converted to floating point is already integral and finite. Rounding it or asking whether it is NaN or infinite cannot provide useful information.",
+		GoodExample:     "rounded := math.Ceil(measurement)",
+		BadExample:      "rounded := math.Ceil(float64(count))",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -68,7 +68,7 @@ func allIntegerTypes(valueType types.Type) bool {
 	}
 	switch underlying := valueType.Underlying().(type) {
 	case *types.Basic:
-		return underlying.Info() & types.IsInteger != 0
+		return underlying.Info()&types.IsInteger != 0
 	case *types.Interface:
 		if underlying.NumEmbeddeds() == 0 {
 			return false

@@ -7,8 +7,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "532de8b9f14d955075a672e90a3bb5a59d94414e2f857c84b669559ee7ada85c",
-          "findings": 1830,
+          "digest": "d6780e17a23b35a97491a5b803df1eea8fd90234bd81704dc8f421651381e8f8",
+          "findings": 1819,
           "by_code": {
             "add-constant": 175,
             "bare-return": 1,
@@ -31,7 +31,7 @@
             "exported": 123,
             "external-call-in-loop": 3,
             "flag-parameter": 4,
-            "format": 54,
+            "format": 43,
             "function-length": 19,
             "function-result-limit": 1,
             "get-return": 1,
@@ -74,8 +74,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "fee0342acc037d301e42ce2ff52bd689b4dbfe8a7d53b9a86292c36fa8d27062",
-          "findings": 54
+          "digest": "813c4c2c514d07302d0778c92c3696887bac899208ac7004bc9fd15857727f3b",
+          "findings": 43
         }
       }
     },
@@ -85,8 +85,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "e1c34fcf4db651508803df9e79aad34c3a18d07530052196fd3b19fcbf1e8d3f",
-          "findings": 4107,
+          "digest": "08e314a991356111a3d0b6eba9203e8575ceb84f7f40a17ca5196c242e48e2d4",
+          "findings": 4078,
           "by_code": {
             "add-constant": 503,
             "bare-return": 31,
@@ -109,7 +109,7 @@
             "exported": 352,
             "external-call-in-loop": 4,
             "flag-parameter": 7,
-            "format": 79,
+            "format": 50,
             "function-length": 20,
             "import-alias-naming": 1,
             "import-shadowing": 7,
@@ -154,8 +154,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "bcf38aadebee1aa01af4477fc8756abdda4a5302d470335c76004fde9cfca247",
-          "findings": 79
+          "digest": "9a03af3397440f4ccb853f3a808d026bf180a94684fd17dbcb4d3966b3bfcd4b",
+          "findings": 50
         }
       }
     },
@@ -165,8 +165,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "33a99d84a2cf776eaff00cf875d025291b8b96bf8deb52521061bf728014392e",
-          "findings": 1234,
+          "digest": "8ebf0dc1d95a3de0239f210d39572912b9d120328726bfae684ba44ee0fdd165",
+          "findings": 1225,
           "by_code": {
             "add-constant": 42,
             "byte-string-write": 1,
@@ -185,7 +185,7 @@
             "exported": 90,
             "external-call-in-loop": 1,
             "flag-parameter": 8,
-            "format": 30,
+            "format": 21,
             "function-length": 10,
             "import-shadowing": 7,
             "increment-decrement": 1,
@@ -225,8 +225,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "96e2be4da33ed0cf2ae5680194ccf3730774e2153904f9955785b5a6222a5a05",
-          "findings": 30
+          "digest": "4cc9a9a22b679275c803bb518194e76ca65cac8ca46970ff4795d7cd02504b51",
+          "findings": 21
         }
       }
     },
@@ -293,8 +293,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "9a287455b888d689c35b033786d14194a57cb26c1ba5bfaa571b45e5a0c0c3f8",
-          "findings": 353,
+          "digest": "e1ab6120d9ebad2733239714c21e7245031dc6a107e87de51baeefd2d243856a",
+          "findings": 349,
           "by_code": {
             "add-constant": 8,
             "bare-return": 14,
@@ -310,7 +310,7 @@
             "epoch-naming": 1,
             "error-strings": 11,
             "exported": 34,
-            "format": 11,
+            "format": 7,
             "import-alias-naming": 1,
             "ineffective-bitwise-zero": 1,
             "inline-error-declaration": 12,
@@ -341,8 +341,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "d4fcd98f254af5254700ace49e700802666adf67df8bd1f8e2dec8386e17acd2",
-          "findings": 11
+          "digest": "04e4287bdc87ba82a3c61e569008e484d3fba113da8497a40d14323bb745a642",
+          "findings": 7
         }
       }
     },
@@ -352,8 +352,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "01e448684f981b489316a41a05b2005b8a6a68f7a2cc884bca71c526a2d6c9ab",
-          "findings": 423,
+          "digest": "5b45a2cafab626f9b590ab2ffee6f9cba3c604a79a1ed4e187307bbdc1c75311",
+          "findings": 420,
           "by_code": {
             "add-constant": 13,
             "bare-return": 13,
@@ -370,7 +370,7 @@
             "error-strings": 10,
             "exported": 103,
             "filename-format": 2,
-            "format": 16,
+            "format": 13,
             "import-shadowing": 4,
             "inline-error-declaration": 12,
             "line-length-limit": 61,
@@ -400,8 +400,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "d53b1bbf677f4db3b08f4440a392b18b1f021194996a65aa38b13bd27270cd0a",
-          "findings": 16
+          "digest": "8eebadea301f0dc4edd67336f81a34e7fa7a4bf258f28400db871c0275b54900",
+          "findings": 13
         }
       }
     },
@@ -411,8 +411,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "6e6975f9fad1fbf264c4806f9fceb0fb8e52b5330eade371246a13382cca5d4f",
-          "findings": 769,
+          "digest": "173c57637f6c174db5f624cc6c3f6794ec4122effbc87bab71286f03ff2c188b",
+          "findings": 760,
           "by_code": {
             "add-constant": 38,
             "append-to-sized-slice": 1,
@@ -432,7 +432,7 @@
             "error-strings": 28,
             "exported": 18,
             "flag-parameter": 1,
-            "format": 24,
+            "format": 15,
             "get-return": 2,
             "increment-decrement": 2,
             "indent-error-flow": 1,
@@ -466,8 +466,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "21748ffbaac4268787149d3a8daa63029703797e0beaece8d0d08665ecab22b9",
-          "findings": 24
+          "digest": "703b1f02b2e5b6f88f08dbc7f837db8decee614be3b7a4a1c3c31f087bec347a",
+          "findings": 15
         }
       }
     },
@@ -477,8 +477,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "cc6184d612a42e521ccf38e58f87d536d2fa44742f495c46ff9077d48a502e83",
-          "findings": 350,
+          "digest": "f9af824f82300314c3f664f313791475736ecbbf93ae78d5be76f9d7017573c8",
+          "findings": 349,
           "by_code": {
             "add-constant": 1,
             "cognitive-complexity": 5,
@@ -494,7 +494,7 @@
             "exported": 64,
             "flag-parameter": 2,
             "forbidden-call-in-wg-go": 37,
-            "format": 22,
+            "format": 21,
             "function-length": 9,
             "import-shadowing": 1,
             "indent-error-flow": 2,
@@ -519,8 +519,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "b183b767652cae417b328df9db95de02c0bc8f0aa134aa4192a9a4372f48c020",
-          "findings": 22
+          "digest": "92c8519bf76d56b9ac11b781f510147a6c0970ec86738963c78b6652073d806d",
+          "findings": 21
         }
       }
     },
@@ -530,8 +530,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "34241c4ade40c179789f99cc13d8668f4b72b51e9530174915909299889860ea",
-          "findings": 592,
+          "digest": "17a1cb061251769f9b15d9dee1c9dab75d2d0aba92f9b9b22afdaab3014040ba",
+          "findings": 587,
           "by_code": {
             "add-constant": 35,
             "bare-return": 2,
@@ -548,7 +548,7 @@
             "error-strings": 73,
             "exported": 77,
             "flag-parameter": 2,
-            "format": 14,
+            "format": 9,
             "indent-error-flow": 1,
             "interface-method-limit": 1,
             "interface-return": 6,
@@ -578,8 +578,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "4796cca63c9ba382c3a5af01de6f30467504daee931f85a67c2560476f2e8110",
-          "findings": 14
+          "digest": "30d82e25d66cd6d2f1781427ad8eb4b3be7ab45bbeab5d041b78e20ddec73469",
+          "findings": 9
         }
       }
     },
@@ -589,8 +589,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "aa4f34949de85a16c82283bd383dff693de764935d5959093eb3307567bc1875",
-          "findings": 871,
+          "digest": "d426b4c0326d5b864aba7071cb6c07986c4ce733196daea698818b54ae066e56",
+          "findings": 870,
           "by_code": {
             "add-constant": 47,
             "bare-return": 15,
@@ -606,7 +606,7 @@
             "error-strings": 74,
             "exported": 101,
             "flag-parameter": 2,
-            "format": 11,
+            "format": 10,
             "function-length": 8,
             "identical-binary-operands": 2,
             "indent-error-flow": 4,
@@ -645,8 +645,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "d53bae24ae2b909eb2be4d2055aea3d7209b14db695f29b41b4e59c76b0fa39c",
-          "findings": 11
+          "digest": "3219d1effe3abad8c387b7fda5f57757ce8aa514487d94a3080150922008b245",
+          "findings": 10
         }
       }
     },
@@ -656,8 +656,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "b53d2f31ef975a1723c549e84ea5ea5945660b31919d3331624ab994fc420e8e",
-          "findings": 55618,
+          "digest": "6c06b8e9cb6a7f9b21cfff119c60c2a45d0d201f5f47ed5af49a412de9c6835c",
+          "findings": 55595,
           "by_code": {
             "add-constant": 3608,
             "argument-limit": 17,
@@ -689,7 +689,7 @@
             "exported": 2436,
             "flag-parameter": 97,
             "forbidden-call-in-wg-go": 1,
-            "format": 650,
+            "format": 627,
             "function-length": 758,
             "function-result-limit": 24,
             "identical-switch-branches": 2,
@@ -753,8 +753,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "0f093bd1375b80b22a86dfc4aa03c1975534211b0bfedd245b042b0f5f1fc936",
-          "findings": 650
+          "digest": "5f6ab00195d1d506850e408ae666baa32a58d361774f2dddfdc6964b0363fe56",
+          "findings": 627
         }
       }
     }

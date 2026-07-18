@@ -28,72 +28,72 @@ const schemaVersion = 1
 const projectReportDiagnosticLimit = 1000
 
 type manifest struct {
-	Version int `json:"version"`
+	Version  int       `json:"version"`
 	Projects []project `json:"projects"`
 }
 
 type project struct {
-	Name string `json:"name"`
-	Repository string `json:"repository"`
-	Revision string `json:"revision"`
-	BudgetsMS map[string]int `json:"budgets_ms"`
-	Paths []string `json:"paths,omitempty"`
-	FormatExcludes []string `json:"format_excludes,omitempty"`
+	Name           string         `json:"name"`
+	Repository     string         `json:"repository"`
+	Revision       string         `json:"revision"`
+	BudgetsMS      map[string]int `json:"budgets_ms"`
+	Paths          []string       `json:"paths,omitempty"`
+	FormatExcludes []string       `json:"format_excludes,omitempty"`
 }
 
 type baseline struct {
-	Version int `json:"version"`
+	Version  int               `json:"version"`
 	Projects []baselineProject `json:"projects"`
 }
 
 type baselineProject struct {
-	Name string `json:"name"`
-	Revision string `json:"revision"`
+	Name       string               `json:"name"`
+	Revision   string               `json:"revision"`
 	Operations map[string]signature `json:"operations"`
 }
 
 type signature struct {
-	ExitCode int `json:"exit_code"`
-	Digest string `json:"digest"`
-	Findings int `json:"findings"`
-	ByCode map[string]int `json:"by_code,omitempty"`
+	ExitCode int            `json:"exit_code"`
+	Digest   string         `json:"digest"`
+	Findings int            `json:"findings"`
+	ByCode   map[string]int `json:"by_code,omitempty"`
 }
 
 type report struct {
 	Projects []projectResult `json:"projects"`
-	Passed bool `json:"passed"`
-	TotalMS int64 `json:"total_ms"`
+	Passed   bool            `json:"passed"`
+	TotalMS  int64           `json:"total_ms"`
 }
 
 type projectResult struct {
-	Name string `json:"name"`
-	Repository string `json:"repository"`
-	Revision string `json:"revision"`
+	Name       string            `json:"name"`
+	Repository string            `json:"repository"`
+	Revision   string            `json:"revision"`
 	Operations []operationResult `json:"operations"`
 }
 
 type operationResult struct {
-	Name string `json:"name"`
-	ExitCode int `json:"exit_code"`
-	Digest string `json:"digest"`
-	Findings int `json:"findings"`
-	ByCode map[string]int `json:"by_code,omitempty"`
-	DurationMS int64 `json:"duration_ms"`
-	BudgetMS int `json:"budget_ms"`
-	BaselineMatch bool `json:"baseline_match"`
-	WithinBudget bool `json:"within_budget"`
-	Error string `json:"error,omitempty"`
-	Diagnostics []diagnosticmodel.Diagnostic `json:"-"`
+	Name          string                       `json:"name"`
+	ExitCode      int                          `json:"exit_code"`
+	Digest        string                       `json:"digest"`
+	Findings      int                          `json:"findings"`
+	ByCode        map[string]int               `json:"by_code,omitempty"`
+	DurationMS    int64                        `json:"duration_ms"`
+	BudgetMS      int                          `json:"budget_ms"`
+	BaselineMatch bool                         `json:"baseline_match"`
+	WithinBudget  bool                         `json:"within_budget"`
+	Error         string                       `json:"error,omitempty"`
+	Diagnostics   []diagnosticmodel.Diagnostic `json:"-"`
 }
 
 type options struct {
-	mode string
-	strider string
-	manifestPath string
-	baselinePath string
-	cachePath string
-	jsonPath string
-	htmlPath string
+	mode            string
+	strider         string
+	manifestPath    string
+	baselinePath    string
+	cachePath       string
+	jsonPath        string
+	htmlPath        string
 	projectHTMLPath string
 }
 
@@ -157,7 +157,7 @@ func run(options options) error {
 			results.Passed = false
 			projectReport.Operations = append(projectReport.Operations, operationResult{Name: "prepare", Error: checkoutErr.Error()})
 		} else {
-			for _, operation := range[]string{"format", "check"} {
+			for _, operation := range []string{"format", "check"} {
 				observed := runOperation(strider, checkout, operation, item)
 				expectedSignature, found := findExpected(expected, item.Name, item.Revision, operation)
 				observed.BaselineMatch = options.mode == "update" || (found && reflect.DeepEqual(expectedSignature, observed.signature()))
@@ -219,7 +219,7 @@ func readManifest(path string) (manifest, error) {
 			return result, fmt.Errorf("invalid project entry %q", item.Name)
 		}
 		seen[item.Name] = true
-		for _, operation := range[]string{"format", "check"} {
+		for _, operation := range []string{"format", "check"} {
 			if item.BudgetsMS[operation] <= 0 {
 				return result, fmt.Errorf("%s has no positive %s budget", item.Name, operation)
 			}
@@ -262,7 +262,7 @@ func prepareProject(cacheRoot string, item project) (string, error) {
 			return "", err
 		}
 	}
-	if err := command(checkout, "git", "cat-file", "-e", item.Revision + "^{commit}"); err != nil {
+	if err := command(checkout, "git", "cat-file", "-e", item.Revision+"^{commit}"); err != nil {
 		if err := command(checkout, "git", "fetch", "--quiet", "--depth", "1", "origin", item.Revision); err != nil {
 			return "", err
 		}
@@ -286,7 +286,7 @@ func prepareProject(cacheRoot string, item project) (string, error) {
 	return checkout, nil
 }
 
-func command(directory, name string, arguments... string) error {
+func command(directory, name string, arguments ...string) error {
 	output, err := commandOutput(directory, name, arguments...)
 	if err != nil {
 		return fmt.Errorf("%s %s: %w\n%s", name, strings.Join(arguments, " "), err, bytes.TrimSpace(output))
@@ -294,7 +294,7 @@ func command(directory, name string, arguments... string) error {
 	return nil
 }
 
-func commandOutput(directory, name string, arguments... string) ([]byte, error) {
+func commandOutput(directory, name string, arguments ...string) ([]byte, error) {
 	cmd := exec.Command(name, arguments...)
 	cmd.Dir = directory
 	cmd.Env = append(os.Environ(), "GOWORK=off")
@@ -478,11 +478,11 @@ func writeConsole(writer io.Writer, results report) {
 			)
 		}
 	}
-	fmt.Fprintf(writer, "\nTotal wall time: %.2fs\n", float64(results.TotalMS) / 1000)
+	fmt.Fprintf(writer, "\nTotal wall time: %.2fs\n", float64(results.TotalMS)/1000)
 }
 
 func writeGitHubSummary(path string, results report) error {
-	file, err := os.OpenFile(path, os.O_APPEND | os.O_CREATE | os.O_WRONLY, 0o644)
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		return err
 	}
@@ -509,14 +509,14 @@ func writeGitHubSummary(path string, results report) error {
 				project.Name,
 				operation.Name,
 				operation.Findings,
-				float64(operation.DurationMS) / 1000,
-				float64(operation.BudgetMS) / 1000,
+				float64(operation.DurationMS)/1000,
+				float64(operation.BudgetMS)/1000,
 				baselineState,
 				performanceState,
 			)
 		}
 	}
-	fmt.Fprintf(file, "\nTotal wall time: **%.2fs**\n", float64(results.TotalMS) / 1000)
+	fmt.Fprintf(file, "\nTotal wall time: **%.2fs**\n", float64(results.TotalMS)/1000)
 	return nil
 }
 
@@ -552,13 +552,13 @@ var reportTemplate = template.Must(
 	template.New("corpus").Funcs(
 		template.FuncMap{
 			"seconds": func(milliseconds int64) string {
-				return fmt.Sprintf("%.2fs", float64(milliseconds) / 1000)
+				return fmt.Sprintf("%.2fs", float64(milliseconds)/1000)
 			},
 			"budget": func(milliseconds int) string {
-				return fmt.Sprintf("%.2fs", float64(milliseconds) / 1000)
+				return fmt.Sprintf("%.2fs", float64(milliseconds)/1000)
 			},
 			"status": statusClass,
-			"codes": sortedCodes,
+			"codes":  sortedCodes,
 		},
 	).Parse(
 		`<!doctype html>

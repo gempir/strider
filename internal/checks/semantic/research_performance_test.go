@@ -9,7 +9,7 @@ import (
 
 func TestResearchPerformanceRuleMetadata(t *testing.T) {
 	tests := []struct {
-		rule Rule
+		rule     Rule
 		severity diagnostic.Severity
 	}{
 		{appendToSizedSliceRule{}, diagnostic.SeverityWarning},
@@ -39,9 +39,9 @@ func TestResearchPerformanceRuleMetadata(t *testing.T) {
 
 func TestResearchPerformanceRulesReportConservativeCases(t *testing.T) {
 	tests := []struct {
-		code string
-		source string
-		want int
+		code       string
+		source     string
+		want       int
 		messageHas string
 	}{
 		{
@@ -68,7 +68,7 @@ func check() {
 	packageValues = append(packageValues, 1)
 }
 `,
-			want: 2,
+			want:       2,
 			messageHas: "positive length",
 		},
 		{
@@ -82,7 +82,7 @@ func check(existing UserID, raw int) {
 	_ = UserID(raw)
 }
 `,
-			want: 1,
+			want:       1,
 			messageHas: "identical type",
 		},
 		{
@@ -132,7 +132,7 @@ func rangeOverResult() []int {
 	return result
 }
 `,
-			want: 1,
+			want:       1,
 			messageHas: "preallocate",
 		},
 		{
@@ -156,7 +156,7 @@ func check(number int, text string, custom labeled) {
 	_ = fmt.Sprintf("%d", customInt(number))
 }
 `,
-			want: 3,
+			want:       3,
 			messageHas: "unnecessary",
 		},
 		{
@@ -171,7 +171,7 @@ type bloated interface {
 	A(); B(); C(); D(); E(); F(); G(); H(); I(); J(); K()
 }
 `,
-			want: 1,
+			want:       1,
 			messageHas: "11 methods",
 		},
 		{
@@ -188,7 +188,7 @@ func NewStore() Store { return &memoryStore{} }
 func BuildStore() Store { return &memoryStore{} }
 func NewAny() any { return &memoryStore{} }
 `,
-			want: 1,
+			want:       1,
 			messageHas: "concrete result",
 		},
 		{
@@ -208,7 +208,7 @@ func check(value any) {
 	slog.Info("attrs", slog.String("key", "value"), slog.Any("other", value))
 }
 `,
-			want: 4,
+			want:       4,
 			messageHas: "slog",
 		},
 		{
@@ -235,7 +235,7 @@ func check(db *sql.DB, client *http.Client, request *http.Request, ids []int) {
 	}
 }
 `,
-			want: 2,
+			want:       2,
 			messageHas: "inside a loop",
 		},
 	}
@@ -246,20 +246,19 @@ func check(db *sql.DB, client *http.Client, request *http.Request, ids []int) {
 			func(t *testing.T) {
 				root := analysisModule(t, test.source)
 				registry,
-				err := NewRegistry([]string{test.code})
+					err := NewRegistry([]string{test.code})
 				if err != nil {
 					t.Fatal(err)
 				}
 				diagnostics,
-				err := Run([]string{root}, registry)
+					err := Run([]string{root}, registry)
 				if err != nil {
 					t.Fatal(err)
 				}
 				if len(diagnostics) != test.want {
 					t.Fatalf("got %d diagnostics, want %d: %#v", len(diagnostics), test.want, diagnostics)
 				}
-				for _,
-				item := range diagnostics {
+				for _, item := range diagnostics {
 					if item.Code != test.code || !strings.Contains(item.Message, test.messageHas) {
 						t.Fatalf("unexpected diagnostic: %#v", item)
 					}
@@ -271,7 +270,7 @@ func check(db *sql.DB, client *http.Client, request *http.Request, ids []int) {
 
 func TestResearchPerformanceRuleStages(t *testing.T) {
 	ssaRules := map[string]bool{"append-to-sized-slice": true, "external-call-in-loop": true}
-	for _, rule := range[]Rule{
+	for _, rule := range []Rule{
 		appendToSizedSliceRule{},
 		redundantConversionRule{},
 		slicePreallocationRule{},

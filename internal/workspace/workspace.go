@@ -16,33 +16,33 @@ import (
 // Options controls source discovery for a workspace.
 type Options struct {
 	SkipGenerated bool
-	Root string
-	Excludes []string
+	Root          string
+	Excludes      []string
 }
 
 // Workspace is an immutable set of input paths and source files. File contents
 // and CSTs are loaded lazily and are safe to request concurrently.
 type Workspace struct {
-	inputs []string
-	files []*File
+	inputs     []string
+	files      []*File
 	generation uint64
 }
 
 // File owns the cached source and CST for one Go file.
 type File struct {
-	path string
+	path     string
 	snapshot *fileSnapshot
 
-	bytesOnce sync.Once
-	bytesMu sync.RWMutex
-	bytes []byte
-	bytesErr error
+	bytesOnce     sync.Once
+	bytesMu       sync.RWMutex
+	bytes         []byte
+	bytesErr      error
 	bytesReleased bool
-	treeOnce sync.Once
-	treeMu sync.RWMutex
-	tree *cst.Tree
-	treeErr error
-	treeReleased bool
+	treeOnce      sync.Once
+	treeMu        sync.RWMutex
+	tree          *cst.Tree
+	treeErr       error
+	treeReleased  bool
 }
 
 // Open discovers a deterministic workspace for paths.
@@ -156,7 +156,7 @@ func (file *File) CST() (*cst.Tree, error) {
 	file.treeOnce.Do(
 		func() {
 			contents,
-			err := file.Bytes()
+				err := file.Bytes()
 			if err != nil {
 				file.treeMu.Lock()
 				file.treeErr = err
@@ -164,7 +164,7 @@ func (file *File) CST() (*cst.Tree, error) {
 				return
 			}
 			tree,
-			parseErr := cst.Parse(file.path, contents)
+				parseErr := cst.Parse(file.path, contents)
 			file.treeMu.Lock()
 			if !file.treeReleased {
 				file.tree = tree

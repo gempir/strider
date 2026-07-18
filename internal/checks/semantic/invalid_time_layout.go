@@ -10,15 +10,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type invalidTimeParseRule struct {}
+type invalidTimeParseRule struct{}
 
 func (invalidTimeParseRule) Meta() Meta {
 	return Meta{
-		Code: "invalid-time-layout",
-		Summary: "detect invalid time.Parse layouts",
-		Explanation: "time.Parse layouts must represent Go's reference time Mon Jan 2 15:04:05 MST 2006 rather than using conventional date-format placeholders.",
-		GoodExample: "time.Parse(\"2006-01-02\", value)",
-		BadExample: "time.Parse(\"YYYY-MM-DD\", value)",
+		Code:            "invalid-time-layout",
+		Summary:         "detect invalid time.Parse layouts",
+		Explanation:     "time.Parse layouts must represent Go's reference time Mon Jan 2 15:04:05 MST 2006 rather than using conventional date-format placeholders.",
+		GoodExample:     "time.Parse(\"2006-01-02\", value)",
+		BadExample:      "time.Parse(\"YYYY-MM-DD\", value)",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }

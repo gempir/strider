@@ -9,15 +9,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type contextKeyTypeRule struct {}
+type contextKeyTypeRule struct{}
 
 func (contextKeyTypeRule) Meta() Meta {
 	return Meta{
-		Code: "context-key-type",
-		Summary: "detect unsafe context.WithValue key types",
-		Explanation: "Context keys must be comparable and should use a dedicated named type to avoid collisions between packages. Built-in types and anonymous empty structs risk collisions; non-comparable and nil keys panic at runtime.",
-		GoodExample: "type contextKey struct{}\nctx = context.WithValue(ctx, contextKey{}, value)",
-		BadExample: `ctx = context.WithValue(ctx, "request-id", value)`,
+		Code:            "context-key-type",
+		Summary:         "detect unsafe context.WithValue key types",
+		Explanation:     "Context keys must be comparable and should use a dedicated named type to avoid collisions between packages. Built-in types and anonymous empty structs risk collisions; non-comparable and nil keys panic at runtime.",
+		GoodExample:     "type contextKey struct{}\nctx = context.WithValue(ctx, contextKey{}, value)",
+		BadExample:      `ctx = context.WithValue(ctx, "request-id", value)`,
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }

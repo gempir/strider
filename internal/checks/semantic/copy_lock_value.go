@@ -9,15 +9,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type copyLockValueRule struct {}
+type copyLockValueRule struct{}
 
 func (copyLockValueRule) Meta() Meta {
 	return Meta{
-		Code: "copy-lock-value",
-		Summary: "detect copying values that contain sync.Mutex or sync.RWMutex",
-		Explanation: "Copying a struct after one of its locks has been used creates an independent copy of the lock state and breaks synchronization. Pass lock-containing values by pointer and avoid assigning, ranging over, or returning existing instances by value.",
-		GoodExample: "func update(state *State) { state.mu.Lock(); defer state.mu.Unlock() }",
-		BadExample: "func update(state State) { state.mu.Lock(); defer state.mu.Unlock() }",
+		Code:            "copy-lock-value",
+		Summary:         "detect copying values that contain sync.Mutex or sync.RWMutex",
+		Explanation:     "Copying a struct after one of its locks has been used creates an independent copy of the lock state and breaks synchronization. Pass lock-containing values by pointer and avoid assigning, ranging over, or returning existing instances by value.",
+		GoodExample:     "func update(state *State) { state.mu.Lock(); defer state.mu.Unlock() }",
+		BadExample:      "func update(state State) { state.mu.Lock(); defer state.mu.Unlock() }",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -37,8 +37,7 @@ func (copyLockValueRule) Run(pass *Pass) {
 					reportLockAssignments(pass, node.Lhs, node.Rhs, node)
 				case *ast.ValueSpec:
 					left := make([]ast.Expr, 0, len(node.Names))
-					for _,
-					name := range node.Names {
+					for _, name := range node.Names {
 						left = append(left, name)
 					}
 					reportLockAssignments(pass, left, node.Values, node)
@@ -61,13 +60,17 @@ func (copyLockValueRule) Run(pass *Pass) {
 			if body == nil || signature == nil {
 				return
 			}
-			inspectFunctionBody(body, func(node ast.Node) bool {
-				statement, ok := node.(*ast.ReturnStmt)
-				if ok {
-					reportLockReturn(pass, statement, signature)
-				}
-				return true
-			})
+			inspectFunctionBody(
+				body,
+				func(node ast.Node) bool {
+					statement,
+						ok := node.(*ast.ReturnStmt)
+					if ok {
+						reportLockReturn(pass, statement, signature)
+					}
+					return true
+				},
+			)
 		},
 	)
 }

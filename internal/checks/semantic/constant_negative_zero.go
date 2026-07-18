@@ -9,15 +9,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type constantNegativeZeroRule struct {}
+type constantNegativeZeroRule struct{}
 
 func (constantNegativeZeroRule) Meta() Meta {
 	return Meta{
-		Code: "constant-negative-zero",
-		Summary: "detect constant expressions that cannot represent negative zero",
-		Explanation: "Go's ideal constants do not preserve a zero sign. Literal forms such as -0.0 and float64(-0) therefore produce positive zero at runtime; use math.Copysign when a true IEEE negative zero is required.",
-		GoodExample: "negativeZero := math.Copysign(0, -1)",
-		BadExample: "negativeZero := -0.0",
+		Code:            "constant-negative-zero",
+		Summary:         "detect constant expressions that cannot represent negative zero",
+		Explanation:     "Go's ideal constants do not preserve a zero sign. Literal forms such as -0.0 and float64(-0) therefore produce positive zero at runtime; use math.Copysign when a true IEEE negative zero is required.",
+		GoodExample:     "negativeZero := math.Copysign(0, -1)",
+		BadExample:      "negativeZero := -0.0",
 		DefaultSeverity: diagnostic.SeverityNote,
 	}
 }
@@ -28,7 +28,7 @@ func (constantNegativeZeroRule) Run(pass *Pass) {
 			file,
 			func(node ast.Node) bool {
 				expression,
-				ok := node.(ast.Expr)
+					ok := node.(ast.Expr)
 				if ok && constantNegativeZero(pass, expression) {
 					pass.Report(expression, "Go constants cannot represent negative zero; use math.Copysign(0, -1)")
 					return false

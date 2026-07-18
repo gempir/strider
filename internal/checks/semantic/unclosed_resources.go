@@ -11,15 +11,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type unclosedHTTPResponseBodyRule struct {}
+type unclosedHTTPResponseBodyRule struct{}
 
 func (unclosedHTTPResponseBodyRule) Meta() Meta {
 	return Meta{
-		Code: "unclosed-http-response-body",
-		Summary: "detect locally acquired HTTP response bodies that are not closed",
-		Explanation: "An HTTP response body owns a connection until Body.Close is called. Failing to close a locally acquired response can leak file descriptors and prevent connection reuse.",
-		GoodExample: "response, err := http.Get(url); if err != nil { return err }; defer response.Body.Close()",
-		BadExample: "response, err := http.Get(url); if err != nil { return err }; return decode(response.Body)",
+		Code:            "unclosed-http-response-body",
+		Summary:         "detect locally acquired HTTP response bodies that are not closed",
+		Explanation:     "An HTTP response body owns a connection until Body.Close is called. Failing to close a locally acquired response can leak file descriptors and prevent connection reuse.",
+		GoodExample:     "response, err := http.Get(url); if err != nil { return err }; defer response.Body.Close()",
+		BadExample:      "response, err := http.Get(url); if err != nil { return err }; return decode(response.Body)",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -28,15 +28,15 @@ func (unclosedHTTPResponseBodyRule) Run(pass *Pass) {
 	runUnclosedResourceRule(pass, httpResponseResource)
 }
 
-type unclosedSQLResourceRule struct {}
+type unclosedSQLResourceRule struct{}
 
 func (unclosedSQLResourceRule) Meta() Meta {
 	return Meta{
-		Code: "unclosed-sql-resource",
-		Summary: "detect locally acquired sql.Rows and sql.Stmt values that are not closed",
-		Explanation: "Rows and prepared statements retain database resources until Close is called. Close every locally acquired value, normally with a defer immediately after checking the acquisition error.",
-		GoodExample: "rows, err := db.Query(query); if err != nil { return err }; defer rows.Close()",
-		BadExample: "rows, err := db.Query(query); if err != nil { return err }; return scan(rows)",
+		Code:            "unclosed-sql-resource",
+		Summary:         "detect locally acquired sql.Rows and sql.Stmt values that are not closed",
+		Explanation:     "Rows and prepared statements retain database resources until Close is called. Close every locally acquired value, normally with a defer immediately after checking the acquisition error.",
+		GoodExample:     "rows, err := db.Query(query); if err != nil { return err }; defer rows.Close()",
+		BadExample:      "rows, err := db.Query(query); if err != nil { return err }; return scan(rows)",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }
@@ -55,25 +55,25 @@ const (
 )
 
 type acquiredResource struct {
-	kind acquiredResourceKind
-	object types.Object
+	kind             acquiredResourceKind
+	object           types.Object
 	acquisitionError types.Object
-	node ast.Node
-	start token.Pos
+	node             ast.Node
+	start            token.Pos
 }
 
 type resourceUse struct {
-	object types.Object
-	kind acquiredResourceKind
-	pos token.Pos
+	object          types.Object
+	kind            acquiredResourceKind
+	pos             token.Pos
 	deferredClosure bool
 }
 
 type resourceAssignment struct {
-	target types.Object
-	source types.Object
-	kind acquiredResourceKind
-	pos token.Pos
+	target      types.Object
+	source      types.Object
+	kind        acquiredResourceKind
+	pos         token.Pos
 	acquisition token.Pos
 }
 
@@ -85,14 +85,13 @@ func runUnclosedResourceRule(pass *Pass, wanted acquiredResourceKind) {
 				return
 			}
 			resources,
-			assignments := collectAcquiredResources(pass, body, wanted)
+				assignments := collectAcquiredResources(pass, body, wanted)
 			if len(resources) == 0 {
 				return
 			}
 			closes,
-			transfers := collectResourceUses(pass, body, signature, assignments)
-			for _,
-			resource := range resources {
+				transfers := collectResourceUses(pass, body, signature, assignments)
+			for _, resource := range resources {
 				if resourceClosedOnEveryExit(pass, resource, body, closes, transfers, assignments) {
 					continue
 				}
@@ -109,15 +108,15 @@ func runUnclosedResourceRule(pass *Pass, wanted acquiredResourceKind) {
 }
 
 type resourcePathState struct {
-	block *cfg.Block
-	next int
+	block  *cfg.Block
+	next   int
 	active bool
 	owners map[types.Object]bool
 }
 
 type resourcePathKey struct {
-	block *cfg.Block
-	next int
+	block  *cfg.Block
+	next   int
 	active bool
 	owners string
 }
@@ -186,7 +185,7 @@ func resourceUnavailableOnReturn(pass *Pass, body *ast.BlockStmt, resource acqui
 		body,
 		func(node ast.Node) bool {
 			statement,
-			ok := node.(*ast.IfStmt)
+				ok := node.(*ast.IfStmt)
 			if !ok {
 				return true
 			}
@@ -218,14 +217,13 @@ func objectAssignedBetween(pass *Pass, body *ast.BlockStmt, object types.Object,
 				return !assigned
 			}
 			assignment,
-			ok := node.(*ast.AssignStmt)
+				ok := node.(*ast.AssignStmt)
 			if !ok {
 				return true
 			}
-			for _,
-			expression := range assignment.Lhs {
+			for _, expression := range assignment.Lhs {
 				identifier,
-				ok := ast.Unparen(expression).(*ast.Ident)
+					ok := ast.Unparen(expression).(*ast.Ident)
 				if ok && pass.TypesInfo.ObjectOf(identifier) == object {
 					assigned = true
 					return false
@@ -357,13 +355,13 @@ func resourceOwnerIDs(resource acquiredResource, closes, transfers []resourceUse
 }
 
 func resourceOwnersKey(owners map[types.Object]bool, identifiers map[types.Object]int) string {
-	bits := make([]byte, (len(identifiers) + 7) / 8)
+	bits := make([]byte, (len(identifiers)+7)/8)
 	for object := range owners {
 		identifier, exists := identifiers[object]
 		if !exists {
 			continue
 		}
-		bits[identifier / 8] |= 1 << (identifier % 8)
+		bits[identifier/8] |= 1 << (identifier % 8)
 	}
 	return string(bits)
 }
@@ -376,16 +374,15 @@ func collectAcquiredResources(pass *Pass, body *ast.BlockStmt, wanted acquiredRe
 		body,
 		func(node ast.Node) bool {
 			var left,
-			right []ast.Expr
+				right []ast.Expr
 			switch statement := node.(type) {
 			case *ast.AssignStmt:
 				left,
-				right = statement.Lhs,
-				statement.Rhs
+					right = statement.Lhs,
+					statement.Rhs
 			case *ast.ValueSpec:
 				left = make([]ast.Expr, 0, len(statement.Names))
-				for _,
-				name := range statement.Names {
+				for _, name := range statement.Names {
 					left = append(left, name)
 				}
 				right = statement.Values
@@ -395,8 +392,7 @@ func collectAcquiredResources(pass *Pass, body *ast.BlockStmt, wanted acquiredRe
 			collectResourceAssignments(pass, left, right, node, httpBodies, &assignments)
 			acquired := resourcesFromAssignment(pass, left, right, node, wanted)
 			resources = append(resources, acquired...)
-			for _,
-			resource := range acquired {
+			for _, resource := range acquired {
 				assignments = append(assignments, resourceAssignment{target: resource.object, kind: resource.kind, pos: resource.start, acquisition: resource.start})
 			}
 			return true
@@ -542,7 +538,9 @@ func collectResourceAssignments(pass *Pass, left, right []ast.Expr, node ast.Nod
 	}
 	for index, leftExpression := range left {
 		rightExpression := right[index]
-		if selector, ok := ast.Unparen(leftExpression).(*ast.SelectorExpr); ok && selector.Sel.Name == "Body" && acquiredResourceKindForType(pass.TypesInfo.TypeOf(selector.X)) == httpResponseResource {
+		if selector, ok := ast.Unparen(leftExpression).(*ast.SelectorExpr); ok && selector.Sel.Name == "Body" && acquiredResourceKindForType(
+			pass.TypesInfo.TypeOf(selector.X),
+		) == httpResponseResource {
 			response, _ := ast.Unparen(selector.X).(*ast.Ident)
 			target := types.Object(nil)
 			if response != nil {
@@ -551,7 +549,12 @@ func collectResourceAssignments(pass *Pass, left, right []ast.Expr, node ast.Nod
 			if target != nil {
 				*assignments = append(
 					*assignments,
-					resourceAssignment{target: target, source: httpBodyAssignmentSource(pass, rightExpression, httpBodies), kind: httpResponseResource, pos: node.Pos()},
+					resourceAssignment{
+						target: target,
+						source: httpBodyAssignmentSource(pass, rightExpression, httpBodies),
+						kind:   httpResponseResource,
+						pos:    node.Pos(),
+					},
 				)
 			}
 			continue
@@ -613,66 +616,52 @@ func collectResourceUses(pass *Pass, body *ast.BlockStmt, signature *types.Signa
 			switch node := node.(type) {
 			case *ast.CallExpr:
 				literal,
-				literalCall := ast.Unparen(node.Fun).(*ast.FuncLit)
+					literalCall := ast.Unparen(node.Fun).(*ast.FuncLit)
 				_,
-				deferred := parents[node].(*ast.DeferStmt)
+					deferred := parents[node].(*ast.DeferStmt)
 				_,
-				immediate := parents[node].(*ast.ExprStmt)
+					immediate := parents[node].(*ast.ExprStmt)
 				if literalCall && (deferred || immediate) {
 					collectLiteralResourceCloses(pass, literal.Body, assignments, deferred, &closes)
 				}
 				if selector,
-				ok := ast.Unparen(node.Fun).(*ast.SelectorExpr); ok && selector.Sel.Name == "Close" {
+					ok := ast.Unparen(node.Fun).(*ast.SelectorExpr); ok && selector.Sel.Name == "Close" {
 					if object,
-					kind := closedResourceObject(pass, selector.X, node.Pos(), assignments); object != nil {
-						closes = append(closes, resourceUse{object:
-						object, kind:
-						kind, pos:
-						node.Pos()})
+						kind := closedResourceObject(pass, selector.X, node.Pos(), assignments); object != nil {
+						closes = append(closes, resourceUse{object: object, kind: kind, pos: node.Pos()})
 					}
 				}
 			case *ast.ReturnStmt:
 				if len(node.Results) == 0 {
 					transfers = append(transfers, namedResultResourceUses(signature, assignments, node.Pos())...)
 				}
-				for _,
-				expression := range node.Results {
+				for _, expression := range node.Results {
 					if object,
-					kind := transferredResourceObject(pass, expression, assignments); object != nil {
-						transfers = append(transfers, resourceUse{object:
-						object, kind:
-						kind, pos:
-						expression.Pos()})
+						kind := transferredResourceObject(pass, expression, assignments); object != nil {
+						transfers = append(transfers, resourceUse{object: object, kind: kind, pos: expression.Pos()})
 					}
 				}
 			case *ast.AssignStmt:
 				if len(node.Lhs) != len(node.Rhs) {
 					break
 				}
-				for index,
-				expression := range node.Rhs {
+				for index, expression := range node.Rhs {
 					if _,
-					local := ast.Unparen(node.Lhs[index]).(*ast.Ident); local {
+						local := ast.Unparen(node.Lhs[index]).(*ast.Ident); local {
 						continue
 					}
 					if isHTTPResponseBodySelector(pass, node.Lhs[index]) {
 						continue
 					}
 					if object,
-					kind := transferredResourceObject(pass, expression, assignments); object != nil {
-						transfers = append(transfers, resourceUse{object:
-						object, kind:
-						kind, pos:
-						expression.Pos()})
+						kind := transferredResourceObject(pass, expression, assignments); object != nil {
+						transfers = append(transfers, resourceUse{object: object, kind: kind, pos: expression.Pos()})
 					}
 				}
 			case *ast.SendStmt:
 				if object,
-				kind := transferredResourceObject(pass, node.Value, assignments); object != nil {
-					transfers = append(transfers, resourceUse{object:
-					object, kind:
-					kind, pos:
-					node.Value.Pos()})
+					kind := transferredResourceObject(pass, node.Value, assignments); object != nil {
+					transfers = append(transfers, resourceUse{object: object, kind: kind, pos: node.Value.Pos()})
 				}
 			}
 			return true
@@ -714,11 +703,11 @@ func resourceASTParents(root ast.Node) map[ast.Node]ast.Node {
 		root,
 		func(node ast.Node) bool {
 			if node == nil {
-				stack = stack[:len(stack) - 1]
+				stack = stack[:len(stack)-1]
 				return true
 			}
 			if len(stack) != 0 {
-				parents[node] = stack[len(stack) - 1]
+				parents[node] = stack[len(stack)-1]
 			}
 			stack = append(stack, node)
 			return true
@@ -735,17 +724,17 @@ func collectLiteralResourceCloses(pass *Pass, body *ast.BlockStmt, assignments [
 		body,
 		func(node ast.Node) bool {
 			call,
-			ok := node.(*ast.CallExpr)
+				ok := node.(*ast.CallExpr)
 			if !ok {
 				return true
 			}
 			selector,
-			ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
+				ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
 			if !ok || selector.Sel.Name != "Close" || !literalPositionReachedOnEveryExit(body, call.Pos()) {
 				return true
 			}
 			object,
-			kind := closedResourceObject(pass, selector.X, call.Pos(), assignments)
+				kind := closedResourceObject(pass, selector.X, call.Pos(), assignments)
 			if object != nil {
 				*closes = append(*closes, resourceUse{object: object, kind: kind, pos: call.Pos(), deferredClosure: deferred})
 			}
@@ -755,8 +744,8 @@ func collectLiteralResourceCloses(pass *Pass, body *ast.BlockStmt, assignments [
 }
 
 type literalPathState struct {
-	block *cfg.Block
-	next int
+	block   *cfg.Block
+	next    int
 	reached bool
 }
 

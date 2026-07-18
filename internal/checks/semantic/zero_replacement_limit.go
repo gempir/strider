@@ -9,22 +9,22 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type zeroReplacementLimitRule struct {}
+type zeroReplacementLimitRule struct{}
 
 func (zeroReplacementLimitRule) Meta() Meta {
 	return Meta{
-		Code: "zero-replacement-limit",
-		Summary: "detect replacement calls with a zero limit",
-		Explanation: "The final argument to strings.Replace and bytes.Replace is the maximum number of replacements. Zero replaces nothing; use a negative value or ReplaceAll to replace every occurrence.",
-		GoodExample: "strings.ReplaceAll(value, old, replacement)",
-		BadExample: "strings.Replace(value, old, replacement, 0)",
+		Code:            "zero-replacement-limit",
+		Summary:         "detect replacement calls with a zero limit",
+		Explanation:     "The final argument to strings.Replace and bytes.Replace is the maximum number of replacements. Zero replaces nothing; use a negative value or ReplaceAll to replace every occurrence.",
+		GoodExample:     "strings.ReplaceAll(value, old, replacement)",
+		BadExample:      "strings.Replace(value, old, replacement, 0)",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
 
 func (zeroReplacementLimitRule) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
-	for _, packagePath := range[]string{"bytes", "strings"} {
+	for _, packagePath := range []string{"bytes", "strings"} {
 		for _, call := range pass.staticCallsInPackage(packagePath) {
 			if len(call.Common().Args) <= 3 || !isReplacementCall(call) {
 				continue

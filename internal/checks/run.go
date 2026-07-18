@@ -19,8 +19,8 @@ import (
 // RunOptions configures one read-only check pass.
 type RunOptions struct {
 	Formatter formatter.Options
-	Root string
-	Excludes []string
+	Root      string
+	Excludes  []string
 	// CollectCandidates retains complete formatted files for a future write or
 	// fix operation. Read-only check callers should leave it disabled.
 	CollectCandidates bool
@@ -31,14 +31,14 @@ type RunOptions struct {
 // mode can apply them without embedding whole files in diagnostic reports.
 type Result struct {
 	Diagnostics []diagnostic.Diagnostic
-	Candidates map[string]formatter.Result
+	Candidates  map[string]formatter.Result
 }
 
 type fileResult struct {
-	filename string
+	filename    string
 	diagnostics []diagnostic.Diagnostic
-	candidate *formatter.Result
-	err error
+	candidate   *formatter.Result
+	err         error
 }
 
 // Run executes the selected checks. Concrete-syntax checks and formatting
@@ -102,7 +102,7 @@ func runConcreteChecks(files []*workspace.File, registry *Registry, formatOption
 
 	session := formatter.NewSession()
 	workers := min(runtime.GOMAXPROCS(0), len(applicable))
-	jobs := make(chan*workspace.File)
+	jobs := make(chan *workspace.File)
 	results := make(chan fileResult, len(applicable))
 	var group sync.WaitGroup
 	for range workers {
@@ -188,13 +188,13 @@ func formatDiagnostic(filename string, severity diagnostic.Severity) diagnostic.
 	display := source.DisplayPath(filename)
 	position := token.Position{Filename: display, Offset: 0, Line: 1, Column: 1}
 	return diagnostic.Diagnostic{
-		Code: formatMeta.Code,
-		Message: "file is not formatted",
+		Code:     formatMeta.Code,
+		Message:  "file is not formatted",
 		Severity: severity,
-		File: display,
-		Start: position,
-		End: position,
-		Fixes: []diagnostic.Fix{{Message: fmt.Sprintf("run `strider fmt %s`", display), Safety: diagnostic.Safe}},
+		File:     display,
+		Start:    position,
+		End:      position,
+		Fixes:    []diagnostic.Fix{{Message: fmt.Sprintf("run `strider fmt %s`", display), Safety: diagnostic.Safe}},
 	}
 }
 

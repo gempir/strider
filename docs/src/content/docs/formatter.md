@@ -53,17 +53,13 @@ Function signatures, calls, composite literals, and expressions use the same
 bounded group-fitting algorithm. Binary operators remain on the preceding line
 so automatic semicolon insertion cannot change the program.
 
-Configure the wrap target, visual indentation width, preserved empty-line cap,
-line endings, and excluded filesystem paths in `strider.toml`:
+Configure the wrap target and excluded filesystem paths in `strider.toml`:
 
 ```toml
 version = 1
 
 [formatter]
 print-width = 120
-indent-width = 4
-max-empty-lines = 1
-end-of-line = "lf"
 excludes = ["internal/generated/**"]
 ```
 

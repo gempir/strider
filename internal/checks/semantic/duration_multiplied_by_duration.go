@@ -8,15 +8,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type durationMultipliedByDurationRule struct {}
+type durationMultipliedByDurationRule struct{}
 
 func (durationMultipliedByDurationRule) Meta() Meta {
 	return Meta{
-		Code: "duration-multiplied-by-duration",
-		Summary: "detect multiplication of two time.Duration values",
-		Explanation: "time.Duration stores a scalar number of nanoseconds. Multiplying two duration values produces squared time units and usually means that a caller supplied an already-scaled duration where a plain count was expected.",
-		GoodExample: "delay := time.Duration(count) * time.Second",
-		BadExample: "delay := duration * time.Second",
+		Code:            "duration-multiplied-by-duration",
+		Summary:         "detect multiplication of two time.Duration values",
+		Explanation:     "time.Duration stores a scalar number of nanoseconds. Multiplying two duration values produces squared time units and usually means that a caller supplied an already-scaled duration where a plain count was expected.",
+		GoodExample:     "delay := time.Duration(count) * time.Second",
+		BadExample:      "delay := duration * time.Second",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -28,12 +28,12 @@ func (durationMultipliedByDurationRule) Run(pass *Pass) {
 			file,
 			func(node ast.Node) bool {
 				if node == nil {
-					stack = stack[:len(stack) - 1]
+					stack = stack[:len(stack)-1]
 					return true
 				}
 				var parent ast.Node
 				if len(stack) != 0 {
-					parent = stack[len(stack) - 1]
+					parent = stack[len(stack)-1]
 				}
 				stack = append(stack, node)
 				var candidate ast.Expr
@@ -43,7 +43,7 @@ func (durationMultipliedByDurationRule) Run(pass *Pass) {
 						return true
 					}
 					if binaryParent,
-					ok := parent.(*ast.BinaryExpr); ok && binaryParent.Op == token.MUL {
+						ok := parent.(*ast.BinaryExpr); ok && binaryParent.Op == token.MUL {
 						return true
 					}
 					candidate = expression
@@ -51,9 +51,7 @@ func (durationMultipliedByDurationRule) Run(pass *Pass) {
 					if expression.Tok != token.MUL_ASSIGN || len(expression.Lhs) != 1 || len(expression.Rhs) != 1 {
 						return true
 					}
-					candidate = &ast.BinaryExpr{X:
-					expression.Lhs[0], Y:
-					expression.Rhs[0]}
+					candidate = &ast.BinaryExpr{X: expression.Lhs[0], Y: expression.Rhs[0]}
 				default:
 					return true
 				}
@@ -76,7 +74,7 @@ func semanticDurationFactors(pass *Pass, expression ast.Expr) int {
 		case token.MUL, token.ILLEGAL:
 			return left + right
 		case token.ADD, token.SUB:
-			if left + right != 0 {
+			if left+right != 0 {
 				return 1
 			}
 			return 0
@@ -86,7 +84,7 @@ func semanticDurationFactors(pass *Pass, expression ast.Expr) int {
 			}
 			return 0
 		default:
-			if left + right != 0 && isTimeDuration(pass.TypesInfo.TypeOf(expression)) {
+			if left+right != 0 && isTimeDuration(pass.TypesInfo.TypeOf(expression)) {
 				return 1
 			}
 			return 0

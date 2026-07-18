@@ -39,7 +39,7 @@ func TestWalkIncludesProductionsAndTokens(t *testing.T) {
 		kinds = append(kinds, Kind(node))
 		return true
 	})
-	for _, wanted := range[]string{"SourceFile", "FunctionDecl", "IfElseStmt", "func", "IDENT"} {
+	for _, wanted := range []string{"SourceFile", "FunctionDecl", "IfElseStmt", "func", "IDENT"} {
 		if !slices.Contains(kinds, wanted) {
 			t.Errorf("walk did not include %q in %v", wanted, kinds)
 		}
@@ -68,7 +68,7 @@ func TestTokensIncludeImplicitSemicolonAndEOF(t *testing.T) {
 		t.Fatal(err)
 	}
 	tokens := tree.Tokens()
-	if len(tokens) < 4 || tokens[len(tokens) - 1].Ch() != token.EOF {
+	if len(tokens) < 4 || tokens[len(tokens)-1].Ch() != token.EOF {
 		t.Fatalf("unexpected tokens: %#v", tokens)
 	}
 }
@@ -225,7 +225,7 @@ var (
 			fmt.Sprintf("fixture-%d", index),
 			func(t *testing.T) {
 				tree,
-				err := Parse("fixture.go", []byte(source))
+					err := Parse("fixture.go", []byte(source))
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -238,22 +238,21 @@ var (
 				if !slices.Equal(gotWalk, wantWalk) {
 					t.Fatal("generated walk differs from reflection")
 				}
-				for _,
-				node := range wantWalk {
+				for _, node := range wantWalk {
 					if got,
-					want := Children(node),
-					referenceChildren(node); !slices.Equal(got, want) {
+						want := Children(node),
+						referenceChildren(node); !slices.Equal(got, want) {
 						t.Fatalf("%s children differ", Kind(node))
 					}
 					if got,
-					want := NodeTokens(node),
-					referenceNodeTokens(node); !slices.Equal(got, want) {
+						want := NodeTokens(node),
+						referenceNodeTokens(node); !slices.Equal(got, want) {
 						t.Fatalf("%s tokens differ", Kind(node))
 					}
 					gotStart,
-					gotEnd := Range(node)
+						gotEnd := Range(node)
 					wantStart,
-					wantEnd := referenceRange(referenceNodeTokens(node))
+						wantEnd := referenceRange(referenceNodeTokens(node))
 					if gotStart != wantStart || gotEnd != wantEnd {
 						t.Fatalf("%s range = %d:%d, want %d:%d", Kind(node), gotStart, gotEnd, wantStart, wantEnd)
 					}
@@ -277,8 +276,7 @@ func TestWalkWithAncestors(t *testing.T) {
 			}
 			foundReturn = true
 			kinds := make([]string, len(ancestors))
-			for index,
-			ancestor := range ancestors {
+			for index, ancestor := range ancestors {
 				kinds[index] = Kind(ancestor)
 			}
 			if len(kinds) == 0 || kinds[0] != "SourceFile" || !slices.Contains(kinds, "FunctionDecl") {
@@ -292,7 +290,7 @@ func TestWalkWithAncestors(t *testing.T) {
 	}
 
 	type visitRecord struct {
-		node Node
+		node      Node
 		ancestors []Node
 	}
 	want := []visitRecord{}
@@ -486,7 +484,7 @@ func referenceChildren(node Node) []Node {
 	}
 	value := referenceIndirect(reflect.ValueOf(node))
 	if !value.IsValid() || value.Kind() != reflect.Struct {
-		return[]Node{}
+		return []Node{}
 	}
 	result := []Node{}
 	valueType := value.Type()

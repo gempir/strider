@@ -22,23 +22,23 @@ func runCheck(args []string, configuration config.Config, colorMode ui.ColorMode
 	flags := flag.NewFlagSet("check", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	aliases := map[string]string{
-		"format": "f",
-		"minimum-severity": "s",
-		"summary-only": "q",
-		"watch": "w",
-		"list-checks": "l",
-		"list-rules": "l",
-		"all": "a",
-		"all-rules": "a",
-		"explain": "e",
-		"baseline": "b",
-		"baseline-variant": "v",
-		"generate-baseline": "g",
+		"format":                           "f",
+		"minimum-severity":                 "s",
+		"summary-only":                     "q",
+		"watch":                            "w",
+		"list-checks":                      "l",
+		"list-rules":                       "l",
+		"all":                              "a",
+		"all-rules":                        "a",
+		"explain":                          "e",
+		"baseline":                         "b",
+		"baseline-variant":                 "v",
+		"generate-baseline":                "g",
 		"remove-outdated-baseline-entries": "r",
-		"ignore-baseline": "i",
-		"backup-baseline": "B",
-		"only": "o",
-		"help": "h",
+		"ignore-baseline":                  "i",
+		"backup-baseline":                  "B",
+		"only":                             "o",
+		"help":                             "h",
 	}
 	reportFormat := stringOption(flags, "format", "f", "text", "report format: text, json, or html")
 	minimumSeverityFlag := stringOption(flags, "minimum-severity", "s", "", "minimum effective severity: note, warning, or error")
@@ -59,7 +59,7 @@ func runCheck(args []string, configuration config.Config, colorMode ui.ColorMode
 	varOption(flags, &only, "only", "o", "run only these check codes (repeatable or comma-separated)")
 	flags.Usage = func() {
 		palette := ui.NewPalette(stderr, colorMode)
-		fmt.Fprintln(stderr, palette.Accent("Usage:") + " strider check [OPTIONS] [FILE|DIR]...")
+		fmt.Fprintln(stderr, palette.Accent("Usage:")+" strider check [OPTIONS] [FILE|DIR]...")
 		printFlagDefaults(stderr, flags, aliases)
 	}
 	if !parseCommandFlags(flags, args, aliases, "check", colorMode, stderr) {
@@ -89,12 +89,12 @@ func runCheck(args []string, configuration config.Config, colorMode ui.ColorMode
 	}
 	registry, err := checkengine.NewRegistry(
 		checkengine.RegistryOptions{
-			Only: only,
-			All: *allChecks,
-			Settings: checkConfig.Rules,
+			Only:            only,
+			All:             *allChecks,
+			Settings:        checkConfig.Rules,
 			MinimumSeverity: minimumSeverity,
-			FormatExcludes: configuration.Formatter.Excludes,
-			Root: configuration.Root,
+			FormatExcludes:  configuration.Formatter.Excludes,
+			Root:            configuration.Root,
 		},
 	)
 	if err != nil {
@@ -131,16 +131,7 @@ func runCheck(args []string, configuration config.Config, colorMode ui.ColorMode
 	}
 	baselineConfig.knownCodes = registry.KnownCodes()
 	workspaceOptions := workspace.Options{SkipGenerated: true, Root: configuration.Root, Excludes: checkConfig.Excludes}
-	runOptions := checkengine.RunOptions{
-		Formatter: formatter.Options{
-			PrintWidth: configuration.Formatter.PrintWidth,
-			IndentWidth: configuration.Formatter.IndentWidth,
-			MaxEmptyLines: configuration.Formatter.MaxEmptyLines,
-			EndOfLine: configuration.Formatter.EndOfLine,
-		},
-		Root: configuration.Root,
-		Excludes: checkConfig.Excludes,
-	}
+	runOptions := checkengine.RunOptions{Formatter: formatter.Options{PrintWidth: configuration.Formatter.PrintWidth}, Root: configuration.Root, Excludes: checkConfig.Excludes}
 	if *watch {
 		if err := runCheckWatch(flags.Args(), workspaceOptions, registry, runOptions, baselineConfig, *summaryOnly, colorMode, stdout, stderr); err != nil {
 			printCommandError(stderr, colorMode, "strider check", "%v", err)
@@ -180,15 +171,15 @@ func runCheck(args []string, configuration config.Config, colorMode ui.ColorMode
 const checkWatchInterval = time.Second
 
 type checkWatcher struct {
-	paths []string
+	paths            []string
 	workspaceOptions workspace.Options
-	cache *workspace.Cache
-	session *checkengine.Session
-	baseline baselineOptions
-	summaryOnly bool
-	colorMode ui.ColorMode
-	stdout io.Writer
-	stderr io.Writer
+	cache            *workspace.Cache
+	session          *checkengine.Session
+	baseline         baselineOptions
+	summaryOnly      bool
+	colorMode        ui.ColorMode
+	stdout           io.Writer
+	stderr           io.Writer
 
 	iteration uint64
 }
@@ -209,15 +200,15 @@ func runCheckWatch(
 		return err
 	}
 	watcher := &checkWatcher{
-		paths: append([]string(nil), paths...),
+		paths:            append([]string(nil), paths...),
 		workspaceOptions: workspaceOptions,
-		cache: workspace.NewCache(workspace.CacheOptions{}),
-		session: session,
-		baseline: baselineConfig,
-		summaryOnly: summaryOnly,
-		colorMode: colorMode,
-		stdout: stdout,
-		stderr: stderr,
+		cache:            workspace.NewCache(workspace.CacheOptions{}),
+		session:          session,
+		baseline:         baselineConfig,
+		summaryOnly:      summaryOnly,
+		colorMode:        colorMode,
+		stdout:           stdout,
+		stderr:           stderr,
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()

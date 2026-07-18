@@ -7,15 +7,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type singleArgumentAppendRule struct {}
+type singleArgumentAppendRule struct{}
 
 func (singleArgumentAppendRule) Meta() Meta {
 	return Meta{
-		Code: "single-argument-append",
-		Summary: "detect append calls that add no elements",
-		Explanation: "Calling the predeclared append function with only a slice argument returns that same slice unchanged. Assign the slice directly instead.",
-		GoodExample: "destination = source",
-		BadExample: "destination = append(source)",
+		Code:            "single-argument-append",
+		Summary:         "detect append calls that add no elements",
+		Explanation:     "Calling the predeclared append function with only a slice argument returns that same slice unchanged. Assign the slice directly instead.",
+		GoodExample:     "destination = source",
+		BadExample:      "destination = append(source)",
 		DefaultSeverity: diagnostic.SeverityNote,
 	}
 }
@@ -26,17 +26,17 @@ func (singleArgumentAppendRule) Run(pass *Pass) {
 			file,
 			func(node ast.Node) bool {
 				call,
-				ok := node.(*ast.CallExpr)
+					ok := node.(*ast.CallExpr)
 				if !ok || len(call.Args) != 1 || call.Ellipsis.IsValid() {
 					return true
 				}
 				identifier,
-				ok := call.Fun.(*ast.Ident)
+					ok := call.Fun.(*ast.Ident)
 				if !ok {
 					return true
 				}
 				builtin,
-				ok := pass.TypesInfo.ObjectOf(identifier).(*types.Builtin)
+					ok := pass.TypesInfo.ObjectOf(identifier).(*types.Builtin)
 				if !ok || builtin.Name() != "append" {
 					return true
 				}

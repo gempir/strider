@@ -14,53 +14,53 @@ import (
 )
 
 type htmlReport struct {
-	Title string
-	Timings []HTMLTiming
+	Title       string
+	Timings     []HTMLTiming
 	Diagnostics []htmlDiagnostic
-	Total int
-	Errors int
-	Warnings int
-	Notes int
-	Shown int
-	Omitted int
-	Rules []htmlRuleCount
+	Total       int
+	Errors      int
+	Warnings    int
+	Notes       int
+	Shown       int
+	Omitted     int
+	Rules       []htmlRuleCount
 }
 
 type htmlRuleCount struct {
-	Code string
+	Code  string
 	Count int
 }
 
 type htmlDiagnostic struct {
-	Code string
-	Message string
+	Code     string
+	Message  string
 	Severity diagnostic.Severity
-	File string
+	File     string
 	Location string
-	Source []htmlSourceLine
-	Notes []diagnostic.Note
-	Fixes []diagnostic.Fix
+	Source   []htmlSourceLine
+	Notes    []diagnostic.Note
+	Fixes    []diagnostic.Fix
 }
 
 type htmlSourceLine struct {
-	Number int
-	Before string
+	Number    int
+	Before    string
 	Highlight string
-	After string
-	Current bool
+	After     string
+	Current   bool
 }
 
 // HTMLTiming records one operation duration in milliseconds.
 type HTMLTiming struct {
-	Name string
+	Name       string
 	DurationMS int64
 }
 
 // HTMLOptions configures a self-contained diagnostic report.
 type HTMLOptions struct {
-	Title string
-	SourceRoot string
-	Timings []HTMLTiming
+	Title          string
+	SourceRoot     string
+	Timings        []HTMLTiming
 	MaxDiagnostics int
 }
 
@@ -97,14 +97,14 @@ func HTMLWithOptions(writer io.Writer, options HTMLOptions, diagnostics []diagno
 		data.Diagnostics = append(
 			data.Diagnostics,
 			htmlDiagnostic{
-				Code: item.Code,
-				Message: item.Message,
+				Code:     item.Code,
+				Message:  item.Message,
 				Severity: item.Severity,
-				File: item.File,
+				File:     item.File,
 				Location: htmlLocation(item),
-				Source: htmlSourceContext(item, options.SourceRoot, sources, missing),
-				Notes: item.Notes,
-				Fixes: item.Fixes,
+				Source:   htmlSourceContext(item, options.SourceRoot, sources, missing),
+				Notes:    item.Notes,
+				Fixes:    item.Fixes,
 			},
 		)
 	}
@@ -193,22 +193,22 @@ func htmlSourceContext(item diagnostic.Diagnostic, root string, cache map[string
 	if item.Start.Line > len(lines) {
 		return nil
 	}
-	first := max(1, item.Start.Line - 1)
-	last := min(len(lines), item.Start.Line + 1)
-	result := make([]htmlSourceLine, 0, last - first + 1)
+	first := max(1, item.Start.Line-1)
+	last := min(len(lines), item.Start.Line+1)
+	result := make([]htmlSourceLine, 0, last-first+1)
 	for number := first; number <= last; number++ {
 		line := htmlSourceLine{Number: number}
-		contents := lines[number - 1]
+		contents := lines[number-1]
 		if number != item.Start.Line {
 			line.Before = contents
 			result = append(result, line)
 			continue
 		}
 		line.Current = true
-		start := min(max(item.Start.Column - 1, 0), len(contents))
+		start := min(max(item.Start.Column-1, 0), len(contents))
 		end := len(contents)
 		if item.End.Line == item.Start.Line && item.End.Column > item.Start.Column {
-			end = min(max(item.End.Column - 1, start), len(contents))
+			end = min(max(item.End.Column-1, start), len(contents))
 		}
 		if end == start && start < len(contents) {
 			_, width := utf8.DecodeRuneInString(contents[start:])

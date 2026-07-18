@@ -85,7 +85,7 @@ func concreteResultDecls(result *cst.Result) []*cst.ParameterDecl {
 		return concreteParameterDecls(result.Parameters)
 	}
 	if result.TypeNode != nil {
-		return[]*cst.ParameterDecl{{TypeNode: result.TypeNode}}
+		return []*cst.ParameterDecl{{TypeNode: result.TypeNode}}
 	}
 	return nil
 }
@@ -106,7 +106,7 @@ func (a *cstAnalyzer) checkConcreteResults(name cst.Token, results []*cst.Parame
 	previous := ""
 	for index, result := range results {
 		typeName := cst.Spelling(result.TypeNode)
-		if typeName == "error" && index != len(results) - 1 {
+		if typeName == "error" && index != len(results)-1 {
 			a.report("error-return", result.TypeNode, "error should be the last returned value")
 		}
 		if token.IsExported(name.Src()) {
@@ -187,8 +187,7 @@ func concreteConditionUses(body cst.Node, name string) bool {
 			if kind != "IfStmt" && kind != "IfElseStmt" {
 				return true
 			}
-			for _,
-			current := range cst.NodeTokens(node) {
+			for _, current := range cst.NodeTokens(node) {
 				if current.Ch() == token.IDENT && current.Src() == name {
 					found = true
 					return false
@@ -202,7 +201,7 @@ func concreteConditionUses(body cst.Node, name string) bool {
 
 func concreteIdentifierTokens(list *cst.IdentifierList) []cst.Token {
 	result := []cst.Token{}
-	for; list != nil; list = list.List {
+	for ; list != nil; list = list.List {
 		if list.IDENT.IsValid() {
 			result = append(result, list.IDENT)
 		}

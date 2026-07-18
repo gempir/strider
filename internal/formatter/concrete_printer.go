@@ -15,32 +15,32 @@ import (
 )
 
 type concreteGroup struct {
-	close int
+	close  int
 	broken bool
 }
 
 type concreteLayout struct {
-	tree *cst.Tree
-	tokens []cst.Token
-	indices map[cst.Token]int
-	hardOpen []int
-	hardClose []bool
-	softOpen []int
-	softClose []bool
-	softSemis []bool
-	topSemis []bool
-	spacedOps []bool
-	spaceBefore []bool
-	unaryOps []bool
+	tree          *cst.Tree
+	tokens        []cst.Token
+	indices       map[cst.Token]int
+	hardOpen      []int
+	hardClose     []bool
+	softOpen      []int
+	softClose     []bool
+	softSemis     []bool
+	topSemis      []bool
+	spacedOps     []bool
+	spaceBefore   []bool
+	unaryOps      []bool
 	channelArrows []bool
-	spacedAfter []bool
-	labelColons []bool
-	caseTokens []bool
-	caseColons []bool
-	importStart int
-	importEnd int
-	imports []concreteImport
-	module string
+	spacedAfter   []bool
+	labelColons   []bool
+	caseTokens    []bool
+	caseColons    []bool
+	importStart   int
+	importEnd     int
+	imports       []concreteImport
+	module        string
 }
 
 type concreteImport struct {
@@ -49,19 +49,18 @@ type concreteImport struct {
 }
 
 type concreteWriter struct {
-	output strings.Builder
-	indent int
-	column int
+	output          strings.Builder
+	indent          int
+	column          int
 	pendingNewlines int
-	forceSpace bool
-	lineStart bool
-	indentWidth int
-	maxEmptyLines int
+	forceSpace      bool
+	lineStart       bool
+	maxEmptyLines   int
 }
 
 func renderConcreteWithModule(tree *cst.Tree, options Options, module string) string {
 	layout := newConcreteLayout(tree, module)
-	writer := concreteWriter{lineStart: true, indentWidth: options.IndentWidth, maxEmptyLines: options.MaxEmptyLines}
+	writer := concreteWriter{lineStart: true, maxEmptyLines: 1}
 	source := tree.Bytes()
 	writer.output.Grow(len(source))
 	comments := tree.Comments()
@@ -73,7 +72,7 @@ func renderConcreteWithModule(tree *cst.Tree, options Options, module string) st
 	for index := 0; index < len(layout.tokens); index++ {
 		current := layout.tokens[index]
 		if current.Ch() == token.EOF {
-			layout.renderCommentsBefore(&writer, comments, &commentIndex, source, &sourceEnd, len(source) + 1)
+			layout.renderCommentsBefore(&writer, comments, &commentIndex, source, &sourceEnd, len(source)+1)
 			break
 		}
 		position := current.Position()
@@ -105,13 +104,13 @@ func renderConcreteWithModule(tree *cst.Tree, options Options, module string) st
 		case layout.hardOpen[index] != 0:
 			writer.beforeToken(previous, kind, true)
 			writer.write(current.Src(), -1)
-			if layout.hardOpen[index] != index + 1 {
+			if layout.hardOpen[index] != index+1 {
 				writer.indent++
 				writer.requestNewlines(1)
 			}
 		case layout.hardClose[index]:
-			if index > 0 && layout.hardOpen[index - 1] != index {
-				writer.indent = max(0, writer.indent - 1)
+			if index > 0 && layout.hardOpen[index-1] != index {
+				writer.indent = max(0, writer.indent-1)
 				writer.requestNewlines(1)
 			}
 			writer.write(current.Src(), -1)
@@ -121,42 +120,39 @@ func renderConcreteWithModule(tree *cst.Tree, options Options, module string) st
 			}
 			writer.write(current.Src(), -1)
 			close := layout.softOpen[index]
-			broken := layout.shouldBreak(index, close, writer.column, options.PrintWidth, comments, source, options.MaxEmptyLines > 0)
-			groups = append(groups, concreteGroup{close:
-			close, broken:
-			broken})
-			if broken && close != index + 1 {
+			broken := layout.shouldBreak(index, close, writer.column, options.PrintWidth, comments, source, true)
+			groups = append(groups, concreteGroup{close: close, broken: broken})
+			if broken && close != index+1 {
 				writer.indent++
 				writer.requestNewlines(1)
 			}
 		case layout.softClose[index]:
 			group := concreteGroup{}
 			if len(groups) != 0 {
-				group = groups[len(groups) - 1]
-				groups = groups[:
-				len(groups) - 1]
+				group = groups[len(groups)-1]
+				groups = groups[:len(groups)-1]
 			}
 			if group.broken && group.close == index && previous != token.COMMA {
 				writer.write(",", -1)
 			}
 			if group.broken && group.close == index {
-				writer.indent = max(0, writer.indent - 1)
+				writer.indent = max(0, writer.indent-1)
 				writer.requestNewlines(1)
 			}
 			writer.write(current.Src(), -1)
 		case kind == token.COMMA:
-			if len(groups) != 0 && !groups[len(groups) - 1].broken && groups[len(groups) - 1].close == index + 1 {
+			if len(groups) != 0 && !groups[len(groups)-1].broken && groups[len(groups)-1].close == index+1 {
 				break
 			}
 			writer.write(",", -1)
-			if len(groups) != 0 && groups[len(groups) - 1].broken {
+			if len(groups) != 0 && groups[len(groups)-1].broken {
 				writer.requestNewlines(1)
 			} else {
 				writer.forceSpace = true
 			}
 		case layout.caseTokens[index]:
 			writer.requestNewlines(1)
-			writer.write(current.Src(), max(0, writer.indent - 1))
+			writer.write(current.Src(), max(0, writer.indent-1))
 			writer.forceSpace = kind == token.CASE
 		case layout.caseColons[index]:
 			writer.write(":", -1)
@@ -193,9 +189,6 @@ func renderConcreteWithModule(tree *cst.Tree, options Options, module string) st
 	}
 
 	result := strings.TrimRight(writer.output.String(), " \t\r\n") + "\n"
-	if options.EndOfLine == "crlf" {
-		result = strings.ReplaceAll(result, "\n", "\r\n")
-	}
 	return result
 }
 
@@ -210,29 +203,29 @@ func concreteSourceEnd(current cst.Token) int {
 func newConcreteLayout(tree *cst.Tree, module string) *concreteLayout {
 	tokens := tree.Tokens()
 	tokenCount := len(tokens)
-	integerStorage := make([]int, tokenCount * 2)
-	booleanStorage := make([]bool, tokenCount * 12)
+	integerStorage := make([]int, tokenCount*2)
+	booleanStorage := make([]bool, tokenCount*12)
 	layout := &concreteLayout{
-		tree: tree,
-		tokens: tokens,
-		indices: make(map[cst.Token]int, tokenCount),
-		hardOpen: integerStorage[:tokenCount],
-		hardClose: booleanStorage[:tokenCount],
-		softOpen: integerStorage[tokenCount:],
-		softClose: booleanStorage[tokenCount:2 * tokenCount],
-		softSemis: booleanStorage[2 * tokenCount:3 * tokenCount],
-		topSemis: booleanStorage[3 * tokenCount:4 * tokenCount],
-		spacedOps: booleanStorage[4 * tokenCount:5 * tokenCount],
-		spaceBefore: booleanStorage[5 * tokenCount:6 * tokenCount],
-		unaryOps: booleanStorage[6 * tokenCount:7 * tokenCount],
-		channelArrows: booleanStorage[7 * tokenCount:8 * tokenCount],
-		spacedAfter: booleanStorage[8 * tokenCount:9 * tokenCount],
-		labelColons: booleanStorage[9 * tokenCount:10 * tokenCount],
-		caseTokens: booleanStorage[10 * tokenCount:11 * tokenCount],
-		caseColons: booleanStorage[11 * tokenCount:],
-		importStart: -1,
-		importEnd: -1,
-		module: module,
+		tree:          tree,
+		tokens:        tokens,
+		indices:       make(map[cst.Token]int, tokenCount),
+		hardOpen:      integerStorage[:tokenCount],
+		hardClose:     booleanStorage[:tokenCount],
+		softOpen:      integerStorage[tokenCount:],
+		softClose:     booleanStorage[tokenCount : 2*tokenCount],
+		softSemis:     booleanStorage[2*tokenCount : 3*tokenCount],
+		topSemis:      booleanStorage[3*tokenCount : 4*tokenCount],
+		spacedOps:     booleanStorage[4*tokenCount : 5*tokenCount],
+		spaceBefore:   booleanStorage[5*tokenCount : 6*tokenCount],
+		unaryOps:      booleanStorage[6*tokenCount : 7*tokenCount],
+		channelArrows: booleanStorage[7*tokenCount : 8*tokenCount],
+		spacedAfter:   booleanStorage[8*tokenCount : 9*tokenCount],
+		labelColons:   booleanStorage[9*tokenCount : 10*tokenCount],
+		caseTokens:    booleanStorage[10*tokenCount : 11*tokenCount],
+		caseColons:    booleanStorage[11*tokenCount:],
+		importStart:   -1,
+		importEnd:     -1,
+		module:        module,
 	}
 	for index, current := range tokens {
 		layout.indices[current] = index
@@ -328,8 +321,7 @@ func (l *concreteLayout) indexTree() {
 				l.markToken(current.OR, l.spacedOps)
 			}
 			if kind == "SendStmt" || kind == "RangeClause" || kind == "TypeSwitchGuard" {
-				for _,
-				current := range cst.NodeTokens(node) {
+				for _, current := range cst.NodeTokens(node) {
 					switch current.Ch() {
 					case token.ARROW,
 						token.ASSIGN,
@@ -339,8 +331,7 @@ func (l *concreteLayout) indexTree() {
 				}
 			}
 			if kind == "RecvStmt" {
-				for _,
-				current := range cst.NodeTokens(node) {
+				for _, current := range cst.NodeTokens(node) {
 					if current.Ch() == token.ASSIGN || current.Ch() == token.DEFINE {
 						l.markToken(current, l.spacedOps)
 					}
@@ -356,8 +347,7 @@ func (l *concreteLayout) indexTree() {
 				l.markTokens(node, token.COLON, l.labelColons)
 			}
 			if kind == "ExprCaseClauseList" || kind == "TypeCaseClause" || kind == "CommClause" {
-				for _,
-				current := range cst.NodeTokens(node) {
+				for _, current := range cst.NodeTokens(node) {
 					switch current.Ch() {
 					case token.CASE,
 						token.DEFAULT:
@@ -377,8 +367,8 @@ func (l *concreteLayout) markAnyDelimited(node cst.Node, opens []int, closes []b
 	if len(tokens) < 2 {
 		return
 	}
-	open, close := tokens[0].Ch(), tokens[len(tokens) - 1].Ch()
-	if(open == token.LPAREN && close == token.RPAREN) || (open == token.LBRACK && close == token.RBRACK) || (open == token.LBRACE && close == token.RBRACE) {
+	open, close := tokens[0].Ch(), tokens[len(tokens)-1].Ch()
+	if (open == token.LPAREN && close == token.RPAREN) || (open == token.LBRACK && close == token.RBRACK) || (open == token.LBRACE && close == token.RBRACE) {
 		l.markDelimited(node, open, close, opens, closes)
 	}
 }
@@ -448,16 +438,16 @@ func (l *concreteLayout) indexImports() {
 		l.tree.Root(),
 		func(node cst.Node) bool {
 			declaration,
-			ok := node.(*cst.ImportDecl)
+				ok := node.(*cst.ImportDecl)
 			if !ok {
 				return true
 			}
 			tokens := cst.NodeTokens(declaration)
 			if len(tokens) != 0 {
 				start,
-				_ := l.tokenIndex(tokens[0])
+					_ := l.tokenIndex(tokens[0])
 				end,
-				_ := l.tokenIndex(tokens[len(tokens) - 1])
+					_ := l.tokenIndex(tokens[len(tokens)-1])
 				if l.importStart < 0 || start < l.importStart {
 					l.importStart = start
 				}
@@ -469,7 +459,7 @@ func (l *concreteLayout) indexImports() {
 				declaration,
 				func(child cst.Node) bool {
 					spec,
-					isSpec := child.(*cst.ImportSpec)
+						isSpec := child.(*cst.ImportSpec)
 					if !isSpec {
 						return true
 					}
@@ -491,7 +481,7 @@ func (l *concreteLayout) indexImports() {
 		l.importStart, l.importEnd = -1, -1
 		return
 	}
-	for l.importEnd + 1 < len(l.tokens) && l.tokens[l.importEnd + 1].Ch() == token.SEMICOLON {
+	for l.importEnd+1 < len(l.tokens) && l.tokens[l.importEnd+1].Ch() == token.SEMICOLON {
 		l.importEnd++
 	}
 	for _, comment := range l.tree.Comments() {
@@ -518,7 +508,7 @@ func (l *concreteLayout) renderImports(writer *concreteWriter) {
 		},
 	)
 	if len(imports) == 1 {
-		writer.write("import " + importText(imports[0]), -1)
+		writer.write("import "+importText(imports[0]), -1)
 		writer.requestNewlines(2)
 		return
 	}
@@ -545,7 +535,7 @@ func (l *concreteLayout) importCategory(item concreteImport) int {
 	if err != nil {
 		return 1
 	}
-	if l.module != "" && (path == l.module || strings.HasPrefix(path, l.module + "/")) {
+	if l.module != "" && (path == l.module || strings.HasPrefix(path, l.module+"/")) {
 		return 2
 	}
 	first := strings.Split(path, "/")[0]
@@ -623,13 +613,13 @@ func modulePathIn(directory string) (string, bool) {
 		if lineEnd == len(content) {
 			break
 		}
-		content = content[lineEnd + 1:]
+		content = content[lineEnd+1:]
 	}
 	return "", true
 }
 
 func (l *concreteLayout) shouldBreak(open, close, column, width int, comments []cst.Comment, source []byte, preserveEmptyLines bool) bool {
-	if close <= open + 1 {
+	if close <= open+1 {
 		return false
 	}
 	start := l.tokens[open].Position().Offset
@@ -665,7 +655,7 @@ func (l *concreteLayout) shouldBreak(open, close, column, width int, comments []
 		}
 		previous = current.Ch()
 	}
-	return column + length > width
+	return column+length > width
 }
 
 func (l *concreteLayout) renderCommentsBefore(writer *concreteWriter, comments []cst.Comment, commentIndex *int, source []byte, sourceEnd *int, beforeOffset int) {
@@ -729,7 +719,7 @@ func concreteNeedsSpace(previous, current token.Token, spaced bool) bool {
 	if tokenWord(previous) && tokenWord(current) {
 		return true
 	}
-	if(previous == token.RPAREN || previous == token.RBRACE) && tokenWord(current) {
+	if (previous == token.RPAREN || previous == token.RBRACE) && tokenWord(current) {
 		return true
 	}
 	return false
@@ -750,7 +740,7 @@ func (w *concreteWriter) write(value string, indentOverride int) {
 			indent = indentOverride
 		}
 		w.output.WriteString(strings.Repeat("\t", indent))
-		w.column = indent * w.indentWidth
+		w.column = indent * 8
 		w.lineStart = false
 	}
 	if w.forceSpace && w.column != 0 {
@@ -760,8 +750,8 @@ func (w *concreteWriter) write(value string, indentOverride int) {
 	}
 	w.output.WriteString(value)
 	if newline := strings.LastIndexByte(value, '\n'); newline >= 0 {
-		w.column = utf8.RuneCountInString(value[newline + 1:])
-		w.lineStart = newline == len(value) - 1
+		w.column = utf8.RuneCountInString(value[newline+1:])
+		w.lineStart = newline == len(value)-1
 		return
 	}
 	w.column += utf8.RuneCountInString(value)
@@ -769,7 +759,7 @@ func (w *concreteWriter) write(value string, indentOverride int) {
 
 func (w *concreteWriter) requestNewlines(count int) {
 	w.forceSpace = false
-	count = min(count, w.maxEmptyLines + 1)
+	count = min(count, w.maxEmptyLines+1)
 	if count > w.pendingNewlines {
 		w.pendingNewlines = count
 	}

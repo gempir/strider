@@ -16,7 +16,7 @@ func (a *cstAnalyzer) checkConcreteIfReturn(current, next cst.Node) {
 		return
 	}
 	name := assignment.IdentifierList.IDENT.Src()
-	if cst.Spelling(statement.Expression) != name + "!=nil" {
+	if cst.Spelling(statement.Expression) != name+"!=nil" {
 		return
 	}
 	body := concreteBlockStatements(statement.Block)
@@ -65,7 +65,7 @@ func (a *cstAnalyzer) checkConcreteBreak(statement *cst.BreakStmt) {
 			continue
 		}
 		statements := concreteStatementsFromList(list)
-		if len(statements) != 0 && statements[len(statements) - 1] == statement {
+		if len(statements) != 0 && statements[len(statements)-1] == statement {
 			a.report("useless-break", statement, "break at the end of a switch case is redundant")
 			a.report("unnecessary-stmt", statement, "omit unnecessary break at the end of a case clause")
 		}
@@ -81,7 +81,7 @@ func (a *cstAnalyzer) checkConcreteTestMain(function *cst.FunctionDecl) {
 		function.FunctionBody,
 		func(node cst.Node) bool {
 			call,
-			ok := node.(*cst.PrimaryExpr)
+				ok := node.(*cst.PrimaryExpr)
 			if ok && concreteCallName(call) == "os.Exit" {
 				a.report("redundant-test-main-exit", call, "TestMain can return instead of calling os.Exit")
 			}

@@ -52,7 +52,7 @@ func closeThing() {}
 	for _, item := range diagnostics {
 		codes = append(codes, item.Code)
 	}
-	for _, wanted := range[]string{"cyclomatic-complexity", "max-parameters", "no-defer-in-loop", "no-else-after-return", "no-init", "no-naked-return", "no-package-var"} {
+	for _, wanted := range []string{"cyclomatic-complexity", "max-parameters", "no-defer-in-loop", "no-else-after-return", "no-init", "no-naked-return", "no-package-var"} {
 		if !slices.Contains(codes, wanted) {
 			t.Errorf("missing %s in %v", wanted, codes)
 		}
@@ -299,10 +299,10 @@ func TestStructTagReportsDuplicateKeysAndInvalidOptions(t *testing.T) {
 		t,
 		`package sample
 type tagged struct {
-	A string ` + "`json:\"a\" json:\"b\"`" + `
-	B string ` + "`xml:\"b,attr,attr\"`" + `
-	C string ` + "`xml:\"c,mystery\"`" + `
-	D string ` + "`json:\"d,omitEmpty\"`" + `
+	A string `+"`json:\"a\" json:\"b\"`"+`
+	B string `+"`xml:\"b,attr,attr\"`"+`
+	C string `+"`xml:\"c,mystery\"`"+`
+	D string `+"`json:\"d,omitEmpty\"`"+`
 }
 `,
 	)
@@ -589,7 +589,7 @@ import (
 	for _, item := range diagnostics {
 		counts[item.Code]++
 	}
-	for _, code := range[]string{"blank-imports", "dot-imports", "duplicated-imports", "import-alias-naming", "redundant-import-alias"} {
+	for _, code := range []string{"blank-imports", "dot-imports", "duplicated-imports", "import-alias-naming", "redundant-import-alias"} {
 		if counts[code] != 1 {
 			t.Errorf("%s produced %d findings; want 1: %#v", code, counts[code], diagnostics)
 		}
@@ -625,7 +625,7 @@ func TestCatalogIsCompleteDocumentedAndRunnable(t *testing.T) {
 		if strings.HasPrefix(meta.GoodExample, "See the rule reference") || strings.HasPrefix(meta.BadExample, "See the rule reference") {
 			t.Errorf("rule %s still has placeholder examples", meta.Code)
 		}
-		if _, err := os.Stat(filepath.Join(docsDirectory, meta.Code + ".md")); err != nil {
+		if _, err := os.Stat(filepath.Join(docsDirectory, meta.Code+".md")); err != nil {
 			t.Errorf("rule %s has no documentation: %v", meta.Code, err)
 		}
 		registry, err := NewRegistry([]string{meta.Code})
@@ -674,25 +674,24 @@ func TestEveryLintRuleAcceptsCommonConfiguration(t *testing.T) {
 func TestLintRegistryFiltersByEffectiveSeverityBeforeExecution(t *testing.T) {
 	for name, options := range map[string]RegistryOptions{
 		"only": {Only: []string{"no-init"}, Settings: map[string]config.RuleConfig{"no-init": {Severity: "warning"}}, MinimumSeverity: diagnostic.SeverityError},
-		"all": {EnableAll: true, Settings: map[string]config.RuleConfig{"no-init": {Severity: "warning"}}, MinimumSeverity: diagnostic.SeverityError},
+		"all":  {EnableAll: true, Settings: map[string]config.RuleConfig{"no-init": {Severity: "warning"}}, MinimumSeverity: diagnostic.SeverityError},
 	} {
 		t.Run(
 			name,
 			func(t *testing.T) {
 				registry,
-				err := NewRegistryWithOptions(options)
+					err := NewRegistryWithOptions(options)
 				if err != nil {
 					t.Fatal(err)
 				}
-				for _,
-				rule := range registry.Rules() {
+				for _, rule := range registry.Rules() {
 					if rule.Meta().Code == "no-init" {
 						t.Fatal("selection bypassed the minimum severity")
 					}
 				}
 				if name == "only" {
 					diagnostics,
-					runErr := Run([]string{filepath.Join(t.TempDir(), "missing.go")}, registry)
+						runErr := Run([]string{filepath.Join(t.TempDir(), "missing.go")}, registry)
 					if runErr != nil {
 						t.Fatalf("empty registry attempted CST execution: %v", runErr)
 					}
@@ -795,7 +794,7 @@ func Assert(v interface{}) { _ = v.(string) }
 	for _, item := range diagnostics {
 		codes[item.Code] = true
 	}
-	for _, code := range[]string{
+	for _, code := range []string{
 		"argument-limit",
 		"bare-return",
 		"bool-literal-in-expr",
@@ -844,7 +843,16 @@ func (current item) mutate(value int, group sync.WaitGroup, closer interface{ Cl
 `,
 	)
 	registry, err := NewRegistry(
-		[]string{"atomic", "epoch-naming", "forbidden-call-in-wg-go", "inefficient-map-lookup", "modifies-parameter", "modifies-value-receiver", "time-equal", "unhandled-error"},
+		[]string{
+			"atomic",
+			"epoch-naming",
+			"forbidden-call-in-wg-go",
+			"inefficient-map-lookup",
+			"modifies-parameter",
+			"modifies-value-receiver",
+			"time-equal",
+			"unhandled-error",
+		},
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -857,7 +865,7 @@ func (current item) mutate(value int, group sync.WaitGroup, closer interface{ Cl
 	for _, item := range diagnostics {
 		codes[item.Code] = true
 	}
-	for _, code := range[]string{
+	for _, code := range []string{
 		"atomic",
 		"epoch-naming",
 		"forbidden-call-in-wg-go",

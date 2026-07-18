@@ -10,15 +10,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type ineffectiveBitwiseZeroRule struct {}
+type ineffectiveBitwiseZeroRule struct{}
 
 func (ineffectiveBitwiseZeroRule) Meta() Meta {
 	return Meta{
-		Code: "ineffective-bitwise-zero",
-		Summary: "detect bitwise operations whose zero operand fixes the result",
-		Explanation: "For integers, x & 0 is always zero while x | 0 and x ^ 0 are always x. A zero-valued flag declared directly with iota often indicates that 1 << iota was intended.",
-		GoodExample: "masked := value & mask",
-		BadExample: "unchanged := value ^ 0",
+		Code:            "ineffective-bitwise-zero",
+		Summary:         "detect bitwise operations whose zero operand fixes the result",
+		Explanation:     "For integers, x & 0 is always zero while x | 0 and x ^ 0 are always x. A zero-valued flag declared directly with iota often indicates that 1 << iota was intended.",
+		GoodExample:     "masked := value & mask",
+		BadExample:      "unchanged := value ^ 0",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -30,7 +30,7 @@ func (ineffectiveBitwiseZeroRule) Run(pass *Pass) {
 			file,
 			func(node ast.Node) bool {
 				binary,
-				ok := node.(*ast.BinaryExpr)
+					ok := node.(*ast.BinaryExpr)
 				if !ok || !allIntegerTypes(pass.TypesInfo.TypeOf(binary)) {
 					return true
 				}
@@ -42,7 +42,7 @@ func (ineffectiveBitwiseZeroRule) Run(pass *Pass) {
 					return true
 				}
 				zero,
-				iotaName := bitwiseZeroOperand(pass, binary.Y, iotaConstants)
+					iotaName := bitwiseZeroOperand(pass, binary.Y, iotaConstants)
 				if !zero {
 					return true
 				}
@@ -73,17 +73,17 @@ func directIotaConstants(pass *Pass) map[*types.Const]bool {
 			file,
 			func(node ast.Node) bool {
 				specification,
-				ok := node.(*ast.ValueSpec)
+					ok := node.(*ast.ValueSpec)
 				if !ok || len(specification.Names) != 1 || len(specification.Values) != 1 {
 					return true
 				}
 				identifier,
-				ok := ast.Unparen(specification.Values[0]).(*ast.Ident)
+					ok := ast.Unparen(specification.Values[0]).(*ast.Ident)
 				if !ok || !isUniverseIota(pass.TypesInfo.ObjectOf(identifier)) {
 					return true
 				}
 				object,
-				ok := pass.TypesInfo.Defs[specification.Names[0]].(*types.Const)
+					ok := pass.TypesInfo.Defs[specification.Names[0]].(*types.Const)
 				if ok {
 					constants[object] = true
 				}

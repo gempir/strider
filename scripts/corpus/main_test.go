@@ -21,7 +21,7 @@ func TestDigestNormalizesLineEndings(t *testing.T) {
 
 func TestWriteProjectReportLimitsDetailedDiagnostics(t *testing.T) {
 	root := t.TempDir()
-	diagnostics := make([]diagnosticmodel.Diagnostic, projectReportDiagnosticLimit + 1)
+	diagnostics := make([]diagnosticmodel.Diagnostic, projectReportDiagnosticLimit+1)
 	for index := range diagnostics {
 		diagnostics[index] = diagnosticmodel.Diagnostic{Code: "example", Message: "finding"}
 	}
@@ -58,7 +58,7 @@ func TestWriteProjectReportIncludesOperationTimings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, wanted := range[]string{"format", "14 <small>ms</small>", "1190 <small>ms</small>"} {
+	for _, wanted := range []string{"format", "14 <small>ms</small>", "1190 <small>ms</small>"} {
 		if !strings.Contains(string(contents), wanted) {
 			t.Fatalf("project report missing timing %q", wanted)
 		}
@@ -69,7 +69,7 @@ func TestManifestRequiresElevenPinnedProjectsAndBudgets(t *testing.T) {
 	path := t.TempDir() + "/projects.json"
 	projects := make([]string, 11)
 	for index := range projects {
-		projects[index] = `{"name":"project-` + string(rune('a' + index)) + `","repository":"https://example.com/project.git","revision":"` + strings.Repeat("a", 40) + `","budgets_ms":{"format":1,"check":1}}`
+		projects[index] = `{"name":"project-` + string(rune('a'+index)) + `","repository":"https://example.com/project.git","revision":"` + strings.Repeat("a", 40) + `","budgets_ms":{"format":1,"check":1}}`
 	}
 	contents := `{"version":1,"projects":[` + strings.Join(projects, ",") + `]}`
 	if err := os.WriteFile(path, []byte(contents), 0o600); err != nil {

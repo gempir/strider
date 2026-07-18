@@ -13,50 +13,50 @@ import (
 var cgoPointerIdentifier = regexp.MustCompile(`^_C(func|var)_.+$`)
 
 var builtinIdentifiers = map[string]bool{
-	"any": true,
-	"append": true,
-	"bool": true,
-	"byte": true,
-	"cap": true,
-	"clear": true,
-	"close": true,
+	"any":        true,
+	"append":     true,
+	"bool":       true,
+	"byte":       true,
+	"cap":        true,
+	"clear":      true,
+	"close":      true,
 	"comparable": true,
-	"complex": true,
+	"complex":    true,
 	"complex128": true,
-	"complex64": true,
-	"copy": true,
-	"delete": true,
-	"error": true,
-	"false": true,
-	"float32": true,
-	"float64": true,
-	"imag": true,
-	"int": true,
-	"int16": true,
-	"int32": true,
-	"int64": true,
-	"int8": true,
-	"iota": true,
-	"len": true,
-	"make": true,
-	"max": true,
-	"min": true,
-	"new": true,
-	"nil": true,
-	"panic": true,
-	"print": true,
-	"println": true,
-	"real": true,
-	"recover": true,
-	"rune": true,
-	"string": true,
-	"true": true,
-	"uint": true,
-	"uint16": true,
-	"uint32": true,
-	"uint64": true,
-	"uint8": true,
-	"uintptr": true,
+	"complex64":  true,
+	"copy":       true,
+	"delete":     true,
+	"error":      true,
+	"false":      true,
+	"float32":    true,
+	"float64":    true,
+	"imag":       true,
+	"int":        true,
+	"int16":      true,
+	"int32":      true,
+	"int64":      true,
+	"int8":       true,
+	"iota":       true,
+	"len":        true,
+	"make":       true,
+	"max":        true,
+	"min":        true,
+	"new":        true,
+	"nil":        true,
+	"panic":      true,
+	"print":      true,
+	"println":    true,
+	"real":       true,
+	"recover":    true,
+	"rune":       true,
+	"string":     true,
+	"true":       true,
+	"uint":       true,
+	"uint16":     true,
+	"uint32":     true,
+	"uint64":     true,
+	"uint8":      true,
+	"uintptr":    true,
 }
 
 func utf8Decode(value string) (rune, int) {
@@ -74,7 +74,7 @@ func isErrorConstructor(name string) bool {
 func likelyReturnsError(name string) bool {
 	base := name
 	if dot := strings.LastIndex(base, "."); dot >= 0 {
-		base = base[dot + 1:]
+		base = base[dot+1:]
 	}
 	return base == "Close" || base == "Flush" || base == "Write" || base == "Remove" || base == "Rename" || base == "Chdir" || base == "Setenv" || base == "Unmarshal" || base == "Encode" || strings.HasPrefix(
 		base,
@@ -105,7 +105,7 @@ func validEpochName(name, unit string) bool {
 
 func hasTimeUnitSuffix(name string) bool {
 	lower := strings.ToLower(name)
-	for _, suffix := range[]string{"ns", "us", "ms", "sec", "secs", "second", "seconds", "min", "mins", "minute", "minutes", "hour", "hours"} {
+	for _, suffix := range []string{"ns", "us", "ms", "sec", "secs", "second", "seconds", "min", "mins", "minute", "minutes", "hour", "hours"} {
 		if strings.HasSuffix(lower, suffix) {
 			return true
 		}
@@ -181,7 +181,7 @@ func parseStructTagValues(value string) (map[string][]string, bool) {
 			}
 		}
 		key := value[:colon]
-		value = value[colon + 1:]
+		value = value[colon+1:]
 		if len(value) == 0 || value[0] != '"' {
 			return nil, false
 		}
@@ -206,7 +206,7 @@ func consumeQuoted(value string) (string, string, bool) {
 			continue
 		}
 		if value[index] == '"' {
-			return value[:index + 1], value[index + 1:], true
+			return value[:index+1], value[index+1:], true
 		}
 	}
 	return "", value, false

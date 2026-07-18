@@ -65,8 +65,8 @@ func TextWithOptions(writer io.Writer, diagnostics []diagnostic.Diagnostic, colo
 }
 
 type checkCount struct {
-	code string
-	count int
+	code     string
+	count    int
 	severity diagnostic.Severity
 }
 
@@ -113,7 +113,7 @@ func writeCheckCounts(writer io.Writer, diagnostics []diagnostic.Diagnostic, pal
 
 func writeDiagnostic(writer io.Writer, item diagnostic.Diagnostic, palette ui.Palette, sources map[string][]string, missing map[string]bool) error {
 	severity := styledSeverity(item.Severity, string(item.Severity), palette)
-	code := styledSeverity(item.Severity, "[" + item.Code + "]", palette)
+	code := styledSeverity(item.Severity, "["+item.Code+"]", palette)
 	if _, err := fmt.Fprintf(writer, "%s%s: %s\n", severity, code, palette.Bold(item.Message)); err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func writeDiagnostic(writer io.Writer, item diagnostic.Diagnostic, palette ui.Pa
 
 	lines := sourceLines(item.File, sources, missing)
 	if item.Start.Line > 0 && item.Start.Line <= len(lines) {
-		line := lines[item.Start.Line - 1]
+		line := lines[item.Start.Line-1]
 		width := len(strconv.Itoa(item.Start.Line))
 		gutter := palette.Accent("│")
 		if _, err := fmt.Fprintf(writer, "%*s %s\n", width, "", gutter); err != nil {
@@ -161,7 +161,7 @@ func writeDiagnostic(writer io.Writer, item diagnostic.Diagnostic, palette ui.Pa
 }
 
 func markerIndent(line string, column int) string {
-	prefixLength := min(max(column - 1, 0), len(line))
+	prefixLength := min(max(column-1, 0), len(line))
 	var indent strings.Builder
 	for _, character := range line[:prefixLength] {
 		if character == '\t' {
@@ -191,10 +191,10 @@ func sourceLines(filename string, cache map[string][]string, missing map[string]
 }
 
 func markerWidth(item diagnostic.Diagnostic, line string, column int) int {
-	start := min(max(column - 1, 0), len(line))
+	start := min(max(column-1, 0), len(line))
 	remaining := max(utf8.RuneCountInString(line[start:]), 1)
 	if item.End.Line == item.Start.Line && item.End.Column > item.Start.Column {
-		end := min(max(item.End.Column - 1, start), len(line))
+		end := min(max(item.End.Column-1, start), len(line))
 		return min(max(utf8.RuneCountInString(line[start:end]), 1), remaining)
 	}
 	return remaining
@@ -221,13 +221,13 @@ func summary(diagnostics []diagnostic.Diagnostic, counts map[diagnostic.Severity
 		return palette.Success(prefix)
 	}
 	parts := make([]string, 0, 3)
-	for _, severity := range[]diagnostic.Severity{diagnostic.SeverityError, diagnostic.SeverityWarning, diagnostic.SeverityNote} {
+	for _, severity := range []diagnostic.Severity{diagnostic.SeverityError, diagnostic.SeverityWarning, diagnostic.SeverityNote} {
 		if count := counts[severity]; count != 0 {
 			part := fmt.Sprintf("%d %s", count, plural(string(severity), count))
 			parts = append(parts, styledSeverity(severity, part, palette))
 		}
 	}
-	return palette.White(prefix + ": ") + strings.Join(parts, palette.White(", "))
+	return palette.White(prefix+": ") + strings.Join(parts, palette.White(", "))
 }
 
 func plural(word string, count int) string {

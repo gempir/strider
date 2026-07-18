@@ -7,15 +7,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type dynamicPrintfRule struct {}
+type dynamicPrintfRule struct{}
 
 func (dynamicPrintfRule) Meta() Meta {
 	return Meta{
-		Code: "dynamic-printf",
-		Summary: "detect Printf calls with a lone dynamic format",
-		Explanation: "Passing a dynamic string as the only format argument to a printf-style function can interpret percent signs unexpectedly. Use the print-style counterpart or an explicit %s format.",
-		GoodExample: "fmt.Printf(\"%s\", message)",
-		BadExample: "fmt.Printf(message)",
+		Code:            "dynamic-printf",
+		Summary:         "detect Printf calls with a lone dynamic format",
+		Explanation:     "Passing a dynamic string as the only format argument to a printf-style function can interpret percent signs unexpectedly. Use the print-style counterpart or an explicit %s format.",
+		GoodExample:     "fmt.Printf(\"%s\", message)",
+		BadExample:      "fmt.Printf(message)",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -26,13 +26,13 @@ func (dynamicPrintfRule) Run(pass *Pass) {
 			file,
 			func(node ast.Node) bool {
 				call,
-				ok := node.(*ast.CallExpr)
+					ok := node.(*ast.CallExpr)
 				if !ok {
 					return true
 				}
 				formatIndex,
-				ok := dynamicPrintfFormatIndex(pass, call)
-				if !ok || len(call.Args) != formatIndex + 1 {
+					ok := dynamicPrintfFormatIndex(pass, call)
+				if !ok || len(call.Args) != formatIndex+1 {
 					return true
 				}
 				format := call.Args[formatIndex]
@@ -43,7 +43,7 @@ func (dynamicPrintfRule) Run(pass *Pass) {
 					return true
 				}
 				if _,
-				tuple := pass.TypesInfo.TypeOf(format).(*types.Tuple); tuple {
+					tuple := pass.TypesInfo.TypeOf(format).(*types.Tuple); tuple {
 					return true
 				}
 				pass.Report(call, "printf-style function with dynamic format string and no further arguments should use print-style function instead")

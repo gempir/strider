@@ -8,15 +8,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type invalidURLRule struct {}
+type invalidURLRule struct{}
 
 func (invalidURLRule) Meta() Meta {
 	return Meta{
-		Code: "invalid-url",
-		Summary: "detect invalid URLs passed to net/url.Parse",
-		Explanation: "Constant strings passed to net/url.Parse must satisfy Go's URL syntax.",
-		GoodExample: `url.Parse("https://golang.org")`,
-		BadExample: `url.Parse(":")`,
+		Code:            "invalid-url",
+		Summary:         "detect invalid URLs passed to net/url.Parse",
+		Explanation:     "Constant strings passed to net/url.Parse must satisfy Go's URL syntax.",
+		GoodExample:     `url.Parse("https://golang.org")`,
+		BadExample:      `url.Parse(":")`,
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }

@@ -45,7 +45,7 @@ func TestRuleRequirementsCoverCatalog(t *testing.T) {
 
 func TestExecutionPlanSelectsNamedFacts(t *testing.T) {
 	tests := []struct {
-		code string
+		code  string
 		facts FactSet
 	}{
 		{code: "invalid-regexp", facts: FactFirstCallArgument | FactStaticCalls},
@@ -59,7 +59,7 @@ func TestExecutionPlanSelectsNamedFacts(t *testing.T) {
 			test.code,
 			func(t *testing.T) {
 				registry,
-				err := NewRegistry([]string{test.code})
+					err := NewRegistry([]string{test.code})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -133,7 +133,7 @@ func valid() string { return "ok" }
 
 func TestSSADebugMetadataIsCapabilityDriven(t *testing.T) {
 	tests := []struct {
-		code string
+		code        string
 		globalDebug bool
 	}{{code: "invalid-regexp"}, {code: "overwritten-before-use", globalDebug: true}}
 	for _, test := range tests {
@@ -141,7 +141,7 @@ func TestSSADebugMetadataIsCapabilityDriven(t *testing.T) {
 			test.code,
 			func(t *testing.T) {
 				registry,
-				err := NewRegistry([]string{test.code})
+					err := NewRegistry([]string{test.code})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -151,7 +151,7 @@ func TestSSADebugMetadataIsCapabilityDriven(t *testing.T) {
 					registry.executionPlan(),
 					func(_ []*packages.Package, mode ssa.BuilderMode) ssaBuildResult {
 						calls++
-						if got := mode & ssa.GlobalDebug != 0; got != test.globalDebug {
+						if got := mode&ssa.GlobalDebug != 0; got != test.globalDebug {
 							t.Fatalf("GlobalDebug = %t, want %t", got, test.globalDebug)
 						}
 						return ssaBuildResult{}

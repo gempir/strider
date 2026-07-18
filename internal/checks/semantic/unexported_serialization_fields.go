@@ -9,29 +9,29 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type unexportedSerializationFieldsRule struct {}
+type unexportedSerializationFieldsRule struct{}
 
 type serializationCall struct {
-	format string
-	direction string
-	ssaArgument int
+	format         string
+	direction      string
+	ssaArgument    int
 	sourceArgument int
 }
 
 func (unexportedSerializationFieldsRule) Meta() Meta {
 	return Meta{
-		Code: "unexported-serialization-fields",
-		Summary: "detect serialization of structs with no exported fields",
-		Explanation: "The standard JSON and XML packages ignore unexported struct fields. Marshaling a non-empty struct with no exported fields produces empty data, and unmarshaling into it cannot populate anything, unless the type defines custom serialization behavior.",
-		GoodExample: "json.Marshal(struct{ Name string }{Name: name})",
-		BadExample: "json.Marshal(struct{ name string }{name: name})",
+		Code:            "unexported-serialization-fields",
+		Summary:         "detect serialization of structs with no exported fields",
+		Explanation:     "The standard JSON and XML packages ignore unexported struct fields. Marshaling a non-empty struct with no exported fields produces empty data, and unmarshaling into it cannot populate anything, unless the type defines custom serialization behavior.",
+		GoodExample:     "json.Marshal(struct{ Name string }{Name: name})",
+		BadExample:      "json.Marshal(struct{ name string }{name: name})",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
 
 func (unexportedSerializationFieldsRule) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
-	for _, packagePath := range[]string{"encoding/json", "encoding/xml"} {
+	for _, packagePath := range []string{"encoding/json", "encoding/xml"} {
 		for _, call := range pass.staticCallsInPackage(packagePath) {
 			descriptor, ok := serializationDescriptor(call)
 			if !ok || len(call.Common().Args) <= descriptor.ssaArgument {

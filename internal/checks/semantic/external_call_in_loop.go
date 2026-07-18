@@ -9,15 +9,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type externalCallInLoopRule struct {}
+type externalCallInLoopRule struct{}
 
 func (externalCallInLoopRule) Meta() Meta {
 	return Meta{
-		Code: "external-call-in-loop",
-		Summary: "detect synchronous SQL and HTTP calls inside loops",
-		Explanation: "A database query or HTTP request issued synchronously on each loop iteration creates serial network round trips and commonly indicates an N+1 access pattern. Batch work before the loop when possible. Calls inside nested function literals are analyzed in their own control-flow graph and are not attributed to the enclosing loop.",
-		GoodExample: "rows, err := db.QueryContext(ctx, batchQuery, ids)\nfor rows.Next() { /* map results in memory */ }",
-		BadExample: "for _, id := range ids { row := db.QueryRowContext(ctx, query, id); _ = row }",
+		Code:            "external-call-in-loop",
+		Summary:         "detect synchronous SQL and HTTP calls inside loops",
+		Explanation:     "A database query or HTTP request issued synchronously on each loop iteration creates serial network round trips and commonly indicates an N+1 access pattern. Batch work before the loop when possible. Calls inside nested function literals are analyzed in their own control-flow graph and are not attributed to the enclosing loop.",
+		GoodExample:     "rows, err := db.QueryContext(ctx, batchQuery, ids)\nfor rows.Next() { /* map results in memory */ }",
+		BadExample:      "for _, id := range ids { row := db.QueryRowContext(ctx, query, id); _ = row }",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }

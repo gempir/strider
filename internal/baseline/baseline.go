@@ -19,29 +19,29 @@ const Version = 1
 type Variant string
 
 const (
-	Loose Variant = "loose"
+	Loose  Variant = "loose"
 	Strict Variant = "strict"
 )
 
 type File struct {
-	Version int `toml:"version"`
+	Version int     `toml:"version"`
 	Variant Variant `toml:"variant"`
-	Issues []Issue `toml:"issues"`
+	Issues  []Issue `toml:"issues"`
 }
 
 type Issue struct {
-	File string `toml:"file"`
-	Code string `toml:"code"`
-	Message string `toml:"message,omitempty"`
-	Count int `toml:"count,omitzero"`
-	StartLine int `toml:"start-line,omitzero"`
-	EndLine int `toml:"end-line,omitzero"`
+	File      string `toml:"file"`
+	Code      string `toml:"code"`
+	Message   string `toml:"message,omitempty"`
+	Count     int    `toml:"count,omitzero"`
+	StartLine int    `toml:"start-line,omitzero"`
+	EndLine   int    `toml:"end-line,omitzero"`
 }
 
 type Result struct {
 	Diagnostics []diagnostic.Diagnostic
-	Matched File
-	Stale int
+	Matched     File
+	Stale       int
 }
 
 // Generate constructs a deterministic baseline from diagnostics.
@@ -103,13 +103,13 @@ func Load(path string) (File, error) {
 	}
 	for index, issue := range baseline.Issues {
 		if issue.File == "" || issue.Code == "" {
-			return File{}, fmt.Errorf("issue %d requires file and code", index + 1)
+			return File{}, fmt.Errorf("issue %d requires file and code", index+1)
 		}
 		if baseline.Variant == Loose && (issue.Message == "" || issue.Count < 1) {
-			return File{}, fmt.Errorf("loose issue %d requires message and a positive count", index + 1)
+			return File{}, fmt.Errorf("loose issue %d requires message and a positive count", index+1)
 		}
 		if baseline.Variant == Strict && (issue.StartLine < 1 || issue.EndLine < issue.StartLine) {
-			return File{}, fmt.Errorf("strict issue %d has an invalid line range", index + 1)
+			return File{}, fmt.Errorf("strict issue %d has an invalid line range", index+1)
 		}
 	}
 	sortIssues(baseline.Issues, baseline.Variant)
@@ -198,7 +198,7 @@ func countForVariant(count int, variant Variant) int {
 func Write(path string, baseline File, backup bool) (err error) {
 	if backup {
 		if content, err := os.ReadFile(path); err == nil {
-			if err := os.WriteFile(path + ".bkp", content, 0o600); err != nil {
+			if err := os.WriteFile(path+".bkp", content, 0o600); err != nil {
 				return fmt.Errorf("backup baseline: %w", err)
 			}
 		} else if !os.IsNotExist(err) {

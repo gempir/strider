@@ -14,23 +14,23 @@ import (
 
 // RegistryOptions selects and configures checks.
 type RegistryOptions struct {
-	Only []string
-	All bool
-	Settings map[string]config.RuleConfig
+	Only            []string
+	All             bool
+	Settings        map[string]config.RuleConfig
 	MinimumSeverity diagnostic.Severity
-	FormatExcludes []string
-	Root string
+	FormatExcludes  []string
+	Root            string
 }
 
 // Registry is an immutable, capability-aware selection of checks.
 type Registry struct {
-	rules []Rule
-	settings map[string]configuredRule
+	rules      []Rule
+	settings   map[string]configuredRule
 	knownCodes map[string]bool
-	root string
-	format bool
-	syntax *syntax.Registry
-	semantic *semantic.Registry
+	root       string
+	format     bool
+	syntax     *syntax.Registry
+	semantic   *semantic.Registry
 }
 
 type configuredRule struct {
@@ -157,13 +157,13 @@ func availableRules() (map[string]Meta, map[string]bool, map[string]bool, error)
 			return nil, nil, nil, fmt.Errorf("duplicate check code %q", meta.Code)
 		}
 		available[code] = Meta{
-			Code: meta.Code,
-			Summary: meta.Summary,
-			Explanation: meta.Explanation,
-			GoodExample: meta.GoodExample,
-			BadExample: meta.BadExample,
+			Code:            meta.Code,
+			Summary:         meta.Summary,
+			Explanation:     meta.Explanation,
+			GoodExample:     meta.GoodExample,
+			BadExample:      meta.BadExample,
 			DefaultSeverity: meta.DefaultSeverity,
-			Capabilities: CapabilityCST,
+			Capabilities:    CapabilityCST,
 		}
 		syntaxCodes[code] = true
 	}
@@ -186,13 +186,13 @@ func availableRules() (map[string]Meta, map[string]bool, map[string]bool, error)
 			capabilities |= CapabilitySSA
 		}
 		available[code] = Meta{
-			Code: meta.Code,
-			Summary: meta.Summary,
-			Explanation: meta.Explanation,
-			GoodExample: meta.GoodExample,
-			BadExample: meta.BadExample,
+			Code:            meta.Code,
+			Summary:         meta.Summary,
+			Explanation:     meta.Explanation,
+			GoodExample:     meta.GoodExample,
+			BadExample:      meta.BadExample,
 			DefaultSeverity: meta.DefaultSeverity,
-			Capabilities: capabilities,
+			Capabilities:    capabilities,
 		}
 		semanticCodes[code] = true
 	}

@@ -18,14 +18,14 @@ func TestHTMLRendersSelfContainedSearchableReport(t *testing.T) {
 	}
 	diagnostics := []diagnostic.Diagnostic{
 		{
-			Code: "example-rule",
-			Message: "value <script>alert(1)</script>",
+			Code:     "example-rule",
+			Message:  "value <script>alert(1)</script>",
 			Severity: diagnostic.SeverityError,
-			File: filename,
-			Start: token.Position{Line: 2, Column: 5},
-			End: token.Position{Line: 2, Column: 10},
-			Notes: []diagnostic.Note{{Message: "a useful note"}},
-			Fixes: []diagnostic.Fix{{Message: "replace the value", Safety: diagnostic.Safe}},
+			File:     filename,
+			Start:    token.Position{Line: 2, Column: 5},
+			End:      token.Position{Line: 2, Column: 10},
+			Notes:    []diagnostic.Note{{Message: "a useful note"}},
+			Fixes:    []diagnostic.Fix{{Message: "replace the value", Safety: diagnostic.Safe}},
 		},
 	}
 
@@ -34,7 +34,7 @@ func TestHTMLRendersSelfContainedSearchableReport(t *testing.T) {
 		t.Fatal(err)
 	}
 	page := output.String()
-	for _, wanted := range[]string{
+	for _, wanted := range []string{
 		"<!doctype html>",
 		"Lint &lt;report&gt;",
 		"example-rule",
@@ -69,7 +69,7 @@ func TestHTMLRendersOperationTimings(t *testing.T) {
 	if err := HTMLWithOptions(&output, options, nil); err != nil {
 		t.Fatal(err)
 	}
-	for _, wanted := range[]string{"Operation timings", "format", "14 <small>ms</small>", "903 <small>ms</small>"} {
+	for _, wanted := range []string{"Operation timings", "format", "14 <small>ms</small>", "903 <small>ms</small>"} {
 		if !strings.Contains(output.String(), wanted) {
 			t.Fatalf("HTML output missing timing %q: %s", wanted, output.String())
 		}
@@ -83,19 +83,19 @@ func TestHTMLResolvesRelativeSourcesAgainstRoot(t *testing.T) {
 	}
 	diagnostics := []diagnostic.Diagnostic{
 		{
-			Code: "example",
-			Message: "highlight the answer",
+			Code:     "example",
+			Message:  "highlight the answer",
 			Severity: diagnostic.SeverityWarning,
-			File: "main.go",
-			Start: token.Position{Line: 2, Column: 5},
-			End: token.Position{Line: 2, Column: 11},
+			File:     "main.go",
+			Start:    token.Position{Line: 2, Column: 5},
+			End:      token.Position{Line: 2, Column: 11},
 		},
 	}
 	var output bytes.Buffer
 	if err := HTMLWithOptions(&output, HTMLOptions{Title: "Corpus", SourceRoot: root}, diagnostics); err != nil {
 		t.Fatal(err)
 	}
-	for _, wanted := range[]string{"package p", "<mark>answer</mark>", "func use() {}"} {
+	for _, wanted := range []string{"package p", "<mark>answer</mark>", "func use() {}"} {
 		if !strings.Contains(output.String(), wanted) {
 			t.Fatalf("HTML output missing source context %q: %s", wanted, output.String())
 		}
@@ -116,7 +116,7 @@ func TestHTMLLimitsDetailsButSummarizesAllDiagnostics(t *testing.T) {
 	if got := strings.Count(page, `<details class="diagnostic"`); got != 2 {
 		t.Fatalf("rendered %d diagnostic details, want 2", got)
 	}
-	for _, wanted := range[]string{
+	for _, wanted := range []string{
 		"Showing 2 of 3 detailed findings",
 		"The summary includes all 3 findings",
 		"common-rule</code></td><td>2",

@@ -75,7 +75,7 @@ func (a *cstAnalyzer) concreteExpressionStatement(call *cst.PrimaryExpr) bool {
 	if len(a.ancestors) == 0 {
 		return false
 	}
-	list, ok := a.ancestors[len(a.ancestors) - 1].(*cst.StatementList)
+	list, ok := a.ancestors[len(a.ancestors)-1].(*cst.StatementList)
 	return ok && list.Statement == call
 }
 
@@ -98,7 +98,7 @@ func (a *cstAnalyzer) insideConcreteWaitGroupGo() bool {
 func (a *cstAnalyzer) checkConcreteTimeDate(arguments []cst.Node) {
 	limits := []struct {
 		index, minimum, maximum int
-		label string
+		label                   string
 	}{{1, 1, 12, "month"}, {2, 1, 31, "day"}, {3, 0, 23, "hour"}, {4, 0, 59, "minute"}, {5, 0, 59, "second"}, {6, 0, 999999999, "nanosecond"}}
 	for _, limit := range limits {
 		if limit.index >= len(arguments) {
@@ -147,7 +147,7 @@ func concreteCallArguments(arguments cst.Node) []cst.Node {
 }
 
 func appendConcreteExpressionList(result []cst.Node, current *cst.ExpressionList) []cst.Node {
-	for; current != nil; current = current.List {
+	for ; current != nil; current = current.List {
 		if current.Expression != nil {
 			result = append(result, current.Expression)
 		}

@@ -8,15 +8,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type singleIterationLoopRule struct {}
+type singleIterationLoopRule struct{}
 
 func (singleIterationLoopRule) Meta() Meta {
 	return Meta{
-		Code: "single-iteration-loop",
-		Summary: "detect loops that always exit during their first iteration",
-		Explanation: "A loop whose top-level control flow always returns or breaks after a conditional branch cannot begin a second iteration. This usually means the exit was placed outside the intended branch.",
-		GoodExample: "for _, value := range values { if done(value) { break }; use(value) }",
-		BadExample: "for _, value := range values { if done(value) { use(value) }; return }",
+		Code:            "single-iteration-loop",
+		Summary:         "detect loops that always exit during their first iteration",
+		Explanation:     "A loop whose top-level control flow always returns or breaks after a conditional branch cannot begin a second iteration. This usually means the exit was placed outside the intended branch.",
+		GoodExample:     "for _, value := range values { if done(value) { break }; use(value) }",
+		BadExample:      "for _, value := range values { if done(value) { use(value) }; return }",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -160,7 +160,7 @@ func loopHasEscape(pass *Pass, loop ast.Stmt, body *ast.BlockStmt, labels map[ty
 		body,
 		func(node ast.Node) bool {
 			branch,
-			ok := node.(*ast.BranchStmt)
+				ok := node.(*ast.BranchStmt)
 			if !ok {
 				return true
 			}

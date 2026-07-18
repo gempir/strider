@@ -4,6 +4,7 @@ package formatter
 import (
 	"bytes"
 	"fmt"
+	goformat "go/format"
 	"go/token"
 
 	"github.com/gempir/strider/internal/cst"
@@ -12,14 +13,11 @@ import (
 const PrintWidth = 180
 
 type Options struct {
-	PrintWidth    int
-	IndentWidth   int
-	MaxEmptyLines int
-	EndOfLine     string
+	PrintWidth int
 }
 
 func DefaultOptions() Options {
-	return Options{PrintWidth: PrintWidth, IndentWidth: 4, MaxEmptyLines: 1, EndOfLine: "lf"}
+	return Options{PrintWidth: PrintWidth}
 }
 
 type unsupportedErrorValue string
@@ -99,7 +97,10 @@ func (s *Session) FormatTree(filename string, originalTree *cst.Tree, options Op
 	if _, err := validateConcreteSyntax(filename, formattedTree); err != nil {
 		return Result{}, fmt.Errorf("formatter idempotence check: %w", err)
 	}
-	second := []byte(renderConcreteWithModule(formattedTree, options, module))
+	second, err := goformat.Source([]byte(renderConcreteWithModule(formattedTree, options, module)))
+	if err != nil {
+		return Result{}, fmt.Errorf("formatter idempotence check: gofmt compatibility: %w", err)
+	}
 	if !bytes.Equal(preview.Source, second) {
 		return Result{}, fmt.Errorf("formatter idempotence check failed for %s", filename)
 	}
@@ -139,8 +140,28 @@ func (s *Session) previewTree(
 	if hasImports {
 		module = s.modules.find(filename)
 	}
-	formatted := []byte(renderConcreteWithModule(originalTree, options, module))
-	return Result{Source: formatted, Changed: !bytes.Equal(source, formatted)}, module, nil
+	formatted, err := goformat.Source([]byte(renderConcreteWithModule(originalTree, options, module)))
+	if err != nil {
+		return Result{}, "", fmt.Errorf("formatter gofmt compatibility: %w", err)
+	}
+	for range 100 {
+		formattedTree, parseErr := cst.Parse(filename, formatted)
+		if parseErr != nil {
+			return Result{}, "", fmt.Errorf("formatter convergence check: formatted output does not parse: %w", parseErr)
+		}
+		if _, syntaxErr := validateConcreteSyntax(filename, formattedTree); syntaxErr != nil {
+			return Result{}, "", fmt.Errorf("formatter convergence check: %w", syntaxErr)
+		}
+		next, formatErr := goformat.Source([]byte(renderConcreteWithModule(formattedTree, options, module)))
+		if formatErr != nil {
+			return Result{}, "", fmt.Errorf("formatter gofmt compatibility: %w", formatErr)
+		}
+		if bytes.Equal(formatted, next) {
+			return Result{Source: formatted, Changed: !bytes.Equal(source, formatted)}, module, nil
+		}
+		formatted = next
+	}
+	return Result{}, "", fmt.Errorf("formatter did not converge for %s", filename)
 }
 
 func validateConcreteSyntax(_ string, tree *cst.Tree) (bool, error) {

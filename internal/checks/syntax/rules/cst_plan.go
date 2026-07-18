@@ -8,43 +8,43 @@ import (
 )
 
 type cstExecutionPlan struct {
-	filename bool
-	comments bool
-	imports bool
-	repeatedLiterals bool
-	functions bool
-	functionTraversal bool
-	functionComplexity bool
-	functionCognitive bool
-	functionStatements bool
-	functionFinal bool
-	returns bool
-	defers bool
-	conditionals bool
-	packageVars bool
-	binaryExpressions bool
-	unaryExpressions bool
-	interfaces bool
+	filename             bool
+	comments             bool
+	imports              bool
+	repeatedLiterals     bool
+	functions            bool
+	functionTraversal    bool
+	functionComplexity   bool
+	functionCognitive    bool
+	functionStatements   bool
+	functionFinal        bool
+	returns              bool
+	defers               bool
+	conditionals         bool
+	packageVars          bool
+	binaryExpressions    bool
+	unaryExpressions     bool
+	interfaces           bool
 	incrementAssignments bool
-	assignmentPolicies bool
-	identifiers bool
-	calls bool
-	structs bool
-	fields bool
-	stringLiterals bool
-	blocks bool
-	loops bool
-	controlNesting bool
-	switches bool
-	typeAssertions bool
-	varSpecs bool
-	constSpecs bool
-	typeDefinitions bool
-	breaks bool
+	assignmentPolicies   bool
+	identifiers          bool
+	calls                bool
+	structs              bool
+	fields               bool
+	stringLiterals       bool
+	blocks               bool
+	loops                bool
+	controlNesting       bool
+	switches             bool
+	typeAssertions       bool
+	varSpecs             bool
+	constSpecs           bool
+	typeDefinitions      bool
+	breaks               bool
 }
 
 func compileCSTExecutionPlan(enabled map[string]bool) cstExecutionPlan {
-	any := func(codes... string) bool {
+	any := func(codes ...string) bool {
 		for _, code := range codes {
 			if enabled[code] {
 				return true
@@ -58,9 +58,9 @@ func compileCSTExecutionPlan(enabled map[string]bool) cstExecutionPlan {
 	functionStatements := enabled["function-length"]
 	functionFinal := enabled["unnecessary-stmt"]
 	return cstExecutionPlan{
-		filename: any("filename-format", "package-directory-mismatch", "package-naming"),
-		comments: any("bidirectional-control-character", "comment-spacings", "line-length-limit", "package-comments", "redundant-build-tag", "spaced-compiler-directive"),
-		imports: any("blank-imports", "dot-imports", "duplicated-imports", "import-alias-naming", "import-shadowing", "redundant-import-alias", "struct-tag"),
+		filename:         any("filename-format", "package-directory-mismatch", "package-naming"),
+		comments:         any("bidirectional-control-character", "comment-spacings", "line-length-limit", "package-comments", "redundant-build-tag", "spaced-compiler-directive"),
+		imports:          any("blank-imports", "dot-imports", "duplicated-imports", "import-alias-naming", "import-shadowing", "redundant-import-alias", "struct-tag"),
 		repeatedLiterals: enabled["add-constant"],
 		functions: any(
 			"argument-limit",
@@ -88,13 +88,13 @@ func compileCSTExecutionPlan(enabled map[string]bool) cstExecutionPlan {
 			"unused-receiver",
 			"waitgroup-by-value",
 		),
-		functionTraversal: functionComplexity || functionCognitive || functionStatements || functionFinal,
+		functionTraversal:  functionComplexity || functionCognitive || functionStatements || functionFinal,
 		functionComplexity: functionComplexity,
-		functionCognitive: functionCognitive,
+		functionCognitive:  functionCognitive,
 		functionStatements: functionStatements,
-		functionFinal: functionFinal,
-		returns: any("bare-return", "no-naked-return"),
-		defers: any("defer", "no-defer-in-loop"),
+		functionFinal:      functionFinal,
+		returns:            any("bare-return", "no-naked-return"),
+		defers:             any("defer", "no-defer-in-loop"),
 		conditionals: any(
 			"early-return",
 			"identical-branches",
@@ -106,13 +106,13 @@ func compileCSTExecutionPlan(enabled map[string]bool) cstExecutionPlan {
 			"superfluous-else",
 			"unnecessary-if",
 		),
-		packageVars: enabled["no-package-var"],
-		binaryExpressions: any("bool-literal-in-expr", "constant-logical-expr", "modulo-one", "optimize-operands-order", "time-equal", "zero-integer-division"),
-		unaryExpressions: any("double-negation", "ineffective-pointer-copy"),
-		interfaces: enabled["use-any"],
+		packageVars:          enabled["no-package-var"],
+		binaryExpressions:    any("bool-literal-in-expr", "constant-logical-expr", "modulo-one", "optimize-operands-order", "time-equal", "zero-integer-division"),
+		unaryExpressions:     any("double-negation", "ineffective-pointer-copy"),
+		interfaces:           enabled["use-any"],
 		incrementAssignments: enabled["increment-decrement"],
-		assignmentPolicies: any("atomic", "epoch-naming"),
-		identifiers: identifiers,
+		assignmentPolicies:   any("atomic", "epoch-naming"),
+		identifiers:          identifiers,
 		calls: any(
 			"call-to-gc",
 			"deep-exit",
@@ -127,31 +127,31 @@ func compileCSTExecutionPlan(enabled map[string]bool) cstExecutionPlan {
 			"use-fmt-print",
 			"use-slices-sort",
 		),
-		structs: enabled["nested-structs"],
-		fields: enabled["struct-tag"],
-		stringLiterals: enabled["unsecure-url-scheme"],
-		blocks: any("empty-block", "empty-lines", "if-return", "unreachable-code", "use-waitgroup-go"),
-		loops: any("datarace", "range", "range-val-address", "range-val-in-closure", "spinning-select-default"),
-		controlNesting: enabled["max-control-nesting"],
-		switches: any("enforce-switch-style", "identical-switch-branches", "identical-switch-conditions", "unnecessary-stmt", "useless-fallthrough"),
-		typeAssertions: enabled["unchecked-type-assertion"],
-		varSpecs: any("error-naming", "exported", "time-naming", "var-declaration"),
-		constSpecs: enabled["exported"],
+		structs:         enabled["nested-structs"],
+		fields:          enabled["struct-tag"],
+		stringLiterals:  enabled["unsecure-url-scheme"],
+		blocks:          any("empty-block", "empty-lines", "if-return", "unreachable-code", "use-waitgroup-go"),
+		loops:           any("datarace", "range", "range-val-address", "range-val-in-closure", "spinning-select-default"),
+		controlNesting:  enabled["max-control-nesting"],
+		switches:        any("enforce-switch-style", "identical-switch-branches", "identical-switch-conditions", "unnecessary-stmt", "useless-fallthrough"),
+		typeAssertions:  enabled["unchecked-type-assertion"],
+		varSpecs:        any("error-naming", "exported", "time-naming", "var-declaration"),
+		constSpecs:      enabled["exported"],
 		typeDefinitions: any("exported", "max-public-structs"),
-		breaks: any("unnecessary-stmt", "useless-break"),
+		breaks:          any("unnecessary-stmt", "useless-break"),
 	}
 }
 
 type cstFunctionFacts struct {
-	node cst.Node
-	name cst.Token
-	signature *cst.Signature
-	body cst.Node
-	receiver *cst.Parameters
-	complexity int
+	node                cst.Node
+	name                cst.Token
+	signature           *cst.Signature
+	body                cst.Node
+	receiver            *cst.Parameters
+	complexity          int
 	cognitiveComplexity int
-	statements int
-	finalStatement cst.Node
+	statements          int
+	finalStatement      cst.Node
 }
 
 func (a *cstAnalyzer) observe(node cst.Node, ancestors []cst.Node) {
@@ -243,7 +243,7 @@ func (a *cstAnalyzer) observeFunctionNode(node cst.Node, ancestors []cst.Node) {
 	}
 	if concreteCognitiveControl(node) {
 		nesting := 0
-		for _, ancestor := range ancestors[a.functionBodyDepth + 1:] {
+		for _, ancestor := range ancestors[a.functionBodyDepth+1:] {
 			if concreteCognitiveControl(ancestor) {
 				nesting++
 			}

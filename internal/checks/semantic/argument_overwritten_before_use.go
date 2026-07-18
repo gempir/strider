@@ -10,15 +10,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type argumentOverwrittenBeforeUseRule struct {}
+type argumentOverwrittenBeforeUseRule struct{}
 
 func (argumentOverwrittenBeforeUseRule) Meta() Meta {
 	return Meta{
-		Code: "argument-overwritten-before-use",
-		Summary: "detect function arguments replaced before their incoming value is used",
-		Explanation: "Overwriting a function argument before reading its incoming value makes that input meaningless. The assignment may be accidental, or the argument may no longer belong in the function signature.",
-		GoodExample: "func normalize(value string) string { use(value); value = fallback; return value }",
-		BadExample: "func normalize(value string) string { value = fallback; return value }",
+		Code:            "argument-overwritten-before-use",
+		Summary:         "detect function arguments replaced before their incoming value is used",
+		Explanation:     "Overwriting a function argument before reading its incoming value makes that input meaningless. The assignment may be accidental, or the argument may no longer belong in the function signature.",
+		GoodExample:     "func normalize(value string) string { use(value); value = fallback; return value }",
+		BadExample:      "func normalize(value string) string { value = fallback; return value }",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -97,14 +97,13 @@ func firstAssignmentToObject(pass *Pass, body *ast.BlockStmt, object types.Objec
 				return false
 			}
 			assignment,
-			ok := node.(*ast.AssignStmt)
+				ok := node.(*ast.AssignStmt)
 			if !ok {
 				return true
 			}
-			for _,
-			left := range assignment.Lhs {
+			for _, left := range assignment.Lhs {
 				identifier,
-				ok := left.(*ast.Ident)
+					ok := left.(*ast.Ident)
 				if ok && pass.TypesInfo.ObjectOf(identifier) == object {
 					found = assignment
 					return false

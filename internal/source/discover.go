@@ -22,7 +22,7 @@ func Discover(paths []string, opts Options) ([]string, error) {
 	if len(paths) == 0 {
 		paths = []string{"."}
 	}
-	seen := make(map[string]struct {})
+	seen := make(map[string]struct{})
 	for _, input := range paths {
 		if err := discoverPath(seen, input, opts); err != nil {
 			return nil, err
@@ -36,7 +36,7 @@ func Discover(paths []string, opts Options) ([]string, error) {
 	return files, nil
 }
 
-func discoverPath(seen map[string]struct {}, input string, opts Options) error {
+func discoverPath(seen map[string]struct{}, input string, opts Options) error {
 	path := cleanPattern(input)
 	info, err := os.Stat(path)
 	if err != nil {
@@ -59,14 +59,14 @@ func cleanPattern(input string) string {
 	if !strings.HasSuffix(filepath.ToSlash(path), "/...") {
 		return path
 	}
-	path = strings.TrimSuffix(path, string(filepath.Separator) + "...")
+	path = strings.TrimSuffix(path, string(filepath.Separator)+"...")
 	if path == "" {
 		return "."
 	}
 	return path
 }
 
-func walkSourceFiles(seen map[string]struct {}, root string, opts Options) fs.WalkDirFunc {
+func walkSourceFiles(seen map[string]struct{}, root string, opts Options) fs.WalkDirFunc {
 	return func(filename string, entry fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
@@ -77,7 +77,7 @@ func walkSourceFiles(seen map[string]struct {}, root string, opts Options) fs.Wa
 			}
 			return nil
 		}
-		if entry.Type() & os.ModeSymlink != 0 || filepath.Ext(entry.Name()) != ".go" {
+		if entry.Type()&os.ModeSymlink != 0 || filepath.Ext(entry.Name()) != ".go" {
 			return nil
 		}
 		return addFile(seen, filename, opts)
@@ -100,7 +100,7 @@ func isSkippedDirectory(name string) bool {
 	}
 }
 
-func addFile(seen map[string]struct {}, filename string, opts Options) error {
+func addFile(seen map[string]struct{}, filename string, opts Options) error {
 	abs, err := filepath.Abs(filename)
 	if err != nil {
 		return err
@@ -114,7 +114,7 @@ func addFile(seen map[string]struct {}, filename string, opts Options) error {
 			return nil
 		}
 	}
-	seen[abs] = struct {}{}
+	seen[abs] = struct{}{}
 	return nil
 }
 
@@ -144,7 +144,7 @@ func DisplayPath(filename string) string {
 		return filepath.ToSlash(filename)
 	}
 	rel, err := filepath.Rel(cwd, filename)
-	if err != nil || strings.HasPrefix(rel, ".." + string(filepath.Separator)) {
+	if err != nil || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
 		return filepath.ToSlash(filename)
 	}
 	return filepath.ToSlash(rel)

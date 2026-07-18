@@ -9,15 +9,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type sortNonSliceRule struct {}
+type sortNonSliceRule struct{}
 
 func (sortNonSliceRule) Meta() Meta {
 	return Meta{
-		Code: "sort-non-slice",
-		Summary: "detect sort.Slice calls with non-slice values",
-		Explanation: "sort.Slice, sort.SliceStable, and sort.SliceIsSorted accept any only for historical API reasons. Their first argument must hold a slice; passing another concrete type panics at runtime.",
-		GoodExample: "sort.Slice(values, less)",
-		BadExample: "sort.Slice(array, less)",
+		Code:            "sort-non-slice",
+		Summary:         "detect sort.Slice calls with non-slice values",
+		Explanation:     "sort.Slice, sort.SliceStable, and sort.SliceIsSorted accept any only for historical API reasons. Their first argument must hold a slice; passing another concrete type panics at runtime.",
+		GoodExample:     "sort.Slice(values, less)",
+		BadExample:      "sort.Slice(array, less)",
 		DefaultSeverity: diagnostic.SeverityError,
 	}
 }

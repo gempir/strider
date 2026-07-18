@@ -9,28 +9,28 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type overlappingEncodeBuffersRule struct {}
+type overlappingEncodeBuffersRule struct{}
 
 type encodeBufferCall struct {
-	destinationSSA int
-	sourceSSA int
+	destinationSSA    int
+	sourceSSA         int
 	destinationSource int
 }
 
 func (overlappingEncodeBuffersRule) Meta() Meta {
 	return Meta{
-		Code: "overlapping-encode-buffers",
-		Summary: "detect overlapping source and destination encoding buffers",
-		Explanation: "Byte encoders that expand their input can overwrite source bytes before reading them when destination and source begin at the same memory. Use separate storage or a destination region proven not to overlap.",
-		GoodExample: "hex.Encode(destination, source)",
-		BadExample: "hex.Encode(buffer, buffer)",
+		Code:            "overlapping-encode-buffers",
+		Summary:         "detect overlapping source and destination encoding buffers",
+		Explanation:     "Byte encoders that expand their input can overwrite source bytes before reading them when destination and source begin at the same memory. Use separate storage or a destination region proven not to overlap.",
+		GoodExample:     "hex.Encode(destination, source)",
+		BadExample:      "hex.Encode(buffer, buffer)",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
 
 func (overlappingEncodeBuffersRule) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
-	for _, packagePath := range[]string{"encoding/ascii85", "encoding/base32", "encoding/base64", "encoding/hex"} {
+	for _, packagePath := range []string{"encoding/ascii85", "encoding/base32", "encoding/base64", "encoding/hex"} {
 		for _, call := range pass.staticCallsInPackage(packagePath) {
 			descriptor, ok := encodeBufferDescriptor(call)
 			if !ok || len(call.Common().Args) <= descriptor.sourceSSA {
@@ -57,10 +57,7 @@ func encodeBufferDescriptor(call ssa.CallInstruction) (encodeBufferCall, bool) {
 	}
 	switch callee.Object().Pkg().Path() {
 	case "encoding/base32", "encoding/base64":
-		return encodeBufferCall{destinationSSA:
-		1, sourceSSA:
-		2, destinationSource:
-		0}, true
+		return encodeBufferCall{destinationSSA: 1, sourceSSA: 2, destinationSource: 0}, true
 	default:
 		return encodeBufferCall{}, false
 	}

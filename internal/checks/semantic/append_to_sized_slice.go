@@ -12,15 +12,15 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type appendToSizedSliceRule struct {}
+type appendToSizedSliceRule struct{}
 
 func (appendToSizedSliceRule) Meta() Meta {
 	return Meta{
-		Code: "append-to-sized-slice",
-		Summary: "detect appends to slices created with a known positive length",
-		Explanation: "make([]T, n) with a compile-time positive n creates existing zero-valued elements, not capacity for future elements. Appending places new values after those zeros. When the intent is to grow the slice, create it with length zero and capacity n, or reset its length before appending.",
-		GoodExample: "values := make([]int, 0, count)\nvalues = append(values, next)",
-		BadExample: "values := make([]int, count)\nvalues = append(values, next)",
+		Code:            "append-to-sized-slice",
+		Summary:         "detect appends to slices created with a known positive length",
+		Explanation:     "make([]T, n) with a compile-time positive n creates existing zero-valued elements, not capacity for future elements. Appending places new values after those zeros. When the intent is to grow the slice, create it with length zero and capacity n, or reset its length before appending.",
+		GoodExample:     "values := make([]int, 0, count)\nvalues = append(values, next)",
+		BadExample:      "values := make([]int, count)\nvalues = append(values, next)",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
@@ -67,13 +67,12 @@ func localPositiveLengthMakes(pass *Pass) map[token.Pos]sizedSliceCandidate {
 				case *ast.FuncLit:
 					return false
 				case *ast.AssignStmt:
-					for index,
-					right := range node.Rhs {
+					for index, right := range node.Rhs {
 						if index >= len(node.Lhs) {
 							break
 						}
 						identifier,
-						ok := node.Lhs[index].(*ast.Ident)
+							ok := node.Lhs[index].(*ast.Ident)
 						if !ok {
 							continue
 						}
@@ -81,19 +80,17 @@ func localPositiveLengthMakes(pass *Pass) map[token.Pos]sizedSliceCandidate {
 					}
 				case *ast.DeclStmt:
 					declaration,
-					ok := node.Decl.(*ast.GenDecl)
+						ok := node.Decl.(*ast.GenDecl)
 					if !ok || declaration.Tok != token.VAR {
 						return true
 					}
-					for _,
-					specification := range declaration.Specs {
+					for _, specification := range declaration.Specs {
 						value,
-						ok := specification.(*ast.ValueSpec)
+							ok := specification.(*ast.ValueSpec)
 						if !ok {
 							continue
 						}
-						for index,
-						right := range value.Values {
+						for index, right := range value.Values {
 							if index >= len(value.Names) {
 								break
 							}
@@ -165,8 +162,8 @@ func sizedSliceOrigin(value ssa.Value, visiting map[ssa.Value]bool) ssa.Value {
 
 type sizedSliceTrace struct {
 	origin ssa.Value
-	cycle bool
-	valid bool
+	cycle  bool
+	valid  bool
 }
 
 func traceSizedSliceOrigin(value ssa.Value, visiting map[ssa.Value]bool) sizedSliceTrace {
@@ -182,9 +179,7 @@ func traceSizedSliceOrigin(value ssa.Value, visiting map[ssa.Value]bool) sizedSl
 		if length == nil || length.Value == nil || length.Value.Kind() != constant.Int || constant.Sign(length.Value) <= 0 {
 			return sizedSliceTrace{}
 		}
-		return sizedSliceTrace{origin:
-		value, valid:
-		true}
+		return sizedSliceTrace{origin: value, valid: true}
 	case *ssa.ChangeType:
 		return traceSizedSliceOrigin(value.X, visiting)
 	case *ssa.Phi:
@@ -205,17 +200,12 @@ func traceSizedSliceOrigin(value ssa.Value, visiting map[ssa.Value]bool) sizedSl
 				return sizedSliceTrace{}
 			}
 		}
-		return sizedSliceTrace{origin:
-		common, cycle:
-		cycle, valid:
-		common != nil || cycle}
+		return sizedSliceTrace{origin: common, cycle: cycle, valid: common != nil || cycle}
 	case *ssa.Slice:
 		if allocation, ok := value.X.(*ssa.Alloc); ok && allocation.Comment == "makeslice" && value.Low == nil && value.Max == nil {
 			high := ssaConstant(value.High)
 			if high != nil && high.Value != nil && high.Value.Kind() == constant.Int && constant.Sign(high.Value) > 0 {
-				return sizedSliceTrace{origin:
-				allocation, valid:
-				true}
+				return sizedSliceTrace{origin: allocation, valid: true}
 			}
 		}
 		// A full slice expression preserves the original non-zero length. Any

@@ -1,9 +1,13 @@
 ---
 title: zero-integer-division
 description: Detect literal integer division that truncates to zero.
+sidebar:
+  badge:
+    text: error
+    class: severity-indicator severity-error
 ---
 
-**Default severity:** 🔴 `error`
+**Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
 Dividing two integer literals uses integer arithmetic. A fraction such as
 `2 / 3` therefore truncates to zero, even when it is later converted or assigned

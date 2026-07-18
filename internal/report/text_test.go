@@ -21,13 +21,13 @@ func TestTextRendersSourceAnnotationAndSummary(t *testing.T) {
 	}
 	diagnostics := []diagnostic.Diagnostic{
 		{
-			Code: "no-init",
-			Message: "avoid package initialization",
+			Code:     "no-init",
+			Message:  "avoid package initialization",
 			Severity: diagnostic.SeverityWarning,
-			File: filename,
-			Start: token.Position{Filename: filename, Line: 2, Column: 1},
-			End: token.Position{Filename: filename, Line: 2, Column: 15},
-			Notes: []diagnostic.Note{{Message: "move initialization into an explicit function"}},
+			File:     filename,
+			Start:    token.Position{Filename: filename, Line: 2, Column: 1},
+			End:      token.Position{Filename: filename, Line: 2, Column: 15},
+			Notes:    []diagnostic.Note{{Message: "move initialization into an explicit function"}},
 		},
 	}
 
@@ -35,7 +35,7 @@ func TestTextRendersSourceAnnotationAndSummary(t *testing.T) {
 	if err := Text(&output, diagnostics, ui.ColorAlways); err != nil {
 		t.Fatal(err)
 	}
-	for _, wanted := range[]string{
+	for _, wanted := range []string{
 		"\x1b[",
 		"warning",
 		"\x1b[1;33m[no-init]\x1b[0m",
@@ -46,7 +46,7 @@ func TestTextRendersSourceAnnotationAndSummary(t *testing.T) {
 		"note",
 		"found 1 issue:",
 		"no-init",
-		"1 ×",
+		"1",
 	} {
 		if !strings.Contains(output.String(), wanted) {
 			t.Fatalf("output missing %q:\n%s", wanted, output.String())
@@ -63,7 +63,7 @@ func TestTextSummaryOnlySuppressesDetailsAndCheckCounts(t *testing.T) {
 	if err := TextWithOptions(&output, diagnostics, ui.ColorNever, TextOptions{SummaryOnly: true}); err != nil {
 		t.Fatal(err)
 	}
-	want := "error-rule  1 ×\nnote-rule   1 ×\nfound 2 issues: 1 error, 1 note\n"
+	want := "error-rule  1\nnote-rule   1\nfound 2 issues: 1 error, 1 note\n"
 	if output.String() != want {
 		t.Fatalf("summary-only output = %q", output.String())
 	}
@@ -92,8 +92,8 @@ func TestTextSummarizesFindingsByCheck(t *testing.T) {
 		t.Fatal(err)
 	}
 	text := output.String()
-	first := strings.Index(text, "\nfirst   2 ×")
-	second := strings.Index(text, "\nsecond  1 ×")
+	first := strings.Index(text, "\nfirst   2")
+	second := strings.Index(text, "\nsecond  1")
 	if first < 0 || second < 0 || first >= second || strings.Contains(text, "Check summary") || strings.Contains(
 		text,
 		"checks broken",
@@ -128,11 +128,11 @@ func TestTextNeverDoesNotEmitANSI(t *testing.T) {
 		&output,
 		[]diagnostic.Diagnostic{
 			{
-				Code: "example",
-				Message: "plain",
+				Code:     "example",
+				Message:  "plain",
 				Severity: diagnostic.SeverityNote,
-				File: "missing.go",
-				Start: token.Position{Line: 3, Column: 2},
+				File:     "missing.go",
+				Start:    token.Position{Line: 3, Column: 2},
 			},
 		},
 		ui.ColorNever,
@@ -147,7 +147,7 @@ func TestTextNeverDoesNotEmitANSI(t *testing.T) {
 func TestMarkerWidthUsesRuneColumnsFromBytePositions(t *testing.T) {
 	item := diagnostic.Diagnostic{
 		Start: token.Position{Line: 1, Column: 4},
-		End: token.Position{Line: 1, Column: 7},
+		End:   token.Position{Line: 1, Column: 7},
 	}
 	if got := markerWidth(item, "é abc", item.Start.Column); got != 3 {
 		t.Fatalf("marker width %d; want 3", got)

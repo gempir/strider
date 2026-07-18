@@ -1,9 +1,13 @@
 ---
 title: bidirectional-control-character
 description: Reject invisible bidirectional source controls.
+sidebar:
+  badge:
+    text: error
+    class: severity-indicator severity-error
 ---
 
-**Default severity:** 🔴 `error`
+**Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
 Purpose: detect invisible Unicode controls that can change the visual order of
 source text without changing its logical byte order. Such controls can make

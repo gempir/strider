@@ -1,9 +1,13 @@
 ---
 title: possible-nil-dereference
 description: Detect pointer dereferences not protected by their nil checks.
+sidebar:
+  badge:
+    text: error
+    class: severity-indicator severity-error
 ---
 
-**Default severity:** 🔴 `error`
+**Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
 Checking a pointer against nil is evidence that nil is a possible value. A
 dereference that is not dominated by the check's non-nil path may panic. This

@@ -1,9 +1,13 @@
 ---
 title: dangerous-directory-removal
 description: Detect removal of whole system or user directories.
+sidebar:
+  badge:
+    text: error
+    class: severity-indicator severity-error
 ---
 
-**Default severity:** 🔴 `error`
+**Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
 Passing the direct result of `os.TempDir` or a user directory helper to
 `os.RemoveAll` deletes the entire shared directory rather than an

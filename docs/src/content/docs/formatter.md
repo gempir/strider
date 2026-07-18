@@ -1,14 +1,17 @@
 ---
 title: Formatter
 description: Strider's strict formatting profile, write workflows, and safety model.
+sidebar:
+  badge:
+    text: warning
+    class: severity-indicator severity-warning
 ---
 
-**Default severity:** 🔵 `note`
+**Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-The formatter renders Go source directly from a lossless parse at a configured
-width of 180 columns by default. It is intentionally independent from `gofmt`:
-output remains valid and semantically equivalent Go, but byte-for-byte `gofmt`
-compatibility is not a goal.
+Gofmt is not strict enough in my opinion, the goal of strider's formatter is decide almost every choice of formatting for you.
+No discussion in the team about it, just accept the formatting. 
+Goal is to be compatible with gofmt as much as possible.
 
 ## Workflows
 

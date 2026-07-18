@@ -1,12 +1,16 @@
 ---
 title: struct-tag
 description: Validate struct tag syntax, duplicate keys, and standard options.
+sidebar:
+  badge:
+    text: error
+    class: severity-indicator severity-error
 ---
 
 Purpose: detect malformed struct tags before reflection or encoding packages
 silently ignore them.
 
-**Default severity:** 🔴 `error`
+**Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
 ## Behavior
 

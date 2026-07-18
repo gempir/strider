@@ -1,9 +1,13 @@
 ---
 title: discarded-pure-result
 description: Detect ignored results from functions without side effects.
+sidebar:
+  badge:
+    text: warning
+    class: severity-indicator severity-warning
 ---
 
-**Default severity:** 🟡 `warning`
+**Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
 Calling a function that has no side effects and then discarding all of its
 return values cannot affect program behavior. The call is either dead code or

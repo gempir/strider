@@ -120,7 +120,7 @@ Formatting participates as code `format`. An unformatted file produces a normal
 note at the start of the file and suggests the write-focused formatter:
 
 ```text
-note[format]: file is not formatted
+warning[format]: file is not formatted
   ┌─ main.go:1:1
   = help: run `strider fmt main.go`
 ```

@@ -1,9 +1,13 @@
 ---
 title: no-package-var
 description: Avoid mutable variables at package scope.
+sidebar:
+  badge:
+    text: note
+    class: severity-indicator severity-note
 ---
 
-**Default severity:** 🔵 `note`
+**Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
 **Configuration:** `enabled`, `severity`, and path `excludes`; blank identifiers remain exempt
 

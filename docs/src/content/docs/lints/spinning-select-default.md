@@ -1,9 +1,13 @@
 ---
 title: spinning-select-default
 description: Detect select loops that spin on an empty default.
+sidebar:
+  badge:
+    text: warning
+    class: severity-indicator severity-warning
 ---
 
-**Default severity:** 🟡 `warning`
+**Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
 An empty `default` makes a `select` immediately ready. Inside an unconditional
 loop, this prevents the goroutine from blocking and consumes CPU continuously.

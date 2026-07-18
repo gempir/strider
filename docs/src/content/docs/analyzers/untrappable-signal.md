@@ -1,9 +1,13 @@
 ---
 title: untrappable-signal
 description: Detect attempts to handle signals that cannot be trapped.
+sidebar:
+  badge:
+    text: warning
+    class: severity-indicator severity-warning
 ---
 
-**Default severity:** 🟡 `warning`
+**Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
 Unix-like kernels handle `SIGKILL` and `SIGSTOP` directly. They are never
 delivered to the process, so registering them with `os/signal` cannot work.

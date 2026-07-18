@@ -136,11 +136,45 @@ site-search button {
   transition: color 120ms ease, background-color 120ms ease;
 }
 
+.sidebar-content a:has(> .sl-badge.severity-indicator) {
+  display: flex;
+  align-items: flex-start;
+}
+
+.sidebar-content a:has(> .sl-badge.severity-indicator) > span:first-child {
+  min-width: 0;
+}
+
 .sidebar-content a[aria-current='page'] {
   background: color-mix(in srgb, var(--sl-color-accent) 14%, transparent);
   box-shadow: inset 2px 0 var(--sl-color-accent);
   color: var(--sl-color-text-accent);
   font-weight: 600;
+}
+
+/* Severity markers shared by check pages and their sidebar entries. */
+.severity-indicator {
+  display: inline-block;
+  width: 0.625rem;
+  height: 0.625rem;
+  flex: 0 0 0.625rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  vertical-align: 0.025em;
+  overflow: hidden;
+  color: transparent;
+  text-indent: -9999px;
+}
+
+.severity-indicator.severity-error { background-color: #e5695e; }
+.severity-indicator.severity-warning { background-color: #f0b13c; }
+.severity-indicator.severity-note { background-color: #5794d8; }
+
+.sidebar-content .sl-badge.severity-indicator {
+  order: -1;
+  margin-top: 0.4em;
+  margin-inline: 0 0.5rem;
 }
 
 /* ------------------------------------------------------------------ */
@@ -171,17 +205,6 @@ h1[data-page-title],
   margin-top: 2.6rem;
   padding-top: 1.4rem;
   border-top: 1px solid var(--sl-color-hairline-light);
-}
-
-.sl-markdown-content h2::before {
-  content: '';
-  display: inline-block;
-  width: 0.55em;
-  height: 0.55em;
-  margin-inline-end: 0.45em;
-  border-radius: 2px;
-  background: var(--sl-color-accent);
-  transform: rotate(45deg) translateY(-0.08em);
 }
 
 .sl-markdown-content :not(pre) > code {
@@ -412,6 +435,9 @@ h1[data-page-title],
 }
 
 .land-stat {
+  display: grid;
+  grid-template-rows: 3rem auto;
+  align-items: start;
   padding: 1.5rem 1.25rem;
   text-align: center;
 }
@@ -421,10 +447,13 @@ h1[data-page-title],
 }
 
 .land-stat strong {
-  display: block;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
   font-family: var(--strider-font-display);
   font-size: clamp(1.8rem, 3.5vw, 2.6rem);
   font-weight: 780;
+  line-height: 1;
   letter-spacing: -0.03em;
   color: var(--sl-color-white);
 }

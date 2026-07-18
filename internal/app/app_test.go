@@ -24,7 +24,7 @@ func listedSeverity(output, code string) (string, bool) {
 }
 
 func stripTerminalStyles(output string) string {
-	for _, sequence := range[]string{"\x1b[0m", "\x1b[1;31m", "\x1b[1;33m", "\x1b[1;34m"} {
+	for _, sequence := range []string{"\x1b[0m", "\x1b[1;31m", "\x1b[1;33m", "\x1b[1;34m"} {
 		output = strings.ReplaceAll(output, sequence, "")
 	}
 	return output
@@ -48,7 +48,7 @@ func TestVersion(t *testing.T) {
 }
 
 func TestShortOptionAliases(t *testing.T) {
-	for _, arguments := range[][]string{
+	for _, arguments := range [][]string{
 		{"-n", "check", "-s", "error", "-l"},
 		{"-n", "lint", "-s", "error", "-l"},
 		{"-n", "analyze", "-s", "error", "-l"},
@@ -57,7 +57,7 @@ func TestShortOptionAliases(t *testing.T) {
 			arguments[1],
 			func(t *testing.T) {
 				var stdout,
-				stderr bytes.Buffer
+					stderr bytes.Buffer
 				if code := Run(arguments, strings.NewReader(""), &stdout, &stderr); code != exitSuccess {
 					t.Fatalf(
 						"exit %d, stdout %q, stderr %q",
@@ -94,17 +94,17 @@ func TestShortOptionAliases(t *testing.T) {
 
 func TestLongOptionsRequireTwoDashes(t *testing.T) {
 	for name, arguments := range map[string][]string{
-		"global": {"-config", "missing.toml", "check"},
-		"check": {"-n", "check", "-minimum-severity", "error"},
-		"fmt": {"-n", "fmt", "-stdin"},
-		"lint": {"-n", "lint", "-minimum-severity", "error"},
+		"global":  {"-config", "missing.toml", "check"},
+		"check":   {"-n", "check", "-minimum-severity", "error"},
+		"fmt":     {"-n", "fmt", "-stdin"},
+		"lint":    {"-n", "lint", "-minimum-severity", "error"},
 		"analyze": {"-n", "analyze", "-minimum-severity", "error"},
 	} {
 		t.Run(
 			name,
 			func(t *testing.T) {
 				var stdout,
-				stderr bytes.Buffer
+					stderr bytes.Buffer
 				code := Run(arguments, strings.NewReader(""), &stdout, &stderr)
 				if code != exitError || !strings.Contains(stderr.String(), "must use two dashes") {
 					t.Fatalf(
@@ -128,7 +128,7 @@ func TestCommandUsageShowsShortAndLongOptions(t *testing.T) {
 	if code != exitError {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
-	for _, wanted := range[]string{"-s, --stdin", "-f, --stdin-filename"} {
+	for _, wanted := range []string{"-s, --stdin", "-f, --stdin-filename"} {
 		if !strings.Contains(stderr.String(), wanted) {
 			t.Fatalf("usage missing %q: %q", wanted, stderr.String())
 		}
@@ -231,7 +231,7 @@ func TestFormatBatchReportsFirstFilenameError(t *testing.T) {
 
 func TestFormatBatchReportsChangesInFilenameOrder(t *testing.T) {
 	root := t.TempDir()
-	for _, name := range[]string{"z.go", "a.go"} {
+	for _, name := range []string{"z.go", "a.go"} {
 		if err := os.WriteFile(
 			filepath.Join(root, name),
 			[]byte("package p\nfunc F( ){return}\n"),
@@ -263,7 +263,7 @@ func TestFormatCheckDiffAndWrite(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, test := range[]struct {
+	for _, test := range []struct {
 		flag string
 		text string
 	}{{flag: "--check", text: "main.go"}, {flag: "--diff", text: "--- "}} {
@@ -350,7 +350,7 @@ func TestCheckCombinesFormattingSyntaxAndPackageChecks(t *testing.T) {
 	if code != exitFindings || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
-	for _, wanted := range[]string{
+	for _, wanted := range []string{
 		`"code": "format"`,
 		`"code": "no-init"`,
 		`"code": "invalid-regexp"`,
@@ -382,7 +382,7 @@ func TestCheckListsOneUnifiedCatalog(t *testing.T) {
 	if got := strings.Count(strings.TrimSpace(stdout.String()), "\n") + 1; got != 227 {
 		t.Fatalf("listed %d checks; want 227", got)
 	}
-	for _, wanted := range[]string{"format", "no-init", "invalid-regexp"} {
+	for _, wanted := range []string{"format", "no-init", "invalid-regexp"} {
 		if _, ok := listedSeverity(stdout.String(), wanted); !ok {
 			t.Fatalf("unified catalog missing %q", wanted)
 		}
@@ -412,9 +412,9 @@ func TestCheckListAlignsAndColorsRulesBySeverity(t *testing.T) {
 	if code != exitSuccess || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
-	for _, wanted := range[]string{
+	for _, wanted := range []string{
 		"\x1b[1;33maddress-nil-comparison",
-		"\x1b[1;34mformat",
+		"\x1b[1;33mformat",
 		"\x1b[1;31minvalid-regexp",
 	} {
 		if !strings.Contains(stdout.String(), wanted) {
@@ -450,7 +450,7 @@ func TestCheckSummaryOnly(t *testing.T) {
 		&stdout,
 		&stderr,
 	)
-	if code != exitFindings || stdout.String() != "no-init  1 ×\nfound 1 issue: 1 note\n" || stderr.Len() != 0 {
+	if code != exitFindings || stdout.String() != "no-init  1\nfound 1 issue: 1 note\n" || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 }
@@ -521,13 +521,13 @@ func TestCheckWatcherReportsOnlyChangedGenerations(t *testing.T) {
 	}
 	var stdout, stderr bytes.Buffer
 	watcher := &checkWatcher{
-		paths: []string{filename},
+		paths:            []string{filename},
 		workspaceOptions: workspace.Options{},
-		cache: workspace.NewCache(workspace.CacheOptions{}),
-		session: session,
-		colorMode: ui.ColorNever,
-		stdout: &stdout,
-		stderr: &stderr,
+		cache:            workspace.NewCache(workspace.CacheOptions{}),
+		session:          session,
+		colorMode:        ui.ColorNever,
+		stdout:           &stdout,
+		stderr:           &stderr,
 	}
 	if err := watcher.run(); err != nil {
 		t.Fatal(err)
@@ -680,29 +680,29 @@ severity = "warning"
 		t.Fatal(err)
 	}
 	for name, test := range map[string]struct {
-		command string
-		includedCode string
+		command          string
+		includedCode     string
 		includedSeverity string
-		excludedCode string
+		excludedCode     string
 	}{
 		"lint": {
-			command: "lint",
-			includedCode: "no-init",
+			command:          "lint",
+			includedCode:     "no-init",
 			includedSeverity: "error",
-			excludedCode: "invalid-regexp",
+			excludedCode:     "invalid-regexp",
 		},
 		"analyze": {
-			command: "analyze",
-			includedCode: "invalid-regexp",
+			command:          "analyze",
+			includedCode:     "invalid-regexp",
 			includedSeverity: "warning",
-			excludedCode: "no-init",
+			excludedCode:     "no-init",
 		},
 	} {
 		t.Run(
 			name,
 			func(t *testing.T) {
 				var stdout,
-				stderr bytes.Buffer
+					stderr bytes.Buffer
 				code := Run(
 					[]string{"--config", configurationPath, test.command, "--list-rules"},
 					strings.NewReader(""),
@@ -718,9 +718,9 @@ severity = "warning"
 					)
 				}
 				severity,
-				included := listedSeverity(stdout.String(), test.includedCode)
+					included := listedSeverity(stdout.String(), test.includedCode)
 				_,
-				excluded := listedSeverity(stdout.String(), test.excludedCode)
+					excluded := listedSeverity(stdout.String(), test.excludedCode)
 				if !included || severity != test.includedSeverity || excluded {
 					t.Fatalf("canonical settings were not scoped: %q", stdout.String())
 				}
@@ -739,12 +739,12 @@ enabled = false
 	if err := os.WriteFile(configurationPath, []byte(configuration), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	for _, command := range[]string{"lint", "analyze"} {
+	for _, command := range []string{"lint", "analyze"} {
 		t.Run(
 			command,
 			func(t *testing.T) {
 				var stdout,
-				stderr bytes.Buffer
+					stderr bytes.Buffer
 				code := Run(
 					[]string{"--config", configurationPath, command, "--list-rules"},
 					strings.NewReader(""),
@@ -780,7 +780,7 @@ severity = "warning"
 		t.Fatal(err)
 	}
 	for name, command := range map[string][]string{
-		"lint": {"lint", "--only", "no-init", "--list-rules"},
+		"lint":    {"lint", "--only", "no-init", "--list-rules"},
 		"analyze": {"analyze", "--only", "suspicious-sleep", "--list-rules"},
 	} {
 		t.Run(
@@ -790,7 +790,7 @@ severity = "warning"
 				args = append(args, command[0], "--minimum-severity", "error")
 				args = append(args, command[1:]...)
 				var stdout,
-				stderr bytes.Buffer
+					stderr bytes.Buffer
 				if code := Run(args, strings.NewReader(""), &stdout, &stderr); code != exitSuccess || stdout.Len() != 0 || stderr.Len() != 0 {
 					t.Fatalf(
 						"exit %d, stdout %q, stderr %q",
@@ -806,15 +806,15 @@ severity = "warning"
 
 func TestCommandsRejectInvalidMinimumSeverity(t *testing.T) {
 	for name, args := range map[string][]string{
-		"check": {"check", "--minimum-severity", "fatal", "--list-checks"},
-		"lint": {"lint", "--minimum-severity", "fatal", "--list-rules"},
+		"check":   {"check", "--minimum-severity", "fatal", "--list-checks"},
+		"lint":    {"lint", "--minimum-severity", "fatal", "--list-rules"},
 		"analyze": {"analyze", "--minimum-severity", "fatal", "--list-rules"},
 	} {
 		t.Run(
 			name,
 			func(t *testing.T) {
 				var stdout,
-				stderr bytes.Buffer
+					stderr bytes.Buffer
 				arguments := append([]string{"--no-config"}, args...)
 				code := Run(arguments, strings.NewReader(""), &stdout, &stderr)
 				if code != exitError || !strings.Contains(
@@ -928,7 +928,7 @@ func TestLintHTMLAndExitCode(t *testing.T) {
 	if code != exitFindings {
 		t.Fatalf("exit %d, stderr %s", code, stderr.String())
 	}
-	for _, wanted := range[]string{
+	for _, wanted := range []string{
 		"<!doctype html>",
 		"Strider lint report",
 		"no-init",
@@ -968,7 +968,7 @@ func TestColorFlagRendersRichDiagnosticsAndLeavesJSONPlain(t *testing.T) {
 	if code != exitFindings || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
-	for _, wanted := range[]string{"\x1b[", "func init() {}", "┌─", "found 1 issue"} {
+	for _, wanted := range []string{"\x1b[", "func init() {}", "┌─", "found 1 issue"} {
 		if !strings.Contains(stdout.String(), wanted) {
 			t.Fatalf("rich output missing %q: %q", wanted, stdout.String())
 		}
@@ -1269,7 +1269,7 @@ func TestLintBaselineGenerateApplyIgnoreAndPrune(t *testing.T) {
 		restoreWorkingDirectory(t, previous)
 	})
 
-	run := func(extra... string) (int, string, string) {
+	run := func(extra ...string) (int, string, string) {
 		t.Helper()
 		args := []string{
 			"lint",

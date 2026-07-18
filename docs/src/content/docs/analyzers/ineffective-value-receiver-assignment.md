@@ -1,9 +1,13 @@
 ---
 title: ineffective-value-receiver-assignment
 description: Detect field assignments that cannot escape a value receiver.
+sidebar:
+  badge:
+    text: warning
+    class: severity-indicator severity-warning
 ---
 
-**Default severity:** 🟡 `warning`
+**Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
 A method with a value receiver modifies only its local receiver copy. When an
 assigned field is never read afterward, the write has no observable effect and

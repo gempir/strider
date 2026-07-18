@@ -1,9 +1,13 @@
 ---
 title: never-nil-comparison
 description: Detect nil checks on values proven to be non-nil.
+sidebar:
+  badge:
+    text: error
+    class: severity-indicator severity-error
 ---
 
-**Default severity:** 🔴 `error`
+**Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
 Fresh allocations, `make` results, functions, closures, and values flowing
 exclusively from those sources cannot be nil. Comparing them with nil has a

@@ -1,9 +1,13 @@
 ---
 title: modulo-one
 description: Detect remainder operations that are always zero.
+sidebar:
+  badge:
+    text: error
+    class: severity-indicator severity-error
 ---
 
-**Default severity:** 🔴 `error`
+**Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
 Every integer is evenly divisible by one, so `value % 1` always produces zero.
 The expression usually contains a mistaken divisor.

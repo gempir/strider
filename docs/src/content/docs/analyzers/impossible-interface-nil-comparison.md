@@ -1,9 +1,13 @@
 ---
 title: impossible-interface-nil-comparison
 description: Detect interface comparisons made non-nil by a concrete dynamic type.
+sidebar:
+  badge:
+    text: error
+    class: severity-indicator severity-error
 ---
 
-**Default severity:** 🔴 `error`
+**Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
 An interface is nil only when both its dynamic type and value are absent.
 Storing a typed nil pointer in an interface gives it a concrete dynamic type,

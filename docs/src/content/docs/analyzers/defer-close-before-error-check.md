@@ -1,9 +1,13 @@
 ---
 title: defer-close-before-error-check
 description: Detect deferred Close calls scheduled before checking acquisition errors.
+sidebar:
+  badge:
+    text: error
+    class: severity-indicator severity-error
 ---
 
-**Default severity:** 🔴 `error`
+**Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
 A resource-returning call may yield an unusable or nil value when it also
 returns an error. Check the error before deferring `Close` on the resource.

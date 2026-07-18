@@ -3,7 +3,7 @@ title: invalid-time-layout
 description: Detect invalid time.Parse layouts.
 ---
 
-**Default severity:** `error`
+**Default severity:** 🔴 `error`
 
 Validates constant layouts against Go's reference-time convention.
 

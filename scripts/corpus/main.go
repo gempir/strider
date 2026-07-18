@@ -23,7 +23,7 @@ import (
 	reporter "github.com/gempir/strider/internal/report"
 )
 
-const schemaVersion = 2
+const schemaVersion = 1
 
 const projectReportDiagnosticLimit = 1000
 
@@ -375,7 +375,7 @@ func runOperation(strider, checkout, operation string, item project) operationRe
 				Error: err.Error(),
 			}
 		}
-		contents := []byte("version = 2\n[formatter]\nexcludes = " + string(encoded) + "\n")
+		contents := []byte("version = 1\n[formatter]\nexcludes = " + string(encoded) + "\n")
 		if err := os.WriteFile(configPath, contents, 0o600); err != nil {
 			return operationResult{
 				Name: operation,

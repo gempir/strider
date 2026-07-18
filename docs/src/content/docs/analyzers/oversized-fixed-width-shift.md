@@ -3,7 +3,7 @@ title: oversized-fixed-width-shift
 description: Detect shifts that always clear fixed-width integers.
 ---
 
-**Default severity:** `warning`
+**Default severity:** 🟡 `warning`
 
 Shifting a fixed-width integer by its full width or more always clears every
 value bit. This is usually an incorrect shift count. Machine-sized `int`,

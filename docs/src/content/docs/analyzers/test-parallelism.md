@@ -3,7 +3,7 @@ title: test-parallelism
 description: Identify tests and direct subtests that can run in parallel.
 ---
 
-**Default severity:** `note`
+**Default severity:** 🔵 `note`
 
 The advisory check suggests `t.Parallel()` for eligible top-level tests and
 direct subtests. It skips tests that already opt in or visibly change process

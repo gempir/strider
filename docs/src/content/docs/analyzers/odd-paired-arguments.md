@@ -3,7 +3,7 @@ title: odd-paired-arguments
 description: Detect odd element counts passed to pair-oriented APIs.
 ---
 
-**Default severity:** `error`
+**Default severity:** 🔴 `error`
 
 Some functions consume slice or variadic elements in pairs and reject odd
 lengths. The check recognizes standard pair-oriented APIs and local

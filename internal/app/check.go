@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	checkengine "github.com/gempir/strider/internal/check"
+	checkengine "github.com/gempir/strider/internal/checks"
 	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/diagnostic"
 	"github.com/gempir/strider/internal/formatter"
@@ -84,12 +84,7 @@ func runCheck(
 		return exitError
 	}
 	if *watch && *reportFormat != "text" {
-		printCommandError(
-			stderr,
-			colorMode,
-			"strider check",
-			"--watch requires text report format",
-		)
+		printCommandError(stderr, colorMode, "strider check", "--watch requires text report format")
 		return exitError
 	}
 	if *watch && (*generateBaseline || *removeOutdated || *backupBaseline) {
@@ -114,48 +109,12 @@ func runCheck(
 	if !ok {
 		return exitError
 	}
-	lintMinimumSeverity := minimumSeverity
-	analyzeMinimumSeverity := minimumSeverity
-	lintExcludes := []string(nil)
-	analyzeExcludes := []string(nil)
-	if configuration.Version == 1 {
-		lintConfig := configuration.EffectiveChecks(config.LegacyLintScope)
-		analyzeConfig := configuration.EffectiveChecks(config.LegacyAnalyzeScope)
-		lintExcludes = lintConfig.Excludes
-		analyzeExcludes = analyzeConfig.Excludes
-		lintMinimumSeverity, ok = resolveMinimumSeverity(
-			flags,
-			*minimumSeverityFlag,
-			lintConfig.MinimumSeverity,
-			"check",
-			colorMode,
-			stderr,
-		)
-		if !ok {
-			return exitError
-		}
-		analyzeMinimumSeverity, ok = resolveMinimumSeverity(
-			flags,
-			*minimumSeverityFlag,
-			analyzeConfig.MinimumSeverity,
-			"check",
-			colorMode,
-			stderr,
-		)
-		if !ok {
-			return exitError
-		}
-	}
 	registry, err := checkengine.NewRegistry(
 		checkengine.RegistryOptions{
 			Only: only,
 			All: allChecks,
 			Settings: checkConfig.Rules,
 			MinimumSeverity: minimumSeverity,
-			LintMinimumSeverity: lintMinimumSeverity,
-			AnalyzeMinimumSeverity: analyzeMinimumSeverity,
-			LintExcludes: lintExcludes,
-			AnalyzeExcludes: analyzeExcludes,
 			FormatExcludes: configuration.Formatter.Excludes,
 			Root: configuration.Root,
 		},
@@ -385,11 +344,7 @@ func reportCheckDiagnostics(
 	return checkengine.ReportText(stdout, diagnostics, colorMode)
 }
 
-func listChecksInRegistry(
-	registry *checkengine.Registry,
-	colorMode ui.ColorMode,
-	stdout io.Writer,
-) int {
+func listChecksInRegistry(registry *checkengine.Registry, colorMode ui.ColorMode, stdout io.Writer) int {
 	palette := ui.NewPalette(stdout, colorMode)
 	for _, rule := range registry.Rules() {
 		meta := rule.Meta()

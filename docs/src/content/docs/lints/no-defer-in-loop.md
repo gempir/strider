@@ -3,7 +3,8 @@ title: no-defer-in-loop
 description: Avoid accumulating deferred calls across loop iterations.
 ---
 
-**Default severity:** `warning`  
+**Default severity:** 🟡 `warning`
+
 **Configuration:** `enabled`, `severity`, and path `excludes`
 
 Reports `defer` statements nested inside `for` or `range` loops. Deferred calls

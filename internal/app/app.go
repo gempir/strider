@@ -13,13 +13,13 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/gempir/strider/internal/analyze"
 	"github.com/gempir/strider/internal/baseline"
-	checkengine "github.com/gempir/strider/internal/check"
+	checkengine "github.com/gempir/strider/internal/checks"
+	"github.com/gempir/strider/internal/checks/semantic"
+	"github.com/gempir/strider/internal/checks/syntax"
 	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/diagnostic"
 	"github.com/gempir/strider/internal/formatter"
-	"github.com/gempir/strider/internal/lint"
 	"github.com/gempir/strider/internal/pathfilter"
 	"github.com/gempir/strider/internal/source"
 	"github.com/gempir/strider/internal/ui"
@@ -712,11 +712,10 @@ func runLint(
 		)
 		return exitError
 	}
-	lintConfig := configuration.EffectiveChecks(config.LegacyLintScope)
-	lintSettings, knownCodes, settingsErr := legacyCommandSettings(
-		configuration,
-		config.LegacyLintScope,
+	lintConfig := configuration.Checks
+	syntaxSettings, knownCodes, settingsErr := commandSettings(
 		lintConfig.Rules,
+		checkengine.CapabilityCST,
 	)
 	if settingsErr != nil {
 		printCommandError(stderr, colorMode, "strider lint", "%v", settingsErr)
@@ -750,13 +749,13 @@ func runLint(
 	if !ok {
 		return exitError
 	}
-	var registry *lint.Registry
+	var registry *syntax.Registry
 	var err error
-	registry, err = lint.NewRegistryWithOptions(
-		lint.RegistryOptions{
+	registry, err = syntax.NewRegistryWithOptions(
+		syntax.RegistryOptions{
 			Only: only,
 			EnableAll: *allRules,
-			Settings: lintSettings,
+			Settings: syntaxSettings,
 			Root: configuration.Root,
 			MinimumSeverity: minimumSeverity,
 		},
@@ -802,7 +801,7 @@ func runLint(
 	)
 }
 
-func listLintRules(registry *lint.Registry, colorMode ui.ColorMode, stdout io.Writer) int {
+func listLintRules(registry *syntax.Registry, colorMode ui.ColorMode, stdout io.Writer) int {
 	palette := ui.NewPalette(stdout, colorMode)
 	rules := registry.Rules()
 	sort.Slice(rules, func(i, j int) bool {
@@ -823,7 +822,7 @@ func listLintRules(registry *lint.Registry, colorMode ui.ColorMode, stdout io.Wr
 }
 
 func explainLintRule(
-	registry *lint.Registry,
+	registry *syntax.Registry,
 	code string,
 	colorMode ui.ColorMode,
 	stdout,
@@ -855,7 +854,7 @@ func explainLintRule(
 func lintPaths(
 	paths []string,
 	format string,
-	registry *lint.Registry,
+	registry *syntax.Registry,
 	root string,
 	excludes []string,
 	baselineConfig baselineOptions,
@@ -869,7 +868,7 @@ func lintPaths(
 		return exitError
 	}
 	files = filterFiles(files, root, excludes)
-	diagnostics, err := lint.Run(files, registry)
+	diagnostics, err := syntax.Run(files, registry)
 	if err != nil {
 		printCommandError(stderr, colorMode, "strider lint", "%v", err)
 		return exitError
@@ -889,11 +888,11 @@ func lintPaths(
 		return exitSuccess
 	}
 	if format == "json" {
-		err = lint.ReportJSON(stdout, diagnostics)
+		err = syntax.ReportJSON(stdout, diagnostics)
 	} else if format == "html" {
-		err = lint.ReportHTML(stdout, diagnostics)
+		err = syntax.ReportHTML(stdout, diagnostics)
 	} else {
-		err = lint.ReportText(stdout, diagnostics, colorMode)
+		err = syntax.ReportText(stdout, diagnostics, colorMode)
 	}
 	if err != nil {
 		printCommandError(stderr, colorMode, "strider lint", "%v", err)
@@ -954,11 +953,10 @@ func runAnalyze(
 	if err := flags.Parse(args); err != nil {
 		return exitError
 	}
-	analyzeConfig := configuration.EffectiveChecks(config.LegacyAnalyzeScope)
-	analyzeSettings, knownCodes, settingsErr := legacyCommandSettings(
-		configuration,
-		config.LegacyAnalyzeScope,
+	analyzeConfig := configuration.Checks
+	semanticSettings, knownCodes, settingsErr := commandSettings(
 		analyzeConfig.Rules,
+		checkengine.CapabilityAST,
 	)
 	if settingsErr != nil {
 		printCommandError(stderr, colorMode, "strider analyze", "%v", settingsErr)
@@ -992,10 +990,10 @@ func runAnalyze(
 	if !ok {
 		return exitError
 	}
-	registry, err := analyze.NewRegistryWithOptions(
-		analyze.RegistryOptions{
+	registry, err := semantic.NewRegistryWithOptions(
+		semantic.RegistryOptions{
 			Only: only,
-			Settings: analyzeSettings,
+			Settings: semanticSettings,
 			Root: configuration.Root,
 			MinimumSeverity: minimumSeverity,
 		},
@@ -1041,7 +1039,7 @@ func runAnalyze(
 	)
 }
 
-func listAnalyzeRules(registry *analyze.Registry, colorMode ui.ColorMode, stdout io.Writer) int {
+func listAnalyzeRules(registry *semantic.Registry, colorMode ui.ColorMode, stdout io.Writer) int {
 	palette := ui.NewPalette(stdout, colorMode)
 	rules := registry.Rules()
 	sort.Slice(rules, func(i, j int) bool {
@@ -1062,7 +1060,7 @@ func listAnalyzeRules(registry *analyze.Registry, colorMode ui.ColorMode, stdout
 }
 
 func explainAnalyzeRule(
-	registry *analyze.Registry,
+	registry *semantic.Registry,
 	code string,
 	colorMode ui.ColorMode,
 	stdout,
@@ -1094,7 +1092,7 @@ func explainAnalyzeRule(
 func analyzePaths(
 	paths []string,
 	format string,
-	registry *analyze.Registry,
+	registry *semantic.Registry,
 	root string,
 	excludes []string,
 	baselineConfig baselineOptions,
@@ -1102,7 +1100,7 @@ func analyzePaths(
 	stdout,
 	stderr io.Writer,
 ) int {
-	diagnostics, err := analyze.Run(paths, registry)
+	diagnostics, err := semantic.Run(paths, registry)
 	if err != nil {
 		printCommandError(stderr, colorMode, "strider analyze", "%v", err)
 		return exitError
@@ -1123,11 +1121,11 @@ func analyzePaths(
 		return exitSuccess
 	}
 	if format == "json" {
-		err = analyze.ReportJSON(stdout, diagnostics)
+		err = semantic.ReportJSON(stdout, diagnostics)
 	} else if format == "html" {
-		err = analyze.ReportHTML(stdout, diagnostics)
+		err = semantic.ReportHTML(stdout, diagnostics)
 	} else {
-		err = analyze.ReportText(stdout, diagnostics, colorMode)
+		err = semantic.ReportText(stdout, diagnostics, colorMode)
 	}
 	if err != nil {
 		printCommandError(stderr, colorMode, "strider analyze", "%v", err)
@@ -1175,14 +1173,11 @@ func resolveMinimumSeverity(
 	return "", false
 }
 
-func legacyCommandSettings(
-	configuration config.Config,
-	scope config.LegacyCheckScope,
-	settings map[string]config.RuleConfig,
-) (map[string]config.RuleConfig, map[string]bool, error) {
-	if configuration.Version == 1 {
-		return settings, nil, nil
-	}
+func commandSettings(settings map[string]config.RuleConfig, capability checkengine.Capability) (
+	map[string]config.RuleConfig,
+	map[string]bool,
+	error,
+) {
 	registry, err := checkengine.NewRegistry(
 		checkengine.RegistryOptions{All: true, Settings: settings},
 	)
@@ -1200,17 +1195,8 @@ func legacyCommandSettings(
 		if !configured {
 			continue
 		}
-		switch scope {
-		case config.LegacyLintScope:
-			if meta.Code != "format" && meta.Capabilities == checkengine.CapabilityCST {
-				filtered[meta.Code] = setting
-			}
-		case config.LegacyAnalyzeScope:
-			if meta.Capabilities & checkengine.CapabilityAST != 0 {
-				filtered[meta.Code] = setting
-			}
-		default:
-			return nil, nil, fmt.Errorf("invalid legacy check scope")
+		if meta.Code != "format" && meta.Capabilities & capability != 0 {
+			filtered[meta.Code] = setting
 		}
 	}
 	return filtered, registry.KnownCodes(), nil

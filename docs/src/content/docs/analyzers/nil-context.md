@@ -3,7 +3,7 @@ title: nil-context
 description: Detect nil context.Context arguments.
 ---
 
-**Default severity:** `error`
+**Default severity:** 🔴 `error`
 
 A context must not be nil. Use `context.TODO()` when the appropriate parent is
 not known or `context.Background()` for an explicit root.

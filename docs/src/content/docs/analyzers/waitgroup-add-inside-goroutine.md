@@ -3,7 +3,7 @@ title: waitgroup-add-inside-goroutine
 description: Detect WaitGroup.Add calls inside newly started goroutines.
 ---
 
-**Default severity:** `error`
+**Default severity:** 🔴 `error`
 
 `WaitGroup.Add` must happen before starting the goroutine it accounts for.
 Calling `Add` inside the goroutine races with `Wait`, which may observe a zero

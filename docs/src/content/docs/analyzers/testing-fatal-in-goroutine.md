@@ -3,7 +3,7 @@ title: testing-fatal-in-goroutine
 description: Detect test termination methods called from child goroutines.
 ---
 
-**Default severity:** `error`
+**Default severity:** 🔴 `error`
 
 Methods on `testing.T` and `testing.B` that terminate or skip execution must
 run in the same goroutine as the test. Calling `Fatal`, `FailNow`, `Skip`, or

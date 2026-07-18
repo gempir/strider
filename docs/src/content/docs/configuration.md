@@ -4,15 +4,15 @@ description: Configure Strider's formatter, unified checks, exclusions, severiti
 ---
 
 Strider reads project settings from one strict TOML file named `strider.toml`.
-Version 2 has one `[checks]` namespace for formatting, maintainability, and
+Version 1 has one `[checks]` namespace for formatting, maintainability, and
 correctness diagnostics, while `[formatter]` controls rendered source.
 
 ```toml
-version = 2
+version = 1
 color = "auto"
 
 [formatter]
-print-width = 100
+print-width = 180
 indent-width = 4
 max-empty-lines = 1
 end-of-line = "lf"
@@ -66,9 +66,8 @@ discovery quietly falls back to defaults when no file exists.
 
 ## Version and strict validation
 
-The canonical configuration version is `2`. New files should declare it
-explicitly. Earlier version-1 files remain readable for compatibility, but a
-document cannot mix sections from different versions.
+The configuration version is `1`; new files should declare it explicitly.
+There is no alternate or legacy schema.
 
 Strider rejects malformed TOML, unsupported versions, unknown section keys,
 unknown check names, invalid severities, invalid baseline variants, and
@@ -157,7 +156,7 @@ Formatter settings live under `[formatter]`.
 
 | Setting | Type | Default | Accepted values and effect |
 | --- | --- | --- | --- |
-| `print-width` | integer | `100` | Wrap target from `40` through `500` columns. |
+| `print-width` | integer | `180` | Wrap target from `40` through `500` columns. |
 | `indent-width` | integer | `4` | Display width of an indentation tab, from `1` through `16`; output indentation remains tabs. |
 | `max-empty-lines` | integer | `1` | Preserve at most this many consecutive empty lines; any nonnegative value is accepted. |
 | `end-of-line` | string | `"lf"` | `"lf"` or `"crlf"`. |

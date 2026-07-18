@@ -3,7 +3,7 @@ title: finalizer-captures-object
 description: Detect finalizers that retain the object they should release.
 ---
 
-**Default severity:** `error`
+**Default severity:** 🔴 `error`
 
 A finalizer closure that captures the finalized object keeps that object
 reachable. The garbage collector can never make the object eligible for

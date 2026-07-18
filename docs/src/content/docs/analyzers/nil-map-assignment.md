@@ -3,7 +3,7 @@ title: nil-map-assignment
 description: Detect assignments into maps proven to be nil.
 ---
 
-**Default severity:** `error`
+**Default severity:** 🔴 `error`
 
 Reading from a nil map is allowed, but assigning an entry to a nil map panics.
 Initialize the map with `make` or a map literal before writing.

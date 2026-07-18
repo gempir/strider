@@ -3,7 +3,7 @@ title: invalid-strconv-argument
 description: Detect invalid constant arguments to strconv functions.
 ---
 
-**Default severity:** `error`
+**Default severity:** 🔴 `error`
 
 The `strconv` parsing and formatting functions accept only documented number
 bases, bit sizes, and floating-point format characters. Invalid constant

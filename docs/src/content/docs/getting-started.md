@@ -23,10 +23,10 @@ Create `strider.toml` at the repository root. Strider discovers it from the
 current directory or any parent:
 
 ```toml
-version = 2
+version = 1
 
 [formatter]
-print-width = 100
+print-width = 180
 max-empty-lines = 1
 
 [checks]

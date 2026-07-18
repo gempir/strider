@@ -3,7 +3,7 @@ title: impossible-integer-comparison
 description: Detect integer comparisons fixed by the type's range.
 ---
 
-**Default severity:** `warning`
+**Default severity:** 🟡 `warning`
 
 An integer type's minimum and maximum values make some comparisons always
 true or false, such as checking whether an unsigned value is below zero or

@@ -3,7 +3,7 @@ title: regexp-match-in-loop
 description: Detect repeated regexp compilation inside loops.
 ---
 
-**Default severity:** `warning`
+**Default severity:** 🟡 `warning`
 
 The package-level regexp matching helpers compile their pattern on every call.
 Calling them with a constant pattern inside a loop repeats the same compilation.

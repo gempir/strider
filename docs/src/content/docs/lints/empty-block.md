@@ -3,6 +3,8 @@ title: empty-block
 description: Detect empty statement blocks that need removal or explanation.
 ---
 
+**Default severity:** 🟡 `warning`
+
 Purpose: catch empty `if` and `else` branches that are usually unfinished code
 or accidental no-ops.
 

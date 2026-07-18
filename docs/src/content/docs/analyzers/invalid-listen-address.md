@@ -3,7 +3,7 @@ title: invalid-listen-address
 description: Detect invalid constant HTTP listen addresses.
 ---
 
-**Default severity:** `error`
+**Default severity:** 🔴 `error`
 
 `http.ListenAndServe` and `http.ListenAndServeTLS` expect a host and port
 separated by a colon. Either side may be omitted. Numeric ports must be in

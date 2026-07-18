@@ -3,7 +3,7 @@ title: interface-return
 description: Detect constructors that hide a single concrete result.
 ---
 
-**Default severity:** `warning`
+**Default severity:** 🟡 `warning`
 
 Reports only exported `New`-style constructors whose returns consistently
 reveal one local concrete implementation of a non-empty local interface.

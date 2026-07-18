@@ -3,7 +3,7 @@ title: constant-negative-zero
 description: Detect constant expressions that cannot represent negative zero.
 ---
 
-**Default severity:** `note`
+**Default severity:** 🔵 `note`
 
 Go's ideal constants do not preserve a zero sign. Literal forms such as `-0.0`,
 `-float64(0)`, and `float32(-0)` therefore produce positive zero at runtime.

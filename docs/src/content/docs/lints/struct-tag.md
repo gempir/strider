@@ -6,7 +6,7 @@ description: Validate struct tag syntax, duplicate keys, and standard options.
 Purpose: detect malformed struct tags before reflection or encoding packages
 silently ignore them.
 
-**Default severity:** `error`
+**Default severity:** 🔴 `error`
 
 ## Behavior
 

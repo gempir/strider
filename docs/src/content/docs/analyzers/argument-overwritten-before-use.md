@@ -3,7 +3,7 @@ title: argument-overwritten-before-use
 description: Detect arguments replaced before their incoming value is used.
 ---
 
-**Default severity:** `warning`
+**Default severity:** 🟡 `warning`
 
 Overwriting a function argument before reading its incoming value makes that
 input meaningless. The assignment may be accidental, or the argument may no

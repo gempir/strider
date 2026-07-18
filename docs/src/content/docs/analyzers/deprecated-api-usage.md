@@ -3,7 +3,7 @@ title: deprecated-api-usage
 description: Detect uses of deprecated packages and APIs.
 ---
 
-**Default severity:** `note`
+**Default severity:** 🔵 `note`
 
 Go documentation can mark packages, functions, methods, fields, variables,
 constants, and types with a `Deprecated:` paragraph. This check reads those

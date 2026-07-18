@@ -3,7 +3,7 @@ title: unsafe-formatted-url-host-port
 description: Detect URL and network-address construction that breaks IPv6.
 ---
 
-**Default severity:** `warning`
+**Default severity:** 🟡 `warning`
 
 Formatting a URL authority or an address passed directly to a standard-library
 network listener as `host:port` does not add the brackets required around IPv6

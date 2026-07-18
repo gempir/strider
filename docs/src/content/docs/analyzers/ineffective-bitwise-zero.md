@@ -3,7 +3,7 @@ title: ineffective-bitwise-zero
 description: Detect bitwise operations whose zero operand fixes the result.
 ---
 
-**Default severity:** `warning`
+**Default severity:** 🟡 `warning`
 
 For integers, `x & 0` is always zero while `x | 0` and `x ^ 0` are always
 `x`. A zero-valued flag declared directly with `iota` often indicates that

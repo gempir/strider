@@ -3,7 +3,7 @@ title: impossible-platform-comparison
 description: Detect GOOS and GOARCH comparisons excluded by build constraints.
 ---
 
-**Default severity:** `warning`
+**Default severity:** 🟡 `warning`
 
 A file's build constraints limit the operating systems and architectures on
 which its code can run. Comparing `runtime.GOOS` or `runtime.GOARCH` with an

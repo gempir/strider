@@ -83,7 +83,7 @@ func TestManifestRequiresElevenPinnedProjectsAndBudgets(t *testing.T) {
 			40,
 		) + `","budgets_ms":{"format":1,"check":1}}`
 	}
-	contents := `{"version":2,"projects":[` + strings.Join(projects, ",") + `]}`
+	contents := `{"version":1,"projects":[` + strings.Join(projects, ",") + `]}`
 	if err := os.WriteFile(path, []byte(contents), 0o600); err != nil {
 		t.Fatal(err)
 	}

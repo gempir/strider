@@ -56,7 +56,7 @@ Strider has not run those checks, so their findings cannot be considered fixed.
 Add the path to `strider.toml` after generating it:
 
 ```toml
-version = 2
+version = 1
 
 [checks]
 baseline = "strider-baseline.toml"
@@ -101,7 +101,7 @@ count = 2
 ```
 
 The baseline file format has its own version, independent from configuration
-version 2.
+version 1.
 
 Line numbers are deliberately absent. Adding an import or reformatting code
 above an old finding does not invalidate the entry. Counts still protect new
@@ -199,7 +199,7 @@ pruning are mutually exclusive, and neither can be combined with
 
 ## Recommended adoption workflow
 
-1. Commit a version-2 `strider.toml` with the intended check selection and
+1. Commit a version-1 `strider.toml` with the intended check selection and
    severities.
 2. Run `strider check` without a baseline to inspect the backlog.
 3. Generate a loose baseline for the exact profile CI will run.

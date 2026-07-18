@@ -3,7 +3,7 @@ title: invalid-regexp
 description: Detect invalid constant regular expressions.
 ---
 
-**Default severity:** `error`
+**Default severity:** 🔴 `error`
 
 Reports invalid constant patterns passed to regular-expression compilation and
 matching functions. Dynamic patterns are checked at runtime by the standard

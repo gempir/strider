@@ -3,7 +3,7 @@ title: zero-replacement-limit
 description: Detect replacement calls with a zero limit.
 ---
 
-**Default severity:** `warning`
+**Default severity:** 🟡 `warning`
 
 The final argument to `strings.Replace` and `bytes.Replace` is the maximum
 number of replacements. Zero replaces nothing. Use a negative value or the

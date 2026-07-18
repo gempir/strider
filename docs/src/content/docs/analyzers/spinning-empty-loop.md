@@ -3,7 +3,7 @@ title: spinning-empty-loop
 description: Detect empty loops that consume a core while waiting unsafely.
 ---
 
-**Default severity:** `warning`
+**Default severity:** 🟡 `warning`
 
 An empty unconditional loop spins at full speed. An empty loop that only
 rereads variables can terminate only through unsynchronized mutation, which is

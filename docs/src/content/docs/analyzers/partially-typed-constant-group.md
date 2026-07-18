@@ -3,7 +3,7 @@ title: partially-typed-constant-group
 description: Detect constant groups where only the first explicit value has a type.
 ---
 
-**Default severity:** `note`
+**Default severity:** 🔵 `note`
 
 In a constant group, an explicit type is inherited only when a later
 declaration omits its value. If every declaration has an explicit literal but

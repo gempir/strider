@@ -3,7 +3,7 @@ title: swapped-errors-is-arguments
 description: Detect likely reversed errors.Is arguments.
 ---
 
-**Default severity:** `error`
+**Default severity:** 🔴 `error`
 
 `errors.Is` expects the error being inspected first and the target sentinel
 second. A package-level sentinel from another package in the first position,

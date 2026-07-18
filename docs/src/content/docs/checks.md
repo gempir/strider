@@ -88,10 +88,10 @@ purpose for browsing:
 ## Configure checks
 
 Every check code accepts `enabled`, `severity`, and path `excludes` under the
-version-2 `[checks.rules]` namespace:
+version-1 `[checks.rules]` namespace:
 
 ```toml
-version = 2
+version = 1
 
 [checks]
 minimum-severity = "warning"

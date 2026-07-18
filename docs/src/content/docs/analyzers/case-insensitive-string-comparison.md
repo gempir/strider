@@ -3,7 +3,7 @@ title: case-insensitive-string-comparison
 description: Detect allocating case conversions used only for comparison.
 ---
 
-**Default severity:** `warning`
+**Default severity:** 🟡 `warning`
 
 Converting both strings with `strings.ToLower` or `strings.ToUpper` allocates
 intermediate strings and processes each input fully. `strings.EqualFold`

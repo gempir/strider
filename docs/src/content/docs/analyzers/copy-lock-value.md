@@ -3,7 +3,7 @@ title: copy-lock-value
 description: Detect values that copy sync locks.
 ---
 
-**Default severity:** `error`
+**Default severity:** 🔴 `error`
 
 Copying a value that contains `sync.Mutex` or `sync.RWMutex` creates an
 independent lock state and can invalidate the intended synchronization. Pass

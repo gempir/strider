@@ -3,7 +3,7 @@ title: unbuffered-signal-channel
 description: Detect unbuffered channels used for signal notification.
 ---
 
-**Default severity:** `warning`
+**Default severity:** 🟡 `warning`
 
 The `os/signal` package uses non-blocking sends to deliver notifications. If
 no receiver is immediately ready, an unbuffered channel drops the signal.

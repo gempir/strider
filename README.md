@@ -71,16 +71,16 @@ current syntax boundary.
 ## Configuration
 
 Strider discovers the nearest `strider.toml` from the current directory upward.
-Version 2 uses one `[checks]` namespace. Every check supports `enabled`,
+Version 1 uses one `[checks]` namespace. Every check supports `enabled`,
 `severity`, and path `excludes`; the formatter exposes print width, visual
 indentation width, line endings, and filesystem exclusions.
 
 ```toml
-version = 2
+version = 1
 color = "auto"
 
 [formatter]
-print-width = 100
+print-width = 180
 max-empty-lines = 1
 
 [checks]

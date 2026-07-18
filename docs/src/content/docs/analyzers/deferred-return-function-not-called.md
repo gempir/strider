@@ -3,7 +3,7 @@ title: deferred-return-function-not-called
 description: Detect deferred setup calls whose returned function is not called.
 ---
 
-**Default severity:** `warning`
+**Default severity:** 🟡 `warning`
 
 Functions sometimes perform setup immediately and return a function that
 performs cleanup. Deferring only the first call delays setup until function

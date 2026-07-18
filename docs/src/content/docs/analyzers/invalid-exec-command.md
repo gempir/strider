@@ -3,7 +3,7 @@ title: invalid-exec-command
 description: Detect shell commands used as exec.Command program names.
 ---
 
-**Default severity:** `warning`
+**Default severity:** 🟡 `warning`
 
 `exec.Command` expects one executable name or path, not a shell command that
 needs argument splitting.

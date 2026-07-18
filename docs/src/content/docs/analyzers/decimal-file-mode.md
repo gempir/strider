@@ -3,7 +3,7 @@ title: decimal-file-mode
 description: Detect decimal file modes that look like octal permissions.
 ---
 
-**Default severity:** `warning`
+**Default severity:** 🟡 `warning`
 
 Unix permission modes are conventionally written in octal. A three-digit
 decimal literal such as `644` passed as `os.FileMode` evaluates to a different

@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/gempir/strider/internal/baseline"
-	checkengine "github.com/gempir/strider/internal/check"
+	checkengine "github.com/gempir/strider/internal/checks"
 	"github.com/gempir/strider/internal/ui"
 	"github.com/gempir/strider/internal/workspace"
 )
@@ -280,9 +280,7 @@ func TestCheckWatcherReportsOnlyChangedGenerations(t *testing.T) {
 	if err := os.WriteFile(filename, []byte("package sample\nfunc init() {}\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	registry, err := checkengine.NewRegistry(
-		checkengine.RegistryOptions{Only: []string{"no-init"}},
-	)
+	registry, err := checkengine.NewRegistry(checkengine.RegistryOptions{Only: []string{"no-init"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -341,10 +339,10 @@ func TestCheckWatcherReportsOnlyChangedGenerations(t *testing.T) {
 	}
 }
 
-func TestVersionTwoCheckConfigurationControlsUnifiedRegistry(t *testing.T) {
+func TestVersionOneCheckConfigurationControlsUnifiedRegistry(t *testing.T) {
 	root := t.TempDir()
 	configurationPath := filepath.Join(root, "strider.toml")
-	configuration := `version = 2
+	configuration := `version = 1
 [checks.rules.format]
 enabled = false
 [checks.rules.no-init]
@@ -376,10 +374,10 @@ enabled = false
 	}
 }
 
-func TestVersionTwoCheckMinimumSeverityUsesEffectiveOverrides(t *testing.T) {
+func TestVersionOneCheckMinimumSeverityUsesEffectiveOverrides(t *testing.T) {
 	root := t.TempDir()
 	configurationPath := filepath.Join(root, "strider.toml")
-	configuration := `version = 2
+	configuration := `version = 1
 [checks]
 minimum-severity = "error"
 [checks.rules.no-init]
@@ -443,10 +441,10 @@ severity = "warning"
 	}
 }
 
-func TestVersionTwoLegacyCommandsFilterCanonicalRuleSettings(t *testing.T) {
+func TestCategoryCommandsFilterUnifiedRuleSettings(t *testing.T) {
 	root := t.TempDir()
 	configurationPath := filepath.Join(root, "strider.toml")
-	configuration := `version = 2
+	configuration := `version = 1
 [checks.rules.format]
 enabled = false
 [checks.rules.no-init]
@@ -495,10 +493,10 @@ severity = "warning"
 	}
 }
 
-func TestVersionTwoLegacyCommandsStillRejectUnknownCanonicalRules(t *testing.T) {
+func TestCategoryCommandsRejectUnknownUnifiedRules(t *testing.T) {
 	root := t.TempDir()
 	configurationPath := filepath.Join(root, "strider.toml")
-	configuration := `version = 2
+	configuration := `version = 1
 [checks.rules.removed-check]
 enabled = false
 `
@@ -533,54 +531,13 @@ enabled = false
 	}
 }
 
-func TestVersionOneCheckUsesScopedMinimumSeverities(t *testing.T) {
+func TestMinimumSeverityFlagAppliesToCategoryCommands(t *testing.T) {
 	root := t.TempDir()
 	configurationPath := filepath.Join(root, "strider.toml")
 	configuration := `version = 1
-[linter]
-minimum-severity = "error"
-[linter.rules.no-init]
+[checks.rules.no-init]
 severity = "warning"
-[analyzer]
-minimum-severity = "warning"
-[analyzer.rules.suspicious-sleep]
-severity = "warning"
-`
-	if err := os.WriteFile(configurationPath, []byte(configuration), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	var stdout, stderr bytes.Buffer
-	code := Run(
-		[]string{
-			"--config",
-			configurationPath,
-			"check",
-			"--only",
-			"no-init,suspicious-sleep",
-			"--list-checks",
-		},
-		strings.NewReader(""),
-		&stdout,
-		&stderr,
-	)
-	if code != exitSuccess || stderr.Len() != 0 {
-		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
-	}
-	if strings.Contains(stdout.String(), "no-init\t") || !strings.Contains(
-		stdout.String(),
-		"suspicious-sleep\twarning\t",
-	) {
-		t.Fatalf("legacy scoped minimum severity selected the wrong checks: %q", stdout.String())
-	}
-}
-
-func TestMinimumSeverityFlagAppliesToLegacyCommands(t *testing.T) {
-	root := t.TempDir()
-	configurationPath := filepath.Join(root, "strider.toml")
-	configuration := `version = 1
-[linter.rules.no-init]
-severity = "warning"
-[analyzer.rules.suspicious-sleep]
+[checks.rules.suspicious-sleep]
 severity = "warning"
 `
 	if err := os.WriteFile(configurationPath, []byte(configuration), 0o600); err != nil {
@@ -944,9 +901,9 @@ func TestProjectConfigurationControlsFormatterLintAndAnalyzer(t *testing.T) {
 [formatter]
 end-of-line = "crlf"
 max-empty-lines = 0
-[linter.rules.no-init]
+[checks.rules.no-init]
 severity = "error"
-[analyzer.rules.invalid-regexp]
+[checks.rules.invalid-regexp]
 enabled = false
 `
 	if err := os.WriteFile(filepath.Join(root, "strider.toml"), []byte(configuration), 0o600); err != nil {
@@ -1048,10 +1005,7 @@ func TestLintBaselineGenerateApplyIgnoreAndPrune(t *testing.T) {
 		t.Fatalf("apply exit %d, stdout %q, stderr %q", code, stdout, stderr)
 	}
 	write("package p\nfunc init() {}\nfunc init() {}\n")
-	if code, stdout, stderr := run(); code != exitFindings || strings.Count(
-		stdout,
-		"note[no-init]",
-	) != 1 || stderr != "" {
+	if code, stdout, stderr := run(); code != exitFindings || strings.Count(stdout, "note[no-init]") != 1 || stderr != "" {
 		t.Fatalf("new issue exit %d, stdout %q, stderr %q", code, stdout, stderr)
 	}
 	if code, stdout, stderr := run("--ignore-baseline"); code != exitFindings || strings.Count(
@@ -1141,7 +1095,7 @@ func TestConfiguredAnalyzerBaseline(t *testing.T) {
 	}
 	if err := os.WriteFile(
 		filepath.Join(root, "strider.toml"),
-		[]byte("version = 1\n[analyzer]\nbaseline = \"analysis-baseline.toml\"\n"),
+		[]byte("version = 1\n[checks]\nbaseline = \"analysis-baseline.toml\"\n"),
 		0o600,
 	); err != nil {
 		t.Fatal(err)

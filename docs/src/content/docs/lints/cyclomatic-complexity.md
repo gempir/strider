@@ -3,7 +3,8 @@ title: cyclomatic-complexity
 description: Limit branching complexity in declared functions.
 ---
 
-**Default severity:** `warning`  
+**Default severity:** 🔵 `note`
+
 **Maximum:** `10`  
 **Configuration:** `enabled`, `severity`, and path `excludes`; maximum remains `10`
 

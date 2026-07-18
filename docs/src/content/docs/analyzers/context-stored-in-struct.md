@@ -3,7 +3,7 @@ title: context-stored-in-struct
 description: Detect context.Context fields in structs.
 ---
 
-**Default severity:** `warning`
+**Default severity:** 🟡 `warning`
 
 Contexts carry request-scoped cancellation, deadlines, and values. Keeping one
 in a struct obscures its lifetime and can accidentally reuse stale request

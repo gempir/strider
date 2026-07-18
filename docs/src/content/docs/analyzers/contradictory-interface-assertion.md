@@ -3,7 +3,7 @@ title: contradictory-interface-assertion
 description: Detect interface assertions with conflicting method signatures.
 ---
 
-**Default severity:** `error`
+**Default severity:** 🔴 `error`
 
 An assertion from one interface to another can compile even when the two
 method sets contain a same-named method with incompatible signatures. No

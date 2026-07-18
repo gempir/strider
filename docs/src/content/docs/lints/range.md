@@ -6,7 +6,7 @@ description: Simplify range statements and avoid unnecessary rune slices.
 Purpose: simplify range statements and remove allocations that do not change
 the yielded values.
 
-**Default severity:** `note`
+**Default severity:** 🔵 `note`
 
 ## Behavior
 

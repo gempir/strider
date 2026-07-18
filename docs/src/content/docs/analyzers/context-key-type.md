@@ -3,7 +3,7 @@ title: context-key-type
 description: Detect unsafe context.WithValue key types.
 ---
 
-**Default severity:** `warning`
+**Default severity:** 🟡 `warning`
 
 Context keys must be comparable and should use a dedicated named type to avoid
 collisions between packages. Built-in types and anonymous empty structs risk

@@ -3,7 +3,7 @@ title: separate-byte-string-map-key
 description: Detect allocated byte-to-string temporaries used only for map lookups.
 ---
 
-**Default severity:** `warning`
+**Default severity:** 🟡 `warning`
 
 The compiler can perform `items[string(bytes)]` without copying the byte slice
 because the temporary string cannot escape the lookup. Assigning

@@ -3,7 +3,7 @@ title: leaky-time-tick
 description: Detect time.Tick calls that leak on older Go versions.
 ---
 
-**Default severity:** `warning`
+**Default severity:** 🟡 `warning`
 
 Before Go 1.23, an unreferenced ticker could not be reclaimed unless it was
 stopped. Because `time.Tick` does not expose the ticker, returning functions

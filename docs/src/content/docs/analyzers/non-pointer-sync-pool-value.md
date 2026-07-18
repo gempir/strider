@@ -3,7 +3,7 @@ title: non-pointer-sync-pool-value
 description: Detect sync.Pool values that allocate while being stored.
 ---
 
-**Default severity:** `warning`
+**Default severity:** 🟡 `warning`
 
 `sync.Pool.Put` accepts an interface. Storing a concrete non-pointer value
 requires boxing it on the heap, adding the allocation the pool is intended to

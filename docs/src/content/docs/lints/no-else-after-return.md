@@ -3,7 +3,8 @@ title: no-else-after-return
 description: Remove unnecessary nesting after a terminal return.
 ---
 
-**Default severity:** `note`
+**Default severity:** 🔵 `note`
+
 **Configuration:** `enabled`, `severity`, and path `excludes`
 
 Reports an `else` when the final direct statement of the corresponding `if`

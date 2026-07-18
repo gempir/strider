@@ -4,9 +4,9 @@
     "type": "module",
     "packageManager": "bun@1.3.5",
     "scripts": {
-        "generate:lints": "go run ./scripts/generate-lint-docs.go",
-        "dev": "bun run generate:lints && astro dev",
-        "build": "bun run generate:lints && astro build",
+        "generate:checks": "go run ./scripts/generate-check-docs.go",
+        "dev": "bun run generate:checks && astro dev",
+        "build": "bun run generate:checks && astro build",
         "preview": "astro preview",
         "deploy": "wrangler deploy --config wrangler.jsonc"
     },

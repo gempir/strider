@@ -3,7 +3,7 @@ title: timer-reset-drain-race
 description: Detect attempts to drain a timer based on Reset's result.
 ---
 
-**Default severity:** `error`
+**Default severity:** 🔴 `error`
 
 Using `time.Timer.Reset`'s boolean result to decide whether to receive from the
 timer channel is racy on older timer implementations and can block with

@@ -3,7 +3,8 @@ title: max-parameters
 description: Limit declared functions to five parameters.
 ---
 
-**Default severity:** `warning`  
+**Default severity:** 🔵 `note`
+
 **Maximum:** `5`  
 **Configuration:** `enabled`, `severity`, and path `excludes`; maximum remains `5`
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -34,8 +35,90 @@ func Text(writer io.Writer, diagnostics []diagnostic.Diagnostic, colorMode ui.Co
 	if len(diagnostics) == 0 {
 		return nil
 	}
-	_, err := fmt.Fprintf(writer, "\n%s\n", summary(diagnostics, counts, palette))
+	if _, err := fmt.Fprintf(writer, "\n%s\n", summary(diagnostics, counts, palette)); err != nil {
+		return err
+	}
+	return writeCheckSummary(writer, diagnostics, palette)
+}
+
+type checkCount struct {
+	code string
+	count int
+	severity diagnostic.Severity
+}
+
+func writeCheckSummary(writer io.Writer, diagnostics []diagnostic.Diagnostic, palette ui.Palette) error {
+	byCode := make(map[string]checkCount)
+	codeWidth := 0
+	for _, item := range diagnostics {
+		entry := byCode[item.Code]
+		entry.code = item.Code
+		entry.count++
+		if item.Severity.AtLeast(entry.severity) || entry.severity == "" {
+			entry.severity = item.Severity
+		}
+		byCode[item.Code] = entry
+		codeWidth = max(codeWidth, utf8.RuneCountInString(item.Code))
+	}
+	entries := make([]checkCount, 0, len(byCode))
+	for _, entry := range byCode {
+		entries = append(entries, entry)
+	}
+	sort.Slice(
+		entries,
+		func(left, right int) bool {
+			if entries[left].count != entries[right].count {
+				return entries[left].count > entries[right].count
+			}
+			return entries[left].code < entries[right].code
+		},
+	)
+	if _, err := fmt.Fprintf(
+		writer,
+		"\n%s %s\n",
+		palette.Accent("  ┌─"),
+		palette.Bold("Check summary"),
+	); err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		code := fmt.Sprintf("%-*s", codeWidth, entry.code)
+		count := styledSeverity(entry.severity, fmt.Sprintf("%d ×", entry.count), palette)
+		if _, err := fmt.Fprintf(
+			writer,
+			"%s %s  %s\n",
+			palette.Accent("  │"),
+			palette.Code(code),
+			count,
+		); err != nil {
+			return err
+		}
+	}
+	label := "checks broken"
+	if len(entries) == 1 {
+		label = "check broken"
+	}
+	_, err := fmt.Fprintf(
+		writer,
+		"%s %s\n",
+		palette.Accent("  └─"),
+		styledSeverity(
+			highestSeverityFromDiagnostics(diagnostics),
+			fmt.Sprintf("%d %s", len(entries), label),
+			palette,
+		),
+	)
 	return err
+}
+
+func highestSeverityFromDiagnostics(diagnostics []diagnostic.Diagnostic) diagnostic.Severity {
+	severity := diagnostic.SeverityNote
+	for _, item := range diagnostics {
+		if item.Severity.AtLeast(severity) {
+			severity = item.Severity
+		}
+	}
+	return severity
 }
 
 func writeDiagnostic(

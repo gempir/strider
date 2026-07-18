@@ -3,7 +3,7 @@ title: unreachable-type-switch-case
 description: Detect type-switch cases hidden by earlier interfaces.
 ---
 
-**Default severity:** `warning`
+**Default severity:** 🟡 `warning`
 
 Type-switch cases are evaluated in source order. A later concrete type or
 narrower interface is unreachable when it necessarily implements an interface

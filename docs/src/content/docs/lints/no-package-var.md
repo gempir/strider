@@ -3,7 +3,8 @@ title: no-package-var
 description: Avoid mutable variables at package scope.
 ---
 
-**Default severity:** `warning`  
+**Default severity:** 🔵 `note`
+
 **Configuration:** `enabled`, `severity`, and path `excludes`; blank identifiers remain exempt
 
 Reports every non-blank name declared by a package-level `var`. Package

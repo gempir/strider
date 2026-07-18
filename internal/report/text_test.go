@@ -45,10 +45,42 @@ func TestTextRendersSourceAnnotationAndSummary(t *testing.T) {
 		"  \x1b[1;36m│",
 		"note",
 		"found 1 issue: 1 warning",
+		"Check summary",
+		"no-init",
+		"1 ×",
+		"1 check broken",
 	} {
 		if !strings.Contains(output.String(), wanted) {
 			t.Fatalf("output missing %q:\n%s", wanted, output.String())
 		}
+	}
+}
+
+func TestTextRendersCleanSummary(t *testing.T) {
+	var output bytes.Buffer
+	if err := Text(&output, nil, ui.ColorNever); err != nil {
+		t.Fatal(err)
+	}
+	if output.String() != "" {
+		t.Fatalf("clean summary = %q", output.String())
+	}
+}
+
+func TestTextSummarizesFindingsByCheck(t *testing.T) {
+	diagnostics := []diagnostic.Diagnostic{
+		{Code: "second", Message: "one", Severity: diagnostic.SeverityWarning, File: "missing.go"},
+		{Code: "first", Message: "one", Severity: diagnostic.SeverityError, File: "missing.go"},
+		{Code: "first", Message: "two", Severity: diagnostic.SeverityError, File: "missing.go"},
+	}
+	var output bytes.Buffer
+	if err := Text(&output, diagnostics, ui.ColorNever); err != nil {
+		t.Fatal(err)
+	}
+	text := output.String()
+	first := strings.Index(text, "first   2 ×")
+	second := strings.Index(text, "second  1 ×")
+	if first < 0 || second < 0 || first >= second || !strings.Contains(text, "2 checks broken") {
+		t.Fatalf("unexpected check summary:\n%s", text)
 	}
 }
 

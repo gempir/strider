@@ -38,7 +38,7 @@ func Text(writer io.Writer, diagnostics []diagnostic.Diagnostic, colorMode ui.Co
 	if _, err := fmt.Fprintf(writer, "\n%s\n", summary(diagnostics, counts, palette)); err != nil {
 		return err
 	}
-	return writeCheckSummary(writer, diagnostics, palette)
+	return writeCheckCounts(writer, diagnostics, palette)
 }
 
 type checkCount struct {
@@ -47,7 +47,7 @@ type checkCount struct {
 	severity diagnostic.Severity
 }
 
-func writeCheckSummary(writer io.Writer, diagnostics []diagnostic.Diagnostic, palette ui.Palette) error {
+func writeCheckCounts(writer io.Writer, diagnostics []diagnostic.Diagnostic, palette ui.Palette) error {
 	byCode := make(map[string]checkCount)
 	codeWidth := 0
 	for _, item := range diagnostics {
@@ -73,52 +73,17 @@ func writeCheckSummary(writer io.Writer, diagnostics []diagnostic.Diagnostic, pa
 			return entries[left].code < entries[right].code
 		},
 	)
-	if _, err := fmt.Fprintf(
-		writer,
-		"\n%s %s\n",
-		palette.Accent("  ┌─"),
-		palette.Bold("Check summary"),
-	); err != nil {
+	if _, err := fmt.Fprintln(writer); err != nil {
 		return err
 	}
 	for _, entry := range entries {
 		code := fmt.Sprintf("%-*s", codeWidth, entry.code)
 		count := styledSeverity(entry.severity, fmt.Sprintf("%d ×", entry.count), palette)
-		if _, err := fmt.Fprintf(
-			writer,
-			"%s %s  %s\n",
-			palette.Accent("  │"),
-			palette.Code(code),
-			count,
-		); err != nil {
+		if _, err := fmt.Fprintf(writer, "%s  %s\n", palette.Code(code), count); err != nil {
 			return err
 		}
 	}
-	label := "checks broken"
-	if len(entries) == 1 {
-		label = "check broken"
-	}
-	_, err := fmt.Fprintf(
-		writer,
-		"%s %s\n",
-		palette.Accent("  └─"),
-		styledSeverity(
-			highestSeverityFromDiagnostics(diagnostics),
-			fmt.Sprintf("%d %s", len(entries), label),
-			palette,
-		),
-	)
-	return err
-}
-
-func highestSeverityFromDiagnostics(diagnostics []diagnostic.Diagnostic) diagnostic.Severity {
-	severity := diagnostic.SeverityNote
-	for _, item := range diagnostics {
-		if item.Severity.AtLeast(severity) {
-			severity = item.Severity
-		}
-	}
-	return severity
+	return nil
 }
 
 func writeDiagnostic(

@@ -15,8 +15,8 @@ func TestDefaultsUseVersionOneAndWideFormatting(t *testing.T) {
 	if defaults.Formatter.PrintWidth != 180 || defaults.Formatter.MaxEmptyLines != 1 {
 		t.Fatalf("unexpected formatter defaults: %#v", defaults.Formatter)
 	}
-	if defaults.Checks.MinimumSeverity != "note" {
-		t.Fatalf("default minimum severity = %q, want note", defaults.Checks.MinimumSeverity)
+	if defaults.Checks.MinimumSeverity != "warning" {
+		t.Fatalf("default minimum severity = %q, want warning", defaults.Checks.MinimumSeverity)
 	}
 }
 

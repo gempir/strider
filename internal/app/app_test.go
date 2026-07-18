@@ -211,6 +211,8 @@ func TestCheckCombinesFormattingSyntaxAndPackageChecks(t *testing.T) {
 			"check",
 			"--format",
 			"json",
+			"--minimum-severity",
+			"note",
 			"--only",
 			"format,no-init,invalid-regexp",
 			filename,
@@ -243,7 +245,7 @@ func TestCheckCombinesFormattingSyntaxAndPackageChecks(t *testing.T) {
 func TestCheckListsOneUnifiedCatalog(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(
-		[]string{"--no-config", "check", "--all", "--list-checks"},
+		[]string{"--no-config", "check", "--all", "--minimum-severity", "note", "--list-checks"},
 		strings.NewReader(""),
 		&stdout,
 		&stderr,
@@ -258,6 +260,27 @@ func TestCheckListsOneUnifiedCatalog(t *testing.T) {
 		if !strings.Contains(stdout.String(), wanted) {
 			t.Fatalf("unified catalog missing %q", wanted)
 		}
+	}
+}
+
+func TestCheckDefaultsToWarningMinimumSeverity(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(
+		[]string{"--no-config", "check", "--only", "no-init,invalid-regexp", "--list-checks"},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitSuccess || stderr.Len() != 0 || strings.Contains(stdout.String(), "no-init\t") || !strings.Contains(
+		stdout.String(),
+		"invalid-regexp\terror\t",
+	) {
+		t.Fatalf(
+			"default severity floor: exit %d, stdout %q, stderr %q",
+			code,
+			stdout.String(),
+			stderr.String(),
+		)
 	}
 }
 
@@ -611,6 +634,8 @@ func TestCheckBaselineDoesNotCaptureFormattingDebt(t *testing.T) {
 			"check",
 			"--only",
 			"format,no-init",
+			"--minimum-severity",
+			"note",
 			"--baseline",
 			baselinePath,
 			"--generate-baseline",
@@ -643,7 +668,16 @@ func TestLintJSONAndExitCode(t *testing.T) {
 	}
 	var stdout, stderr bytes.Buffer
 	code := Run(
-		[]string{"lint", "--format", "json", "--only", "no-init", root},
+		[]string{
+			"lint",
+			"--format",
+			"json",
+			"--minimum-severity",
+			"note",
+			"--only",
+			"no-init",
+			root,
+		},
 		strings.NewReader(""),
 		&stdout,
 		&stderr,
@@ -664,7 +698,16 @@ func TestLintHTMLAndExitCode(t *testing.T) {
 	}
 	var stdout, stderr bytes.Buffer
 	code := Run(
-		[]string{"lint", "--format", "html", "--only", "no-init", root},
+		[]string{
+			"lint",
+			"--format",
+			"html",
+			"--minimum-severity",
+			"note",
+			"--only",
+			"no-init",
+			root,
+		},
 		strings.NewReader(""),
 		&stdout,
 		&stderr,
@@ -695,7 +738,16 @@ func TestColorFlagRendersRichDiagnosticsAndLeavesJSONPlain(t *testing.T) {
 
 	var stdout, stderr bytes.Buffer
 	code := Run(
-		[]string{"--color", "always", "lint", "--only", "no-init", filename},
+		[]string{
+			"--color",
+			"always",
+			"lint",
+			"--minimum-severity",
+			"note",
+			"--only",
+			"no-init",
+			filename,
+		},
 		strings.NewReader(""),
 		&stdout,
 		&stderr,
@@ -711,7 +763,17 @@ func TestColorFlagRendersRichDiagnosticsAndLeavesJSONPlain(t *testing.T) {
 
 	stdout.Reset()
 	code = Run(
-		[]string{"--color=always", "lint", "--format", "json", "--only", "no-init", filename},
+		[]string{
+			"--color=always",
+			"lint",
+			"--format",
+			"json",
+			"--minimum-severity",
+			"note",
+			"--only",
+			"no-init",
+			filename,
+		},
 		strings.NewReader(""),
 		&stdout,
 		&stderr,
@@ -725,7 +787,7 @@ func TestConfiguredColorAndCLIOverride(t *testing.T) {
 	t.Setenv("FORCE_COLOR", "")
 	t.Setenv("NO_COLOR", "")
 	root := t.TempDir()
-	configuration := "version = 1\ncolor = \"always\"\n"
+	configuration := "version = 1\ncolor = \"always\"\n[checks]\nminimum-severity = \"note\"\n"
 	if err := os.WriteFile(filepath.Join(root, "strider.toml"), []byte(configuration), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -804,7 +866,12 @@ func TestLintWithoutPathsScansCurrentDirectory(t *testing.T) {
 		_ = os.Chdir(previous)
 	})
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{"lint", "--only", "no-init"}, strings.NewReader(""), &stdout, &stderr)
+	code := Run(
+		[]string{"lint", "--minimum-severity", "note", "--only", "no-init"},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
 	if code != exitFindings || !strings.Contains(stdout.String(), "no-init") {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
@@ -813,7 +880,7 @@ func TestLintWithoutPathsScansCurrentDirectory(t *testing.T) {
 func TestLintAllRulesListsCompleteRegistry(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(
-		[]string{"lint", "--all-rules", "--list-rules"},
+		[]string{"lint", "--all-rules", "--minimum-severity", "note", "--list-rules"},
 		strings.NewReader(""),
 		&stdout,
 		&stderr,
@@ -991,7 +1058,15 @@ func TestLintBaselineGenerateApplyIgnoreAndPrune(t *testing.T) {
 
 	run := func(extra... string) (int, string, string) {
 		t.Helper()
-		args := []string{"lint", "--only", "no-init", "--baseline", baselinePath}
+		args := []string{
+			"lint",
+			"--minimum-severity",
+			"note",
+			"--only",
+			"no-init",
+			"--baseline",
+			baselinePath,
+		}
 		args = append(args, extra...)
 		args = append(args, filename)
 		var stdout, stderr bytes.Buffer

@@ -35,11 +35,11 @@ strider check --list-checks
 strider check --explain invalid-regexp
 ```
 
-The default profile contains 118 checks: formatting, seven style and
-maintainability checks, and 110 correctness and data-flow checks. Use
-`strider check --all` to enable the complete 227-check catalog. `--only` selects
-exactly the named codes and avoids building program information that those
-checks do not need.
+The built-in profile selects 118 checks. With the default warning severity
+floor, 96 warning and error checks run; use `--minimum-severity note` to include
+the profile's notes. `strider check --all --minimum-severity note` enables the
+complete 227-check catalog. `--only` selects exactly the named codes and avoids
+building program information that those checks do not need.
 
 Formatting is the `format` check. It reports an unformatted file without
 modifying it and suggests `strider fmt` as the remedy. Strider internally

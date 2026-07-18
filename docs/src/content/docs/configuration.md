@@ -176,13 +176,14 @@ Tool-wide settings live under `[checks]`.
 | `excludes` | string list | `[]` | Skip matching files for all checks. |
 | `baseline` | string | unset | Apply this baseline unless the CLI overrides or ignores it. Relative paths resolve from `strider.toml`. |
 | `baseline-variant` | string | `"loose"` | Shape used the next time a baseline is generated: `"loose"` or `"strict"`. |
-| `minimum-severity` | string | `"note"` | Run only checks whose effective severity is at least `"note"`, `"warning"`, or `"error"`. |
+| `minimum-severity` | string | `"warning"` | Run only checks whose effective severity is at least `"note"`, `"warning"`, or `"error"`. |
 | `rules` | table | `{}` | Common configuration keyed by any registered check code. |
 
-The default profile contains 118 checks: `format`, seven style and
-maintainability checks, and all 110 package-aware correctness checks. The other
-109 style and maintainability checks are optional. `strider check --all` enables
-all 227 checks.
+The built-in profile selects 118 checks: `format`, seven style and
+maintainability checks, and all 110 package-aware correctness checks. The
+default warning floor runs 96 of them. The other 109 style and maintainability
+checks are optional. `strider check --all --minimum-severity note` enables all
+227 checks.
 
 Every code accepts the same three options:
 

@@ -45,10 +45,8 @@ func TestTextRendersSourceAnnotationAndSummary(t *testing.T) {
 		"  \x1b[1;36m│",
 		"note",
 		"found 1 issue: 1 warning",
-		"Check summary",
 		"no-init",
 		"1 ×",
-		"1 check broken",
 	} {
 		if !strings.Contains(output.String(), wanted) {
 			t.Fatalf("output missing %q:\n%s", wanted, output.String())
@@ -77,9 +75,12 @@ func TestTextSummarizesFindingsByCheck(t *testing.T) {
 		t.Fatal(err)
 	}
 	text := output.String()
-	first := strings.Index(text, "first   2 ×")
-	second := strings.Index(text, "second  1 ×")
-	if first < 0 || second < 0 || first >= second || !strings.Contains(text, "2 checks broken") {
+	first := strings.Index(text, "\nfirst   2 ×")
+	second := strings.Index(text, "\nsecond  1 ×")
+	if first < 0 || second < 0 || first >= second || strings.Contains(text, "Check summary") || strings.Contains(
+		text,
+		"checks broken",
+	) {
 		t.Fatalf("unexpected check summary:\n%s", text)
 	}
 }

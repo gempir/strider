@@ -62,7 +62,7 @@ func Defaults() Config {
 func defaultToolConfig() ToolConfig {
 	return ToolConfig{
 		BaselineVariant: "loose",
-		MinimumSeverity: string(diagnostic.SeverityNote),
+		MinimumSeverity: string(diagnostic.SeverityWarning),
 		Rules: make(map[string]RuleConfig),
 	}
 }

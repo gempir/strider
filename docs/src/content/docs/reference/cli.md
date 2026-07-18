@@ -46,8 +46,9 @@ JSON and formatted source are never decorated with ANSI escapes.
 strider check [OPTIONS] [FILE|DIR]...
 ```
 
-`check` is read-only. Its default profile contains 118 checks, including code
-`format`; `--all` enables the complete 227-check catalog.
+`check` is read-only. Its built-in profile selects 118 checks; the default
+warning floor runs 96. `--all --minimum-severity note` enables the complete
+227-check catalog, including `format`.
 
 ### Selection and reporting
 

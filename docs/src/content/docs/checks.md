@@ -16,16 +16,16 @@ changing its public code.
 
 ## Run checks
 
-Run the configured profile, which contains 118 checks by default:
+Run the configured profile. Its default warning floor runs 96 checks:
 
 ```sh
 strider check [PATH]...
 ```
 
-Run the complete 227-check catalog:
+Run the complete 227-check catalog, including notes:
 
 ```sh
-strider check --all [PATH]...
+strider check --all --minimum-severity note [PATH]...
 ```
 
 Run exactly a subset of codes:

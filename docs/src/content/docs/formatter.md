@@ -1,6 +1,6 @@
 ---
 title: Formatter
-description: Strider's strict formatting profile, write workflows, and safety model.
+description: Strider's strict formatting profile and write workflows.
 sidebar:
   badge:
     text: warning
@@ -66,29 +66,3 @@ excludes = ["internal/generated/**"]
 Formatter exclusions apply both to `strider fmt` and to the `format` check. See
 [Configuration](/configuration/#formatter) for ranges and the fixed parts of
 Strider's formatting profile.
-
-## Safety checks
-
-Before a file can be written, Strider:
-
-1. Parses and preflights the complete file.
-2. Renders and reparses the result.
-3. Confirms that the syntax fingerprint is unchanged.
-4. Confirms that comment contents and ordering are unchanged.
-5. Formats the result again and requires byte-for-byte idempotence.
-
-For a batch write, every file must pass before temporary files are staged and
-atomically renamed. One unsupported or invalid file prevents the entire batch
-from being written.
-
-## Current syntax boundary
-
-The formatter supports ordinary application code, including generics, type
-switches, `select`, channel sends, `goto`, `fallthrough`, and labeled
-statements. Some comments embedded deeply inside expressions remain outside the
-current syntax boundary. Refusal is an exit-code `2` error and never produces a
-partial file.
-
-Use `//strider:format-ignore` anywhere in a file to return that file unchanged.
-This is currently a file-level escape hatch; region and next-node formatting
-ignores are not implemented.

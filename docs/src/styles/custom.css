@@ -257,9 +257,16 @@ h1[data-page-title],
     font-weight: 650;
 }
 
-.sl-markdown-content td,
-.sl-markdown-content th {
+.sl-markdown-content table :is(td, th):not(:where(.not-content *)) {
     border-color: var(--sl-color-hairline-light);
+    padding: 0.75rem 1rem;
+    text-align: start;
+    vertical-align: top;
+}
+
+.sl-markdown-content table :is(td, th):first-child:not(:where(.not-content *)) {
+    width: 1%;
+    white-space: nowrap;
 }
 
 .right-sidebar {
@@ -387,6 +394,11 @@ h1[data-page-title],
     font-weight: 600;
 }
 
+.land-terminal .t-note {
+    color: #5794d8;
+    font-weight: 600;
+}
+
 .land-terminal .t-ok {
     color: #00ff00;
     font-weight: 600;
@@ -395,6 +407,10 @@ h1[data-page-title],
 .land-terminal .t-path {
     color: var(--strider-terminal-code);
     font-weight: 600;
+}
+
+.sl-markdown-content .report-terminal {
+    margin-block: 1rem;
 }
 
 /* Feature grid */

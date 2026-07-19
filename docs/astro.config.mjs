@@ -45,15 +45,10 @@ export default defineConfig({
           ],
         },
         {
-          label: 'Guides',
+          label: 'Checks',
           items: [
             { slug: 'formatter', label: 'The formatter' },
             { slug: 'checks', label: 'Running checks' },
-          ],
-        },
-        {
-          label: 'Check catalog',
-          items: [
             {
               label: 'Style and maintainability',
               collapsed: true,
@@ -67,7 +62,7 @@ export default defineConfig({
           ],
         },
         {
-          label: 'In the wild',
+          label: 'Benchmarks',
           collapsed: true,
           items: [{ autogenerate: { directory: 'benchmarks' } }],
         },

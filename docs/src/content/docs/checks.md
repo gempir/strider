@@ -79,11 +79,8 @@ strider check --explain invalid-regexp
 ```
 
 Strider includes one reserved `format` check, 116 style and maintainability
-checks, and 110 correctness and data-flow checks. The reference groups them by
-purpose for browsing:
-
-- [Style and maintainability checks](/lints/)
-- [Correctness and safety checks](/analyzers/)
+checks, and 110 correctness and data-flow checks. Individual check pages are
+grouped by purpose in the documentation sidebar.
 
 ## Configure checks
 
@@ -120,8 +117,11 @@ Formatting participates as code `format`. An unformatted file produces a normal
 note at the start of the file and suggests the write-focused formatter:
 
 ```text
-warning[format]: file is not formatted
+format: file is not formatted
   ┌─ main.go:1:1
+  │
+1 │ package main
+2 │
   = help: run `strider fmt main.go`
 ```
 
@@ -133,15 +133,17 @@ by baselines.
 
 Text is the default human-readable report format:
 
-```text
-note[no-init]: replace init with explicit initialization
-  ┌─ main.go:12:1
-  │
-12 │ func init() {
-   │ ^^^^^^^^^^^^^
-
-found 1 issue: 1 note
-```
+<div class="land-terminal report-terminal">
+<pre><code><span class="t-note">no-init</span>: <strong>replace init with explicit initialization</strong>
+   <span class="t-path">┌─ main.go:12:6</span>
+   <span class="t-path">│</span>
+11 <span class="t-path">│</span>
+12 <span class="t-path">│</span> func <span class="t-note">init</span>() {
+13 <span class="t-path">│</span>     configure()
+<span aria-hidden="true"> </span>
+<span class="t-note">no-init</span>  <span class="t-note">1</span>
+<strong>found 1 issue:</strong> <span class="t-note">1 note</span></code></pre>
+</div>
 
 Use JSON for integrations or HTML for a self-contained artifact:
 

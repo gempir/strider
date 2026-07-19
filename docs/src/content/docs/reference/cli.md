@@ -5,7 +5,7 @@ description: Check and format commands, global options, reports, baselines, stre
 
 ## Synopsis
 
-```text
+```sh
 strider [--config PATH|--no-config] [--color auto|always|never] COMMAND [OPTIONS] [FILE|DIR]...
 ```
 
@@ -45,7 +45,7 @@ JSON and formatted source are never decorated with ANSI escapes.
 
 ## `strider check`
 
-```text
+```sh
 strider check [OPTIONS] [FILE|DIR]...
 ```
 
@@ -97,7 +97,7 @@ an update. Code `format` is never stored in a baseline.
 
 ## `strider fmt`
 
-```text
+```sh
 strider fmt [--check|--diff|--write|--stdin] [FILE|DIR]...
 ```
 
@@ -132,9 +132,9 @@ marker are skipped. Configuration can add tool-wide and per-check exclusions.
 - Successful baseline generation writes the file without printing diagnostics.
 
 Text diagnostics use a rich, source-annotated layout with a severity-colored
-heading, file location, source line, underlined span, notes or suggested
-remedies, and an aggregate severity summary. Redirected output remains plain
-under the default `auto` mode.
+heading and source span, file location, one surrounding line on either side,
+notes or suggested remedies, and an aggregate severity summary. Redirected
+output remains plain under the default `auto` mode.
 
 Severity-bearing rule codes use the same color as their severity: red for
 errors, yellow for warnings, and blue for notes.

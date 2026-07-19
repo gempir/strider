@@ -1,0 +1,100 @@
+name: release
+
+on:
+    release:
+        types: [published]
+
+permissions:
+    contents: read
+
+concurrency:
+    group: release-${{ github.event.release.tag_name }}
+    cancel-in-progress: false
+
+jobs:
+    build:
+        name: ${{ matrix.goos }}-${{ matrix.goarch }}
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - goos: linux
+                      goarch: amd64
+                      binary: strider
+                      extension: tar.gz
+                    - goos: linux
+                      goarch: arm64
+                      binary: strider
+                      extension: tar.gz
+                    - goos: darwin
+                      goarch: amd64
+                      binary: strider
+                      extension: tar.gz
+                    - goos: darwin
+                      goarch: arm64
+                      binary: strider
+                      extension: tar.gz
+                    - goos: windows
+                      goarch: amd64
+                      binary: strider.exe
+                      extension: zip
+                    - goos: windows
+                      goarch: arm64
+                      binary: strider.exe
+                      extension: zip
+        steps:
+            - uses: actions/checkout@v6
+              with:
+                  ref: ${{ github.event.release.tag_name }}
+            - uses: actions/setup-go@v6
+              with:
+                  go-version-file: go.mod
+            - name: Build
+              env:
+                  CGO_ENABLED: "0"
+                  GOOS: ${{ matrix.goos }}
+                  GOARCH: ${{ matrix.goarch }}
+                  RELEASE_TAG: ${{ github.event.release.tag_name }}
+              run: |
+                  archive_version="${RELEASE_TAG//\//-}"
+                  archive="strider-${archive_version}-${GOOS}-${GOARCH}.${{ matrix.extension }}"
+                  mkdir -p package dist
+                  go build -trimpath \
+                    -ldflags "-s -w -X github.com/gempir/strider/internal/app.version=${RELEASE_TAG}" \
+                    -o "package/${{ matrix.binary }}" ./cmd/strider
+
+                  if [[ "${{ matrix.extension }}" == "zip" ]]; then
+                    (cd package && zip -q "../dist/${archive}" "${{ matrix.binary }}")
+                  else
+                    tar -C package -czf "dist/${archive}" "${{ matrix.binary }}"
+                  fi
+            - name: Upload archive
+              uses: actions/upload-artifact@v7
+              with:
+                  name: strider-${{ matrix.goos }}-${{ matrix.goarch }}
+                  path: dist/*
+                  if-no-files-found: error
+
+    release:
+        needs: build
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        steps:
+            - name: Download archives
+              uses: actions/download-artifact@v8
+              with:
+                  pattern: "strider-*"
+                  path: dist
+                  merge-multiple: true
+            - name: Create checksums
+              run: |
+                  cd dist
+                  sha256sum strider-* > checksums.txt
+            - name: Upload release assets
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  GH_REPO: ${{ github.repository }}
+                  RELEASE_TAG: ${{ github.event.release.tag_name }}
+              run: gh release upload "$RELEASE_TAG" dist/* --clobber

@@ -77,9 +77,14 @@ func runCheck(args []string, configuration config.Config, colorMode ui.ColorMode
 	if !ok {
 		return exitError
 	}
+	selected := []string(only)
+	if *explain != "" {
+		selected = []string{*explain}
+		minimumSeverity = diagnostic.SeverityNone
+	}
 	registry, err := checkengine.NewRegistry(
 		checkengine.RegistryOptions{
-			Only:            only,
+			Only:            selected,
 			Settings:        checkConfig.Rules,
 			MinimumSeverity: minimumSeverity,
 			FormatExcludes:  configuration.Formatter.Excludes,

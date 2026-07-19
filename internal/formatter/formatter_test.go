@@ -102,17 +102,25 @@ func F() {
 	}
 }
 
-func TestFormatOptionsControlWidth(t *testing.T) {
-	source := []byte("package p\nfunc f(){call(alpha,beta,gamma,delta,epsilon)}\n")
-	wide, err := FormatWithOptions("fixture.go", source, Options{
-		PrintWidth: 100,
-	})
+func TestFormatOwnsIfInitializerLineLayout(t *testing.T) {
+	input := []byte("package p\nfunc f() error {\nif value, err :=\nload(); err != nil { return err }; _ = value; return nil\n}\n")
+	result, err := Format("if-init.go", input)
 	if err != nil {
 		t.Fatal(err)
 	}
-	narrow, err := FormatWithOptions("fixture.go", source, Options{
-		PrintWidth: 40,
-	})
+	want := "if value, err := load(); err != nil {"
+	if !strings.Contains(string(result.Source), want) {
+		t.Fatalf("formatter did not canonicalize the initializer layout:\n%s", result.Source)
+	}
+}
+
+func TestFormatOptionsControlWidth(t *testing.T) {
+	source := []byte("package p\nfunc f(){call(alpha,beta,gamma,delta,epsilon)}\n")
+	wide, err := FormatWithOptions("fixture.go", source, Options{PrintWidth: 100})
+	if err != nil {
+		t.Fatal(err)
+	}
+	narrow, err := FormatWithOptions("fixture.go", source, Options{PrintWidth: 40})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -145,21 +153,22 @@ func TestFormatGotoAndFallthrough(t *testing.T) {
 			input: "package p\nfunc F(v int) { switch v { case 1: fallthrough; default: return } }\n",
 			want:  "package p\n\nfunc F(v int) {\n\tswitch v {\n\tcase 1:\n\t\tfallthrough\n\tdefault:\n\t\treturn\n\t}\n}\n",
 		},
-		"goto": {
-			input: "package p\nfunc F() { goto done; done: return }\n",
-			want:  "package p\n\nfunc F() {\n\tgoto done\ndone:\n\treturn\n}\n",
-		},
+		"goto": {input: "package p\nfunc F() { goto done; done: return }\n", want: "package p\n\nfunc F() {\n\tgoto done\ndone:\n\treturn\n}\n"},
 	}
 	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			result, err := Format(name+".go", []byte(test.input))
-			if err != nil {
-				t.Fatal(err)
-			}
-			if got := string(result.Source); got != test.want {
-				t.Fatalf("formatted source:\n%s\nwant:\n%s", got, test.want)
-			}
-		})
+		t.Run(
+			name,
+			func(t *testing.T) {
+				result,
+					err := Format(name+".go", []byte(test.input))
+				if err != nil {
+					t.Fatal(err)
+				}
+				if got := string(result.Source); got != test.want {
+					t.Fatalf("formatted source:\n%s\nwant:\n%s", got, test.want)
+				}
+			},
+		)
 	}
 }
 
@@ -202,9 +211,7 @@ var _ = Map[string, int]
 
 func TestFormatBreaksLongGenericLists(t *testing.T) {
 	input := []byte("package p\nfunc Transform[VeryLongInputType any,VeryLongOutputType comparable](value VeryLongInputType)VeryLongOutputType{return Convert[VeryLongInputType,VeryLongOutputType](value)}\n")
-	result, err := FormatWithOptions("generics.go", input, Options{
-		PrintWidth: 40,
-	})
+	result, err := FormatWithOptions("generics.go", input, Options{PrintWidth: 40})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -258,6 +265,29 @@ func TestFormatIgnoreReturnsExactInput(t *testing.T) {
 	}
 }
 
+func TestFormatIgnoreRequiresACommentDirective(t *testing.T) {
+	input := []byte("package p\nconst marker = `//strider:format-ignore`\nfunc F( ){ }\n")
+	result, err := Format("not-ignored.go", input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Ignored || !result.Changed {
+		t.Fatalf("string contents acted as a directive: %#v", result)
+	}
+	if !strings.Contains(string(result.Source), "func F() {}") {
+		t.Fatalf("source was not formatted:\n%s", result.Source)
+	}
+}
+
+func TestFormatRejectsOutOfRangePrintWidthAtAPI(t *testing.T) {
+	for _, width := range []int{0, 39, 501} {
+		_, err := FormatWithOptions("width.go", []byte("package p\n"), Options{PrintWidth: width})
+		if err == nil || !strings.Contains(err.Error(), "print width must be between 40 and 500") {
+			t.Errorf("width %d: got %v, want range error", width, err)
+		}
+	}
+}
+
 func TestFormatPreservesBuildConstraintSeparation(t *testing.T) {
 	input := []byte("//go:build linux\n\n// Package p is a fixture.\npackage p\nfunc F(){return}\n")
 	result, err := Format("constraint.go", input)
@@ -286,8 +316,7 @@ func F(v int) int {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(result.Source), "// the first case\n\tcase 1:") ||
-		!strings.Contains(string(result.Source), "default: // fallback") {
+	if !strings.Contains(string(result.Source), "// the first case\n\tcase 1:") || !strings.Contains(string(result.Source), "default: // fallback") {
 		t.Fatalf("case comments moved:\n%s", result.Source)
 	}
 }
@@ -442,30 +471,30 @@ func B() {}
 }
 
 func FuzzFormatRoundTrip(f *testing.F) {
-	seeds := []string{
-		"package p\n",
-		"package p\nfunc F(a, b int) int { return a + b }\n",
-		"package p\ntype T struct { Name string; Values []int }\n",
-	}
+	seeds := []string{"package p\n", "package p\nfunc F(a, b int) int { return a + b }\n", "package p\ntype T struct { Name string; Values []int }\n"}
 	for _, seed := range seeds {
 		f.Add(seed)
 	}
-	f.Fuzz(func(t *testing.T, source string) {
-		if !strings.Contains(source, "package ") {
-			return
-		}
-		result, err := Format("fuzz.go", []byte(source))
-		if err != nil {
-			return
-		}
-		second, err := Format("fuzz.go", result.Source)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if string(result.Source) != string(second.Source) {
-			t.Fatal("formatter is not idempotent")
-		}
-	})
+	f.Fuzz(
+		func(t *testing.T, source string) {
+			if !strings.Contains(source, "package ") {
+				return
+			}
+			result,
+				err := Format("fuzz.go", []byte(source))
+			if err != nil {
+				return
+			}
+			second,
+				err := Format("fuzz.go", result.Source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(result.Source) != string(second.Source) {
+				t.Fatal("formatter is not idempotent")
+			}
+		},
+	)
 }
 
 func BenchmarkFormat(b *testing.B) {

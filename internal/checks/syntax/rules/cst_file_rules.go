@@ -25,16 +25,20 @@ func (a *cstAnalyzer) checkFilenameAndPackage() {
 	}
 	name := nameToken.Src()
 	base := filepath.Base(a.filename)
+	packageName := name
+	if strings.HasSuffix(base, "_test.go") && strings.HasSuffix(packageName, "_test") {
+		packageName = strings.TrimSuffix(packageName, "_test")
+	}
 	if a.enabled["filename-format"] && !validFilenamePattern.MatchString(base) {
 		a.report("filename-format", nameToken, "filename does not match the supported Go filename format")
 	}
-	if a.enabled["package-naming"] && name != "main" && !validPackagePattern.MatchString(name) {
+	if a.enabled["package-naming"] && name != "main" && !validPackagePattern.MatchString(packageName) {
 		a.report("package-naming", nameToken, "package name should be short, lower-case, and contain no separators")
 	}
-	if a.enabled["package-directory-mismatch"] && name != "main" && !pathContains(a.filename, "testdata") {
+	if a.enabled["package-directory-mismatch"] && packageName != "main" && !pathContains(a.filename, "testdata") {
 		directory := filepath.Base(filepath.Dir(a.filename))
 		normalized := strings.ReplaceAll(strings.ReplaceAll(directory, "-", ""), "_", "")
-		if normalized != "" && normalized != name && !strings.HasPrefix(directory, ".") {
+		if normalized != "" && normalized != packageName && !strings.HasPrefix(directory, ".") {
 			a.report("package-directory-mismatch", nameToken, fmt.Sprintf("package %s does not match directory %s", name, directory))
 		}
 	}
@@ -122,16 +126,6 @@ func (a *cstAnalyzer) checkLinesAndComments() {
 				)
 			}
 			offset += width
-		}
-	}
-	if a.enabled["line-length-limit"] {
-		offset := 0
-		for _, line := range lines {
-			count := utf8.RuneCount(line)
-			if count > 80 {
-				a.reportRange("line-length-limit", offset, offset+len(line), fmt.Sprintf("line has %d runes; maximum is 80", count))
-			}
-			offset += len(line) + 1
 		}
 	}
 	comments := a.tree.Comments()

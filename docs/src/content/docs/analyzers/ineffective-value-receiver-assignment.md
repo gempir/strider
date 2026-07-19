@@ -16,12 +16,14 @@ often indicates that the method should use a pointer receiver.
 The check follows field reads through the method's control-flow graph. It
 does not report a local mutation that is subsequently read to compute a result.
 
-```go
-func (item Item) Rename(name string) {
-    item.Name = name // reported
-}
+## Bad
 
-func (item *Item) Rename(name string) {
-    item.Name = name // accepted
-}
+```go
+func (item Item) Rename(name string) { item.Name = name }
+```
+
+## Good
+
+```go
+func (item *Item) Rename(name string) { item.Name = name }
 ```

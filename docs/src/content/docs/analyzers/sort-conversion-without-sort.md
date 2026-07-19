@@ -13,8 +13,14 @@ sidebar:
 sorting functions. Converting a slice to one of these types and assigning it
 back does not reorder any values.
 
+## Bad
+
 ```go
-values = sort.IntSlice(values) // reported
-sort.Ints(values)              // accepted
-sort.Sort(sort.IntSlice(values)) // accepted
+values = sort.IntSlice(values)
+```
+
+## Good
+
+```go
+sort.Ints(values)
 ```

@@ -12,3 +12,23 @@ sidebar:
 Named types whose value or pointer method set implements `error` should end in
 `Error`, making their role recognizable at API boundaries and in type
 assertions.
+
+## Bad
+
+```go
+type ParseFailure struct {
+	Offset int
+}
+
+func (ParseFailure) Error() string { return "parse failed" }
+```
+
+## Good
+
+```go
+type ParseError struct {
+	Offset int
+}
+
+func (ParseError) Error() string { return "parse failed" }
+```

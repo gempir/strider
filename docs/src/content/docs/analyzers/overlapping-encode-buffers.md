@@ -16,7 +16,14 @@ separate storage or a destination region proven not to overlap.
 The check covers the standard ASCII85, base32, base64, and hexadecimal
 encoders.
 
+## Bad
+
 ```go
-hex.Encode(buffer, buffer)      // reported
-hex.Encode(destination, source) // accepted
+hex.Encode(buffer, buffer)
+```
+
+## Good
+
+```go
+hex.Encode(destination, source)
 ```

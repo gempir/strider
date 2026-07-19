@@ -13,9 +13,15 @@ sidebar:
 Calling `Add` inside the goroutine races with `Wait`, which may observe a zero
 counter and return too early.
 
-```go
-go func() { group.Add(1); defer group.Done() }() // reported
+## Bad
 
+```go
+go func() { group.Add(1); defer group.Done() }()
+```
+
+## Good
+
+```go
 group.Add(1)
-go func() { defer group.Done() }()               // accepted
+go func() { defer group.Done() }()
 ```

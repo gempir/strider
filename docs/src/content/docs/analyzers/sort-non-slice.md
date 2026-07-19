@@ -13,7 +13,14 @@ sidebar:
 for historical API reasons. The value must hold a slice; passing an array or
 another concrete type panics at runtime.
 
+## Bad
+
 ```go
-sort.Slice(array, less) // reported
-sort.Slice(slice, less) // accepted
+sort.Slice(array, less)
+```
+
+## Good
+
+```go
+sort.Slice(values, less)
 ```

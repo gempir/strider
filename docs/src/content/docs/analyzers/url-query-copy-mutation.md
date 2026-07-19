@@ -13,10 +13,14 @@ sidebar:
 temporary map does not update the URL unless the encoded result is assigned
 back to `RawQuery`.
 
-```go
-address.Query().Set(key, value) // reported
+## Bad
 
-values := address.Query()
-values.Set(key, value)
-address.RawQuery = values.Encode() // accepted
+```go
+address.Query().Set(key, value)
+```
+
+## Good
+
+```go
+values := address.Query(); values.Set(key, value); address.RawQuery = values.Encode()
 ```

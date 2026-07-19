@@ -17,10 +17,7 @@ func (a *cstAnalyzer) checkBinaryExpression(binary *cst.BinaryExpression) {
 	}
 	if binary.Op.Ch() == token.EQL || binary.Op.Ch() == token.NEQ {
 		if cstBooleanLiteral(binary.LHS) || cstBooleanLiteral(binary.RHS) {
-			a.report("bool-literal-in-expr", binary, "omit the boolean literal from the logical expression")
-		}
-		if concreteLooksLikeTime(binary.LHS) || concreteLooksLikeTime(binary.RHS) {
-			a.report("time-equal", binary, "compare time.Time values with Equal instead of == or !=")
+			a.report("boolean-literal-comparison", binary, "omit the boolean literal from the logical expression")
 		}
 	}
 	if binary.Op.Ch() == token.LAND || binary.Op.Ch() == token.LOR {
@@ -33,11 +30,6 @@ func (a *cstAnalyzer) checkBinaryExpression(binary *cst.BinaryExpression) {
 			a.report("optimize-operands-order", binary, "place the cheaper logical operand first to improve short-circuiting")
 		}
 	}
-}
-
-func concreteLooksLikeTime(node cst.Node) bool {
-	text := cst.Spelling(node)
-	return strings.Contains(text, "time.Now(") || strings.Contains(text, "time.Date(") || strings.Contains(text, ".Time")
 }
 
 func concreteStaticBool(node cst.Node) (bool, bool) {

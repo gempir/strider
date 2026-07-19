@@ -32,19 +32,18 @@ score.
 ## Bad
 
 ```go
-func route(value any, ready, fallback bool) string {
-	switch current := value.(type) {
-	case string:
-		if ready && !fallback {
-			return current
-		}
-	case int:
-		if current > 0 || fallback {
-			return strconv.Itoa(current)
-		}
-	// More independent cases and conditions push the score over 10.
-	}
-	return ""
+func route() string {
+	if first() { return "first" }
+	if second() { return "second" }
+	if third() { return "third" }
+	if fourth() { return "fourth" }
+	if fifth() { return "fifth" }
+	if sixth() { return "sixth" }
+	if seventh() { return "seventh" }
+	if eighth() { return "eighth" }
+	if ninth() { return "ninth" }
+	if tenth() { return "tenth" }
+	return "fallback"
 }
 ```
 

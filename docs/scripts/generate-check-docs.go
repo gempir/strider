@@ -1,5 +1,6 @@
 // Command generate-check-docs renders generated syntax-check pages and keeps
-// the default-severity indicator on every check reference page in sync with code.
+// every check reference page aligned with the registry, examples, configuration,
+// and default severity.
 package main
 
 import (
@@ -25,7 +26,9 @@ const (
 func main() {
 	docsDirectory := docsDirectory()
 	generateSyntaxPages(docsDirectory)
-	synchronizeSeverityBadges(docsDirectory)
+	registry := synchronizeCheckPages(docsDirectory)
+	validateCheckPages(docsDirectory, registry)
+	validateBehaviorConfiguration(docsDirectory, registry)
 }
 
 func generateSyntaxPages(docsDirectory string) {
@@ -146,7 +149,7 @@ allow every character.
 	return content
 }
 
-func synchronizeSeverityBadges(docsDirectory string) {
+func synchronizeCheckPages(docsDirectory string) *checks.Registry {
 	registry, err := checks.NewRegistry(checks.RegistryOptions{MinimumSeverity: diagnostic.SeverityNone})
 	if err != nil {
 		fatal(err)
@@ -159,9 +162,165 @@ func synchronizeSeverityBadges(docsDirectory string) {
 			fatal(fmt.Errorf("check %s documentation: %w", meta.Code, readErr))
 		}
 		updated := withSeverityMetadata(string(contents), meta.DefaultSeverity)
+		updated = withExamples(updated, meta)
 		if updated != string(contents) {
 			if writeErr := os.WriteFile(path, []byte(updated), 0o644); writeErr != nil {
 				fatal(writeErr)
+			}
+		}
+	}
+	return registry
+}
+
+func withExamples(contents string, meta checks.Meta) string {
+	if meta.Code == "format" {
+		return contents
+	}
+	bad := strings.Contains(contents, "\n## Bad\n")
+	good := strings.Contains(contents, "\n## Good\n")
+	if bad && good {
+		return contents
+	}
+	if strings.TrimSpace(meta.BadExample) == "" || strings.TrimSpace(meta.GoodExample) == "" {
+		fatal(fmt.Errorf("check %s has incomplete examples", meta.Code))
+	}
+	if strings.TrimSpace(meta.BadExample) == strings.TrimSpace(meta.GoodExample) {
+		fatal(fmt.Errorf("check %s has identical good and bad examples", meta.Code))
+	}
+	sections := renderExampleSections(meta.BadExample, meta.GoodExample)
+	if !bad && !good {
+		if start, end, ok := firstGoCodeBlock(contents); ok {
+			remainder := strings.TrimLeft(contents[end:], "\n")
+			if remainder != "" {
+				remainder = "\n" + remainder
+			}
+			return strings.TrimRight(contents[:start], "\n") + "\n\n" + sections + remainder
+		}
+	}
+	missing := ""
+	if !bad {
+		missing += renderBadSection(meta.BadExample)
+	}
+	if !good {
+		missing += renderGoodSection(meta.GoodExample)
+	}
+	return strings.TrimRight(contents, "\n") + "\n\n" + missing
+}
+
+func renderExampleSections(bad, good string) string {
+	return renderBadSection(bad) + renderGoodSection(good)
+}
+
+func renderBadSection(example string) string {
+	return "## Bad\n\n```go\n" + strings.TrimSpace(example) + "\n```\n\n"
+}
+
+func renderGoodSection(example string) string {
+	return "## Good\n\n```go\n" + strings.TrimSpace(example) + "\n```\n"
+}
+
+func firstGoCodeBlock(contents string) (int, int, bool) {
+	start := strings.Index(contents, "```go\n")
+	if start < 0 {
+		return 0, 0, false
+	}
+	closing := strings.Index(contents[start+len("```go\n"):], "\n```")
+	if closing < 0 {
+		fatal(fmt.Errorf("documentation page has an unterminated Go code block"))
+	}
+	end := start + len("```go\n") + closing + len("\n```")
+	return start, end, true
+}
+
+func validateCheckPages(docsDirectory string, registry *checks.Registry) {
+	expected := make(map[string]bool, len(registry.Rules())-1)
+	for _, rule := range registry.Rules() {
+		meta := rule.Meta()
+		path := checkPagePath(docsDirectory, meta)
+		contents, err := os.ReadFile(path)
+		if err != nil {
+			fatal(fmt.Errorf("check %s documentation: %w", meta.Code, err))
+		}
+		if meta.Code != "format" {
+			expected[filepath.Clean(path)] = true
+		}
+		bad := documentedGoExample(string(contents), "Bad")
+		good := documentedGoExample(string(contents), "Good")
+		if bad == "" || good == "" {
+			fatal(fmt.Errorf("check %s documentation must have non-empty Bad and Good Go examples", meta.Code))
+		}
+		if bad == good {
+			fatal(fmt.Errorf("check %s documentation has identical Bad and Good examples", meta.Code))
+		}
+	}
+	for _, category := range []string{"lints", "analyzers"} {
+		directory := filepath.Join(docsDirectory, category)
+		entries, err := os.ReadDir(directory)
+		if err != nil {
+			fatal(err)
+		}
+		for _, entry := range entries {
+			if entry.IsDir() || filepath.Ext(entry.Name()) != ".md" {
+				continue
+			}
+			path := filepath.Clean(filepath.Join(directory, entry.Name()))
+			if !expected[path] {
+				fatal(fmt.Errorf("orphan check documentation page %s", path))
+			}
+		}
+	}
+}
+
+func documentedGoExample(contents, heading string) string {
+	section := strings.Index(contents, "\n## "+heading+"\n")
+	if section < 0 {
+		return ""
+	}
+	contents = contents[section:]
+	start := strings.Index(contents, "```go\n")
+	if start < 0 {
+		return ""
+	}
+	contents = contents[start+len("```go\n"):]
+	end := strings.Index(contents, "\n```")
+	if end < 0 {
+		return ""
+	}
+	example := strings.TrimSpace(contents[:end])
+	if nextHeading := strings.Index(example, "\n## "); nextHeading >= 0 {
+		return ""
+	}
+	return example
+}
+
+func validateBehaviorConfiguration(docsDirectory string, registry *checks.Registry) {
+	required := map[string][]string{
+		"banned-characters":      {"characters"},
+		"file-length-limit":      {"max-lines"},
+		"function-length":        {"max-lines", "max-statements"},
+		"function-result-limit":  {"max-results"},
+		"imports-blocklist":      {"blocked-imports"},
+		"interface-method-limit": {"max-methods"},
+		"max-parameters":         {"max-parameters"},
+		"max-public-structs":     {"max-public-structs"},
+	}
+	byCode := make(map[string]checks.Meta, len(registry.Rules()))
+	for _, rule := range registry.Rules() {
+		byCode[rule.Meta().Code] = rule.Meta()
+	}
+	for code, options := range required {
+		meta, ok := byCode[code]
+		if !ok {
+			fatal(fmt.Errorf("configurable check %s is not registered", code))
+		}
+		contents, err := os.ReadFile(checkPagePath(docsDirectory, meta))
+		if err != nil {
+			fatal(err)
+		}
+		page := string(contents)
+		for _, wanted := range append([]string{"## Configuration", "[checks.rules." + code + "]"}, options...) {
+			if !strings.Contains(page, wanted) {
+				fatal(fmt.Errorf("check %s documentation is missing configuration token %q", code, wanted))
 			}
 		}
 	}

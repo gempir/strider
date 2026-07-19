@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Require default clauses to be last.
+Require default clauses to be last. Default: default optional.
 
 ## Bad
 

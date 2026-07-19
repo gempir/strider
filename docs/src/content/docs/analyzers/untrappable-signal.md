@@ -12,7 +12,14 @@ sidebar:
 Unix-like kernels handle `SIGKILL` and `SIGSTOP` directly. They are never
 delivered to the process, so registering them with `os/signal` cannot work.
 
+## Bad
+
 ```go
-signal.Notify(ch, os.Kill)          // reported
-signal.Notify(ch, syscall.SIGTERM)  // accepted
+signal.Notify(ch, os.Kill)
+```
+
+## Good
+
+```go
+signal.Notify(ch, syscall.SIGTERM)
 ```

@@ -13,9 +13,16 @@ Bounded random integer functions generate values in the half-open range from
 zero up to, but excluding, the bound. A bound of one therefore always returns
 zero.
 
+## Bad
+
 ```go
-choice := rand.Intn(1) // reported: always zero
-choice := rand.Intn(2) // accepted: zero or one
+choice := rand.Intn(1)
+```
+
+## Good
+
+```go
+choice := rand.Intn(2)
 ```
 
 The check covers package functions and `Rand` methods in both standard

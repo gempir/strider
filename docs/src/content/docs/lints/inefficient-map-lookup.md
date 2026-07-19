@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
-Avoid repeated map lookups.
+Avoid repeated map lookups. Default: enabled.
 
 ## Bad
 

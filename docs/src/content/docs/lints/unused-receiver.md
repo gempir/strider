@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Detect unused method receivers.
+Detect unused method receivers. Default: enabled.
 
 ## Bad
 

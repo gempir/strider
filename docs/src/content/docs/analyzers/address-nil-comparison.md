@@ -15,12 +15,14 @@ evaluation completes, so comparing that address with `nil` has a fixed result.
 The `&*pointer` form is excluded because it simplifies to `pointer`, which may
 legitimately be nil.
 
-```go
-if &value == nil { // reported
-    handle()
-}
+## Bad
 
-if pointer == nil { // accepted
-    handle()
-}
+```go
+if &value == nil { handle() }
+```
+
+## Good
+
+```go
+if pointer == nil { handle() }
 ```

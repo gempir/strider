@@ -13,7 +13,14 @@ The testing package dynamically controls `B.N` to calibrate benchmark
 duration and calculate per-operation time. Benchmark code that changes `N`
 invalidates those measurements.
 
+## Bad
+
 ```go
-b.N = 1000        // reported
-for range b.N {}  // accepted
+b.N = 1000
+```
+
+## Good
+
+```go
+for range b.N { operation() }
 ```

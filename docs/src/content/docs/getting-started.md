@@ -53,8 +53,9 @@ print-width = 180
 [checks]
 minimum-severity = "warning"
 
-[checks.rules.line-length-limit]
+[checks.rules.file-length-limit]
 severity = "warning"
+max-lines = 800
 
 [checks.rules.possible-nil-dereference]
 severity = "error"
@@ -72,7 +73,7 @@ current directory:
 strider check
 ```
 
-All 225 checks are eligible. The default warning floor runs 151; select
+All 207 checks are eligible. The default warning floor runs 191; select
 individual codes when investigating a finding or adopting Strider incrementally:
 
 ```sh

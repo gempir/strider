@@ -16,18 +16,14 @@ exit was placed outside the intended branch.
 Map ranges and one-statement loops are accepted because selecting a single
 arbitrary or first element is a common intentional pattern.
 
-```go
-for _, value := range values {
-    if done(value) {
-        use(value)
-    }
-    return // reported
-}
+## Bad
 
-for _, value := range values {
-    if done(value) {
-        break
-    }
-    use(value) // accepted
-}
+```go
+for _, value := range values { if done(value) { use(value) }; return }
+```
+
+## Good
+
+```go
+for _, value := range values { if done(value) { break }; use(value) }
 ```

@@ -49,8 +49,8 @@ JSON and formatted source are never decorated with ANSI escapes.
 strider check [OPTIONS] [FILE|DIR]...
 ```
 
-`check` is read-only. All 225 checks are eligible; the default warning floor
-runs the 151 warning and error checks. `--minimum-severity note` also includes
+`check` is read-only. All 207 checks are eligible; the default warning floor
+runs the 191 warning and error checks. `--minimum-severity note` also includes
 notes, and `--minimum-severity none` includes checks configured as `none`.
 
 ### Selection and reporting

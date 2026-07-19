@@ -15,13 +15,14 @@ Compile the expression once before the loop and reuse it.
 
 Dynamic patterns are accepted because hoisting them may change behavior.
 
-```go
-for _, value := range values {
-    regexp.MatchString("^[a-z]+$", value) // reported
-}
+## Bad
 
-pattern := regexp.MustCompile("^[a-z]+$")
-for _, value := range values {
-    pattern.MatchString(value) // accepted
-}
+```go
+for _, value := range values { regexp.MatchString(`^[a-z]+$`, value) }
+```
+
+## Good
+
+```go
+pattern := regexp.MustCompile(`^[a-z]+$`); for _, value := range values { pattern.MatchString(value) }
 ```

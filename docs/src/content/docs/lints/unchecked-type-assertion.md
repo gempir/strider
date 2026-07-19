@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
-Require checked type assertions.
+Require checked type assertions. Default: enabled.
 
 ## Bad
 

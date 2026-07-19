@@ -13,15 +13,14 @@ Overwriting a function argument before reading its incoming value makes that
 input meaningless. The assignment may be accidental, or the argument may no
 longer belong in the function signature.
 
-```go
-func normalize(value string) string {
-    value = fallback // reported
-    return value
-}
+## Bad
 
-func normalize(value string) string {
-    use(value)
-    value = fallback // accepted
-    return value
-}
+```go
+func normalize(value string) string { value = fallback; return value }
+```
+
+## Good
+
+```go
+func normalize(value string) string { use(value); value = fallback; return value }
 ```

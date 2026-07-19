@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Detect suspicious time.Date arguments.
+Detect suspicious time.Date arguments. Default: enabled.
 
 ## Bad
 

@@ -12,12 +12,14 @@ sidebar:
 The predeclared `len` and `cap` functions always return non-negative values, so
 testing whether either result is below zero can never succeed.
 
-```go
-if len(values) < 0 { // reported
-    unreachable()
-}
+## Bad
 
-if len(values) == 0 { // accepted
-    handleEmpty()
-}
+```go
+if len(values) < 0 { unreachable() }
+```
+
+## Good
+
+```go
+if len(values) == 0 { handleEmpty() }
 ```

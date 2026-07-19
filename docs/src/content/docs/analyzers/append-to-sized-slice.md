@@ -13,3 +13,17 @@ sidebar:
 values. If the intent is to append up to `n` values, use `make([]T, 0, n)` so
 the result does not begin with zeros. Runtime lengths are left alone when the
 analyzer cannot prove that they are positive.
+
+## Bad
+
+```go
+values := make([]int, count)
+values = append(values, next)
+```
+
+## Good
+
+```go
+values := make([]int, 0, count)
+values = append(values, next)
+```

@@ -13,7 +13,14 @@ Comparisons and non-idempotent operations with identical expressions on both
 sides are usually copy-and-paste mistakes. Floating-point expressions are
 excluded because `NaN` makes self-comparisons meaningful.
 
+## Bad
+
 ```go
-value == value // reported for non-floating-point values
-left == right  // accepted
+if left == left { use() }
+```
+
+## Good
+
+```go
+if left == right { use() }
 ```

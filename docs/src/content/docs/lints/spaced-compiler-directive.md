@@ -12,10 +12,16 @@ sidebar:
 Purpose: detect top-level compiler directives that look intentional but are
 ignored because whitespace appears between `//` and `go:`.
 
+## Bad
+
 ```go
 // go:noinline
-func calculate() {} // reported: the directive is ignored
+func call() {}
+```
 
+## Good
+
+```go
 //go:noinline
-func calculateExactly() {} // accepted
+func call() {}
 ```

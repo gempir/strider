@@ -16,12 +16,14 @@ finalization, so the finalizer never runs and the object leaks.
 Use the finalizer function's parameter to operate on the object instead of
 capturing the outer variable.
 
-```go
-runtime.SetFinalizer(object, func(*resource) {
-    object.Close() // reported: captures the outer object
-})
+## Bad
 
-runtime.SetFinalizer(object, func(object *resource) {
-    object.Close() // accepted: uses the finalizer parameter
-})
+```go
+runtime.SetFinalizer(object, func(*resource) { object.Close() })
+```
+
+## Good
+
+```go
+runtime.SetFinalizer(object, func(object *resource) { object.Close() })
 ```

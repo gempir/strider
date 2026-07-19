@@ -12,7 +12,7 @@ type testMainMissingExitRule struct{}
 
 func (testMainMissingExitRule) Meta() Meta {
 	return Meta{
-		Code:            "testmain-missing-exit",
+		Code:            "test-main-missing-exit",
 		Summary:         "detect legacy TestMain functions that lose the test exit code",
 		Explanation:     "Before Go 1.15, a custom TestMain that called testing.M.Run had to pass its result to os.Exit or failed tests could appear successful. Go 1.15 and newer propagate the returned status automatically.",
 		GoodExample:     "func TestMain(m *testing.M) { os.Exit(m.Run()) }",

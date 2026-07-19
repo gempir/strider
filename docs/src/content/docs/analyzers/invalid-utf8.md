@@ -12,6 +12,14 @@ sidebar:
 Reports invalid constant cutsets and character lists passed to selected
 `strings` functions.
 
+## Bad
+
 ```go
 strings.Trim(value, "\xff") // reported
+```
+
+## Good
+
+```go
+strings.Trim(value, "é")
 ```

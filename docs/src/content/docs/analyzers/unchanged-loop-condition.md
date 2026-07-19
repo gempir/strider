@@ -13,12 +13,14 @@ A conventional three-part loop that initializes and tests one variable but
 never changes that variable cannot progress as intended. This often means the
 post statement increments the wrong counter or is unreachable.
 
-```go
-for index := 0; index < limit; other++ { // reported
-    use(index)
-}
+## Bad
 
-for index := 0; index < limit; index++ { // accepted
-    use(index)
-}
+```go
+for index := 0; index < limit; other++ { use(index) }
+```
+
+## Good
+
+```go
+for index := 0; index < limit; index++ { use(index) }
 ```

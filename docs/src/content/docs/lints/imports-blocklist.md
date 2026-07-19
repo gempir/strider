@@ -17,6 +17,12 @@ Reject configured imports.
 import "log" // when log is configured as blocked
 ```
 
+## Good
+
+```go
+import "log/slog"
+```
+
 ## Configuration
 
 No imports are blocked by default. Paths match exactly.
@@ -26,8 +32,4 @@ No imports are blocked by default. Paths match exactly.
 blocked-imports = ["log", "io/ioutil"]
 ```
 
-## Good
-
-```go
-import "log/slog"
-```
+Set `blocked-imports = []` to block no imports.

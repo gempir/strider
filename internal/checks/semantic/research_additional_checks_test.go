@@ -74,57 +74,6 @@ func check() {
 	}
 }
 
-func TestInlineErrorDeclarationOnlyReportsBuiltinErrors(t *testing.T) {
-	root := analysisModule(
-		t,
-		`package sample
-
-type ParseError struct{}
-func (ParseError) Error() string { return "parse" }
-
-type ErrorAlias = error
-
-func pair() (int, error) { return 0, nil }
-func one() error { return nil }
-func aliasError() ErrorAlias { return nil }
-func concreteError() ParseError { return ParseError{} }
-
-func check() {
-	if value, err := pair(); err != nil {
-		_ = value
-	}
-	switch err := one(); err {
-	case nil:
-	}
-	switch err := one(); value := any(1).(type) {
-	case int:
-		_ = err
-		_ = value
-	}
-	if err := aliasError(); err != nil {
-		_ = err
-	}
-	if err := concreteError(); err.Error() != "" {
-		_ = err
-	}
-	var err error
-	if err = one(); err != nil {
-		_ = err
-	}
-}
-`,
-	)
-	diagnostics := runStandaloneAnalysisRule(t, root, inlineErrorDeclarationRule{})
-	if len(diagnostics) != 4 {
-		t.Fatalf("got %d diagnostics, want 4: %#v", len(diagnostics), diagnostics)
-	}
-	for _, item := range diagnostics {
-		if item.Code != "inline-error-declaration" || item.Severity != diagnostic.SeverityWarning {
-			t.Fatalf("unexpected diagnostic: %#v", item)
-		}
-	}
-}
-
 func TestTestParallelismReportsOnlyPlausiblyIndependentTests(t *testing.T) {
 	root := analysisModule(t, `package sample
 
@@ -187,7 +136,7 @@ func TestSubtests(t *testing.T) {
 	}
 }
 
-func TestDeclarationOrderReportsOneRegressionPerFile(t *testing.T) {
+func TestTopLevelDeclarationOrderReportsOneRegressionPerFile(t *testing.T) {
 	root := analysisModule(
 		t,
 		`package sample
@@ -205,16 +154,16 @@ const late = 2
 type later struct{}
 `,
 	)
-	diagnostics := runStandaloneAnalysisRule(t, root, declarationOrderRule{})
+	diagnostics := runStandaloneAnalysisRule(t, root, topLevelDeclarationOrderRule{})
 	if len(diagnostics) != 1 {
 		t.Fatalf("got %d diagnostics, want 1: %#v", len(diagnostics), diagnostics)
 	}
-	if diagnostics[0].Code != "declaration-order" || diagnostics[0].Severity != diagnostic.SeverityWarning {
+	if diagnostics[0].Code != "top-level-declaration-order" || diagnostics[0].Severity != diagnostic.SeverityWarning {
 		t.Fatalf("unexpected diagnostic: %#v", diagnostics[0])
 	}
 }
 
-func TestDeclarationOrderAcceptsTypeConstVarAndFunctions(t *testing.T) {
+func TestTopLevelDeclarationOrderAcceptsTypeConstVarAndFunctions(t *testing.T) {
 	root := analysisModule(t, `package sample
 
 type item struct{}
@@ -226,7 +175,7 @@ var current item
 func init() { current = item{} }
 func use() item { return current }
 `)
-	diagnostics := runStandaloneAnalysisRule(t, root, declarationOrderRule{})
+	diagnostics := runStandaloneAnalysisRule(t, root, topLevelDeclarationOrderRule{})
 	if len(diagnostics) != 0 {
 		t.Fatalf("unexpected diagnostics: %#v", diagnostics)
 	}
@@ -236,12 +185,7 @@ func TestAdditionalResearchRuleSeverities(t *testing.T) {
 	tests := []struct {
 		rule     Rule
 		severity diagnostic.Severity
-	}{
-		{discardedErrorResultRule{}, diagnostic.SeverityError},
-		{inlineErrorDeclarationRule{}, diagnostic.SeverityWarning},
-		{testParallelismRule{}, diagnostic.SeverityNote},
-		{declarationOrderRule{}, diagnostic.SeverityWarning},
-	}
+	}{{discardedErrorResultRule{}, diagnostic.SeverityError}, {testParallelismRule{}, diagnostic.SeverityNote}, {topLevelDeclarationOrderRule{}, diagnostic.SeverityWarning}}
 	for _, test := range tests {
 		if got := test.rule.Meta().DefaultSeverity; got != test.severity {
 			t.Errorf("%s severity = %s, want %s", test.rule.Meta().Code, got, test.severity)

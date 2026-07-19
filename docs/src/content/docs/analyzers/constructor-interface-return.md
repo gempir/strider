@@ -1,5 +1,5 @@
 ---
-title: interface-return
+title: constructor-interface-return
 description: Detect constructors that hide a single concrete result.
 sidebar:
   badge:
@@ -12,3 +12,19 @@ sidebar:
 Reports only exported `New`-style constructors whose returns consistently
 reveal one local concrete implementation of a non-empty local interface.
 Polymorphic, standard-library, empty, and error interfaces are skipped.
+
+## Bad
+
+```go
+func NewStore() Store {
+	return &memoryStore{}
+}
+```
+
+## Good
+
+```go
+func NewStore() *memoryStore {
+	return &memoryStore{}
+}
+```

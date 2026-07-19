@@ -13,6 +13,8 @@ An interface is nil only when both its dynamic type and value are absent.
 Storing a typed nil pointer in an interface gives it a concrete dynamic type,
 so the interface itself is non-nil.
 
+## Bad
+
 ```go
 func result() error {
     var problem *Problem
@@ -25,3 +27,14 @@ if result() == nil { // reported as never true
 ```
 
 Return an explicit `nil` interface on the success path instead.
+
+## Good
+
+```go
+func result(ok bool) error {
+	if ok {
+		return nil
+	}
+	return &Problem{}
+}
+```

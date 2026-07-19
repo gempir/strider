@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Avoid redefining predeclared identifiers.
+Avoid redefining predeclared identifiers. Default: enabled.
 
 ## Bad
 

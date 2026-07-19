@@ -12,6 +12,14 @@ sidebar:
 A context must not be nil. Use `context.TODO()` when the appropriate parent is
 not known or `context.Background()` for an explicit root.
 
+## Bad
+
 ```go
 load(nil) // reported when the first parameter is context.Context
+```
+
+## Good
+
+```go
+load(context.TODO())
 ```

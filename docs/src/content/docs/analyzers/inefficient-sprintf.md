@@ -11,3 +11,15 @@ sidebar:
 
 Simple `%s`, `%t`, and base-10 integer conversions can use the string directly
 or the corresponding `strconv` function without format parsing and reflection.
+
+## Bad
+
+```go
+text := fmt.Sprintf("%d", number)
+```
+
+## Good
+
+```go
+text := strconv.Itoa(number)
+```

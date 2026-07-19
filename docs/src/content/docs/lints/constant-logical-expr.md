@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Detect constant logical expressions.
+Detect constant logical expressions. Default: enabled.
 
 ## Bad
 

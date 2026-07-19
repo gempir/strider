@@ -16,9 +16,20 @@ wrappers that arrange their own alignment.
 
 This check is target-aware and remains silent when loading a 64-bit build.
 
+## Bad
+
 ```go
 type counters struct {
     ready uint32
     total uint64 // may be misaligned on a 32-bit target
+}
+```
+
+## Good
+
+```go
+type counters struct {
+	total uint64
+	ready uint32
 }
 ```

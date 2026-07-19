@@ -13,7 +13,14 @@ An integer converted to floating point is already integral and finite.
 Rounding it with `math.Ceil`, `math.Floor`, or `math.Trunc`, or testing it with
 `math.IsNaN` or `math.IsInf`, cannot provide useful information.
 
+## Bad
+
 ```go
-rounded := math.Ceil(float64(count)) // reported
-rounded := math.Ceil(measurement)    // accepted
+rounded := math.Ceil(float64(count))
+```
+
+## Good
+
+```go
+rounded := math.Ceil(measurement)
 ```

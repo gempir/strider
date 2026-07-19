@@ -14,10 +14,6 @@ func (a *cstAnalyzer) checkConcreteFunctionRules(name cst.Token, signature *cst.
 	}
 	parameters := concreteParameterDecls(signature.Parameters)
 	results := concreteResultDecls(signature.Result)
-	parameterTotal := concreteDeclCount(parameters)
-	if a.enabled["argument-limit"] && parameterTotal > 8 {
-		a.report("argument-limit", name, fmt.Sprintf("function has %d parameters; maximum is 8", parameterTotal))
-	}
 	resultTotal := concreteDeclCount(results)
 	resultLimit := a.limit("function-result-limit", 3)
 	if a.enabled["function-result-limit"] && resultTotal > resultLimit {
@@ -26,13 +22,13 @@ func (a *cstAnalyzer) checkConcreteFunctionRules(name cst.Token, signature *cst.
 	if a.enabled["cognitive-complexity"] && facts.cognitiveComplexity > 7 {
 		a.report("cognitive-complexity", name, fmt.Sprintf("function has cognitive complexity %d; maximum is 7", facts.cognitiveComplexity))
 	}
-	if body != nil && (a.enabled["function-length"] || a.enabled["unnecessary-stmt"]) {
+	if body != nil && (a.enabled["function-length"] || a.enabled["redundant-final-return"]) {
 		a.checkConcreteFunctionBody(name, body, resultTotal, facts)
 	}
-	if a.enabled["get-return"] && strings.HasPrefix(strings.ToUpper(name.Src()), "GET") && resultTotal == 0 {
-		a.report("get-return", name, "Get-prefixed function should return a value")
+	if a.enabled["get-function-return-value"] && strings.HasPrefix(strings.ToUpper(name.Src()), "GET") && resultTotal == 0 {
+		a.report("get-function-return-value", name, "Get-prefixed function should return a value")
 	}
-	if a.enabled["error-return"] || a.enabled["unexported-return"] || a.enabled["confusing-results"] {
+	if a.enabled["error-last-result"] || a.enabled["unexported-return"] || a.enabled["confusing-results"] {
 		a.checkConcreteResults(name, results)
 	}
 	if a.enabled["context-as-argument"] || a.enabled["waitgroup-by-value"] || a.enabled["time-naming"] {
@@ -60,11 +56,11 @@ func (a *cstAnalyzer) checkConcreteFunctionBody(name cst.Token, body cst.Node, r
 			)
 		}
 	}
-	if resultTotal != 0 || !a.enabled["unnecessary-stmt"] {
+	if resultTotal != 0 || !a.enabled["redundant-final-return"] {
 		return
 	}
 	if returned, ok := facts.finalStatement.(*cst.ReturnStmt); ok && returned.ExpressionList == nil {
-		a.report("unnecessary-stmt", returned, "omit the unnecessary return at the end of a resultless function")
+		a.report("redundant-final-return", returned, "omit the unnecessary return at the end of a resultless function")
 	}
 }
 
@@ -111,7 +107,7 @@ func (a *cstAnalyzer) checkConcreteResults(name cst.Token, results []*cst.Parame
 	for index, result := range results {
 		typeName := cst.Spelling(result.TypeNode)
 		if typeName == "error" && index != len(results)-1 {
-			a.report("error-return", result.TypeNode, "error should be the last returned value")
+			a.report("error-last-result", result.TypeNode, "error should be the last returned value")
 		}
 		if token.IsExported(name.Src()) {
 			base := strings.TrimLeft(typeName, "*[]")
@@ -187,11 +183,16 @@ func concreteConditionUses(body cst.Node, name string) bool {
 	cst.Walk(
 		body,
 		func(node cst.Node) bool {
-			kind := cst.Kind(node)
-			if kind != "IfStmt" && kind != "IfElseStmt" {
+			var condition cst.Node
+			switch current := node.(type) {
+			case *cst.IfStmt:
+				condition = current.Expression
+			case *cst.IfElseStmt:
+				condition = current.Expression
+			default:
 				return true
 			}
-			for _, current := range cst.NodeTokens(node) {
+			for _, current := range cst.NodeTokens(condition) {
 				if current.Ch() == token.IDENT && current.Src() == name {
 					found = true
 					return false

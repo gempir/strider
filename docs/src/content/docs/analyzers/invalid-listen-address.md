@@ -13,7 +13,14 @@ sidebar:
 separated by a colon. Either side may be omitted. Numeric ports must be in
 range; service names must use their supported letter, digit, and hyphen form.
 
+## Bad
+
 ```go
-http.ListenAndServe("localhost", handler) // reported
-http.ListenAndServe(":8080", handler)     // accepted
+http.ListenAndServe("localhost", handler)
+```
+
+## Good
+
+```go
+http.ListenAndServe(":8080", handler)
 ```

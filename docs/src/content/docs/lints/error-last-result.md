@@ -1,6 +1,6 @@
 ---
-title: bool-literal-in-expr
-description: "Simplify comparisons between booleans and literals."
+title: error-last-result
+description: "Place error last in result lists."
 sidebar:
   badge:
     text: warning
@@ -11,16 +11,16 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Simplify comparisons between booleans and literals.
+Place error last in result lists. Default: enabled.
 
 ## Bad
 
 ```go
-if ready == true { start() }
+func Load() (error, string)
 ```
 
 ## Good
 
 ```go
-if ready { start() }
+func Load() (string, error)
 ```

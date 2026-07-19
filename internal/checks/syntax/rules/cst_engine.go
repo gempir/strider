@@ -8,112 +8,100 @@ import (
 )
 
 var cstRuleCodes = map[string]bool{
-	"add-constant":                    true,
-	"atomic":                          true,
-	"bidirectional-control-character": true,
-	"banned-characters":               true,
-	"argument-limit":                  true,
-	"bare-return":                     true,
-	"blank-imports":                   true,
-	"bool-literal-in-expr":            true,
-	"comments-density":                true,
-	"constant-logical-expr":           true,
-	"cognitive-complexity":            true,
-	"confusing-naming":                true,
-	"confusing-results":               true,
-	"context-as-argument":             true,
-	"cyclomatic-complexity":           true,
-	"double-negation":                 true,
-	"call-to-gc":                      true,
-	"deep-exit":                       true,
-	"datarace":                        true,
-	"defer":                           true,
-	"dot-imports":                     true,
-	"duplicated-imports":              true,
-	"enforce-map-style":               true,
-	"enforce-repeated-arg-type-style": true,
-	"enforce-slice-style":             true,
-	"enforce-switch-style":            true,
-	"empty-block":                     true,
-	"early-return":                    true,
-	"error-strings":                   true,
-	"error-return":                    true,
-	"error-naming":                    true,
-	"errorf":                          true,
-	"file-header":                     true,
-	"exported":                        true,
-	"file-length-limit":               true,
-	"flag-parameter":                  true,
-	"forbidden-call-in-wg-go":         true,
-	"filename-format":                 true,
-	"function-length":                 true,
-	"function-result-limit":           true,
-	"get-return":                      true,
-	"identical-branches":              true,
-	"identical-ifelseif-branches":     true,
-	"identical-ifelseif-conditions":   true,
-	"identical-switch-branches":       true,
-	"identical-switch-conditions":     true,
-	"if-return":                       true,
-	"import-alias-naming":             true,
-	"import-shadowing":                true,
-	"inefficient-map-lookup":          true,
-	"imports-blocklist":               true,
-	"ineffective-pointer-copy":        true,
-	"increment-decrement":             true,
-	"indent-error-flow":               true,
-	"max-parameters":                  true,
-	"max-control-nesting":             true,
-	"max-public-structs":              true,
-	"marshal-receiver":                true,
-	"modulo-one":                      true,
-	"modifies-parameter":              true,
-	"modifies-value-receiver":         true,
-	"multiline-if-init":               true,
-	"nested-structs":                  true,
-	"no-defer-in-loop":                true,
-	"no-else-after-return":            true,
-	"no-init":                         true,
-	"no-naked-return":                 true,
-	"no-package-var":                  true,
-	"optimize-operands-order":         true,
-	"package-comments":                true,
-	"package-directory-mismatch":      true,
-	"package-naming":                  true,
-	"redundant-build-tag":             true,
-	"redundant-import-alias":          true,
-	"receiver-naming":                 true,
-	"simplify-range":                  true,
-	"range-val-address":               true,
-	"range-val-in-closure":            true,
-	"redefines-builtin-id":            true,
-	"spaced-compiler-directive":       true,
-	"spinning-select-default":         true,
-	"string-of-int":                   true,
-	"struct-tag":                      true,
-	"time-naming":                     true,
-	"time-equal":                      true,
-	"time-date":                       true,
-	"unchecked-type-assertion":        true,
-	"unnecessary-format":              true,
-	"unnecessary-if":                  true,
-	"unnecessary-stmt":                true,
-	"unhandled-error":                 true,
-	"unreachable-code":                true,
-	"unexported-return":               true,
-	"unsecure-url-scheme":             true,
-	"unexported-naming":               true,
-	"use-any":                         true,
-	"use-errors-new":                  true,
-	"use-fmt-print":                   true,
-	"use-slices-sort":                 true,
-	"use-waitgroup-go":                true,
-	"unused-parameter":                true,
-	"unused-receiver":                 true,
-	"var-declaration":                 true,
-	"var-naming":                      true,
-	"waitgroup-by-value":              true,
-	"zero-integer-division":           true,
+	"add-constant":                       true,
+	"banned-characters":                  true,
+	"bidirectional-control-character":    true,
+	"blank-imports":                      true,
+	"boolean-literal-comparison":         true,
+	"call-to-gc":                         true,
+	"cognitive-complexity":               true,
+	"confusing-naming":                   true,
+	"confusing-results":                  true,
+	"constant-logical-expr":              true,
+	"context-as-argument":                true,
+	"cyclomatic-complexity":              true,
+	"deep-exit":                          true,
+	"deferred-recover-call":              true,
+	"discarded-deferred-result":          true,
+	"dot-imports":                        true,
+	"double-negation":                    true,
+	"duplicated-imports":                 true,
+	"early-return":                       true,
+	"empty-conditional-block":            true,
+	"enforce-switch-style":               true,
+	"error-last-result":                  true,
+	"error-naming":                       true,
+	"error-strings":                      true,
+	"exported-declaration-comment":       true,
+	"file-length-limit":                  true,
+	"filename-format":                    true,
+	"flag-parameter":                     true,
+	"function-length":                    true,
+	"function-result-limit":              true,
+	"get-function-return-value":          true,
+	"identical-branches":                 true,
+	"identical-if-chain-branches":        true,
+	"identical-if-chain-conditions":      true,
+	"identical-switch-branches":          true,
+	"identical-switch-conditions":        true,
+	"import-alias-naming":                true,
+	"import-shadowing":                   true,
+	"imports-blocklist":                  true,
+	"increment-decrement":                true,
+	"ineffective-pointer-copy":           true,
+	"inefficient-map-lookup":             true,
+	"insecure-url-scheme":                true,
+	"invalid-struct-tag":                 true,
+	"marshal-receiver":                   true,
+	"max-control-nesting":                true,
+	"max-parameters":                     true,
+	"max-public-structs":                 true,
+	"modifies-parameter":                 true,
+	"modifies-value-receiver":            true,
+	"modulo-one":                         true,
+	"nested-structs":                     true,
+	"no-defer-in-loop":                   true,
+	"no-else-after-return":               true,
+	"no-init":                            true,
+	"no-naked-return":                    true,
+	"no-package-var":                     true,
+	"optimize-operands-order":            true,
+	"package-comments":                   true,
+	"package-directory-mismatch":         true,
+	"package-naming":                     true,
+	"prefer-fmt-errorf":                  true,
+	"range-value-address":                true,
+	"receiver-naming":                    true,
+	"redefines-builtin-id":               true,
+	"redundant-atomic-result-assignment": true,
+	"redundant-build-tag":                true,
+	"redundant-error-return-check":       true,
+	"redundant-final-return":             true,
+	"redundant-import-alias":             true,
+	"redundant-switch-break":             true,
+	"simplify-range":                     true,
+	"single-case-switch":                 true,
+	"spaced-compiler-directive":          true,
+	"spinning-select-default":            true,
+	"string-of-int":                      true,
+	"time-date":                          true,
+	"time-naming":                        true,
+	"unchecked-type-assertion":           true,
+	"unexported-naming":                  true,
+	"unexported-return":                  true,
+	"unnecessary-format":                 true,
+	"unnecessary-if":                     true,
+	"unreachable-code":                   true,
+	"unused-parameter":                   true,
+	"unused-receiver":                    true,
+	"use-any":                            true,
+	"use-errors-new":                     true,
+	"use-fmt-print":                      true,
+	"use-slices-sort":                    true,
+	"var-declaration":                    true,
+	"var-naming":                         true,
+	"waitgroup-by-value":                 true,
+	"zero-integer-division":              true,
 }
 
 // UsesCST reports whether a rule has moved to the concrete-syntax pass.
@@ -205,7 +193,7 @@ func AnalyzeCST(input CSTInput) {
 	if plan.identifiers {
 		analyzer.foldedNames = make(map[string]map[string]string)
 	}
-	if plan.imports || enabled["exported"] {
+	if plan.imports || enabled["exported-declaration-comment"] {
 		analyzer.packageName = analyzer.packageNameToken().Src()
 	}
 	if analyzer.extended {
@@ -503,15 +491,12 @@ func (a *cstAnalyzer) checkFunction(function *cst.FunctionDecl, facts *cstFuncti
 		return
 	}
 	name := function.FunctionName.IDENT
-	if a.enabled["exported"] {
+	if a.enabled["exported-declaration-comment"] {
 		a.checkConcreteExportedFunction(name, function, false)
 	}
 	a.checkSignature(name, function.Signature.Parameters, facts.complexity)
 	if a.extended {
 		a.checkConcreteFunctionRules(name, function.Signature, function.FunctionBody, nil, facts)
-		if a.enabled["redundant-test-main-exit"] {
-			a.checkConcreteTestMain(function)
-		}
 		if a.enabled["modifies-parameter"] {
 			a.checkConcreteFunctionMutation(function.Signature.Parameters, nil, function.FunctionBody)
 		}
@@ -520,7 +505,7 @@ func (a *cstAnalyzer) checkFunction(function *cst.FunctionDecl, facts *cstFuncti
 
 func (a *cstAnalyzer) checkMethod(method *cst.MethodDecl, facts *cstFunctionFacts) {
 	if method.Signature != nil {
-		if a.enabled["exported"] {
+		if a.enabled["exported-declaration-comment"] {
 			a.checkConcreteExportedFunction(method.MethodName, method, true)
 		}
 		a.checkSignature(method.MethodName, method.Signature.Parameters, facts.complexity)
@@ -576,7 +561,6 @@ func (a *cstAnalyzer) checkNakedReturn(statement *cst.ReturnStmt) {
 		return
 	}
 	a.report("no-naked-return", statement, "return values must be explicit")
-	a.report("bare-return", statement, "avoid bare returns; add explicit return expressions")
 }
 
 func cstEnclosingFunctionHasNamedResults(ancestors []cst.Node) bool {
@@ -625,15 +609,18 @@ func (a *cstAnalyzer) checkDefer(statement *cst.DeferStmt) {
 	if insideLoop {
 		a.report("no-defer-in-loop", statement, "defer inside a loop runs at function exit, not iteration exit")
 	}
-	if !a.enabled["defer"] {
+	if !a.enabled["deferred-recover-call"] && !a.enabled["discarded-deferred-result"] {
 		return
 	}
 	call, ok := statement.Expression.(*cst.PrimaryExpr)
 	if !ok {
 		return
 	}
-	if concreteCallName(call) == "recover" {
-		a.report("defer", statement, "defer recover() evaluates recover immediately")
+	if a.enabled["deferred-recover-call"] && concreteCallName(call) == "recover" {
+		a.report("deferred-recover-call", statement, "defer recover() evaluates recover immediately")
+	}
+	if !a.enabled["discarded-deferred-result"] {
+		return
 	}
 	cst.Walk(
 		call.PrimaryExpr,
@@ -644,7 +631,7 @@ func (a *cstAnalyzer) checkDefer(statement *cst.DeferStmt) {
 				return true
 			}
 			if concreteDeclCount(concreteResultDecls(literal.Signature.Result)) > 0 {
-				a.report("defer", statement, "return values from a deferred function are ignored")
+				a.report("discarded-deferred-result", statement, "return values from a deferred function are ignored")
 			}
 			return false
 		},

@@ -51,17 +51,11 @@ func (a *cstAnalyzer) checkConcreteRange(clause *cst.RangeClause, body *cst.Bloc
 		cst.Walk(
 			body,
 			func(node cst.Node) bool {
-				switch current := node.(type) {
-				case *cst.UnaryExpr:
+				if current,
+					ok := node.(*cst.UnaryExpr); ok {
 					if current.Op.Src() == "&" && concreteContainsIdentifier(current.UnaryExpr, name) {
-						a.report("range-val-address", current, fmt.Sprintf("taking the address of range value %s can be misleading", name))
+						a.report("range-value-address", current, fmt.Sprintf("taking the address of range value %s can be misleading", name))
 					}
-				case *cst.FunctionLit:
-					if concreteContainsIdentifier(current.FunctionBody, name) {
-						a.report("range-val-in-closure", current, fmt.Sprintf("closure captures range value %s", name))
-						a.report("datarace", current, fmt.Sprintf("goroutine or closure captures changing range value %s", name))
-					}
-					return false
 				}
 				return true
 			},

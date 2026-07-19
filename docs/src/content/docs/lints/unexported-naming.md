@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Avoid leading underscores in private names.
+Avoid leading underscores in private names. Default: enabled.
 
 ## Bad
 

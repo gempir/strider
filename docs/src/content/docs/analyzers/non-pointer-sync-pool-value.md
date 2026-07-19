@@ -16,7 +16,14 @@ avoid. Slices are also boxed because the slice header itself is a value.
 Store a pointer to the reusable value instead. Pointer-like maps, channels,
 functions, interfaces, and unsafe pointers are accepted.
 
+## Bad
+
 ```go
-pool.Put(buffer)  // reported when buffer is []byte
-pool.Put(&buffer) // accepted
+buffer := make([]byte, 0, 4096); pool.Put(buffer)
+```
+
+## Good
+
+```go
+buffer := make([]byte, 0, 4096); pool.Put(&buffer)
 ```

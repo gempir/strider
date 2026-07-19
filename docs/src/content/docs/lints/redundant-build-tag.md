@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Remove redundant legacy build tags.
+Remove redundant legacy build tags. Default: enabled.
 
 ## Bad
 

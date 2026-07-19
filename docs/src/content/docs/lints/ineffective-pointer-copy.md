@@ -13,7 +13,14 @@ Go simplifies `&*pointer` to `pointer` and `*&value` to `value`. Neither form
 copies the underlying data, so code using one as a copy operation is
 misleading and usually incorrect.
 
+## Bad
+
 ```go
-copy := &*pointer // reported: still the same pointer
-copy := *pointer  // an actual value copy
+copy := &*pointer
+```
+
+## Good
+
+```go
+copy := *pointer
 ```

@@ -1,6 +1,6 @@
 ---
-title: unsecure-url-scheme
-description: "Detect insecure URL schemes."
+title: identical-if-chain-branches
+description: "Detect repeated if-chain branches."
 sidebar:
   badge:
     text: warning
@@ -11,16 +11,16 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Detect insecure URL schemes.
+Detect repeated if-chain branches. Default: enabled.
 
 ## Bad
 
 ```go
-endpoint := "http://example.com"
+if first { run() } else if second { run() }
 ```
 
 ## Good
 
 ```go
-endpoint := "https://example.com"
+if first { one() } else if second { two() }
 ```

@@ -16,9 +16,14 @@ when the variable is used only as a map key.
 
 The check stays silent when the string variable has any non-lookup use.
 
-```go
-key := string(bytes)
-value := items[key] // reported at the conversion
+## Bad
 
-value := items[string(bytes)] // accepted and allocation-free
+```go
+key := string(keyBytes); value := items[key]
+```
+
+## Good
+
+```go
+value := items[string(keyBytes)]
 ```

@@ -13,7 +13,14 @@ The `strconv` parsing and formatting functions accept only documented number
 bases, bit sizes, and floating-point format characters. Invalid constant
 arguments always return errors or produce unusable results.
 
+## Bad
+
 ```go
-strconv.ParseInt(value, 1, 64)  // reported
-strconv.ParseInt(value, 10, 64) // accepted
+strconv.ParseInt(value, 1, 128)
+```
+
+## Good
+
+```go
+strconv.ParseInt(value, 10, 64)
 ```

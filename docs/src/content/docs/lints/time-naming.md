@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Avoid unit suffixes on time.Duration values.
+Avoid unit suffixes on time.Duration values. Default: enabled.
 
 ## Bad
 

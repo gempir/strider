@@ -172,66 +172,6 @@ func reportDiscardedErrorResult(pass *Pass, call *ast.CallExpr) {
 	pass.Report(call, fmt.Sprintf("error result returned by %s is discarded", name))
 }
 
-type inlineErrorDeclarationRule struct{}
-
-func (inlineErrorDeclarationRule) Meta() Meta {
-	return Meta{
-		Code:            "inline-error-declaration",
-		Summary:         "detect error variables declared in if and switch initializers",
-		Explanation:     "Declaring an error in a control-statement initializer limits its scope and can encourage dense error handling. Declare the error immediately before the control statement when a longer-lived, easier-to-debug value is preferable.",
-		GoodExample:     "value, err := load(); if err != nil { return err }",
-		BadExample:      "if value, err := load(); err != nil { return err }",
-		DefaultSeverity: diagnostic.SeverityWarning,
-	}
-}
-
-func (inlineErrorDeclarationRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				var initializer ast.Stmt
-				switch statement := node.(type) {
-				case *ast.IfStmt:
-					initializer = statement.Init
-				case *ast.SwitchStmt:
-					initializer = statement.Init
-				case *ast.TypeSwitchStmt:
-					initializer = statement.Init
-				default:
-					return true
-				}
-				assignment,
-					ok := initializer.(*ast.AssignStmt)
-				if !ok || assignment.Tok != token.DEFINE {
-					return true
-				}
-				for _, expression := range assignment.Lhs {
-					identifier,
-						ok := ast.Unparen(expression).(*ast.Ident)
-					if !ok || identifier.Name == "_" {
-						continue
-					}
-					variable,
-						_ := pass.TypesInfo.Defs[identifier].(*types.Var)
-					if variable != nil && builtinErrorType(variable.Type()) {
-						pass.Report(identifier, "declare the error before the control statement instead of in its initializer")
-						break
-					}
-				}
-				return true
-			},
-		)
-	}
-}
-
-func builtinErrorType(valueType types.Type) bool {
-	if valueType == nil {
-		return false
-	}
-	return types.Identical(types.Unalias(valueType), types.Universe.Lookup("error").Type())
-}
-
 type testParallelismRule struct{}
 
 func (testParallelismRule) Meta() Meta {
@@ -442,11 +382,11 @@ func rootExpressionObject(pass *Pass, expression ast.Expr) types.Object {
 	}
 }
 
-type declarationOrderRule struct{}
+type topLevelDeclarationOrderRule struct{}
 
-func (declarationOrderRule) Meta() Meta {
+func (topLevelDeclarationOrderRule) Meta() Meta {
 	return Meta{
-		Code:            "declaration-order",
+		Code:            "top-level-declaration-order",
 		Summary:         "keep top-level declarations in type, const, var, and func order",
 		Explanation:     "A consistent top-level declaration order makes files easier to scan. Group types first, then constants, variables, and functions; imports are ignored and init remains in the function group.",
 		GoodExample:     "type Client struct{}; const timeout = 1; var defaultClient Client; func New() Client { return Client{} }",
@@ -455,7 +395,7 @@ func (declarationOrderRule) Meta() Meta {
 	}
 }
 
-func (declarationOrderRule) Run(pass *Pass) {
+func (topLevelDeclarationOrderRule) Run(pass *Pass) {
 	for _, file := range pass.Files {
 		highest := -1
 		for _, declaration := range file.Decls {

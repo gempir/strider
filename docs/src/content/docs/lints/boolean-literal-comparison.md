@@ -1,6 +1,6 @@
 ---
-title: argument-limit
-description: "Limit function parameter count."
+title: boolean-literal-comparison
+description: "Simplify comparisons between booleans and literals."
 sidebar:
   badge:
     text: warning
@@ -11,16 +11,16 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Limit function parameter count.
+Simplify comparisons between booleans and literals. Default: enabled.
 
 ## Bad
 
 ```go
-func Open(path string, read, write, create, truncate, appendMode, sync, exclusive, temporary bool) error
+if ready == true { start() }
 ```
 
 ## Good
 
 ```go
-func Open(path string, options Options) error
+if ready { start() }
 ```

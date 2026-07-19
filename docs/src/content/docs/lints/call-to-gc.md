@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Discourage explicit garbage collection.
+Discourage explicit garbage collection. Default: runtime.GC.
 
 ## Bad
 

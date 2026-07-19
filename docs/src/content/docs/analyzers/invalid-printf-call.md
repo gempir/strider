@@ -18,7 +18,14 @@ non-integer dynamic width or precision arguments, unsupported `%w` wrapping,
 and incompatible value types. Calls with a spread variadic slice are accepted
 when their individual values cannot be determined statically.
 
+## Bad
+
 ```go
-fmt.Printf("%d %s", count, name) // accepted
-fmt.Printf("%d %s", name, count) // reported
+fmt.Printf("%d %s", name, count)
+```
+
+## Good
+
+```go
+fmt.Printf("%d %s", count, name)
 ```

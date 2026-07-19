@@ -178,12 +178,16 @@ func check() {
 	var validInteger int32
 	var invalidSlice []int
 	var validSlice []int32
+	var invalidMap map[string]int32
+	var invalidChannel chan int32
 	var invalidStruct invalid
 	var validStruct valid
 	binary.Write(io.Discard, binary.LittleEndian, architectureSized)
 	binary.Write(io.Discard, binary.LittleEndian, validInteger)
 	binary.Write(io.Discard, binary.LittleEndian, invalidSlice)
 	binary.Write(io.Discard, binary.LittleEndian, validSlice)
+	binary.Write(io.Discard, binary.LittleEndian, invalidMap)
+	binary.Write(io.Discard, binary.LittleEndian, invalidChannel)
 	binary.Write(io.Discard, binary.LittleEndian, invalidStruct)
 	binary.Write(io.Discard, binary.LittleEndian, &validStruct)
 }
@@ -197,8 +201,8 @@ func check() {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(diagnostics) != 3 {
-		t.Fatalf("got %d diagnostics, want 3: %#v", len(diagnostics), diagnostics)
+	if len(diagnostics) != 5 {
+		t.Fatalf("got %d diagnostics, want 5: %#v", len(diagnostics), diagnostics)
 	}
 	for _, item := range diagnostics {
 		if item.Code != "unsupported-binary-write" || !strings.Contains(item.Message, "binary.Write") {
@@ -355,6 +359,7 @@ func check() {
 	_ = header["Content-Type"]
 	header["content-type"] = nil
 	request.Header["etag"] = nil
+	header["Content-Type"] = request.Header["etag"]
 	plain := map[string][]string{}
 	_ = plain["content-type"]
 }
@@ -368,8 +373,8 @@ func check() {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(diagnostics) != 3 {
-		t.Fatalf("got %d diagnostics, want 3: %#v", len(diagnostics), diagnostics)
+	if len(diagnostics) != 4 {
+		t.Fatalf("got %d diagnostics, want 4: %#v", len(diagnostics), diagnostics)
 	}
 }
 
@@ -908,6 +913,14 @@ func serve(handler http.Handler, dynamic string) {
 	}
 }
 
+func TestValidListenPortAcceptsHyphenatedServiceNames(t *testing.T) {
+	for port, want := range map[string]bool{"http-alt": true, "x11-1": true, "-http": false, "http-": false, "http--alt": false, "123-456": false} {
+		if got := validListenPort(port); got != want {
+			t.Errorf("validListenPort(%q) = %t, want %t", port, got, want)
+		}
+	}
+}
+
 func TestIPByteComparisonReportsTwoIPValues(t *testing.T) {
 	root := analysisModule(
 		t,
@@ -1370,7 +1383,7 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 `)
-	registry, err := NewRegistry([]string{"testmain-missing-exit"})
+	registry, err := NewRegistry([]string{"test-main-missing-exit"})
 	if err != nil {
 		t.Fatal(err)
 	}

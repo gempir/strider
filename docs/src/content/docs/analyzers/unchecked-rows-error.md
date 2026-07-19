@@ -13,16 +13,14 @@ sidebar:
 iteration error occurs. Check `Rows.Err` after the loop so driver, network, and
 decoding failures are not silently treated as successful completion.
 
-```go
-for rows.Next() {
-	// scan values
-}
-// reported: rows.Err is never checked
+## Bad
 
-for rows.Next() {
-	// scan values
-}
-if err := rows.Err(); err != nil { // accepted
-	return err
-}
+```go
+for rows.Next() { scan(rows) }
+```
+
+## Good
+
+```go
+for rows.Next() { scan(rows) }; if err := rows.Err(); err != nil { return err }
 ```

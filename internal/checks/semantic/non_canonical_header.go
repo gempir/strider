@@ -25,6 +25,7 @@ func (nonCanonicalHeaderRule) Meta() Meta {
 
 func (nonCanonicalHeaderRule) Run(pass *Pass) {
 	for _, file := range pass.Files {
+		assigned := make(map[*ast.IndexExpr]bool)
 		ast.Inspect(
 			file,
 			func(node ast.Node) bool {
@@ -32,16 +33,16 @@ func (nonCanonicalHeaderRule) Run(pass *Pass) {
 					ok := node.(*ast.AssignStmt); ok {
 					for _, expression := range assignment.Lhs {
 						index,
-							ok := expression.(*ast.IndexExpr)
+							ok := ast.Unparen(expression).(*ast.IndexExpr)
 						if ok && isHTTPHeader(pass.TypesInfo.TypeOf(index.X)) {
-							return false
+							assigned[index] = true
 						}
 					}
 					return true
 				}
 				index,
 					ok := node.(*ast.IndexExpr)
-				if !ok || !isHTTPHeader(pass.TypesInfo.TypeOf(index.X)) {
+				if !ok || assigned[index] || !isHTTPHeader(pass.TypesInfo.TypeOf(index.X)) {
 					return true
 				}
 				value := pass.TypesInfo.Types[index.Index].Value

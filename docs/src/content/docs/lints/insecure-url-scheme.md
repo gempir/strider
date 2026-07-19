@@ -1,6 +1,6 @@
 ---
-title: error-return
-description: "Place error last in result lists."
+title: insecure-url-scheme
+description: "Detect insecure URL schemes."
 sidebar:
   badge:
     text: warning
@@ -11,16 +11,16 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Place error last in result lists.
+Detect insecure URL schemes. Default: HTTP, WS, and FTP.
 
 ## Bad
 
 ```go
-func Load() (error, string)
+endpoint := "http://example.com"
 ```
 
 ## Good
 
 ```go
-func Load() (string, error)
+endpoint := "https://example.com"
 ```

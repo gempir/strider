@@ -14,7 +14,14 @@ value bit. This is usually an incorrect shift count. Machine-sized `int`,
 `uint`, and `uintptr` are excluded because width-dependent bit manipulation can
 be intentional.
 
+## Bad
+
 ```go
-value := uint8(1) << 8 // reported
-value := uint8(1) << 7 // accepted
+value := uint8(1) << 8
+```
+
+## Good
+
+```go
+value := uint8(1) << 7
 ```

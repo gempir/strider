@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Avoid formatting calls without directives.
+Avoid formatting calls without directives. Default: enabled.
 
 ## Bad
 

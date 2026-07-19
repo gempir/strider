@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Enforce idiomatic identifier naming.
+Enforce idiomatic identifier naming. Default: common initialisms.
 
 ## Bad
 

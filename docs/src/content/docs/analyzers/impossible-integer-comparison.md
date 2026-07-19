@@ -14,7 +14,14 @@ true or false, such as checking whether an unsigned value is below zero or
 above its maximum. Target-sized `int`, `uint`, and `uintptr` use the loaded
 build architecture.
 
+## Bad
+
 ```go
-value < 0  // reported when value is unsigned
-value == 0 // accepted
+if value < 0 { use() } // value is unsigned
+```
+
+## Good
+
+```go
+if value == 0 { use() }
 ```

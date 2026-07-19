@@ -17,10 +17,14 @@ directory-creation helper or forgetting to append a suffix.
 The check covers the temporary, user cache, user configuration, and user
 home directory helpers.
 
-```go
-directory := os.TempDir()
-os.RemoveAll(directory) // reported
+## Bad
 
-directory := filepath.Join(os.TempDir(), "application")
-os.RemoveAll(directory) // accepted
+```go
+directory := os.TempDir(); defer os.RemoveAll(directory)
+```
+
+## Good
+
+```go
+directory, err := os.MkdirTemp(os.TempDir(), `app-*`); defer os.RemoveAll(directory)
 ```

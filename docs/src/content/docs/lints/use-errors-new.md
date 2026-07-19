@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Prefer errors.New for static errors.
+Prefer errors.New for static errors. Default: enabled.
 
 ## Bad
 

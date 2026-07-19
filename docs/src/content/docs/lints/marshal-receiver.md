@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Keep marshal receiver types consistent.
+Keep marshal receiver types consistent. Default: standard method families.
 
 ## Bad
 

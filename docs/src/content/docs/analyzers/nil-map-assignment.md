@@ -12,10 +12,14 @@ sidebar:
 Reading from a nil map is allowed, but assigning an entry to a nil map panics.
 Initialize the map with `make` or a map literal before writing.
 
-```go
-var values map[string]int
-values[key] = value // reported
+## Bad
 
-values := make(map[string]int)
-values[key] = value // accepted
+```go
+var values map[string]int; values[key] = value
+```
+
+## Good
+
+```go
+values := make(map[string]int); values[key] = value
 ```

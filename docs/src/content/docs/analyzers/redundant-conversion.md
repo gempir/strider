@@ -11,3 +11,15 @@ sidebar:
 
 An exact same-type conversion cannot change a value or its method set. Remove
 it to make the type flow clearer.
+
+## Bad
+
+```go
+normalized := UserID(existingUserID)
+```
+
+## Good
+
+```go
+normalized := UserID(rawID)
+```

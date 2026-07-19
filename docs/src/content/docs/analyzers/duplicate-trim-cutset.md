@@ -13,7 +13,14 @@ sidebar:
 a set of runes, not as a prefix or suffix. Duplicate runes have no effect and
 often reveal that `TrimPrefix` or `TrimSuffix` was intended.
 
+## Bad
+
 ```go
-strings.TrimLeft(value, "letter")   // reported: repeated runes
-strings.TrimPrefix(value, "letter") // accepted
+strings.TrimLeft(value, "letter")
+```
+
+## Good
+
+```go
+strings.TrimPrefix(value, "prefix")
 ```

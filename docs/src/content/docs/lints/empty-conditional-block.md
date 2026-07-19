@@ -1,5 +1,5 @@
 ---
-title: empty-block
+title: empty-conditional-block
 description: Detect empty statement blocks that need removal or explanation.
 sidebar:
   badge:
@@ -9,7 +9,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
-Purpose: catch empty `if` and `else` branches that are usually unfinished code
+Catch empty `if` and `else` branches that are usually unfinished code
 or accidental no-ops.
 
 ## Behavior
@@ -17,3 +17,18 @@ or accidental no-ops.
 Empty functions, methods, closures, and loop bodies are accepted because they
 are commonly intentional stubs, marker methods, callbacks, or drain loops and
 have different semantics from an empty conditional branch.
+
+## Bad
+
+```go
+if err != nil {
+}
+```
+
+## Good
+
+```go
+if err != nil {
+	return err
+}
+```

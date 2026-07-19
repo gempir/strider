@@ -167,7 +167,10 @@ func (r *Registry) limits() map[string]int {
 	for code, setting := range r.settings {
 		switch code {
 		case "file-length-limit":
-			limits[code] = setting.config.MaxLines
+			limits[code] = 500
+			if setting.config.MaxLines != 0 || setting.config.HasExplicitOption("max-lines") {
+				limits[code] = setting.config.MaxLines
+			}
 		case "function-length":
 			limits[code+"-lines"], limits[code+"-statements"] = setting.config.MaxLines, setting.config.MaxStatements
 		case "function-result-limit":

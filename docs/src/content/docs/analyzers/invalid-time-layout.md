@@ -11,7 +11,14 @@ sidebar:
 
 Validates constant layouts against Go's reference-time convention.
 
+## Bad
+
 ```go
-time.Parse("YYYY-MM-DD", value) // reported
-time.Parse("2006-01-02", value) // accepted
+time.Parse("YYYY-MM-DD", value)
+```
+
+## Good
+
+```go
+time.Parse("2006-01-02", value)
 ```

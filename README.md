@@ -40,7 +40,7 @@ Long options always require two dashes. Every option also has a scoped
 one-character alias, such as `-s warning` for `--minimum-severity warning` and
 `-w` for `--watch`.
 
-All 225 checks are eligible. The default warning severity floor runs the 151
+All 207 checks are eligible. The default warning severity floor runs the 191
 warning and error checks; use `--minimum-severity note` to include notes too.
 Checks configured with `severity = "none"` are suppressed unless the command
 uses `--minimum-severity none`. `--only` selects exactly the named codes and
@@ -91,8 +91,9 @@ print-width = 180
 baseline = "strider-baseline.toml"
 minimum-severity = "warning"
 
-[checks.rules.line-length-limit]
+[checks.rules.file-length-limit]
 severity = "warning"
+max-lines = 800
 
 [checks.rules.possible-nil-dereference]
 severity = "error"

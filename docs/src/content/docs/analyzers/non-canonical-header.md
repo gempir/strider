@@ -12,7 +12,14 @@ sidebar:
 Direct map reads do not canonicalize header keys. Header method calls and map
 writes are not reported.
 
+## Bad
+
 ```go
-value := header["content-type"] // reported
-value := header["Content-Type"] // accepted
+value := header["content-type"]
+```
+
+## Good
+
+```go
+value := header["Content-Type"]
 ```

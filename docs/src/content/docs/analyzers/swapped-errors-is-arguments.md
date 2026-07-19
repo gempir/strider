@@ -13,7 +13,14 @@ sidebar:
 second. A package-level sentinel from another package in the first position,
 followed by a local error value, usually means the arguments were reversed.
 
+## Bad
+
 ```go
-errors.Is(io.EOF, err) // reported
-errors.Is(err, io.EOF) // accepted
+errors.Is(io.EOF, err)
+```
+
+## Good
+
+```go
+errors.Is(err, io.EOF)
 ```

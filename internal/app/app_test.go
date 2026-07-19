@@ -352,12 +352,25 @@ func TestCheckListsOneUnifiedCatalog(t *testing.T) {
 	if code != exitSuccess || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
-	if got := strings.Count(strings.TrimSpace(stdout.String()), "\n") + 1; got != 217 {
-		t.Fatalf("listed %d checks; want 217", got)
+	if got := strings.Count(strings.TrimSpace(stdout.String()), "\n") + 1; got != 207 {
+		t.Fatalf("listed %d checks; want 207", got)
 	}
 	for _, wanted := range []string{"format", "no-init", "invalid-regexp"} {
 		if _, ok := listedSeverity(stdout.String(), wanted); !ok {
 			t.Fatalf("unified catalog missing %q", wanted)
+		}
+	}
+}
+
+func TestCheckExplainsKnownRuleBelowSeverityFloor(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run([]string{"--no-config", "check", "--explain", "NO-INIT"}, strings.NewReader(""), &stdout, &stderr)
+	if code != exitSuccess || stderr.Len() != 0 {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	for _, wanted := range []string{"no-init", "Good:", "Bad:", "init functions hide ordering"} {
+		if !strings.Contains(stdout.String(), wanted) {
+			t.Fatalf("explanation missing %q: %q", wanted, stdout.String())
 		}
 	}
 }
@@ -851,12 +864,13 @@ func TestLintListsCompleteRegistry(t *testing.T) {
 	if code != exitSuccess {
 		t.Fatalf("exit %d, stderr %s", code, stderr.String())
 	}
-	if got := strings.Count(strings.TrimSpace(stdout.String()), "\n") + 1; got != 106 {
-		t.Fatalf("listed %d rules; want 106", got)
+	if got := strings.Count(strings.TrimSpace(stdout.String()), "\n") + 1; got != 94 {
+		t.Fatalf("listed %d rules; want 94", got)
 	}
 	_, marshalListed := listedSeverity(stdout.String(), "marshal-receiver")
-	_, multilineListed := listedSeverity(stdout.String(), "multiline-if-init")
-	if !marshalListed || !multilineListed {
+	_, splitRuleListed := listedSeverity(stdout.String(), "redundant-final-return")
+	_, removedFormatterRuleListed := listedSeverity(stdout.String(), "multiline-if-init")
+	if !marshalListed || !splitRuleListed || removedFormatterRuleListed {
 		t.Fatalf("complete registry is missing extended rules: %s", stdout.String())
 	}
 }

@@ -15,9 +15,15 @@ collisions; non-comparable and nil keys panic at runtime.
 
 This type-aware check supersedes the earlier syntax-only implementation.
 
-```go
-context.WithValue(ctx, "request-id", value) // reported
+## Bad
 
+```go
+ctx = context.WithValue(ctx, "request-id", value)
+```
+
+## Good
+
+```go
 type contextKey struct{}
-context.WithValue(ctx, contextKey{}, value)  // accepted
+ctx = context.WithValue(ctx, contextKey{}, value)
 ```

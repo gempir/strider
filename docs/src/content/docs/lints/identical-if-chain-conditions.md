@@ -1,6 +1,6 @@
 ---
-title: enforce-repeated-arg-type-style
-description: "Enforce repeated argument type style."
+title: identical-if-chain-conditions
+description: "Detect repeated if-chain conditions."
 sidebar:
   badge:
     text: warning
@@ -11,16 +11,16 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Enforce repeated argument type style.
+Detect repeated if-chain conditions. Default: enabled.
 
 ## Bad
 
 ```go
-func add(left int, right int) int // with short style configured
+if ready { one() } else if ready { two() }
 ```
 
 ## Good
 
 ```go
-func add(left, right int) int // with short style configured
+if first { one() } else if second { two() }
 ```

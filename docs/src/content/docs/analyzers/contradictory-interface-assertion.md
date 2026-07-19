@@ -17,9 +17,20 @@ succeed.
 Assertions to concrete types are already checked by the Go compiler. This
 check focuses on interface-to-interface assertions.
 
+## Bad
+
 ```go
 type source interface { Read() int }
 type target interface { Read() string }
 
 value, ok := input.(target) // reported when input has type source
+```
+
+## Good
+
+```go
+type source interface { Read() int }
+type target interface { Write([]byte) error }
+
+value, ok := input.(target)
 ```

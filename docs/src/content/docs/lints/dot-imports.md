@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Discourage dot imports.
+Discourage dot imports. Default: no allowed packages.
 
 ## Bad
 

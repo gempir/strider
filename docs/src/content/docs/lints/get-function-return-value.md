@@ -1,6 +1,6 @@
 ---
-title: file-header
-description: "Require a configured source header."
+title: get-function-return-value
+description: "Require Get-prefixed functions to return values."
 sidebar:
   badge:
     text: note
@@ -11,17 +11,16 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Require a configured source header.
+Require Get-prefixed functions to return values. Default: enabled.
 
 ## Bad
 
 ```go
-package service // when a copyright header is required
+func GetClient() { initializeClient() }
 ```
 
 ## Good
 
 ```go
-// Copyright Example Corp.
-package service
+func GetClient() *Client { return client }
 ```

@@ -27,30 +27,11 @@ func (a *cstAnalyzer) checkConcreteAssignedCall(statement, left, right cst.Node)
 		return
 	}
 	name := concreteCallName(call)
-	root := concreteRootIdentifier(left)
 	if strings.HasPrefix(name, "atomic.") {
 		arguments := concreteCallArguments(call.Postfix)
 		if len(arguments) > 0 && strings.TrimPrefix(cst.Spelling(arguments[0]), "&") == cst.Spelling(left) {
-			a.report("atomic", statement, "do not assign an atomic operation result back to the same value")
+			a.report("redundant-atomic-result-assignment", statement, "do not assign an atomic operation result back to the same value")
 		}
-	}
-	if unit := concreteEpochUnit(name); unit != "" && root.IsValid() && !validEpochName(root.Src(), unit) {
-		a.report("epoch-naming", root, fmt.Sprintf("name should end with a %s unit suffix", unit))
-	}
-}
-
-func concreteEpochUnit(name string) string {
-	switch {
-	case strings.HasSuffix(name, ".UnixNano"):
-		return "nanosecond"
-	case strings.HasSuffix(name, ".UnixMicro"):
-		return "microsecond"
-	case strings.HasSuffix(name, ".UnixMilli"):
-		return "millisecond"
-	case strings.HasSuffix(name, ".Unix"):
-		return "second"
-	default:
-		return ""
 	}
 }
 

@@ -17,13 +17,13 @@ changing its public code.
 ## Run checks
 
 Run every check at or above the configured severity floor. The default warning
-floor runs 151 checks:
+floor runs 191 checks:
 
 ```sh
 strider check [PATH]...
 ```
 
-Run all 225 checks whose effective severity is note or higher:
+Run all 207 checks whose effective severity is note or higher:
 
 ```sh
 strider check --minimum-severity note [PATH]...
@@ -78,8 +78,8 @@ strider check --minimum-severity none --list-checks
 strider check --explain invalid-regexp
 ```
 
-Strider includes one reserved `format` check, 116 style and maintainability
-checks, and 110 correctness and data-flow checks. Individual check pages are
+Strider includes one reserved `format` check, 94 style and maintainability
+checks, and 112 correctness and data-flow checks. Individual check pages are
 grouped by purpose in the documentation sidebar.
 
 ## Configure checks
@@ -96,8 +96,9 @@ minimum-severity = "warning"
 [checks.rules.format]
 severity = "note"
 
-[checks.rules.line-length-limit]
+[checks.rules.file-length-limit]
 severity = "error"
+max-lines = 800
 excludes = ["testdata/golden/**"]
 
 [checks.rules.possible-nil-dereference]

@@ -11,12 +11,12 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Detect boolean control parameters.
+Detect boolean control parameters. Default: enabled.
 
 ## Bad
 
 ```go
-func Open(path string, readOnly bool) error
+func Open(path string, readOnly bool) error { if readOnly { return openReadOnly(path) }; return openReadWrite(path) }
 ```
 
 ## Good

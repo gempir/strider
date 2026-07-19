@@ -13,7 +13,14 @@ An IPv4 address stored in `net.IP` may have either a 4-byte or 16-byte
 representation. `bytes.Equal` treats those representations as different;
 `net.IP.Equal` compares the address values correctly.
 
+## Bad
+
 ```go
-bytes.Equal(left, right) // reported when both values are net.IP
-left.Equal(right)        // accepted
+bytes.Equal(left, right)
+```
+
+## Good
+
+```go
+left.Equal(right)
 ```

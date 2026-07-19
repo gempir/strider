@@ -13,7 +13,14 @@ sidebar:
 before writing it. The writer already accepts bytes through `Write`, so write
 the original slice directly.
 
+## Bad
+
 ```go
-io.WriteString(writer, string(bytes)) // reported
-writer.Write(bytes)                   // accepted
+_, err := io.WriteString(writer, string(bytes))
+```
+
+## Good
+
+```go
+_, err := writer.Write(bytes)
 ```

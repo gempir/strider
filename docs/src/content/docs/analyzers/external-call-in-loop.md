@@ -12,3 +12,25 @@ sidebar:
 Database queries and HTTP requests issued once per loop iteration commonly
 create serial N+1 round trips. The SSA check is limited to known
 `database/sql` and `net/http` calls in actual control-flow cycles.
+
+## Bad
+
+```go
+for _, id := range ids {
+	row := db.QueryRowContext(ctx, query, id)
+	_ = row
+}
+```
+
+## Good
+
+```go
+rows, err := db.QueryContext(ctx, batchQuery, ids)
+if err != nil {
+	return err
+}
+defer rows.Close()
+for rows.Next() {
+	mapResult(rows)
+}
+```

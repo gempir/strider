@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
-Match package and directory names.
+Match package and directory names. Default: testdata ignored.
 
 ## Bad
 

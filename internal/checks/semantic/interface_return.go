@@ -11,11 +11,11 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type interfaceReturnRule struct{}
+type constructorInterfaceReturnRule struct{}
 
-func (interfaceReturnRule) Meta() Meta {
+func (constructorInterfaceReturnRule) Meta() Meta {
 	return Meta{
-		Code:            "interface-return",
+		Code:            "constructor-interface-return",
 		Summary:         "detect constructors that hide a single concrete result",
 		Explanation:     "Callers can define the small interface they need when constructors return concrete types. This conservative check only reports exported New-style constructors whose non-nil returns consistently reveal one local concrete implementation of a non-empty local interface; error, any, standard-library interfaces, and polymorphic results are ignored.",
 		GoodExample:     "func NewStore() *memoryStore { return &memoryStore{} }",
@@ -24,7 +24,7 @@ func (interfaceReturnRule) Meta() Meta {
 	}
 }
 
-func (interfaceReturnRule) Run(pass *Pass) {
+func (constructorInterfaceReturnRule) Run(pass *Pass) {
 	for _, file := range pass.Files {
 		for _, declaration := range file.Decls {
 			function, ok := declaration.(*ast.FuncDecl)

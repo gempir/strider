@@ -12,7 +12,14 @@ sidebar:
 Reports supported printf-style calls whose only format argument is dynamic.
 Use a print-style function or an explicit `%s` format.
 
+## Bad
+
 ```go
-fmt.Printf(message) // reported
-fmt.Printf("%s", message) // accepted
+fmt.Printf(message)
+```
+
+## Good
+
+```go
+fmt.Printf("%s", message)
 ```

@@ -20,14 +20,12 @@ func (a *cstAnalyzer) checkConcreteCall(call *cst.PrimaryExpr) {
 	case "runtime.GC":
 		a.report("call-to-gc", call, "avoid explicit garbage collection")
 	case "errors.New":
-		a.checkConcreteErrorMessage(arguments)
 		if len(arguments) == 1 {
 			if inner, ok := arguments[0].(*cst.PrimaryExpr); ok && concreteCallName(inner) == "fmt.Sprintf" {
-				a.report("errorf", call, "replace errors.New(fmt.Sprintf(...)) with fmt.Errorf(...)")
+				a.report("prefer-fmt-errorf", call, "replace errors.New(fmt.Sprintf(...)) with fmt.Errorf(...)")
 			}
 		}
 	case "fmt.Errorf":
-		a.checkConcreteErrorMessage(arguments)
 		if len(arguments) > 0 && concreteLiteralWithoutFormatting(arguments[0]) {
 			a.report("use-errors-new", call, "replace fmt.Errorf with errors.New for a static message")
 		}
@@ -51,12 +49,6 @@ func (a *cstAnalyzer) checkConcreteCall(call *cst.PrimaryExpr) {
 	if isErrorConstructor(name) {
 		a.checkConcreteErrorMessage(arguments)
 	}
-	if a.concreteExpressionStatement(call) && likelyReturnsError(name) {
-		a.report("unhandled-error", call, fmt.Sprintf("error returned by %s is ignored", name))
-	}
-	if a.insideConcreteWaitGroupGo() && (name == "panic" || name == "recover" || strings.HasSuffix(name, ".Done")) {
-		a.report("forbidden-call-in-wg-go", call, fmt.Sprintf("%s must not be called inside WaitGroup.Go", name))
-	}
 }
 
 func concreteIntegerLooking(node cst.Node) bool {
@@ -69,30 +61,6 @@ func concreteIntegerLooking(node cst.Node) bool {
 	}
 	name := concreteCallName(call)
 	return name == "int" || strings.HasPrefix(name, "int") || strings.HasPrefix(name, "uint")
-}
-
-func (a *cstAnalyzer) concreteExpressionStatement(call *cst.PrimaryExpr) bool {
-	if len(a.ancestors) == 0 {
-		return false
-	}
-	list, ok := a.ancestors[len(a.ancestors)-1].(*cst.StatementList)
-	return ok && list.Statement == call
-}
-
-func (a *cstAnalyzer) insideConcreteWaitGroupGo() bool {
-	for index := len(a.ancestors) - 1; index >= 0; index-- {
-		call, ok := a.ancestors[index].(*cst.PrimaryExpr)
-		if !ok || !strings.HasSuffix(concreteCallName(call), ".Go") {
-			continue
-		}
-		arguments := concreteCallArguments(call.Postfix)
-		if len(arguments) > 0 {
-			if _, ok := arguments[0].(*cst.FunctionLit); ok {
-				return true
-			}
-		}
-	}
-	return false
 }
 
 func (a *cstAnalyzer) checkConcreteTimeDate(arguments []cst.Node) {

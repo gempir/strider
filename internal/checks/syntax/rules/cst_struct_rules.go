@@ -37,7 +37,7 @@ func (a *cstAnalyzer) checkConcreteStringLiteral(literal *cst.BasicLit) {
 	lower := strings.ToLower(value)
 	for _, scheme := range []string{"http://", "ws://", "ftp://"} {
 		if strings.HasPrefix(lower, scheme) {
-			a.report("unsecure-url-scheme", literal, fmt.Sprintf("URL uses insecure %s scheme", strings.TrimSuffix(scheme, "://")))
+			a.report("insecure-url-scheme", literal, fmt.Sprintf("URL uses insecure %s scheme", strings.TrimSuffix(scheme, "://")))
 			return
 		}
 	}
@@ -46,12 +46,12 @@ func (a *cstAnalyzer) checkConcreteStringLiteral(literal *cst.BasicLit) {
 func (a *cstAnalyzer) checkConcreteStructTag(literal cst.Token) {
 	value, err := strconv.Unquote(literal.Src())
 	if err != nil {
-		a.report("struct-tag", literal, "struct tag is not a valid quoted string")
+		a.report("invalid-struct-tag", literal, "struct tag is not a valid quoted string")
 		return
 	}
 	tags, valid := parseStructTagValues(value)
 	if !valid {
-		a.report("struct-tag", literal, "struct tag has invalid key:value syntax")
+		a.report("invalid-struct-tag", literal, "struct tag has invalid key:value syntax")
 		return
 	}
 	keys := make([]string, 0, len(tags))
@@ -62,7 +62,7 @@ func (a *cstAnalyzer) checkConcreteStructTag(literal cst.Token) {
 	importsGoFlags := a.concreteImportsPath("github.com/jessevdk/go-flags")
 	for _, key := range keys {
 		if len(tags[key]) > 1 && !(importsGoFlags && goFlagsRepeatedTag(key)) {
-			a.report("struct-tag", literal, fmt.Sprintf("duplicate struct tag %q", key))
+			a.report("invalid-struct-tag", literal, fmt.Sprintf("duplicate struct tag %q", key))
 		}
 	}
 	tag := reflect.StructTag(value)
@@ -73,7 +73,7 @@ func (a *cstAnalyzer) checkConcreteStructTag(literal cst.Token) {
 		}
 		name := strings.Split(raw, ",")[0]
 		if strings.ContainsAny(name, " \t\n\r\"") {
-			a.report("struct-tag", literal, fmt.Sprintf("%s tag contains invalid whitespace or quoting", key))
+			a.report("invalid-struct-tag", literal, fmt.Sprintf("%s tag contains invalid whitespace or quoting", key))
 		}
 		switch key {
 		case "json":
@@ -94,16 +94,16 @@ func (a *cstAnalyzer) checkConcreteJSONTagOptions(literal cst.Token, tag string)
 	for index, option := range parts[1:] {
 		if option == "" {
 			if index == len(parts[1:])-1 {
-				a.report("struct-tag", literal, "json tag has an empty trailing option")
+				a.report("invalid-struct-tag", literal, "json tag has an empty trailing option")
 			}
 			continue
 		}
 		if seen[option] {
-			a.report("struct-tag", literal, fmt.Sprintf("json tag has duplicate option %q", option))
+			a.report("invalid-struct-tag", literal, fmt.Sprintf("json tag has duplicate option %q", option))
 		}
 		seen[option] = true
 		if !validJSONTagOption(option) {
-			a.report("struct-tag", literal, fmt.Sprintf("json tag has unknown option %q", option))
+			a.report("invalid-struct-tag", literal, fmt.Sprintf("json tag has unknown option %q", option))
 		}
 	}
 }
@@ -116,11 +116,11 @@ func (a *cstAnalyzer) checkConcreteXMLTagOptions(literal cst.Token, tag string) 
 			continue
 		}
 		if seen[option] {
-			a.report("struct-tag", literal, fmt.Sprintf("xml tag has duplicate option %q", option))
+			a.report("invalid-struct-tag", literal, fmt.Sprintf("xml tag has duplicate option %q", option))
 		}
 		seen[option] = true
 		if !validXMLTagOption(option) {
-			a.report("struct-tag", literal, fmt.Sprintf("xml tag has unknown option %q", option))
+			a.report("invalid-struct-tag", literal, fmt.Sprintf("xml tag has unknown option %q", option))
 		}
 	}
 }

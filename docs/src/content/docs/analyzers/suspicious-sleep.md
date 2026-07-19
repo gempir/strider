@@ -12,7 +12,14 @@ sidebar:
 Reports bare integer literals from 1 through 120 because `time.Sleep` treats
 them as nanoseconds.
 
+## Bad
+
 ```go
-time.Sleep(5) // reported
-time.Sleep(5 * time.Second) // accepted
+time.Sleep(5)
+```
+
+## Good
+
+```go
+time.Sleep(5 * time.Second)
 ```

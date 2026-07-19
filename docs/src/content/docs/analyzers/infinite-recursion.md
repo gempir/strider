@@ -17,15 +17,14 @@ recursion should be written as a loop.
 Recursively starting a new goroutine is not reported because it does not grow
 one goroutine's stack indefinitely.
 
-```go
-func visit() {
-    visit() // reported
-}
+## Bad
 
-func visit(done bool) {
-    if done {
-        return
-    }
-    visit(done) // accepted: the early return bypasses this call
-}
+```go
+func visit() { visit() }
+```
+
+## Good
+
+```go
+if done { return }; visit(next)
 ```

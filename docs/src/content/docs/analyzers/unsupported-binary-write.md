@@ -12,6 +12,14 @@ sidebar:
 Reports architecture-sized integers and other variable-size values passed to
 `binary.Write`.
 
+## Bad
+
 ```go
 binary.Write(writer, binary.LittleEndian, value) // reported when value is int
+```
+
+## Good
+
+```go
+binary.Write(writer, binary.LittleEndian, uint32(value))
 ```

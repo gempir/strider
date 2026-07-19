@@ -14,16 +14,14 @@ An `if` initializer such as `if value, ok := value.(T); ok` declares a new
 that variable contains `T`'s zero value. Reading it in the failure branch often
 means the original interface value was intended.
 
-```go
-if value, ok := value.(int); ok {
-	use(value)
-} else {
-	logType(value) // reported: this is always the integer zero value
-}
+## Bad
 
-if typed, ok := value.(int); ok {
-	use(typed)
-} else {
-	logType(value) // accepted: this is the original interface value
-}
+```go
+if value, ok := value.(T); ok { use(value) } else { logType(value) }
+```
+
+## Good
+
+```go
+if typed, ok := value.(T); ok { use(typed) } else { logType(value) }
 ```

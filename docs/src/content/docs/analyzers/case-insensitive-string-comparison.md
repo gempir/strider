@@ -14,7 +14,14 @@ intermediate strings and processes each input fully. `strings.EqualFold`
 compares incrementally without those allocations and can stop at the first
 mismatch.
 
+## Bad
+
 ```go
-strings.ToLower(left) == strings.ToLower(right) // reported
-strings.EqualFold(left, right)                  // accepted
+if strings.ToLower(left) == strings.ToLower(right) { use() }
+```
+
+## Good
+
+```go
+if strings.EqualFold(left, right) { use() }
 ```

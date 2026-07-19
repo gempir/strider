@@ -11,7 +11,14 @@ sidebar:
 
 A zero limit always returns no matches. Use a negative limit for all matches.
 
+## Bad
+
 ```go
-expression.FindAllString(input, 0) // reported
-expression.FindAllString(input, -1) // accepted
+matches := expression.FindAllString(input, 0)
+```
+
+## Good
+
+```go
+matches := expression.FindAllString(input, -1)
 ```

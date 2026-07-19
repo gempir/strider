@@ -26,8 +26,9 @@ severity = "warning"
 [checks.rules.no-init]
 severity = "none"
 
-[checks.rules.line-length-limit]
+[checks.rules.file-length-limit]
 severity = "error"
+max-lines = 800
 excludes = ["cmd/migrations/**"]
 
 [checks.rules.possible-nil-dereference]
@@ -170,7 +171,7 @@ Tool-wide settings live under `[checks]`.
 | `minimum-severity` | string | `"warning"` | Run only checks whose effective severity is at least `"none"`, `"note"`, `"warning"`, or `"error"`. |
 | `rules` | table | `{}` | Common configuration keyed by any registered check code. |
 
-All 225 checks are eligible. The default warning floor runs the 151 checks whose
+All 207 checks are eligible. The default warning floor runs the 191 checks whose
 effective severity is warning or error. `strider check --minimum-severity note`
 also runs note checks, while `strider check --minimum-severity none` additionally
 runs checks configured with severity `none`.
@@ -186,16 +187,33 @@ Every code accepts the same two common options:
 [checks.rules.format]
 severity = "warning"
 
-[checks.rules.line-length-limit]
+[checks.rules.file-length-limit]
 severity = "warning"
+max-lines = 800
 excludes = ["testdata/golden/**"]
 
 [checks.rules.invalid-regexp]
 severity = "none"
 ```
 
-Behavioral thresholds remain part of each check's contract and are not yet
-generally configurable.
+Eight checks accept additional behavioral options. A numeric value of `0`
+uses the built-in limit, except for `file-length-limit`, where `0` disables the
+check. Empty lists are meaningful: they allow all characters or block no
+imports.
+
+| Check | Setting | Type | Built-in behavior |
+| --- | --- | --- | --- |
+| [`banned-characters`](/lints/banned-characters/) | `characters` | string list | Ban `ᐸ` and `ᐳ`; `[]` bans none. |
+| [`file-length-limit`](/lints/file-length-limit/) | `max-lines` | integer | 500; `0` disables the check. |
+| [`function-length`](/lints/function-length/) | `max-lines`, `max-statements` | integer | 75 lines and 50 statements; `0` uses either built-in limit. |
+| [`function-result-limit`](/lints/function-result-limit/) | `max-results` | integer | 3; `0` uses the built-in limit. |
+| [`imports-blocklist`](/lints/imports-blocklist/) | `blocked-imports` | string list | `[]` blocks no imports. |
+| [`max-parameters`](/lints/max-parameters/) | `max-parameters` | integer | 8; `0` uses the built-in limit. |
+| [`max-public-structs`](/lints/max-public-structs/) | `max-public-structs` | integer | 5; `0` uses the built-in limit. |
+| [`interface-method-limit`](/analyzers/interface-method-limit/) | `max-methods` | integer | 10; `0` uses the built-in limit. |
+
+Each linked check page shows its complete TOML table and examples. Check-specific
+options are rejected on unrelated check codes.
 
 Strider resolves selection and each rule's severity before applying
 `minimum-severity`, using `none < note < warning < error`. A note promoted to error is

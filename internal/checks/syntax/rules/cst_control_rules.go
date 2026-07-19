@@ -40,18 +40,6 @@ func (a *cstAnalyzer) checkConcreteIfElse(statement *cst.IfElseStmt) {
 
 func (a *cstAnalyzer) checkConcreteConditional(statement concreteIf) {
 	a.checkConcreteMapLookup(statement)
-	if statement.init != nil {
-		start, end := cst.Range(statement.init)
-		if a.tree.Position(end).Line > a.tree.Position(start).Line {
-			a.report("multiline-if-init", statement.init, "multiline if initializer should be moved above the if statement")
-		}
-	}
-	if statement.elseClause != nil && concreteBlockTerminates(statement.body) {
-		a.report("superfluous-else", statement.elseToken, "remove else after a branch that terminates control flow")
-		if concreteBlockReturns(statement.body) {
-			a.report("indent-error-flow", statement.elseToken, "drop else and outdent the block after the return")
-		}
-	}
 	if elseBlock, ok := statement.elseClause.(*cst.Block); ok {
 		if concreteBlockTerminates(elseBlock) && !concreteBlockTerminates(statement.body) {
 			a.report("early-return", statement.node, "invert the condition and return early to reduce nesting")
@@ -109,13 +97,13 @@ func (a *cstAnalyzer) checkConcreteIfChain(first concreteIf) {
 	for {
 		condition := cst.Spelling(current.condition)
 		if conditions[condition] {
-			a.report("identical-ifelseif-conditions", current.condition, "if-else-if chain repeats a condition")
+			a.report("identical-if-chain-conditions", current.condition, "if-else-if chain repeats a condition")
 		} else {
 			conditions[condition] = true
 		}
 		branch := cst.Spelling(current.body)
 		if branches[branch] {
-			a.report("identical-ifelseif-branches", current.body, "if-else-if chain repeats a branch body")
+			a.report("identical-if-chain-branches", current.body, "if-else-if chain repeats a branch body")
 		} else {
 			branches[branch] = true
 		}
@@ -180,30 +168,15 @@ func concreteBooleanBlock(block *cst.Block) (bool, bool) {
 func (a *cstAnalyzer) checkConcreteBlock(block *cst.Block) {
 	statements := concreteBlockStatements(block)
 	if len(statements) == 0 && a.concreteParentIsConditional() {
-		a.report("empty-block", block, "empty block should be removed or documented")
+		a.report("empty-conditional-block", block, "empty block should be removed or documented")
 	}
 	for index, statement := range statements {
 		if index+1 < len(statements) {
 			a.checkConcreteIfReturn(statement, statements[index+1])
-			a.checkConcreteWaitGroupAdd(statement, statements[index+1])
 		}
 		if index > 0 && concreteStatementTerminates(statements[index-1]) {
 			a.report("unreachable-code", statement, "statement is unreachable after unconditional control flow")
 		}
-	}
-	if len(statements) == 0 {
-		return
-	}
-	openLine := block.LBRACE.Position().Line
-	firstStart, _ := cst.Range(statements[0])
-	_, lastEnd := cst.Range(statements[len(statements)-1])
-	closeLine := block.RBRACE.Position().Line
-	if a.tree.Position(firstStart).Line > openLine+1 {
-		a.report("empty-lines", statements[0], "block begins with an unnecessary empty line")
-	}
-	if closeLine > a.tree.Position(lastEnd).Line+1 {
-		start, end := cst.Range(block.RBRACE)
-		a.reportRange("empty-lines", start, end, "block ends with an unnecessary empty line")
 	}
 }
 
@@ -235,15 +208,6 @@ func concreteBlockStatements(block *cst.Block) []cst.Node {
 func concreteBlockTerminates(block *cst.Block) bool {
 	statements := concreteBlockStatements(block)
 	return len(statements) != 0 && concreteStatementTerminates(statements[len(statements)-1])
-}
-
-func concreteBlockReturns(block *cst.Block) bool {
-	statements := concreteBlockStatements(block)
-	if len(statements) == 0 {
-		return false
-	}
-	_, ok := statements[len(statements)-1].(*cst.ReturnStmt)
-	return ok
 }
 
 func concreteStatementTerminates(statement cst.Node) bool {
@@ -282,16 +246,29 @@ search:
 		}
 		switch parent := a.ancestors[index].(type) {
 		case *cst.Assignment:
-			if parent.ExpressionList != nil && parent.ExpressionList.Len() == 2 {
+			if parent.ExpressionList != nil && parent.ExpressionList.Len() == 2 && a.concreteAssertionIsSoleExpression(assertion, parent.ExpressionList2) {
 				return
 			}
 			break search
 		case *cst.ShortVarDecl:
-			if parent.IdentifierList != nil && parent.IdentifierList.Len() == 2 {
+			if parent.IdentifierList != nil && parent.IdentifierList.Len() == 2 && a.concreteAssertionIsSoleExpression(assertion, parent.ExpressionList) {
 				return
 			}
 			break search
 		}
 	}
 	a.report("unchecked-type-assertion", assertion, "use the checked two-result form of the type assertion")
+}
+
+func (a *cstAnalyzer) concreteAssertionIsSoleExpression(assertion *cst.TypeAssertion, expressions *cst.ExpressionList) bool {
+	if expressions == nil || expressions.Len() != 1 {
+		return false
+	}
+	for index := len(a.ancestors) - 1; index >= 0; index-- {
+		primary, ok := a.ancestors[index].(*cst.PrimaryExpr)
+		if ok && primary.Postfix == assertion {
+			return cstUnparen(expressions.Expression) == primary
+		}
+	}
+	return false
 }

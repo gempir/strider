@@ -14,7 +14,14 @@ lengths. The check recognizes standard pair-oriented APIs and local
 functions that enforce an even length by panicking, then checks calls whose
 argument length is statically known.
 
+## Bad
+
 ```go
-strings.NewReplacer("old", "new")           // accepted
-strings.NewReplacer("old", "new", "extra") // reported
+strings.NewReplacer("old", "new", "orphan")
+```
+
+## Good
+
+```go
+strings.NewReplacer("old", "new")
 ```

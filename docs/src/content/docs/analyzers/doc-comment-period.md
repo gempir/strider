@@ -12,7 +12,14 @@ sidebar:
 Package and exported-declaration documentation should read as complete prose.
 The final sentence may end with `.`, `!`, `?`, or `:`.
 
+## Bad
+
 ```go
-// Client sends requests // reported
-// Client sends requests. // accepted
+// Client sends requests
+```
+
+## Good
+
+```go
+// Client sends requests.
 ```

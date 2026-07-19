@@ -1,6 +1,6 @@
 ---
-title: unnecessary-stmt
-description: "Detect redundant control flow."
+title: prefer-fmt-errorf
+description: "Replace errors.New around fmt.Sprintf."
 sidebar:
   badge:
     text: warning
@@ -11,16 +11,16 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Detect redundant control flow.
+Replace errors.New around fmt.Sprintf. Default: enabled.
 
 ## Bad
 
 ```go
-switch value { case 1: use(); break }
+errors.New(fmt.Sprintf("load %s", name))
 ```
 
 ## Good
 
 ```go
-switch value { case 1: use() }
+fmt.Errorf("load %s", name)
 ```

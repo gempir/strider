@@ -71,38 +71,6 @@ func isErrorConstructor(name string) bool {
 	return name == "errors.New" || name == "fmt.Errorf" || strings.HasSuffix(name, ".Errorf") || strings.HasSuffix(name, ".Wrap") || strings.HasSuffix(name, ".Wrapf")
 }
 
-func likelyReturnsError(name string) bool {
-	base := name
-	if dot := strings.LastIndex(base, "."); dot >= 0 {
-		base = base[dot+1:]
-	}
-	return base == "Close" || base == "Flush" || base == "Write" || base == "Remove" || base == "Rename" || base == "Chdir" || base == "Setenv" || base == "Unmarshal" || base == "Encode" || strings.HasPrefix(
-		base,
-		"Save",
-	)
-}
-
-func validEpochName(name, unit string) bool {
-	lower := strings.ToLower(name)
-	var suffixes []string
-	switch unit {
-	case "second":
-		suffixes = []string{"sec", "second", "seconds"}
-	case "millisecond":
-		suffixes = []string{"milli", "ms"}
-	case "microsecond":
-		suffixes = []string{"micro", "microsecond", "microseconds", "us"}
-	case "nanosecond":
-		suffixes = []string{"nano", "ns"}
-	}
-	for _, suffix := range suffixes {
-		if strings.HasSuffix(lower, suffix) {
-			return true
-		}
-	}
-	return false
-}
-
 func hasTimeUnitSuffix(name string) bool {
 	lower := strings.ToLower(name)
 	for _, suffix := range []string{"ns", "us", "ms", "sec", "secs", "second", "seconds", "min", "mins", "minute", "minutes", "hour", "hours"} {

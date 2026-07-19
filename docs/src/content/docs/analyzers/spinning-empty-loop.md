@@ -17,10 +17,14 @@ Conditions containing calls or channel receives are accepted because their
 result can change dynamically. Constant-false loops are accepted as disabled
 debug scaffolding.
 
-```go
-for !ready { // reported
-}
+## Bad
 
-for !ready() { // accepted
-}
+```go
+for {}
+```
+
+## Good
+
+```go
+for !ready() {} // condition is dynamically evaluated
 ```

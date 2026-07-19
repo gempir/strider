@@ -17,14 +17,14 @@ branch logs an error but continues execution.
 The check follows control-flow dominance so guarded dereferences and code
 reached only after a terminating nil branch are accepted.
 
-```go
-if value == nil {
-    reportError()
-}
-use(*value) // reported
+## Bad
 
-if value == nil {
-    return
-}
-use(*value) // accepted
+```go
+if value == nil { logError() }; use(*value)
+```
+
+## Good
+
+```go
+if value == nil { return }; use(*value)
 ```

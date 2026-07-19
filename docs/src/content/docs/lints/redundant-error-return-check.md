@@ -1,6 +1,6 @@
 ---
-title: multiline-if-init
-description: "Move multiline if initializers above conditions."
+title: redundant-error-return-check
+description: "Simplify redundant error checks before returning."
 sidebar:
   badge:
     text: warning
@@ -11,18 +11,18 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Move multiline if initializers above conditions.
+Simplify redundant error checks before returning. Default: enabled.
 
 ## Bad
 
 ```go
-if value, err :=
-	load(); err != nil { return err }
+if err := save(); err != nil { return err }
+return nil
 ```
 
 ## Good
 
 ```go
-value, err := load()
-if err != nil { return err }
+err := save()
+return err
 ```

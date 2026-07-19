@@ -9,7 +9,14 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
+## Bad
+
 ```go
-url.Parse(":") // reported
-url.Parse("https://go.dev") // accepted
+url.Parse(":")
+```
+
+## Good
+
+```go
+url.Parse("https://golang.org")
 ```

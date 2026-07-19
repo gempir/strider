@@ -109,6 +109,25 @@ func TestLoadRejectsUnknownAndInvalidSettings(t *testing.T) {
 	}
 }
 
+func TestLoadTracksExplicitZeroValuedRuleOptions(t *testing.T) {
+	path := filepath.Join(t.TempDir(), Filename)
+	contents := "version = 1\n[checks.rules.no-init]\nmax-lines = 0\n"
+	if err := os.WriteFile(path, []byte(contents), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	configuration, err := Load(path, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rule := configuration.Checks.Rules["no-init"]
+	if !rule.HasExplicitOption("max-lines") {
+		t.Fatal("explicit max-lines = 0 was not retained for check-specific validation")
+	}
+	if rule.HasExplicitOption("max-methods") {
+		t.Fatal("omitted option was marked explicit")
+	}
+}
+
 func chdir(t *testing.T, directory string) {
 	t.Helper()
 	previous, err := os.Getwd()

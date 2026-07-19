@@ -11,3 +11,15 @@ sidebar:
 
 Reports odd key/value tails, non-string loose keys, and calls that mix
 `slog.Attr` values with loose key/value pairs.
+
+## Bad
+
+```go
+slog.Info("request", 42, method, "status")
+```
+
+## Good
+
+```go
+slog.Info("request", "method", method, "status", status)
+```

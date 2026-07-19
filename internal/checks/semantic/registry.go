@@ -293,6 +293,9 @@ var ruleCatalog = []ruleDefinition{
 	ssaDefinition(testingFatalInGoroutineRule{}, 0, 0),
 	typedDefinition(deferredLockAfterLockRule{}, 0),
 	typedDefinition(testMainMissingExitRule{}, 0),
+	typedDefinition(timeValueEqualityRule{}, 0),
+	typedDefinition(waitGroupGoForbiddenCallRule{}, 0),
+	typedDefinition(rangeValueCaptureRule{}, FactParents),
 	typedDefinition(benchmarkIterationMutationRule{}, 0),
 	typedDefinition(identicalBinaryOperandsRule{}, FactParents),
 	typedDefinition(impossibleIntegerComparisonRule{}, 0),
@@ -354,7 +357,7 @@ var ruleCatalog = []ruleDefinition{
 	typedDefinition(slicePreallocationRule{}, 0),
 	typedDefinition(inefficientSprintfRule{}, 0),
 	typedDefinition(interfaceMethodLimitRule{}, 0),
-	typedDefinition(interfaceReturnRule{}, 0),
+	typedDefinition(constructorInterfaceReturnRule{}, 0),
 	typedDefinition(slogArgumentShapeRule{}, 0),
 	ssaDefinition(externalCallInLoopRule{}, 0, 0),
 	typedDefinition(nilErrorReturnRule{}, 0),
@@ -364,9 +367,8 @@ var ruleCatalog = []ruleDefinition{
 	typedDefinition(contextCancelInLoopRule{}, 0),
 	typedDefinition(copyLockValueRule{}, 0),
 	typedDefinition(discardedErrorResultRule{}, 0),
-	typedDefinition(inlineErrorDeclarationRule{}, 0),
 	typedDefinition(testParallelismRule{}, 0),
-	typedDefinition(declarationOrderRule{}, 0),
+	typedDefinition(topLevelDeclarationOrderRule{}, 0),
 }
 
 var requirementsByCode = func() map[string]Requirements {

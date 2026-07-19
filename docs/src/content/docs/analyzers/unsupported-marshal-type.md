@@ -13,9 +13,14 @@ The standard JSON and XML encoders cannot marshal channel or function values.
 The check recursively checks exported fields, while honoring ignored
 fields and custom marshaling methods.
 
+## Bad
+
 ```go
-json.Marshal(make(chan int)) // reported
-json.Marshal(struct {
-    Channel chan int `json:"-"`
-}{})                         // accepted
+json.Marshal(make(chan int))
+```
+
+## Good
+
+```go
+json.Marshal(struct{ Name string }{Name: name})
 ```

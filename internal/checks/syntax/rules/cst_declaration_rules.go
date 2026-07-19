@@ -44,7 +44,7 @@ func (a *cstAnalyzer) checkConcreteExportedFunction(name cst.Token, node cst.Nod
 		}
 	}
 	if !a.concreteHasDocumentation(name.Src(), node) {
-		a.report("exported", name, "exported function or method should have a comment beginning with its name")
+		a.report("exported-declaration-comment", name, "exported function or method should have a comment beginning with its name")
 	}
 }
 
@@ -56,7 +56,7 @@ func (a *cstAnalyzer) checkConcreteExportedDeclaration(name cst.Token, node cst.
 	if _, ok := node.(*cst.TypeDef); ok {
 		message = "exported type should have a comment beginning with its name"
 	}
-	a.report("exported", name, message)
+	a.report("exported-declaration-comment", name, message)
 }
 
 func (a *cstAnalyzer) checkConcreteExportedList(list *cst.IdentifierList, node cst.Node) {

@@ -73,6 +73,7 @@ func validListenPort(port string) bool {
 		case character >= 'A' && character <= 'Z', character >= 'a' && character <= 'z':
 			hasLetter = true
 		case character >= '0' && character <= '9':
+		case character == '-':
 		default:
 			return false
 		}

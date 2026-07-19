@@ -51,7 +51,10 @@ type RuleConfig struct {
 	MaxPublicStructs int      `toml:"max-public-structs"`
 	MaxMethods       int      `toml:"max-methods"`
 	BlockedImports   []string `toml:"blocked-imports"`
+	definedOptions   map[string]bool
 }
+
+var behavioralRuleOptions = []string{"characters", "max-lines", "max-statements", "max-results", "max-parameters", "max-public-structs", "max-methods", "blocked-imports"}
 
 func Defaults() Config {
 	return Config{Version: 1, Color: string(ui.ColorAuto), Formatter: FormatterConfig{PrintWidth: 180}, Checks: defaultToolConfig()}
@@ -98,12 +101,34 @@ func Load(explicitPath string, disabled bool) (Config, error) {
 		sort.Strings(keys)
 		return Config{}, fmt.Errorf("%s: unknown configuration key(s): %s", absolute, strings.Join(keys, ", "))
 	}
+	recordDefinedRuleOptions(&configuration, metadata)
 	configuration.Path = absolute
 	configuration.Root = filepath.Dir(absolute)
 	if err := configuration.validate(); err != nil {
 		return Config{}, fmt.Errorf("%s: %w", absolute, err)
 	}
 	return configuration, nil
+}
+
+func recordDefinedRuleOptions(configuration *Config, metadata toml.MetaData) {
+	for code, rule := range configuration.Checks.Rules {
+		for _, option := range behavioralRuleOptions {
+			if !metadata.IsDefined("checks", "rules", code, option) {
+				continue
+			}
+			if rule.definedOptions == nil {
+				rule.definedOptions = make(map[string]bool)
+			}
+			rule.definedOptions[option] = true
+		}
+		configuration.Checks.Rules[code] = rule
+	}
+}
+
+// HasExplicitOption reports whether a behavioral option was present in the
+// decoded TOML, including when its value decoded to the Go zero value.
+func (rule RuleConfig) HasExplicitOption(option string) bool {
+	return rule.definedOptions[option]
 }
 
 func discover() (string, error) {
@@ -185,5 +210,11 @@ func cloneRuleConfig(rule RuleConfig) RuleConfig {
 	cloned.Excludes = append([]string(nil), rule.Excludes...)
 	cloned.Characters = append([]string(nil), rule.Characters...)
 	cloned.BlockedImports = append([]string(nil), rule.BlockedImports...)
+	if rule.definedOptions != nil {
+		cloned.definedOptions = make(map[string]bool, len(rule.definedOptions))
+		for option := range rule.definedOptions {
+			cloned.definedOptions[option] = true
+		}
+	}
 	return cloned
 }

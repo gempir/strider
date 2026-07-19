@@ -1,5 +1,5 @@
 ---
-title: exported
+title: exported-declaration-comment
 description: "Document exported declarations."
 sidebar:
   badge:
@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Document exported declarations.
+Document exported declarations. Default: enabled.
 
 ## Bad
 

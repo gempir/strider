@@ -12,7 +12,14 @@ sidebar:
 Every integer is evenly divisible by one, so `value % 1` always produces zero.
 The expression usually contains a mistaken divisor.
 
+## Bad
+
 ```go
-remainder := value % 1 // reported
-remainder := value % 2 // accepted
+remainder := value % 1
+```
+
+## Good
+
+```go
+remainder := value % divisor
 ```

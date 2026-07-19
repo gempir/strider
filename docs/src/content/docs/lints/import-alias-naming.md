@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Enforce conventional import aliases.
+Enforce conventional import aliases. Default: lower-case letters and digits.
 
 ## Bad
 

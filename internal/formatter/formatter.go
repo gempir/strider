@@ -5,7 +5,9 @@ import (
 	"bytes"
 	"fmt"
 	goformat "go/format"
+	"go/scanner"
 	"go/token"
+	"strings"
 
 	"github.com/gempir/strider/internal/cst"
 )
@@ -22,7 +24,9 @@ func DefaultOptions() Options {
 
 type unsupportedErrorValue string
 
-func (value unsupportedErrorValue) Error() string { return string(value) }
+func (value unsupportedErrorValue) Error() string {
+	return string(value)
+}
 
 const ErrUnsupported unsupportedErrorValue = "unsupported Go syntax"
 
@@ -37,7 +41,9 @@ func (e *UnsupportedError) Error() string {
 	return fmt.Sprintf("%s:%d:%d: %v: %s", e.Filename, e.Line, e.Column, ErrUnsupported, e.Feature)
 }
 
-func (e *UnsupportedError) Unwrap() error { return ErrUnsupported }
+func (e *UnsupportedError) Unwrap() error {
+	return ErrUnsupported
+}
 
 type Result struct {
 	Source  []byte
@@ -77,7 +83,25 @@ func (s *Session) FormatWithOptions(filename string, source []byte, options Opti
 
 // IsIgnored reports whether source opts out of canonical formatting.
 func IsIgnored(source []byte) bool {
-	return bytes.Contains(source, []byte("//strider:format-ignore"))
+	file := token.NewFileSet().AddFile("", -1, len(source))
+	var lexer scanner.Scanner
+	lexer.Init(file, source, nil, scanner.ScanComments)
+	for {
+		_, kind, literal := lexer.Scan()
+		if kind == token.EOF {
+			return false
+		}
+		if kind != token.COMMENT {
+			continue
+		}
+		for _, line := range strings.Split(literal, "\n") {
+			line = strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(line, "//"), "/*"))
+			line = strings.TrimSpace(strings.TrimSuffix(line, "*/"))
+			if line == "strider:format-ignore" {
+				return true
+			}
+		}
+	}
 }
 
 // FormatTree formats a previously parsed source tree. The tree and its source
@@ -110,22 +134,17 @@ func (s *Session) FormatTree(filename string, originalTree *cst.Tree, options Op
 // PreviewTree renders a read-only formatting candidate without reparsing it.
 // It is intended for drift checks; callers that may expose or write the
 // candidate must use FormatTree and its equivalence/idempotence checks.
-func (s *Session) PreviewTree(
-	filename string,
-	originalTree *cst.Tree,
-	options Options,
-) (Result, error) {
+func (s *Session) PreviewTree(filename string, originalTree *cst.Tree, options Options) (Result, error) {
 	result, _, err := s.previewTree(filename, originalTree, options)
 	return result, err
 }
 
-func (s *Session) previewTree(
-	filename string,
-	originalTree *cst.Tree,
-	options Options,
-) (Result, string, error) {
+func (s *Session) previewTree(filename string, originalTree *cst.Tree, options Options) (Result, string, error) {
 	if originalTree == nil {
 		return Result{}, "", fmt.Errorf("format %s: nil concrete syntax tree", filename)
+	}
+	if options.PrintWidth < 40 || options.PrintWidth > 500 {
+		return Result{}, "", fmt.Errorf("format %s: print width must be between 40 and 500", filename)
 	}
 	source := originalTree.Bytes()
 	if IsIgnored(source) {

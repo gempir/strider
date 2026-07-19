@@ -25,11 +25,7 @@ func TestRunSharesCSTBetweenFormattingAndSyntaxChecks(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	result, err := Run(
-		shared,
-		registry,
-		RunOptions{Formatter: formatter.DefaultOptions(), CollectCandidates: true},
-	)
+	result, err := Run(shared, registry, RunOptions{Formatter: formatter.DefaultOptions(), CollectCandidates: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,11 +33,7 @@ func TestRunSharesCSTBetweenFormattingAndSyntaxChecks(t *testing.T) {
 		t.Fatalf("diagnostic count = %d, want %d: %#v", got, want, result.Diagnostics)
 	}
 	if result.Diagnostics[0].Code != "format" || result.Diagnostics[1].Code != "no-init" {
-		t.Fatalf(
-			"diagnostic codes = %q, %q",
-			result.Diagnostics[0].Code,
-			result.Diagnostics[1].Code,
-		)
+		t.Fatalf("diagnostic codes = %q, %q", result.Diagnostics[0].Code, result.Diagnostics[1].Code)
 	}
 	candidate, ok := result.Candidates[filename]
 	if !ok || !candidate.Changed {
@@ -82,11 +74,7 @@ func TestRunCSTOnlyDoesNotRequireGoPackage(t *testing.T) {
 func TestRunFormatIgnoreFastPathDoesNotParse(t *testing.T) {
 	directory := t.TempDir()
 	filename := filepath.Join(directory, "ignored.go")
-	if err := os.WriteFile(
-		filename,
-		[]byte("//strider:format-ignore\nthis is intentionally not Go\n"),
-		0o600,
-	); err != nil {
+	if err := os.WriteFile(filename, []byte("//strider:format-ignore\nthis is intentionally not Go\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	shared, err := workspace.Open([]string{filename}, workspace.Options{})

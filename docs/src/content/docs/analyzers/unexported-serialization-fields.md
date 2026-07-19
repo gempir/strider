@@ -16,7 +16,14 @@ unmarshaling into it cannot populate anything.
 Empty structs, promoted exported fields, and types with custom text, JSON, or
 XML serialization methods are accepted.
 
+## Bad
+
 ```go
-json.Marshal(struct{ value string }{"hidden"}) // reported
-json.Marshal(struct{ Value string }{"visible"}) // accepted
+json.Marshal(struct{ name string }{name: name})
+```
+
+## Good
+
+```go
+json.Marshal(struct{ Name string }{Name: name})
 ```

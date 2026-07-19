@@ -13,10 +13,16 @@ Deferring `Lock` or `RLock` immediately after acquiring the same lock is
 almost always a typo for deferring `Unlock` or `RUnlock` and is likely to
 deadlock when the function returns.
 
+## Bad
+
 ```go
 mutex.Lock()
-defer mutex.Lock()   // reported
+defer mutex.Lock()
+```
 
+## Good
+
+```go
 mutex.Lock()
-defer mutex.Unlock() // accepted
+defer mutex.Unlock()
 ```

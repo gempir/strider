@@ -40,8 +40,8 @@ var formatMeta = Meta{
 	Code:            "format",
 	Summary:         "require canonical Strider formatting",
 	Explanation:     "Canonical formatting keeps Go source deterministic and removes style-only review noise.",
-	GoodExample:     "Run `strider fmt` before committing.",
-	BadExample:      "Commit source for which `strider check --only format` reports a finding.",
+	GoodExample:     "package main\n\nfunc main() {}",
+	BadExample:      "package main\nfunc main( ){ }",
 	DefaultSeverity: diagnostic.SeverityWarning,
 	Capabilities:    CapabilityCST,
 }

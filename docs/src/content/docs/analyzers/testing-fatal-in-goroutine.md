@@ -13,8 +13,14 @@ Methods on `testing.T` and `testing.B` that terminate or skip execution must
 run in the same goroutine as the test. Calling `Fatal`, `FailNow`, `Skip`, or
 related methods from a child goroutine does not stop the test correctly.
 
-```go
-go func() { t.Fatal("failed") }() // reported
+## Bad
 
-if err != nil { t.Fatal(err) }    // accepted
+```go
+go func() { t.Fatal("failed") }()
+```
+
+## Good
+
+```go
+if err := work(); err != nil { t.Fatal(err) }
 ```

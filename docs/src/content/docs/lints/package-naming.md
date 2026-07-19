@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Enforce conventional package names.
+Enforce conventional package names. Default: lower-case letters and digits.
 
 ## Bad
 

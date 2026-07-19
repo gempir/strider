@@ -14,7 +14,15 @@ timer channel is racy on older timer implementations and can block with
 current synchronous timer channels. Stop and drain before resetting when
 compatibility requires it, or reset without conditionally draining afterward.
 
+## Bad
+
 ```go
-if !timer.Reset(delay) { <-timer.C } // reported
-timer.Reset(delay)                    // accepted
+if !timer.Reset(delay) { <-timer.C }
+```
+
+## Good
+
+```go
+if !timer.Stop() { select { case <-timer.C: default: } }
+timer.Reset(delay)
 ```

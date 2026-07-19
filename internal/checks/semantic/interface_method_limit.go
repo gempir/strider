@@ -15,8 +15,8 @@ type interfaceMethodLimitRule struct{}
 func (interfaceMethodLimitRule) Meta() Meta {
 	return Meta{
 		Code:            "interface-method-limit",
-		Summary:         "detect interfaces with more than 10 methods",
-		Explanation:     "Interfaces are easiest to implement, compose, and test when they remain small. This check uses a documented limit of 10 methods, including methods contributed by embedded interfaces, to identify abstractions that may need to be split by responsibility.",
+		Summary:         "limit interface method count",
+		Explanation:     "Interfaces are easiest to implement, compose, and test when they remain small. The built-in maximum is 10 methods, including methods contributed by embedded interfaces; max-methods can override it for a project.",
 		GoodExample:     "type Reader interface { Read([]byte) (int, error) }",
 		BadExample:      "type Service interface { Start(); Stop(); Pause(); Resume(); Reload(); Status(); Health(); Metrics(); Configure(); Validate(); Reset() }",
 		DefaultSeverity: diagnostic.SeverityWarning,

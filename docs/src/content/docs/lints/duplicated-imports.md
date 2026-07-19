@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
-Reject importing the same package more than once.
+Reject importing the same package more than once. Default: enabled.
 
 ## Bad
 

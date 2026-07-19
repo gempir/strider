@@ -38,8 +38,8 @@ func TestRuleRequirementsCoverCatalog(t *testing.T) {
 			t.Fatalf("UsesSSA(%q) disagrees with its requirements", code)
 		}
 	}
-	if typed != 66 || ssaRules != 44 {
-		t.Fatalf("got %d typed and %d SSA rules, want 66 and 44", typed, ssaRules)
+	if typed != 68 || ssaRules != 44 {
+		t.Fatalf("got %d typed and %d SSA rules, want 68 and 44", typed, ssaRules)
 	}
 }
 
@@ -51,6 +51,7 @@ func TestExecutionPlanSelectsNamedFacts(t *testing.T) {
 		{code: "invalid-regexp", facts: FactFirstCallArgument | FactStaticCalls},
 		{code: "unsupported-binary-write", facts: FactCallArguments | FactStaticCalls},
 		{code: "identical-binary-operands", facts: FactParents},
+		{code: "range-value-capture", facts: FactParents},
 		{code: "deprecated-api-usage", facts: FactDeprecations},
 		{code: "invalid-template", facts: 0},
 	}

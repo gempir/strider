@@ -166,7 +166,13 @@ func runConcreteFile(file *workspace.File, registry *Registry, session *formatte
 	}
 	result := fileResult{filename: filename}
 	if registry.formatApplies(filename) {
-		formatted, formatErr := session.PreviewTree(filename, tree, formatOptions)
+		var formatted formatter.Result
+		var formatErr error
+		if collectCandidate {
+			formatted, formatErr = session.FormatTree(filename, tree, formatOptions)
+		} else {
+			formatted, formatErr = session.PreviewTree(filename, tree, formatOptions)
+		}
 		if formatErr != nil {
 			result.err = formatErr
 			return result

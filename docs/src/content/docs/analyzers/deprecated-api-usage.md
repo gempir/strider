@@ -18,7 +18,14 @@ Standard-library deprecations are reported only when the module targets the
 running Go language version or newer, avoiding recommendations based on API
 documentation newer than an older module's target.
 
+## Bad
+
 ```go
-ioutil.ReadAll(reader) // reported
-io.ReadAll(reader)     // accepted
+value, err := ioutil.ReadAll(reader)
+```
+
+## Good
+
+```go
+value, err := io.ReadAll(reader)
 ```

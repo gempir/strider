@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
-Keep process-terminating calls in main or init.
+Keep process-terminating calls in main or init. Default: enabled.
 
 ## Bad
 

@@ -12,7 +12,14 @@ sidebar:
 `exec.Command` expects one executable name or path, not a shell command that
 needs argument splitting.
 
+## Bad
+
 ```go
-exec.Command("go test") // reported
-exec.Command("go", "test") // accepted
+exec.Command("ls / /tmp")
+```
+
+## Good
+
+```go
+exec.Command("ls", "/", "/tmp")
 ```

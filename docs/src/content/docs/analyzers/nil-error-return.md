@@ -12,7 +12,14 @@ sidebar:
 Reports explicit nil error results inside a branch entered because an error is
 non-nil. Returning success there silently discards the failure.
 
+## Bad
+
 ```go
-if err != nil { return nil, nil } // reported
-if err != nil { return nil, err } // accepted
+if err != nil { return nil, nil }
+```
+
+## Good
+
+```go
+if err != nil { return nil, err }
 ```

@@ -17,7 +17,7 @@ type concreteCase struct {
 func (a *cstAnalyzer) checkConcreteSwitch(node cst.Node) {
 	cases := concreteSwitchCases(node)
 	if len(cases) == 1 && len(cases[0].conditions) <= 1 {
-		a.report("unnecessary-stmt", node, "switch with one case can be replaced by an if statement")
+		a.report("single-case-switch", node, "switch with one case can be replaced by an if statement")
 	}
 	conditions := map[string]bool{}
 	branches := map[string]bool{}
@@ -40,12 +40,6 @@ func (a *cstAnalyzer) checkConcreteSwitch(node cst.Node) {
 				a.report("identical-switch-branches", clause.node, "switch repeats a case body")
 			} else {
 				branches[body] = true
-			}
-		}
-		if index == len(cases)-1 {
-			statements := concreteStatementsFromList(clause.body)
-			if len(statements) != 0 && cst.Kind(statements[len(statements)-1]) == "FallthroughStmt" {
-				a.report("useless-fallthrough", statements[len(statements)-1], "fallthrough in the final switch case has no effect")
 			}
 		}
 	}

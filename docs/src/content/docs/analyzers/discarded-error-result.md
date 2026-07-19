@@ -12,11 +12,17 @@ sidebar:
 This check uses resolved call signatures, so it catches arbitrary functions and
 methods that return `error`, including errors assigned to `_`.
 
-```go
-value, _ := load() // reported
+## Bad
 
+```go
+value, _ := load()
+```
+
+## Good
+
+```go
 value, err := load()
 if err != nil {
-    return err
+	return err
 }
 ```

@@ -17,7 +17,7 @@ func TestResearchPerformanceRuleMetadata(t *testing.T) {
 		{slicePreallocationRule{}, diagnostic.SeverityWarning},
 		{inefficientSprintfRule{}, diagnostic.SeverityWarning},
 		{interfaceMethodLimitRule{}, diagnostic.SeverityWarning},
-		{interfaceReturnRule{}, diagnostic.SeverityWarning},
+		{constructorInterfaceReturnRule{}, diagnostic.SeverityWarning},
 		{slogArgumentShapeRule{}, diagnostic.SeverityWarning},
 		{externalCallInLoopRule{}, diagnostic.SeverityWarning},
 	}
@@ -175,7 +175,7 @@ type bloated interface {
 			messageHas: "11 methods",
 		},
 		{
-			code: "interface-return",
+			code: "constructor-interface-return",
 			source: `package sample
 
 type Store interface { Get(string) string }
@@ -276,7 +276,7 @@ func TestResearchPerformanceRuleStages(t *testing.T) {
 		slicePreallocationRule{},
 		inefficientSprintfRule{},
 		interfaceMethodLimitRule{},
-		interfaceReturnRule{},
+		constructorInterfaceReturnRule{},
 		slogArgumentShapeRule{},
 		externalCallInLoopRule{},
 	} {

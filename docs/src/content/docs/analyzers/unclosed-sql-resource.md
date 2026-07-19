@@ -11,3 +11,24 @@ sidebar:
 
 Reports local `*sql.Rows` and `*sql.Stmt` acquisitions without a later close or
 obvious ownership transfer. Check acquisition errors before deferring `Close`.
+
+## Bad
+
+```go
+rows, err := db.Query(query)
+if err != nil {
+	return err
+}
+return scan(rows)
+```
+
+## Good
+
+```go
+rows, err := db.Query(query)
+if err != nil {
+	return err
+}
+defer rows.Close()
+return scan(rows)
+```

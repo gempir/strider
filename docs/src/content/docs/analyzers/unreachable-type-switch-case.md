@@ -13,14 +13,14 @@ Type-switch cases are evaluated in source order. A later concrete type or
 narrower interface is unreachable when it necessarily implements an interface
 listed by an earlier case.
 
-```go
-switch value.(type) {
-case io.Reader:
-case io.ReadCloser: // reported: every ReadCloser is already a Reader
-}
+## Bad
 
-switch value.(type) {
-case io.ReadCloser:
-case io.Reader: // accepted: not every Reader is a ReadCloser
-}
+```go
+switch value.(type) { case io.Reader: use(); case io.ReadCloser: use() }
+```
+
+## Good
+
+```go
+switch value.(type) { case io.ReadCloser: use(); case io.Reader: use() }
 ```

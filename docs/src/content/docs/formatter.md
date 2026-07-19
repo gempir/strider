@@ -9,9 +9,10 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Gofmt is not strict enough in my opinion, the goal of strider's formatter is decide almost every choice of formatting for you.
-No discussion in the team about it, just accept the formatting. 
-Goal is to be compatible with gofmt as much as possible.
+Strider applies one deterministic formatting profile so a team does not need to
+make recurring layout decisions in review. It follows gofmt-compatible Go
+syntax while also making line wrapping, import grouping, and multiline layout
+consistent.
 
 ## Workflows
 
@@ -41,6 +42,29 @@ strider check --only format [PATH]...
 
 The resulting `format` diagnostics use the same text, JSON, and HTML reporters
 as every other check.
+
+## Bad
+
+```go
+package main
+import("fmt"; "os")
+func main(){fmt.Println(os.Args)}
+```
+
+## Good
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+)
+
+func main() {
+	fmt.Println(os.Args)
+}
+```
 
 ## Style
 

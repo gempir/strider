@@ -13,10 +13,14 @@ sidebar:
 length or reallocated backing array. The check reports only function-local
 slices whose backing storage has not escaped or been observably aliased.
 
-```go
-values := make([]int, 0, 1)
-values = append(values, item) // reported when values is never read again
+## Bad
 
+```go
+values := make([]int, 0); values = append(values, item) // values is never read again
+```
+
+## Good
+
+```go
 values = append(values, item)
-return values // accepted
 ```

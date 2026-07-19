@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
-Reject declarations whose names differ only by capitalization.
+Reject declarations whose names differ only by capitalization. Default: methods and fields.
 
 ## Bad
 

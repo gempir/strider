@@ -19,12 +19,12 @@ An unnamed parameter field counts as one.
 ## Bad
 
 ```go
-func Open(path string, read, write, create, truncate, appendMode bool) error {
+func Open(path string, read, write, create, truncate, appendMode, sync, exclusive, temporary bool) error {
 	// ...
 }
 ```
 
-The example has seven parameters: `path` plus six named booleans.
+The example has nine parameters: `path` plus eight named booleans.
 
 ## Good
 
@@ -53,3 +53,5 @@ The default maximum is eight.
 [checks.rules.max-parameters]
 max-parameters = 10
 ```
+
+Set `max-parameters = 0` to use the built-in maximum of eight.

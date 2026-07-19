@@ -18,7 +18,14 @@ channels, goroutines, panic, escaping allocations, or unknown callees are not
 reported. Benchmark helpers accepting `*testing.B` are exempt because invoking
 otherwise pure work is a common measurement pattern.
 
+## Bad
+
 ```go
-strings.TrimSpace(input)            // reported
-cleaned := strings.TrimSpace(input) // accepted
+strings.TrimSpace(input)
+```
+
+## Good
+
+```go
+message := strings.TrimSpace(input)
 ```

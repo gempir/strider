@@ -15,8 +15,14 @@ to a floating-point value.
 
 Named constants are accepted to avoid warning on deliberate integer formulas.
 
+## Bad
+
 ```go
-ratio := 2 / 3          // reported: result is zero
-ratio := 2.0 / 3        // accepted: floating-point division
-wholeAndRemainder := 4 / 3 // accepted: result is non-zero
+ratio := 2 / 3
+```
+
+## Good
+
+```go
+ratio := 2.0 / 3.0
 ```

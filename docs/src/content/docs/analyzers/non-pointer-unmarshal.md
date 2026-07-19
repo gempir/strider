@@ -12,7 +12,14 @@ sidebar:
 JSON and XML decoding APIs require a pointer destination so they can populate
 the supplied value.
 
+## Bad
+
 ```go
-json.Unmarshal(data, value) // reported
-json.Unmarshal(data, &value) // accepted
+json.Unmarshal(data, value)
+```
+
+## Good
+
+```go
+json.Unmarshal(data, &value)
 ```

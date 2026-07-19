@@ -12,6 +12,14 @@ sidebar:
 Checks constant templates in direct `template.New(...).Parse(...)` chains.
 Receivers that may use custom delimiters are left alone.
 
+## Bad
+
 ```go
 template.New("greeting").Parse(`Hello, {{.Name}`) // reported
+```
+
+## Good
+
+```go
+template.New("greeting").Parse(`Hello, {{.Name}}`)
 ```

@@ -59,6 +59,9 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 			unknown = append(unknown, code)
 			continue
 		}
+		if err := validateBehavioralOptions(normalized, setting); err != nil {
+			return nil, err
+		}
 		normalizedSettings[normalized] = setting
 	}
 	wanted := make(map[string]bool, len(options.Only))
@@ -114,6 +117,44 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 	}
 	registry.addSelectedRules(available, formatSetting)
 	return registry, nil
+}
+
+var supportedBehavioralOptions = map[string]map[string]bool{
+	"banned-characters":      {"characters": true},
+	"file-length-limit":      {"max-lines": true},
+	"function-length":        {"max-lines": true, "max-statements": true},
+	"function-result-limit":  {"max-results": true},
+	"imports-blocklist":      {"blocked-imports": true},
+	"interface-method-limit": {"max-methods": true},
+	"max-parameters":         {"max-parameters": true},
+	"max-public-structs":     {"max-public-structs": true},
+}
+
+func validateBehavioralOptions(code string, setting config.RuleConfig) error {
+	configured := []struct {
+		name    string
+		present bool
+	}{
+		{"characters", setting.Characters != nil},
+		{"max-lines", setting.MaxLines != 0},
+		{"max-statements", setting.MaxStatements != 0},
+		{"max-results", setting.MaxResults != 0},
+		{"max-parameters", setting.MaxParameters != 0},
+		{"max-public-structs", setting.MaxPublicStructs != 0},
+		{"max-methods", setting.MaxMethods != 0},
+		{"blocked-imports", setting.BlockedImports != nil},
+	}
+	for index := range configured {
+		configured[index].present = configured[index].present || setting.HasExplicitOption(configured[index].name)
+	}
+
+	allowed := supportedBehavioralOptions[code]
+	for _, option := range configured {
+		if option.present && !allowed[option.name] {
+			return fmt.Errorf("check %q does not support %s", code, option.name)
+		}
+	}
+	return nil
 }
 
 func normalizedMinimumSeverity(minimum diagnostic.Severity) (diagnostic.Severity, error) {

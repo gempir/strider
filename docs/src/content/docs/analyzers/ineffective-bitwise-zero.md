@@ -16,8 +16,14 @@ For integers, `x & 0` is always zero while `x | 0` and `x ^ 0` are always
 Shift-by-zero expressions are accepted because they commonly appear in regular
 bit-field layouts alongside shifts by 8, 16, and so on.
 
+## Bad
+
 ```go
-unchanged := value ^ 0 // reported
-masked := value & mask // accepted
-shifted := value << 0  // accepted
+unchanged := value ^ 0
+```
+
+## Good
+
+```go
+masked := value & mask
 ```

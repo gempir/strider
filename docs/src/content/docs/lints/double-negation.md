@@ -12,8 +12,14 @@ sidebar:
 Negating a boolean twice produces the original value. The expression is either
 redundant or contains a mistaken extra `!`.
 
+## Bad
+
 ```go
-return !!ready // reported
-return ready   // accepted
-return !ready  // accepted when inversion is intended
+return !!ready
+```
+
+## Good
+
+```go
+return ready
 ```

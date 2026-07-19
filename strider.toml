@@ -6,9 +6,6 @@ print-width = 180
 # The repository predates these warning- and error-level policies and has
 # existing violations. Keep them active as advisory checks while ordinary
 # self-checks remain focused on newly enforced warnings.
-[checks.rules.argument-limit]
-severity = "note"
-
 [checks.rules.cognitive-complexity]
 severity = "note"
 
@@ -19,9 +16,6 @@ severity = "note"
 severity = "note"
 
 [checks.rules.cyclomatic-complexity]
-severity = "note"
-
-[checks.rules.datarace]
 severity = "note"
 
 [checks.rules.deep-exit]
@@ -48,10 +42,10 @@ severity = "note"
 [checks.rules.optimize-operands-order]
 severity = "note"
 
-[checks.rules.range-val-address]
+[checks.rules.range-value-address]
 severity = "note"
 
-[checks.rules.range-val-in-closure]
+[checks.rules.range-value-capture]
 severity = "note"
 
 [checks.rules.redefines-builtin-id]
@@ -60,59 +54,44 @@ severity = "note"
 [checks.rules.unchecked-type-assertion]
 severity = "note"
 
-[checks.rules.unhandled-error]
-severity = "note"
-
-[checks.rules.unsecure-url-scheme]
+[checks.rules.insecure-url-scheme]
 severity = "note"
 
 # Newly classified policies remain advisory for this repository's existing
 # code; their built-in defaults are still warning or error for other projects.
 [checks.rules.constant-negative-zero]
 severity = "note"
-[checks.rules.declaration-order]
+[checks.rules.top-level-declaration-order]
 severity = "note"
 [checks.rules.deprecated-api-usage]
 severity = "note"
-[checks.rules.empty-block]
-severity = "note"
-[checks.rules.enforce-map-style]
-severity = "note"
-[checks.rules.enforce-repeated-arg-type-style]
-severity = "note"
-[checks.rules.enforce-slice-style]
+[checks.rules.empty-conditional-block]
 severity = "note"
 [checks.rules.enforce-switch-style]
 severity = "note"
 [checks.rules.error-naming]
 severity = "note"
-[checks.rules.error-return]
+[checks.rules.error-last-result]
 severity = "note"
 [checks.rules.error-strings]
 severity = "note"
 [checks.rules.error-type-naming]
 severity = "note"
-[checks.rules.errorf]
+[checks.rules.prefer-fmt-errorf]
 severity = "note"
 [checks.rules.excessive-blank-identifiers]
 severity = "note"
 [checks.rules.function-length]
 severity = "note"
-[checks.rules.if-return]
+[checks.rules.redundant-error-return-check]
 severity = "note"
 [checks.rules.import-alias-naming]
-severity = "note"
-[checks.rules.indent-error-flow]
-severity = "note"
-[checks.rules.inline-error-declaration]
 severity = "note"
 [checks.rules.interface-method-limit]
 severity = "note"
 [checks.rules.max-parameters]
 severity = "note"
 [checks.rules.modifies-parameter]
-severity = "note"
-[checks.rules.multiline-if-init]
 severity = "note"
 [checks.rules.no-else-after-return]
 severity = "note"
@@ -150,7 +129,11 @@ severity = "note"
 severity = "note"
 [checks.rules.unnecessary-if]
 severity = "note"
-[checks.rules.unnecessary-stmt]
+[checks.rules.redundant-final-return]
+severity = "note"
+[checks.rules.redundant-switch-break]
+severity = "note"
+[checks.rules.single-case-switch]
 severity = "note"
 [checks.rules.unused-parameter]
 severity = "note"
@@ -163,8 +146,6 @@ severity = "note"
 [checks.rules.use-fmt-print]
 severity = "note"
 [checks.rules.use-slices-sort]
-severity = "note"
-[checks.rules.use-waitgroup-go]
 severity = "note"
 [checks.rules.var-naming]
 severity = "note"

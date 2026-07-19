@@ -51,16 +51,12 @@ func unwrapSSAValue(value ssa.Value) ssa.Value {
 }
 
 func canBinaryMarshal(valueType types.Type) bool {
-	typeToCheck := valueType.Underlying()
-	if pointer, ok := typeToCheck.(*types.Pointer); ok {
-		typeToCheck = pointer.Elem().Underlying()
+	typeToCheck := types.Unalias(valueType)
+	if pointer, ok := typeToCheck.Underlying().(*types.Pointer); ok {
+		typeToCheck = types.Unalias(pointer.Elem())
 	}
-	if withElement, ok := types.Unalias(typeToCheck).(interface {
-		Elem() types.Type
-	}); ok {
-		if _, pointer := withElement.(*types.Pointer); !pointer {
-			typeToCheck = withElement.Elem()
-		}
+	if slice, ok := typeToCheck.Underlying().(*types.Slice); ok {
+		return validEncodingBinaryType(slice.Elem())
 	}
 	return validEncodingBinaryType(typeToCheck)
 }

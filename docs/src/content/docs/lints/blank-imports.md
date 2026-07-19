@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Require explanatory comments on blank imports outside main and test files.
+Require explanatory comments on blank imports outside main and test files. Default: main and test packages exempt.
 
 ## Bad
 

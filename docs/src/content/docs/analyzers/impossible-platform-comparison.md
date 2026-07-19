@@ -16,10 +16,22 @@ excluded known target has a fixed result.
 Platform aliases are respected: Android satisfies the `linux` tag, iOS
 satisfies `darwin`, and Illumos satisfies `solaris`.
 
+## Bad
+
 ```go
 //go:build linux
 
 if runtime.GOOS == "windows" { // reported
     unreachable()
+}
+```
+
+## Good
+
+```go
+//go:build linux
+
+if runtime.GOOS == "linux" {
+	useLinuxPath()
 }
 ```

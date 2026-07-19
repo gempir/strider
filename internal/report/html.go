@@ -37,9 +37,10 @@ type htmlFileGroup struct {
 }
 
 type htmlRuleCount struct {
-	Code    string
-	Count   int
-	Percent int
+	Code     string
+	Count    int
+	Percent  int
+	Severity diagnostic.Severity
 }
 
 type htmlDiagnostic struct {
@@ -87,8 +88,12 @@ func HTML(writer io.Writer, title string, diagnostics []diagnostic.Diagnostic) e
 func HTMLWithOptions(writer io.Writer, options HTMLOptions, diagnostics []diagnostic.Diagnostic) error {
 	data := htmlReport{Title: options.Title, Timings: options.Timings, Total: len(diagnostics)}
 	counts := make(map[string]int)
+	severities := make(map[string]diagnostic.Severity)
 	for _, item := range diagnostics {
 		counts[item.Code]++
+		if !severities[item.Code].AtLeast(item.Severity) {
+			severities[item.Code] = item.Severity
+		}
 		switch item.Severity {
 		case diagnostic.SeverityError:
 			data.Errors++
@@ -100,7 +105,7 @@ func HTMLWithOptions(writer io.Writer, options HTMLOptions, diagnostics []diagno
 			data.Warnings++
 		}
 	}
-	data.Rules = sortedRuleCounts(counts)
+	data.Rules = sortedRuleCounts(counts, severities)
 	if data.Total > 0 {
 		data.ErrorPct = data.Errors * 100 / data.Total
 		data.WarningPct = data.Warnings * 100 / data.Total
@@ -133,10 +138,10 @@ func HTMLWithOptions(writer io.Writer, options HTMLOptions, diagnostics []diagno
 	return htmlTemplate.Execute(writer, data)
 }
 
-func sortedRuleCounts(counts map[string]int) []htmlRuleCount {
+func sortedRuleCounts(counts map[string]int, severities map[string]diagnostic.Severity) []htmlRuleCount {
 	result := make([]htmlRuleCount, 0, len(counts))
 	for code, count := range counts {
-		result = append(result, htmlRuleCount{Code: code, Count: count})
+		result = append(result, htmlRuleCount{Code: code, Count: count, Severity: severities[code]})
 	}
 	sort.Slice(
 		result,
@@ -289,9 +294,9 @@ a{color:var(--accent-text)}
 header.top{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 18px;padding:14px 0 10px;border-bottom:1px solid var(--line)}
 header.top h1{margin:0;font-size:15px;font-weight:650;letter-spacing:-.01em}
 header.top h1::before{content:"";display:inline-block;width:8px;height:8px;margin-right:8px;background:var(--accent)}
-.timings{display:inline-flex;gap:14px;color:var(--muted);margin-left:auto}
-.timing strong{color:var(--text);font-weight:600}
-.timing small{color:var(--muted);font-weight:400}
+.timings{display:inline-flex;flex-wrap:wrap;gap:6px 18px;padding-right:18px;border-right:1px solid var(--line)}
+.timing strong{color:var(--text)}
+.timing small{color:var(--muted);font-weight:400;font-size:11px}
 
 .tally{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;padding:10px 0;border-bottom:1px solid var(--line)}
 .tally .stat{display:inline-flex;align-items:baseline;gap:6px;white-space:nowrap}
@@ -309,9 +314,12 @@ aside.rules h2{margin:0 0 6px;font-size:11px;font-weight:600;letter-spacing:.08e
 .rules table{width:100%;border-collapse:collapse}
 .rules td{padding:3px 0;border-bottom:1px solid var(--line-soft);vertical-align:middle}
 .rules td:last-child{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;padding-left:10px;width:1%}
-.rules button{all:unset;display:block;width:100%;cursor:pointer;color:var(--accent-text)}
+.rules button{all:unset;display:block;width:100%;cursor:pointer;color:var(--warning)}
+.rules button[data-severity="error"]{color:var(--error)}
+.rules button[data-severity="note"]{color:var(--note)}
+.rules button[data-severity="none"]{color:var(--muted)}
 .rules button:hover code{text-decoration:underline}
-.rules i{display:block;height:2px;margin-top:2px;background:var(--accent);opacity:.55}
+.rules i{display:block;height:2px;margin-top:2px;background:currentColor;opacity:.55}
 
 .controls{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:8px;padding:8px 0;background:var(--bg);border-bottom:1px solid var(--line)}
 .controls input{flex:1 1 220px;min-height:30px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);font:inherit;padding:4px 9px;outline:0}
@@ -330,15 +338,14 @@ aside.rules h2{margin:0 0 6px;font-size:11px;font-weight:600;letter-spacing:.08e
 .file-head span{color:var(--faint);font-weight:400;font-variant-numeric:tabular-nums}
 details.diagnostic{border-top:1px solid var(--line-soft)}
 details.diagnostic:last-child{border-bottom:1px solid var(--line-soft)}
-summary{display:grid;grid-template-columns:3.2rem 4.5rem minmax(11rem,16rem) 1fr;gap:12px;align-items:baseline;cursor:pointer;padding:4px 6px 4px 0;list-style:none}
+summary{display:grid;grid-template-columns:3.2rem minmax(11rem,17rem) 1fr;gap:12px;align-items:baseline;cursor:pointer;padding:4px 6px 4px 0;list-style:none}
 summary:hover{background:var(--panel-2)}
 summary::-webkit-details-marker{display:none}
 .where{color:var(--faint);text-align:right;font-variant-numeric:tabular-nums}
-.severity{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--warning)}
-[data-severity="error"] .severity{color:var(--error)}
-[data-severity="note"] .severity{color:var(--note)}
-[data-severity="none"] .severity{color:var(--muted)}
-.rule{color:var(--muted)}
+.rule{color:var(--warning)}
+[data-severity="error"] .rule{color:var(--error)}
+[data-severity="note"] .rule{color:var(--note)}
+[data-severity="none"] .rule{color:var(--muted)}
 details[open] summary{background:var(--panel-2)}
 .message{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 details[open] .message{white-space:normal}
@@ -359,16 +366,16 @@ details[open] .message{white-space:normal}
 html.embedded main{padding:0 14px 24px}
 html.embedded header.top h1{display:none}
 @media(max-width:900px){.layout{grid-template-columns:1fr}aside.rules{position:static;max-height:none}}
-@media(max-width:640px){summary{grid-template-columns:3.2rem 4.5rem 1fr}.rule{grid-column:3}.message{grid-column:1/-1;padding-left:0}.details{padding-left:0}}
+@media(max-width:640px){summary{grid-template-columns:3.2rem 1fr}.message{grid-column:1/-1;padding-left:0}.details{padding-left:0}}
 </style>
 </head>
 <body>
 <main>
 <header class="top">
 <h1>{{.Title}}</h1>
-{{if .Timings}}<span class="timings" aria-label="Operation timings">{{range .Timings}}<span class="timing">{{.Name}} <strong>{{.DurationMS}} <small>ms</small></strong></span>{{end}}</span>{{end}}
 </header>
 <section class="tally" aria-label="Diagnostic summary">
+{{if .Timings}}<span class="timings" aria-label="Operation timings">{{range .Timings}}<span class="stat timing"><strong>{{.DurationMS}} <small>ms</small></strong><span>{{.Name}}</span></span>{{end}}</span>{{end}}
 <span class="stat"><strong>{{.Total}}</strong><span>total</span></span>
 <span class="stat error"><strong>{{.Errors}}</strong><span>errors</span></span>
 <span class="stat warning"><strong>{{.Warnings}}</strong><span>warnings</span></span>
@@ -378,7 +385,7 @@ html.embedded header.top h1{display:none}
 </section>
 {{if .Omitted}}<p class="limit-note">Showing {{.Shown}} of {{.Total}} detailed findings. The summary includes all {{.Total}} findings.</p>{{end}}
 <div class="layout">
-{{if .Rules}}<aside class="rules" aria-label="Findings by rule"><h2>Findings by rule</h2><table><tbody>{{range .Rules}}<tr><td><button type="button" data-rule="{{.Code}}"><code>{{.Code}}</code><i style="width:{{.Percent}}%"></i></button></td><td>{{.Count}}</td></tr>{{end}}</tbody></table></aside>{{else}}<aside class="rules"></aside>{{end}}
+{{if .Rules}}<aside class="rules" aria-label="Findings by rule"><h2>Findings by rule</h2><table><tbody>{{range .Rules}}<tr><td><button type="button" data-rule="{{.Code}}" data-severity="{{.Severity}}"><code>{{.Code}}</code><i style="width:{{.Percent}}%"></i></button></td><td>{{.Count}}</td></tr>{{end}}</tbody></table></aside>{{else}}<aside class="rules"></aside>{{end}}
 <div class="findings">
 {{if .Files}}
 <section class="controls" aria-label="Report filters">
@@ -394,7 +401,7 @@ html.embedded header.top h1{display:none}
 <section id="diagnostics">
 {{range .Files}}<section class="file">{{if .File}}<h2 class="file-head"><code>{{.File}}</code><span>{{len .Diagnostics}}</span></h2>{{end}}
 {{range .Diagnostics}}<details class="diagnostic" data-severity="{{.Severity}}" data-search="{{.Code}} {{.Message}} {{.File}}">
-<summary><code class="where">{{.Where}}</code><span class="severity">{{.Severity}}</span><code class="rule">{{.Code}}</code><span class="message">{{.Message}}</span></summary>
+<summary><code class="where">{{.Where}}</code><code class="rule">{{.Code}}</code><span class="message">{{.Message}}</span></summary>
 <div class="details"><p class="location"><code>{{.Location}}</code></p>{{if .Source}}<div class="source">{{range .Source}}<div class="source-line{{if .Current}} current{{end}}"><span class="line-number">{{.Number}}</span><code>{{.Before}}{{if .Highlight}}<mark>{{.Highlight}}</mark>{{end}}{{.After}}</code></div>{{end}}</div>{{end}}{{if or .Notes .Fixes}}<ul class="extras">{{range .Notes}}<li><strong>Note:</strong> {{.Message}}</li>{{end}}{{range .Fixes}}<li><strong>Fix ({{.Safety}}):</strong> {{.Message}}</li>{{end}}</ul>{{end}}</div>
 </details>{{end}}
 </section>{{end}}

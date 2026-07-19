@@ -25,7 +25,3 @@ func retry() { reconnect() } // with a positive minimum configured
 // retry reconnects after a transient failure.
 func retry() { reconnect() }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only comments-density`, enabled in `strider.toml`, or included with `--all`.

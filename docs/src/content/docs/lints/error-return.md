@@ -24,7 +24,3 @@ func Load() (error, string)
 ```go
 func Load() (string, error)
 ```
-
-## Enable
-
-This optional check runs when selected with `--only error-return`, enabled in `strider.toml`, or included with `--all`.

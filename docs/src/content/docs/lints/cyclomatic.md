@@ -24,7 +24,3 @@ func tangled() { /* more than ten independent branches */ }
 ```go
 func sign(n int) int { if n < 0 { return -1 }; return 1 }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only cyclomatic`, enabled in `strider.toml`, or included with `--all`.

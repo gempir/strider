@@ -24,7 +24,3 @@ Limit source-file length. Strider default: disabled at 0 lines.
 ```go
 // A source file within the configured line limit.
 ```
-
-## Enable
-
-This optional check runs when selected with `--only file-length-limit`, enabled in `strider.toml`, or included with `--all`.

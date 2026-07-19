@@ -24,7 +24,3 @@ for _, value := range values { go func() { use(value) }() }
 ```go
 for _, value := range values { go func(current int) { use(current) }(value) }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only datarace`, enabled in `strider.toml`, or included with `--all`.

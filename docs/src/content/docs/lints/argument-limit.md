@@ -24,7 +24,3 @@ func Open(path string, read, write, create, truncate, appendMode, sync, exclusiv
 ```go
 func Open(path string, options Options) error
 ```
-
-## Enable
-
-This optional check runs when selected with `--only argument-limit`, enabled in `strider.toml`, or included with `--all`.

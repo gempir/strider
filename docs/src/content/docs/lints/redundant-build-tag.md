@@ -25,7 +25,3 @@ Remove redundant legacy build tags. Strider default: enabled.
 ```go
 //go:build linux || darwin
 ```
-
-## Enable
-
-This optional check runs when selected with `--only redundant-build-tag`, enabled in `strider.toml`, or included with `--all`.

@@ -25,7 +25,3 @@ if ready { for { switch value { case 1: if valid { process() } } } }
 if !ready { return }
 for _, item := range items { process(item) }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only max-control-nesting`, enabled in `strider.toml`, or included with `--all`.

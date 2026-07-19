@@ -25,7 +25,3 @@ type Client struct{}
 // Client sends requests.
 type Client struct{}
 ```
-
-## Enable
-
-This optional check runs when selected with `--only exported`, enabled in `strider.toml`, or included with `--all`.

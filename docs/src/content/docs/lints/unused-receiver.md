@@ -24,7 +24,3 @@ func (client *Client) Version() string { return version }
 ```go
 func (client *Client) Send() { client.flush() }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only unused-receiver`, enabled in `strider.toml`, or included with `--all`.

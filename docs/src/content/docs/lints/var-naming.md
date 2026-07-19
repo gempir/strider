@@ -24,7 +24,3 @@ var userId string
 ```go
 var userID string
 ```
-
-## Enable
-
-This optional check runs when selected with `--only var-naming`, enabled in `strider.toml`, or included with `--all`.

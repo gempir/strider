@@ -153,6 +153,7 @@ type cstAnalyzer struct {
 	functionDepth     int
 	functionBodyDepth int
 	foldedNames       map[string]map[string]string
+	bannedCharacters  map[rune]bool
 	publicStructs     int
 }
 
@@ -174,6 +175,12 @@ func AnalyzeCST(input CSTInput) {
 	}
 	plan := compileCSTExecutionPlan(enabled)
 	analyzer := &cstAnalyzer{filename: input.Filename, tree: input.Tree, content: input.Tree.Bytes(), enabled: enabled, extended: extended, plan: plan, reporter: input.Report}
+	if enabled["banned-characters"] {
+		analyzer.bannedCharacters = make(map[rune]bool, len(input.BannedCharacters))
+		for _, character := range input.BannedCharacters {
+			analyzer.bannedCharacters[character] = true
+		}
+	}
 	if enabled["receiver-naming"] {
 		analyzer.receiverNames = make(map[string]string)
 	}

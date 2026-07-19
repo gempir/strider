@@ -24,7 +24,3 @@ switch { case ready: one(); case ready: two() }
 ```go
 switch { case first: one(); case second: two() }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only identical-switch-conditions`, enabled in `strider.toml`, or included with `--all`.

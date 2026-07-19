@@ -24,7 +24,3 @@ func greet(name string) { fmt.Println("hello") }
 ```go
 func greet(name string) { fmt.Println(name) }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only unused-parameter`, enabled in `strider.toml`, or included with `--all`.

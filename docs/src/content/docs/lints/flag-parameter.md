@@ -24,7 +24,3 @@ func Open(path string, readOnly bool) error
 ```go
 func Open(path string, mode Mode) error
 ```
-
-## Enable
-
-This optional check runs when selected with `--only flag-parameter`, enabled in `strider.toml`, or included with `--all`.

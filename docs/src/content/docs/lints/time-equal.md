@@ -24,7 +24,3 @@ if first.Time == second.Time { match() }
 ```go
 if first.Equal(second) { match() }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only time-equal`, enabled in `strider.toml`, or included with `--all`.

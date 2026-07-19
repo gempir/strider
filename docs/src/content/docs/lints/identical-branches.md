@@ -24,7 +24,3 @@ if ready { start() } else { start() }
 ```go
 if ready { start() } else { wait() }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only identical-branches`, enabled in `strider.toml`, or included with `--all`.

@@ -25,7 +25,3 @@ go func() { defer group.Done(); work() }()
 ```go
 group.Go(func() { work() })
 ```
-
-## Enable
-
-This optional check runs when selected with `--only use-waitgroup-go`, enabled in `strider.toml`, or included with `--all`.

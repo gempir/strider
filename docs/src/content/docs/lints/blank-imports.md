@@ -24,7 +24,3 @@ import _ "example.com/driver"
 ```go
 import _ "example.com/driver" // register the driver
 ```
-
-## Enable
-
-This optional check runs when selected with `--only blank-imports`, enabled in `strider.toml`, or included with `--all`.

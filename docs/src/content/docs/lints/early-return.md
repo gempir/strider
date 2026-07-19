@@ -25,7 +25,3 @@ if ready { process() } else { return }
 if !ready { return }
 process()
 ```
-
-## Enable
-
-This optional check runs when selected with `--only early-return`, enabled in `strider.toml`, or included with `--all`.

@@ -24,7 +24,3 @@ switch value { case 1: use(); fallthrough }
 ```go
 switch value { case 1: use() }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only useless-fallthrough`, enabled in `strider.toml`, or included with `--all`.

@@ -24,7 +24,3 @@ var _clientID string
 ```go
 var clientID string
 ```
-
-## Enable
-
-This optional check runs when selected with `--only unexported-naming`, enabled in `strider.toml`, or included with `--all`.

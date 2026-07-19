@@ -24,7 +24,3 @@ group.Go(func() { defer group.Done(); work() })
 ```go
 group.Go(func() { work() })
 ```
-
-## Enable
-
-This optional check runs when selected with `--only forbidden-call-in-wg-go`, enabled in `strider.toml`, or included with `--all`.

@@ -24,7 +24,3 @@ import JSON_API "example.com/json-api"
 ```go
 import jsonapi "example.com/json-api"
 ```
-
-## Enable
-
-This optional check runs when selected with `--only import-alias-naming`, enabled in `strider.toml`, or included with `--all`.

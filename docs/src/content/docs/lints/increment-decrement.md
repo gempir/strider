@@ -24,7 +24,3 @@ count += 1
 ```go
 count++
 ```
-
-## Enable
-
-This optional check runs when selected with `--only increment-decrement`, enabled in `strider.toml`, or included with `--all`.

@@ -101,7 +101,7 @@ var extendedCatalog = []spec{
 	{"add-constant", "suggest named constants for repeated literals", "strings after 2 repetitions"},
 	{"argument-limit", "limit function parameter count", "maximum 8"},
 	{"atomic", "detect non-atomic operations on atomic values", "standard sync/atomic patterns"},
-	{"banned-characters", "reject configured characters in identifiers", "no banned characters"},
+	{"banned-characters", "reject configured characters in identifiers", "ᐸ and ᐳ"},
 	{"bare-return", "warn about bare returns with named results", "enabled"},
 	{"bidirectional-control-character", "reject invisible bidirectional source controls", "enabled"},
 	{"blank-imports", "require blank imports to be justified", "main and test packages exempt"},
@@ -249,6 +249,7 @@ var extendedWarningSeverities = map[string]bool{
 
 var extendedErrorSeverities = map[string]bool{
 	"atomic":                          true,
+	"banned-characters":               true,
 	"bidirectional-control-character": true,
 	"defer":                           true,
 	"forbidden-call-in-wg-go":         true,

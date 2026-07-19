@@ -19,8 +19,3 @@ deferred function literals whose returned values are discarded. Calls such as
 `defer setup()()` are accepted; the first call runs immediately and the
 returned cleanup function is deferred. Loop placement is owned by the
 dedicated [`no-defer-in-loop`](../no-defer-in-loop/) rule.
-
-## Enable
-
-This optional check runs when selected with `--only defer`, enabled in
-`strider.toml`, or included with `--all`.

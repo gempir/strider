@@ -24,7 +24,3 @@ var value interface{}
 ```go
 var value any
 ```
-
-## Enable
-
-This optional check runs when selected with `--only use-any`, enabled in `strider.toml`, or included with `--all`.

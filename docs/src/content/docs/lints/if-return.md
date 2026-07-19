@@ -26,7 +26,3 @@ return nil
 err := save()
 return err
 ```
-
-## Enable
-
-This optional check runs when selected with `--only if-return`, enabled in `strider.toml`, or included with `--all`.

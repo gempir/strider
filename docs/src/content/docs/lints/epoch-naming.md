@@ -24,7 +24,3 @@ createdAt := time.Now().Unix()
 ```go
 createdSeconds := time.Now().Unix()
 ```
-
-## Enable
-
-This optional check runs when selected with `--only epoch-naming`, enabled in `strider.toml`, or included with `--all`.

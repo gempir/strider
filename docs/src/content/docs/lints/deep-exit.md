@@ -24,7 +24,3 @@ func loadConfig() { if failed() { os.Exit(1) } }
 ```go
 func run() error { return load() }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only deep-exit`, enabled in `strider.toml`, or included with `--all`.

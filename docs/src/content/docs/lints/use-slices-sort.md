@@ -24,7 +24,3 @@ sort.Slice(values, func(i, j int) bool { return values[i] < values[j] })
 ```go
 slices.Sort(values)
 ```
-
-## Enable
-
-This optional check runs when selected with `--only use-slices-sort`, enabled in `strider.toml`, or included with `--all`.

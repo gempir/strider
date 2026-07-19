@@ -25,7 +25,3 @@ Limit exported structs per file. Strider default: maximum 5.
 type Request struct{}
 type Response struct{}
 ```
-
-## Enable
-
-This optional check runs when selected with `--only max-public-structs`, enabled in `strider.toml`, or included with `--all`.

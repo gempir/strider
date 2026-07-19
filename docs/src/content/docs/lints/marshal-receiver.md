@@ -26,7 +26,3 @@ func (value *Value) UnmarshalJSON([]byte) error
 func (value *Value) MarshalJSON() ([]byte, error)
 func (value *Value) UnmarshalJSON([]byte) error
 ```
-
-## Enable
-
-This optional check runs when selected with `--only marshal-receiver`, enabled in `strider.toml`, or included with `--all`.

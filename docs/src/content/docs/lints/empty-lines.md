@@ -30,7 +30,3 @@ func run() {
 	start()
 }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only empty-lines`, enabled in `strider.toml`, or included with `--all`.

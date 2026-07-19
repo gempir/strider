@@ -24,7 +24,3 @@ type User struct { ID string; Id string }
 ```go
 type User struct { ID string; Name string }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only confusing-naming`, enabled in `strider.toml`, or included with `--all`.

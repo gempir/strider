@@ -26,9 +26,12 @@ type Registry struct {
 }
 
 type configuredRule struct {
-	severity diagnostic.Severity
-	excludes []string
+	severity   diagnostic.Severity
+	excludes   []string
+	characters []rune
 }
+
+var defaultBannedCharacters = []rune{'ᐸ', 'ᐳ'}
 
 // RegistryOptions selects and configures concrete-syntax rules.
 type RegistryOptions struct {
@@ -121,7 +124,17 @@ func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
 			continue
 		}
 		registry.rules = append(registry.rules, rule)
-		registry.settings[meta.Code] = configuredRule{severity: severity, excludes: ruleConfig.Excludes}
+		configured := configuredRule{severity: severity, excludes: ruleConfig.Excludes}
+		if meta.Code == "banned-characters" {
+			configured.characters = defaultBannedCharacters
+			if ruleConfig.Characters != nil {
+				configured.characters = make([]rune, 0, len(ruleConfig.Characters))
+				for _, character := range ruleConfig.Characters {
+					configured.characters = append(configured.characters, []rune(character)[0])
+				}
+			}
+		}
+		registry.settings[meta.Code] = configured
 	}
 	return registry, nil
 }
@@ -134,6 +147,14 @@ func validateConfiguredRules(tool string, settings map[string]config.RuleConfig,
 		}
 		if setting.Severity != "" && !diagnostic.ValidSeverity(diagnostic.Severity(setting.Severity)) {
 			return fmt.Errorf("%s rule %q severity must be note, warning, or error", tool, code)
+		}
+		if setting.Characters != nil && code != "banned-characters" {
+			return fmt.Errorf("%s rule %q does not support characters", tool, code)
+		}
+		for _, character := range setting.Characters {
+			if len([]rune(character)) != 1 {
+				return fmt.Errorf("%s rule %q characters must contain exactly one Unicode character each", tool, code)
+			}
 		}
 	}
 	if len(unknown) == 0 {
@@ -162,6 +183,10 @@ func (r *Registry) KnownCodes() map[string]bool {
 
 func (r *Registry) Severity(code string) diagnostic.Severity {
 	return r.settings[code].severity
+}
+
+func (r *Registry) bannedCharacters() []rune {
+	return append([]rune(nil), r.settings["banned-characters"].characters...)
 }
 
 func (r *Registry) activeRules(filename string) []builtinrules.Rule {
@@ -325,9 +350,10 @@ func analyzeTree(filename string, concreteTree *cst.Tree, activeRules []builtinr
 	context := &Context{filename: filename, displayFilename: source.DisplayPath(filename), concreteIgnores: concreteIgnores, concreteNodes: concreteNodes}
 	builtinrules.AnalyzeCST(
 		builtinrules.CSTInput{
-			Filename: filename,
-			Tree:     concreteTree,
-			Rules:    activeRules,
+			Filename:         filename,
+			Tree:             concreteTree,
+			Rules:            activeRules,
+			BannedCharacters: registry.bannedCharacters(),
 			Report: func(finding builtinrules.Finding) {
 				context.reportConcrete(concreteTree, finding, registry.Severity(finding.Code))
 			},

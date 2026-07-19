@@ -24,7 +24,3 @@ func run() { /* more than 50 statements or 75 lines */ }
 ```go
 func run() { load(); process(); save() }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only function-length`, enabled in `strider.toml`, or included with `--all`.

@@ -26,7 +26,3 @@ if next == "ready" { queue() }
 const stateReady = "ready"
 if state == stateReady { start() }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only add-constant`, enabled in `strider.toml`, or included with `--all`.

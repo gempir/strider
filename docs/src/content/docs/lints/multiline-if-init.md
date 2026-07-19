@@ -26,7 +26,3 @@ if value, err :=
 value, err := load()
 if err != nil { return err }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only multiline-if-init`, enabled in `strider.toml`, or included with `--all`.

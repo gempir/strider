@@ -24,7 +24,3 @@ value := input.(string)
 ```go
 value, ok := input.(string)
 ```
-
-## Enable
-
-This optional check runs when selected with `--only unchecked-type-assertion`, enabled in `strider.toml`, or included with `--all`.

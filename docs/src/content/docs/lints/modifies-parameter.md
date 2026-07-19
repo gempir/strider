@@ -24,7 +24,3 @@ func normalize(value string) string { value = strings.TrimSpace(value); return v
 ```go
 func normalize(value string) string { normalized := strings.TrimSpace(value); return normalized }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only modifies-parameter`, enabled in `strider.toml`, or included with `--all`.

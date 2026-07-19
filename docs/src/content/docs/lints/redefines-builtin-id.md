@@ -24,7 +24,3 @@ func parse(error string) error
 ```go
 func parse(input string) error
 ```
-
-## Enable
-
-This optional check runs when selected with `--only redefines-builtin-id`, enabled in `strider.toml`, or included with `--all`.

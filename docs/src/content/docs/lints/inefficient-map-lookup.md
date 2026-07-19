@@ -24,7 +24,3 @@ if _, ok := values[key]; ok { use(values[key]) }
 ```go
 if value, ok := values[key]; ok { use(value) }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only inefficient-map-lookup`, enabled in `strider.toml`, or included with `--all`.

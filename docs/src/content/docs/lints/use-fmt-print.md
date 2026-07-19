@@ -24,7 +24,3 @@ print(message)
 ```go
 fmt.Print(message)
 ```
-
-## Enable
-
-This optional check runs when selected with `--only use-fmt-print`, enabled in `strider.toml`, or included with `--all`.

@@ -671,6 +671,53 @@ func TestEveryLintRuleAcceptsCommonConfiguration(t *testing.T) {
 	}
 }
 
+func TestBannedCharactersUsesDefaultsAndConfiguration(t *testing.T) {
+	filename := writeFixture(t, "package p\nvar ᐸname, under_score int\n")
+	for name, test := range map[string]struct {
+		settings map[string]config.RuleConfig
+		wanted   string
+	}{"defaults": {wanted: "ᐸ"}, "configured": {settings: map[string]config.RuleConfig{"banned-characters": {Characters: []string{"_"}}}, wanted: "_"}} {
+		t.Run(
+			name,
+			func(t *testing.T) {
+				registry,
+					err := NewRegistryWithOptions(RegistryOptions{Only: []string{"banned-characters"}, Settings: test.settings})
+				if err != nil {
+					t.Fatal(err)
+				}
+				diagnostics,
+					err := Run([]string{filename}, registry)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if len(diagnostics) != 1 || !strings.Contains(diagnostics[0].Message, test.wanted) {
+					t.Fatalf("diagnostics = %#v, want one finding for %q", diagnostics, test.wanted)
+				}
+				if diagnostics[0].Severity != diagnostic.SeverityError {
+					t.Fatalf("severity = %s, want error", diagnostics[0].Severity)
+				}
+			},
+		)
+	}
+}
+
+func TestBannedCharactersRejectsInvalidConfiguration(t *testing.T) {
+	for name, settings := range map[string]map[string]config.RuleConfig{
+		"multiple runes": {"banned-characters": {Characters: []string{"ab"}}},
+		"unrelated rule": {"no-init": {Characters: []string{"_"}}},
+	} {
+		t.Run(
+			name,
+			func(t *testing.T) {
+				if _,
+					err := NewRegistryWithOptions(RegistryOptions{Settings: settings}); err == nil {
+					t.Fatal("expected invalid character configuration to fail")
+				}
+			},
+		)
+	}
+}
+
 func TestLintRegistryFiltersByEffectiveSeverityBeforeExecution(t *testing.T) {
 	for name, options := range map[string]RegistryOptions{
 		"only": {Only: []string{"no-init"}, Settings: map[string]config.RuleConfig{"no-init": {Severity: "warning"}}, MinimumSeverity: diagnostic.SeverityError},

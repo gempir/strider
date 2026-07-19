@@ -24,7 +24,3 @@ func add(left int, right int) int // with short style configured
 ```go
 func add(left, right int) int // with short style configured
 ```
-
-## Enable
-
-This optional check runs when selected with `--only enforce-repeated-arg-type-style`, enabled in `strider.toml`, or included with `--all`.

@@ -24,7 +24,3 @@ var NotFoundError = errors.New("not found")
 ```go
 var ErrNotFound = errors.New("not found")
 ```
-
-## Enable
-
-This optional check runs when selected with `--only error-naming`, enabled in `strider.toml`, or included with `--all`.

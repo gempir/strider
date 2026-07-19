@@ -26,7 +26,3 @@ package store
 // store/client.go
 package store
 ```
-
-## Enable
-
-This optional check runs when selected with `--only package-directory-mismatch`, enabled in `strider.toml`, or included with `--all`.

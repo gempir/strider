@@ -24,7 +24,3 @@ switch value { case 1: run(); case 2: run() }
 ```go
 switch value { case 1: one(); case 2: two() }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only identical-switch-branches`, enabled in `strider.toml`, or included with `--all`.

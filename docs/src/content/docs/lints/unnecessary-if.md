@@ -24,7 +24,3 @@ if ready { return true } else { return false }
 ```go
 return ready
 ```
-
-## Enable
-
-This optional check runs when selected with `--only unnecessary-if`, enabled in `strider.toml`, or included with `--all`.

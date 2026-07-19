@@ -42,9 +42,10 @@ type ToolConfig struct {
 }
 
 type RuleConfig struct {
-	Enabled  *bool    `toml:"enabled"`
-	Severity string   `toml:"severity"`
-	Excludes []string `toml:"excludes"`
+	Enabled    *bool    `toml:"enabled"`
+	Severity   string   `toml:"severity"`
+	Excludes   []string `toml:"excludes"`
+	Characters []string `toml:"characters"`
 }
 
 func Defaults() Config {
@@ -168,6 +169,7 @@ func (configuration Config) EffectiveCheckRule(code string) RuleConfig {
 func cloneRuleConfig(rule RuleConfig) RuleConfig {
 	cloned := rule
 	cloned.Excludes = append([]string(nil), rule.Excludes...)
+	cloned.Characters = append([]string(nil), rule.Characters...)
 	if rule.Enabled != nil {
 		enabled := *rule.Enabled
 		cloned.Enabled = &enabled

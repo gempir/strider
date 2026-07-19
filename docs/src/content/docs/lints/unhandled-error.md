@@ -24,7 +24,3 @@ file.Close()
 ```go
 if err := file.Close(); err != nil { return err }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only unhandled-error`, enabled in `strider.toml`, or included with `--all`.

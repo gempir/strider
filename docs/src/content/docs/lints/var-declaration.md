@@ -24,7 +24,3 @@ count := 0
 ```go
 var count int
 ```
-
-## Enable
-
-This optional check runs when selected with `--only var-declaration`, enabled in `strider.toml`, or included with `--all`.

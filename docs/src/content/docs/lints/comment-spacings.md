@@ -24,7 +24,3 @@ Require a space after line-comment markers. Strider default: directives exempt.
 ```go
 // Explain why this is necessary.
 ```
-
-## Enable
-
-This optional check runs when selected with `--only comment-spacings`, enabled in `strider.toml`, or included with `--all`.

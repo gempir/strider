@@ -26,7 +26,3 @@ Println(message)
 import "fmt"
 fmt.Println(message)
 ```
-
-## Enable
-
-This optional check runs when selected with `--only dot-imports`, enabled in `strider.toml`, or included with `--all`.

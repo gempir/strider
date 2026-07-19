@@ -29,7 +29,3 @@ if ready {
 if !ready { return }
 process()
 ```
-
-## Enable
-
-This optional check runs when selected with `--only cognitive-complexity`, enabled in `strider.toml`, or included with `--all`.

@@ -25,7 +25,3 @@ package service // when a copyright header is required
 // Copyright Example Corp.
 package service
 ```
-
-## Enable
-
-This optional check runs when selected with `--only file-header`, enabled in `strider.toml`, or included with `--all`.

@@ -24,7 +24,3 @@ if false && connected { start() }
 ```go
 if ready && connected { start() }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only constant-logical-expr`, enabled in `strider.toml`, or included with `--all`.

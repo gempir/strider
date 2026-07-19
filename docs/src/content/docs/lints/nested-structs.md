@@ -25,7 +25,3 @@ type User struct { Address struct { City string } }
 type Address struct { City string }
 type User struct { Address Address }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only nested-structs`, enabled in `strider.toml`, or included with `--all`.

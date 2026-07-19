@@ -24,7 +24,3 @@ json := loadConfig() // shadows the json import
 ```go
 encoded := json.Marshal(value)
 ```
-
-## Enable
-
-This optional check runs when selected with `--only import-shadowing`, enabled in `strider.toml`, or included with `--all`.

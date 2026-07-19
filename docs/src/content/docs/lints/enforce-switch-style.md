@@ -24,7 +24,3 @@ switch value { default: fallback(); case 1: one() }
 ```go
 switch value { case 1: one(); default: fallback() }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only enforce-switch-style`, enabled in `strider.toml`, or included with `--all`.

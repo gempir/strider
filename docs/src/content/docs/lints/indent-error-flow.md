@@ -25,7 +25,3 @@ if err != nil { return err } else { use(value) }
 if err != nil { return err }
 use(value)
 ```
-
-## Enable
-
-This optional check runs when selected with `--only indent-error-flow`, enabled in `strider.toml`, or included with `--all`.

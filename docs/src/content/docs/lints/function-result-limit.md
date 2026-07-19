@@ -24,7 +24,3 @@ func Parse() (Value, Metadata, Warnings, error)
 ```go
 func Parse() (Value, error)
 ```
-
-## Enable
-
-This optional check runs when selected with `--only function-result-limit`, enabled in `strider.toml`, or included with `--all`.

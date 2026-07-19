@@ -24,7 +24,3 @@ func bounds() (int, int)
 ```go
 func bounds() (min int, max int)
 ```
-
-## Enable
-
-This optional check runs when selected with `--only confusing-results`, enabled in `strider.toml`, or included with `--all`.

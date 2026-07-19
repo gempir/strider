@@ -24,7 +24,3 @@ for _, value := range values { use(func() { print(value) }) }
 ```go
 for _, value := range values { use(func(current int) func() { return func() { print(current) } }(value)) }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only range-val-in-closure`, enabled in `strider.toml`, or included with `--all`.

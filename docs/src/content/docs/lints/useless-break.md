@@ -24,7 +24,3 @@ switch value { case 1: use(); break }
 ```go
 switch value { case 1: use() }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only useless-break`, enabled in `strider.toml`, or included with `--all`.

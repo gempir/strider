@@ -48,8 +48,9 @@ type Finding struct {
 
 // CSTInput contains everything needed for the concrete-syntax lint pass.
 type CSTInput struct {
-	Filename string
-	Tree     *cst.Tree
-	Rules    []Rule
-	Report   func(Finding)
+	Filename         string
+	Tree             *cst.Tree
+	Rules            []Rule
+	BannedCharacters []rune
+	Report           func(Finding)
 }

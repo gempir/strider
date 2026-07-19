@@ -24,7 +24,3 @@ func (item Item) Rename(name string) { item.Name = name }
 ```go
 func (item *Item) Rename(name string) { item.Name = name }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only modifies-value-receiver`, enabled in `strider.toml`, or included with `--all`.

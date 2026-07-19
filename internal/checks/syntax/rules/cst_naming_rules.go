@@ -18,6 +18,12 @@ func (a *cstAnalyzer) checkConcreteIdentifier(name cst.Token) {
 		return
 	}
 	value := name.Src()
+	for _, character := range value {
+		if a.bannedCharacters[character] {
+			a.report("banned-characters", name, fmt.Sprintf("identifier contains banned character %q", character))
+			break
+		}
+	}
 	if strings.HasPrefix(value, "_") {
 		a.report("unexported-naming", name, "unexported identifier should not begin with an underscore")
 	}

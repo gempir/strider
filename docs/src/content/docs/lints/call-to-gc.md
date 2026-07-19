@@ -24,7 +24,3 @@ runtime.GC() // in normal application code
 ```go
 buffer = nil // let Go collect it when appropriate
 ```
-
-## Enable
-
-This optional check runs when selected with `--only call-to-gc`, enabled in `strider.toml`, or included with `--all`.

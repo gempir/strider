@@ -24,7 +24,3 @@ import "log" // when log is configured as blocked
 ```go
 import "log/slog"
 ```
-
-## Enable
-
-This optional check runs when selected with `--only imports-blocklist`, enabled in `strider.toml`, or included with `--all`.

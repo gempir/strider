@@ -24,7 +24,3 @@ const identifier = "ABC 123" // violating the configured format
 ```go
 const identifier = "abc-123" // matching the configured format
 ```
-
-## Enable
-
-This optional check runs when selected with `--only string-format`, enabled in `strider.toml`, or included with `--all`.

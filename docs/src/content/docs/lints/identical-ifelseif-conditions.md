@@ -24,7 +24,3 @@ if ready { one() } else if ready { two() }
 ```go
 if first { one() } else if second { two() }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only identical-ifelseif-conditions`, enabled in `strider.toml`, or included with `--all`.

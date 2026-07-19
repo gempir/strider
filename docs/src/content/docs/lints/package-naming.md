@@ -24,7 +24,3 @@ package http_util
 ```go
 package httputil
 ```
-
-## Enable
-
-This optional check runs when selected with `--only package-naming`, enabled in `strider.toml`, or included with `--all`.

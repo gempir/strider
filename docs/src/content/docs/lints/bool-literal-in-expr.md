@@ -24,7 +24,3 @@ if ready == true { start() }
 ```go
 if ready { start() }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only bool-literal-in-expr`, enabled in `strider.toml`, or included with `--all`.

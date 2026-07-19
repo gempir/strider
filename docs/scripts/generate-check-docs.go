@@ -33,14 +33,6 @@ func generateSyntaxPages(docsDirectory string) {
 	if err != nil {
 		fatal(err)
 	}
-	defaults, err := rules.Select(nil, false)
-	if err != nil {
-		fatal(err)
-	}
-	defaultCodes := make(map[string]bool, len(defaults))
-	for _, rule := range defaults {
-		defaultCodes[rule.Meta().Code] = true
-	}
 	sort.Slice(all, func(i, j int) bool {
 		return all[i].Meta().Code < all[j].Meta().Code
 	})
@@ -60,15 +52,7 @@ func generateSyntaxPages(docsDirectory string) {
 			continue
 		}
 		content := render(
-			pageData{
-				code:           meta.Code,
-				summary:        meta.Summary,
-				explanation:    meta.Explanation,
-				bad:            meta.BadExample,
-				good:           meta.GoodExample,
-				severity:       meta.DefaultSeverity,
-				defaultEnabled: defaultCodes[meta.Code],
-			},
+			pageData{code: meta.Code, summary: meta.Summary, explanation: meta.Explanation, bad: meta.BadExample, good: meta.GoodExample, severity: meta.DefaultSeverity},
 		)
 		if string(current) == content {
 			continue
@@ -92,21 +76,16 @@ func generatedPage(contents string) bool {
 }
 
 type pageData struct {
-	code           string
-	summary        string
-	explanation    string
-	bad            string
-	good           string
-	severity       diagnostic.Severity
-	defaultEnabled bool
+	code        string
+	summary     string
+	explanation string
+	bad         string
+	good        string
+	severity    diagnostic.Severity
 }
 
 func render(page pageData) string {
-	enablement := fmt.Sprintf("This optional check runs when selected with `--only %s`, enabled in `strider.toml`, or included with `--all`.", page.code)
-	if page.defaultEnabled {
-		enablement = "This check is enabled in Strider's default check profile."
-	}
-	return fmt.Sprintf(
+	content := fmt.Sprintf(
 		`---
 title: %s
 description: %q
@@ -133,10 +112,6 @@ sidebar:
 `+"```go"+`
 %s
 `+"```"+`
-
-## Enable
-
-%s
 `,
 		page.code,
 		prose(page.summary),
@@ -149,8 +124,26 @@ sidebar:
 		prose(page.explanation),
 		strings.TrimSpace(page.bad),
 		strings.TrimSpace(page.good),
-		enablement,
 	)
+	if page.code == "banned-characters" {
+		content += `
+## Configuration
+
+Set ` + "`characters`" + ` to the Unicode characters that identifiers must not
+contain. Each entry must contain exactly one character. The configured list
+replaces the defaults.
+
+` + "```toml" + `
+[checks.rules.banned-characters]
+characters = ["ᐸ", "ᐳ", "_"]
+` + "```" + `
+
+By default, Strider bans ` + "`ᐸ`" + ` (` + "`U+1438 CANADIAN SYLLABICS PA`" + `) and
+` + "`ᐳ`" + ` (` + "`U+1433 CANADIAN SYLLABICS PO`" + `). Set ` + "`characters = []`" + ` to
+allow every character.
+`
+	}
+	return content
 }
 
 func synchronizeSeverityBadges(docsDirectory string) {

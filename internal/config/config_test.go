@@ -38,6 +38,8 @@ minimum-severity = "warning"
 enabled = false
 severity = "error"
 excludes = ["legacy/**"]
+[checks.rules.banned-characters]
+characters = ["ᐸ", "ᐳ"]
 `
 	if err := os.WriteFile(filepath.Join(root, Filename), []byte(contents), 0o600); err != nil {
 		t.Fatal(err)
@@ -59,6 +61,9 @@ excludes = ["legacy/**"]
 	}
 	if strings.Join(rule.Excludes, ",") != "generated/**,legacy/**" {
 		t.Fatalf("effective excludes = %q", rule.Excludes)
+	}
+	if got := strings.Join(configuration.EffectiveCheckRule("banned-characters").Characters, ","); got != "ᐸ,ᐳ" {
+		t.Fatalf("banned characters = %q", got)
 	}
 	canonicalRoot, err := filepath.EvalSymlinks(root)
 	if err != nil {

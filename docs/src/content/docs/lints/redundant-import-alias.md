@@ -24,7 +24,3 @@ import strings "strings"
 ```go
 import "strings"
 ```
-
-## Enable
-
-This optional check runs when selected with `--only redundant-import-alias`, enabled in `strider.toml`, or included with `--all`.

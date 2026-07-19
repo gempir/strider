@@ -25,7 +25,3 @@ package store
 // Package store persists application data.
 package store
 ```
-
-## Enable
-
-This optional check runs when selected with `--only package-comments`, enabled in `strider.toml`, or included with `--all`.

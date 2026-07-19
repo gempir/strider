@@ -24,7 +24,3 @@ endpoint := "http://example.com"
 ```go
 endpoint := "https://example.com"
 ```
-
-## Enable
-
-This optional check runs when selected with `--only unsecure-url-scheme`, enabled in `strider.toml`, or included with `--all`.

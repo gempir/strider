@@ -24,7 +24,3 @@ values := make(map[string]int) // with literal style configured
 ```go
 values := map[string]int{} // with literal style configured
 ```
-
-## Enable
-
-This optional check runs when selected with `--only enforce-map-style`, enabled in `strider.toml`, or included with `--all`.

@@ -24,7 +24,3 @@ func Load(id string, ctx context.Context) error
 ```go
 func Load(ctx context.Context, id string) error
 ```
-
-## Enable
-
-This optional check runs when selected with `--only context-as-argument`, enabled in `strider.toml`, or included with `--all`.

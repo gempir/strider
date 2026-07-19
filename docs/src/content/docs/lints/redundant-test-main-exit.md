@@ -24,7 +24,3 @@ func TestMain(m *testing.M) { os.Exit(m.Run()) }
 ```go
 func TestMain(m *testing.M) { m.Run() }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only redundant-test-main-exit`, enabled in `strider.toml`, or included with `--all`.

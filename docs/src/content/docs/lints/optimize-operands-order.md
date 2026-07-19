@@ -24,7 +24,3 @@ if expensiveCheck() && ready { start() }
 ```go
 if ready && expensiveCheck() { start() }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only optimize-operands-order`, enabled in `strider.toml`, or included with `--all`.

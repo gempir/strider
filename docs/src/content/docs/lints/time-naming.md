@@ -24,7 +24,3 @@ var timeoutSeconds time.Duration
 ```go
 var timeout time.Duration
 ```
-
-## Enable
-
-This optional check runs when selected with `--only time-naming`, enabled in `strider.toml`, or included with `--all`.

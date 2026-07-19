@@ -24,7 +24,3 @@ Enforce Go source filename format. Strider default: conventional characters.
 ```go
 // user_service.go
 ```
-
-## Enable
-
-This optional check runs when selected with `--only filename-format`, enabled in `strider.toml`, or included with `--all`.

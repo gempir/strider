@@ -26,7 +26,3 @@ save()
 save()
 return nil
 ```
-
-## Enable
-
-This optional check runs when selected with `--only unreachable-code`, enabled in `strider.toml`, or included with `--all`.

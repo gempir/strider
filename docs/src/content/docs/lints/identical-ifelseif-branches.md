@@ -24,7 +24,3 @@ if first { run() } else if second { run() }
 ```go
 if first { one() } else if second { two() }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only identical-ifelseif-branches`, enabled in `strider.toml`, or included with `--all`.

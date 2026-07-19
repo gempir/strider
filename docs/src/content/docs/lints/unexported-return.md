@@ -24,7 +24,3 @@ func NewClient() *client
 ```go
 func NewClient() *Client
 ```
-
-## Enable
-
-This optional check runs when selected with `--only unexported-return`, enabled in `strider.toml`, or included with `--all`.

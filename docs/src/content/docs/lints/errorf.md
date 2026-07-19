@@ -24,7 +24,3 @@ errors.New(fmt.Sprintf("load %s", name))
 ```go
 fmt.Errorf("load %s", name)
 ```
-
-## Enable
-
-This optional check runs when selected with `--only errorf`, enabled in `strider.toml`, or included with `--all`.

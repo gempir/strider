@@ -24,7 +24,3 @@ values := make([]string, 0) // with literal style configured
 ```go
 values := []string{} // with literal style configured
 ```
-
-## Enable
-
-This optional check runs when selected with `--only enforce-slice-style`, enabled in `strider.toml`, or included with `--all`.

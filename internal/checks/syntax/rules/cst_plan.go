@@ -52,7 +52,7 @@ func compileCSTExecutionPlan(enabled map[string]bool) cstExecutionPlan {
 		}
 		return false
 	}
-	identifiers := any("confusing-naming", "import-shadowing", "redefines-builtin-id", "unexported-naming", "var-naming")
+	identifiers := any("banned-characters", "confusing-naming", "import-shadowing", "redefines-builtin-id", "unexported-naming", "var-naming")
 	functionComplexity := any("cyclomatic", "cyclomatic-complexity")
 	functionCognitive := enabled["cognitive-complexity"]
 	functionStatements := enabled["function-length"]

@@ -24,7 +24,3 @@ message := "a source line that extends beyond the configured maximum line length
 ```go
 message := "keep source lines readable"
 ```
-
-## Enable
-
-This optional check runs when selected with `--only line-length-limit`, enabled in `strider.toml`, or included with `--all`.

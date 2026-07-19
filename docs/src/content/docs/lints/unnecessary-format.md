@@ -24,7 +24,3 @@ fmt.Sprintf("static message")
 ```go
 fmt.Sprint(value)
 ```
-
-## Enable
-
-This optional check runs when selected with `--only unnecessary-format`, enabled in `strider.toml`, or included with `--all`.

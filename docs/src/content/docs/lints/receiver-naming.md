@@ -24,7 +24,3 @@ func (self *Client) Send() error
 ```go
 func (c *Client) Send() error
 ```
-
-## Enable
-
-This optional check runs when selected with `--only receiver-naming`, enabled in `strider.toml`, or included with `--all`.

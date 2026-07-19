@@ -24,7 +24,3 @@ for _, value := range values { pointers = append(pointers, &value) }
 ```go
 for index := range values { pointers = append(pointers, &values[index]) }
 ```
-
-## Enable
-
-This optional check runs when selected with `--only range-val-address`, enabled in `strider.toml`, or included with `--all`.

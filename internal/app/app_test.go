@@ -361,7 +361,7 @@ func TestCheckFixFormatsAndReruns(t *testing.T) {
 					&stdout,
 					&stderr,
 				)
-				if code != exitSuccess || stdout.String() != "found 0 issues\n" || stderr.Len() != 0 {
+				if code != exitSuccess || stdout.String() != "0 issues\n" || stderr.Len() != 0 {
 					t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 				}
 				contents,
@@ -412,17 +412,24 @@ func clean(ready bool, values []int, mode int) ([]int, bool) {
 		&stdout,
 		&stderr,
 	)
-	if code != exitSuccess || stdout.String() != "found 0 issues\n" || stderr.Len() != 0 {
+	if code != exitSuccess || stdout.String() != "0 issues\n" || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 	contents, err := os.ReadFile(filename)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, removed := range []string{"append", "!ready", "break"} {
-		if bytes.Contains(contents, []byte(removed)) {
-			t.Fatalf("fixed source still contains %q:\n%s", removed, contents)
-		}
+	want := `package sample
+
+func clean(ready bool, values []int, mode int) ([]int, bool) {
+	switch mode {
+	case 1:
+	}
+	return (values), ready
+}
+`
+	if string(contents) != want {
+		t.Fatalf("fixed source:\n%s\nwant:\n%s", contents, want)
 	}
 }
 
@@ -450,7 +457,7 @@ func TestCheckFixHonorsFormatterExclusionsForGranularEdits(t *testing.T) {
 	}
 	var stdout, stderr bytes.Buffer
 	code := Run([]string{"--config", configurationPath, "check", "--only", "double-negation", "--fix", filename}, strings.NewReader(""), &stdout, &stderr)
-	if code != exitSuccess || stdout.String() != "found 0 issues\n" || stderr.Len() != 0 {
+	if code != exitSuccess || stdout.String() != "0 issues\n" || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 	contents, err := os.ReadFile(filename)
@@ -478,7 +485,7 @@ func TestCheckFixDoesNotApplyBaselinedFinding(t *testing.T) {
 	stdout.Reset()
 	stderr.Reset()
 	apply := append(append([]string(nil), baseArgs...), "--fix", filename)
-	if code := Run(apply, strings.NewReader(""), &stdout, &stderr); code != exitSuccess || stdout.String() != "found 0 issues\n" || stderr.Len() != 0 {
+	if code := Run(apply, strings.NewReader(""), &stdout, &stderr); code != exitSuccess || stdout.String() != "0 issues\n" || stderr.Len() != 0 {
 		t.Fatalf("fix: exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 	after, err := os.ReadFile(filename)
@@ -599,7 +606,7 @@ func TestCheckSummaryOnly(t *testing.T) {
 	}
 	var stdout, stderr bytes.Buffer
 	code := Run([]string{"--no-config", "check", "-s", "note", "-o", "no-init", "-q", filename}, strings.NewReader(""), &stdout, &stderr)
-	if code != exitFindings || stdout.String() != "no-init  1\nfound 1 issue: 1 note\n" || stderr.Len() != 0 {
+	if code != exitFindings || stdout.String() != "no-init  1\n1 issue: 1 note\n" || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 }
@@ -772,7 +779,7 @@ func TestMinimumSeverityNoneExecutesSuppressedCheck(t *testing.T) {
 	}
 	var stdout, stderr bytes.Buffer
 	code := Run([]string{"--config", configurationPath, "check", "--only", "no-init", filename}, strings.NewReader(""), &stdout, &stderr)
-	if code != exitSuccess || stdout.String() != "found 0 issues\n" || stderr.Len() != 0 {
+	if code != exitSuccess || stdout.String() != "0 issues\n" || stderr.Len() != 0 {
 		t.Fatalf("ordinary run: exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 	stdout.Reset()
@@ -978,7 +985,7 @@ func TestColorFlagRendersRichDiagnosticsAndLeavesJSONPlain(t *testing.T) {
 	if code != exitFindings || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
-	for _, wanted := range []string{"\x1b[", "func \x1b[1;34minit\x1b[0m() {}", "┌─", "found 1 issue"} {
+	for _, wanted := range []string{"\x1b[", "func \x1b[1;34minit\x1b[0m() {}", "┌─", "1 issue"} {
 		if !strings.Contains(stdout.String(), wanted) {
 			t.Fatalf("rich output missing %q: %q", wanted, stdout.String())
 		}
@@ -1158,7 +1165,7 @@ severity = "none"
 	stdout.Reset()
 	stderr.Reset()
 	code = Run([]string{"analyze", filename}, strings.NewReader(""), &stdout, &stderr)
-	if code != exitSuccess || stdout.String() != "found 0 issues\n" {
+	if code != exitSuccess || stdout.String() != "0 issues\n" {
 		t.Fatalf("analyze exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 	stdout.Reset()
@@ -1203,7 +1210,7 @@ func TestLintBaselineGenerateApplyIgnoreAndPrune(t *testing.T) {
 	if code, stdout, stderr := run("--generate-baseline"); code != exitSuccess || stdout != "" || stderr != "" {
 		t.Fatalf("generate exit %d, stdout %q, stderr %q", code, stdout, stderr)
 	}
-	if code, stdout, stderr := run(); code != exitSuccess || stdout != "found 0 issues\n" || stderr != "" {
+	if code, stdout, stderr := run(); code != exitSuccess || stdout != "0 issues\n" || stderr != "" {
 		t.Fatalf("apply exit %d, stdout %q, stderr %q", code, stdout, stderr)
 	}
 	write("package p\nfunc init() {}\nfunc init() {}\n")
@@ -1211,10 +1218,10 @@ func TestLintBaselineGenerateApplyIgnoreAndPrune(t *testing.T) {
 		t.Fatalf("new issue exit %d, stdout %q, stderr %q", code, stdout, stderr)
 	}
 	write("package p\n")
-	if code, stdout, stderr := run(); code != exitSuccess || stdout != "found 0 issues\n" || !strings.Contains(stderr, "1 outdated issue") {
+	if code, stdout, stderr := run(); code != exitSuccess || stdout != "0 issues\n" || !strings.Contains(stderr, "1 outdated issue") {
 		t.Fatalf("stale exit %d, stdout %q, stderr %q", code, stdout, stderr)
 	}
-	if code, stdout, stderr := run("--remove-outdated-baseline-entries"); code != exitSuccess || stdout != "found 0 issues\n" || stderr != "" {
+	if code, stdout, stderr := run("--remove-outdated-baseline-entries"); code != exitSuccess || stdout != "0 issues\n" || stderr != "" {
 		t.Fatalf("prune exit %d, stdout %q, stderr %q", code, stdout, stderr)
 	}
 	loaded, err := baseline.Load(baselinePath)
@@ -1250,7 +1257,7 @@ func TestSeverityFilteredBaselinePrunePreservesKnownAndRemovesUnknownCodes(t *te
 		&stdout,
 		&stderr,
 	)
-	if code != exitSuccess || stdout.String() != "found 0 issues\n" || stderr.Len() != 0 {
+	if code != exitSuccess || stdout.String() != "0 issues\n" || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 	loaded, err := baseline.Load(baselinePath)
@@ -1292,7 +1299,7 @@ func TestConfiguredAnalyzerBaseline(t *testing.T) {
 	stdout.Reset()
 	stderr.Reset()
 	code = Run([]string{"analyze", "--only", "invalid-regexp", filename}, strings.NewReader(""), &stdout, &stderr)
-	if code != exitSuccess || stdout.String() != "found 0 issues\n" || stderr.Len() != 0 {
+	if code != exitSuccess || stdout.String() != "0 issues\n" || stderr.Len() != 0 {
 		t.Fatalf("apply exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 }

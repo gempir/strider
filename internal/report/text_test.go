@@ -44,7 +44,7 @@ func TestTextRendersSourceAnnotationAndSummary(t *testing.T) {
 		"3 \x1b[38;5;2m│\x1b[0m func run() {}",
 		"  \x1b[38;5;2m│",
 		"note",
-		"found 1 issue:",
+		"1 issue:",
 		"no-init",
 		"1",
 	} {
@@ -101,7 +101,7 @@ func TestTextSummaryOnlySuppressesDetailsAndCheckCounts(t *testing.T) {
 	if err := TextWithOptions(&output, diagnostics, ui.ColorNever, TextOptions{SummaryOnly: true}); err != nil {
 		t.Fatal(err)
 	}
-	want := "error-rule  1\nnote-rule   1\nfound 2 issues: 1 error, 1 note\n"
+	want := "error-rule  1\nnote-rule   1\n2 issues: 1 error, 1 note\n"
 	if output.String() != want {
 		t.Fatalf("summary-only output = %q", output.String())
 	}
@@ -114,7 +114,7 @@ func TestTextRendersCleanSummary(t *testing.T) {
 	if err := Text(&output, nil, ui.ColorAlways); err != nil {
 		t.Fatal(err)
 	}
-	if output.String() != "\x1b[38;5;10mfound 0 issues\x1b[0m\n" {
+	if output.String() != "\x1b[38;5;10m0 issues\x1b[0m\n" {
 		t.Fatalf("clean summary = %q", output.String())
 	}
 }
@@ -135,7 +135,7 @@ func TestTextSummarizesFindingsByCheck(t *testing.T) {
 	if first < 0 || second < 0 || first >= second || strings.Contains(text, "Check summary") || strings.Contains(text, "checks broken") {
 		t.Fatalf("unexpected check summary:\n%s", text)
 	}
-	if !strings.HasSuffix(text, "found 3 issues: 2 errors, 1 warning\n") {
+	if !strings.HasSuffix(text, "3 issues: 2 errors, 1 warning\n") {
 		t.Fatalf("issue summary is not the final line:\n%s", text)
 	}
 }
@@ -144,10 +144,68 @@ func TestSummaryColorsEachSeveritySegment(t *testing.T) {
 	t.Setenv("FORCE_COLOR", "")
 	t.Setenv("NO_COLOR", "")
 	palette := ui.NewPalette(&bytes.Buffer{}, ui.ColorAlways)
-	got := summary(make([]diagnostic.Diagnostic, 221), map[diagnostic.Severity]int{diagnostic.SeverityError: 214, diagnostic.SeverityWarning: 7}, palette)
-	want := "\x1b[1;37mfound 221 issues: \x1b[0m" + "\x1b[1;31m214 errors\x1b[0m" + "\x1b[1;37m, \x1b[0m" + "\x1b[1;33m7 warnings\x1b[0m"
+	got := summary(
+		make([]diagnostic.Diagnostic, 221),
+		map[diagnostic.Severity]int{diagnostic.SeverityError: 214, diagnostic.SeverityWarning: 7},
+		map[fixability]int{safelyFixable: 4, unsafelyFixable: 2},
+		palette,
+	)
+	want := "\x1b[1;37m221 issues: \x1b[0m" + "\x1b[1;31m214 errors\x1b[0m" + "\x1b[1;37m, \x1b[0m" + "\x1b[1;33m7 warnings\x1b[0m" + "\x1b[1;37m, \x1b[0m" + "\x1b[38;5;10m4 fixable\x1b[0m" + "\x1b[1;37m, \x1b[0m" + "\x1b[1;35m2 unsafe fixable\x1b[0m"
 	if got != want {
 		t.Fatalf("colored summary = %q, want %q", got, want)
+	}
+}
+
+func TestTextMarksAutomaticFixesWithoutRenderingHelp(t *testing.T) {
+	t.Setenv("FORCE_COLOR", "")
+	t.Setenv("NO_COLOR", "")
+	diagnostics := []diagnostic.Diagnostic{
+		{
+			Code:     "safe-rule",
+			Message:  "safe",
+			Severity: diagnostic.SeverityError,
+			File:     "missing.go",
+			Fixes:    []diagnostic.Fix{{Message: "apply safe fix", Safety: diagnostic.Safe, Automatic: true}},
+		},
+		{
+			Code:     "unsafe-rule",
+			Message:  "unsafe",
+			Severity: diagnostic.SeverityError,
+			File:     "missing.go",
+			Fixes:    []diagnostic.Fix{{Message: "apply unsafe fix", Safety: diagnostic.Unsafe, Automatic: true}},
+		},
+		{Code: "plain-rule", Message: "plain", Severity: diagnostic.SeverityWarning, File: "missing.go"},
+	}
+	var output bytes.Buffer
+	if err := Text(&output, diagnostics, ui.ColorAlways); err != nil {
+		t.Fatal(err)
+	}
+	text := output.String()
+	for _, unwanted := range []string{"apply safe fix", "apply unsafe fix", "help:"} {
+		if strings.Contains(text, unwanted) {
+			t.Fatalf("output contains removed fix help %q:\n%s", unwanted, text)
+		}
+	}
+	for _, wanted := range []string{
+		"\x1b[1;31msafe-rule\x1b[0m\x1b[38;5;10m*\x1b[0m:",
+		"\x1b[1;31munsafe-rule\x1b[0m\x1b[1;35m*\x1b[0m:",
+		"\x1b[1;31msafe-rule\x1b[0m\x1b[38;5;10m*\x1b[0m    ",
+		"\x1b[1;31munsafe-rule\x1b[0m\x1b[1;35m*\x1b[0m  ",
+		"\x1b[38;5;10m1 fixable\x1b[0m",
+		"\x1b[1;35m1 unsafe fixable\x1b[0m",
+	} {
+		if !strings.Contains(text, wanted) {
+			t.Fatalf("output missing %q:\n%s", wanted, text)
+		}
+	}
+	plainSummary := summary(
+		diagnostics,
+		map[diagnostic.Severity]int{diagnostic.SeverityError: 2, diagnostic.SeverityWarning: 1},
+		map[fixability]int{safelyFixable: 1, unsafelyFixable: 1},
+		ui.NewPalette(&bytes.Buffer{}, ui.ColorNever),
+	)
+	if plainSummary != "3 issues: 2 errors, 1 warning, 1 fixable, 1 unsafe fixable" {
+		t.Fatalf("plain summary = %q", plainSummary)
 	}
 }
 

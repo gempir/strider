@@ -87,6 +87,10 @@ cannot be combined with watch mode, baseline generation, or baseline pruning.
 The initial automatic set is `format`, `double-negation`,
 `redundant-switch-break`, and `single-argument-append`.
 
+Text reports put a `*` directly after checks with an automatic fix. Green marks
+safe fixes and purple marks fixes that require `--fix-unsafe`; the same markers
+appear in the per-check list, and the final issue summary counts both kinds.
+
 Fix selection happens only after `--only`, effective severity, path exclusions,
 source suppressions, and the active baseline have removed ineligible findings.
 Baselined or suppressed findings are therefore not changed. Strider chooses an
@@ -167,15 +171,14 @@ The tool-wide minimum severity, exclusions, and default baseline live under
 ## Formatting findings
 
 Formatting participates as code `format`. An unformatted file produces a normal
-note at the start of the file and suggests the write-focused formatter:
+note at the start of the file, with a green `*` marking its safe automatic fix:
 
 ```text
-format: file is not formatted
+format*: file is not formatted
   ┌─ main.go:1:1
   │
 1 │ package main
 2 │
-  = help: run `strider fmt main.go`
 ```
 
 Without a fix flag, `check` never writes the formatted candidate. Use
@@ -196,7 +199,7 @@ Text is the default human-readable report format:
 13 <span class="t-path">│</span>     configure()
 <span aria-hidden="true"> </span>
 <span class="t-note">no-init</span>  <span class="t-note">1</span>
-<strong>found 1 issue:</strong> <span class="t-note">1 note</span></code></pre>
+<strong>1 issue:</strong> <span class="t-note">1 note</span></code></pre>
 </div>
 
 Use JSON for integrations or HTML for a self-contained artifact:

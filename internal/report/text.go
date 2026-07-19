@@ -30,8 +30,10 @@ func TextWithOptions(writer io.Writer, diagnostics []diagnostic.Diagnostic, colo
 	sources := make(map[string][]string)
 	missing := make(map[string]bool)
 	counts := make(map[diagnostic.Severity]int)
+	fixCounts := make(map[fixability]int)
 	for _, item := range diagnostics {
 		counts[item.Severity]++
+		fixCounts[diagnosticFixability(item)]++
 	}
 	if options.SummaryOnly {
 		if len(diagnostics) != 0 {
@@ -39,7 +41,7 @@ func TextWithOptions(writer io.Writer, diagnostics []diagnostic.Diagnostic, colo
 				return err
 			}
 		}
-		_, err := fmt.Fprintln(writer, summary(diagnostics, counts, palette))
+		_, err := fmt.Fprintln(writer, summary(diagnostics, counts, fixCounts, palette))
 		return err
 	}
 
@@ -54,21 +56,30 @@ func TextWithOptions(writer io.Writer, diagnostics []diagnostic.Diagnostic, colo
 		}
 	}
 	if len(diagnostics) == 0 {
-		_, err := fmt.Fprintln(writer, summary(diagnostics, counts, palette))
+		_, err := fmt.Fprintln(writer, summary(diagnostics, counts, fixCounts, palette))
 		return err
 	}
 	if err := writeCheckCounts(writer, diagnostics, palette, true); err != nil {
 		return err
 	}
-	_, err := fmt.Fprintln(writer, summary(diagnostics, counts, palette))
+	_, err := fmt.Fprintln(writer, summary(diagnostics, counts, fixCounts, palette))
 	return err
 }
 
 type checkCount struct {
-	code     string
-	count    int
-	severity diagnostic.Severity
+	code       string
+	count      int
+	severity   diagnostic.Severity
+	fixability fixability
 }
+
+type fixability uint8
+
+const (
+	notFixable fixability = iota
+	safelyFixable
+	unsafelyFixable
+)
 
 func writeCheckCounts(writer io.Writer, diagnostics []diagnostic.Diagnostic, palette ui.Palette, leadingBlank bool) error {
 	byCode := make(map[string]checkCount)
@@ -80,8 +91,9 @@ func writeCheckCounts(writer io.Writer, diagnostics []diagnostic.Diagnostic, pal
 		if item.Severity.AtLeast(entry.severity) || entry.severity == "" {
 			entry.severity = item.Severity
 		}
+		entry.fixability = max(entry.fixability, diagnosticFixability(item))
 		byCode[item.Code] = entry
-		codeWidth = max(codeWidth, utf8.RuneCountInString(item.Code))
+		codeWidth = max(codeWidth, utf8.RuneCountInString(item.Code)+fixabilityWidth(entry.fixability))
 	}
 	entries := make([]checkCount, 0, len(byCode))
 	for _, entry := range byCode {
@@ -102,9 +114,11 @@ func writeCheckCounts(writer io.Writer, diagnostics []diagnostic.Diagnostic, pal
 		}
 	}
 	for _, entry := range entries {
-		code := fmt.Sprintf("%-*s", codeWidth, entry.code)
+		marker := fixabilityMarker(entry.fixability, palette)
+		padding := codeWidth - utf8.RuneCountInString(entry.code) - fixabilityWidth(entry.fixability)
+		code := styledSeverity(entry.severity, entry.code, palette) + marker + strings.Repeat(" ", padding)
 		count := styledSeverity(entry.severity, strconv.Itoa(entry.count), palette)
-		if _, err := fmt.Fprintf(writer, "%s  %s\n", styledSeverity(entry.severity, code, palette), count); err != nil {
+		if _, err := fmt.Fprintf(writer, "%s  %s\n", code, count); err != nil {
 			return err
 		}
 	}
@@ -112,7 +126,7 @@ func writeCheckCounts(writer io.Writer, diagnostics []diagnostic.Diagnostic, pal
 }
 
 func writeDiagnostic(writer io.Writer, item diagnostic.Diagnostic, palette ui.Palette, sources map[string][]string, missing map[string]bool) error {
-	code := styledSeverity(item.Severity, item.Code, palette)
+	code := styledSeverity(item.Severity, item.Code, palette) + fixabilityMarker(diagnosticFixability(item), palette)
 	if _, err := fmt.Fprintf(writer, "%s: %s\n", code, palette.Bold(item.Message)); err != nil {
 		return err
 	}
@@ -149,18 +163,39 @@ func writeDiagnostic(writer io.Writer, item diagnostic.Diagnostic, palette ui.Pa
 			return err
 		}
 	}
-	for _, fix := range item.Fixes {
-		label := "help"
-		style := palette.Success
-		if fix.Safety != diagnostic.Safe {
-			label = string(fix.Safety) + " fix"
-			style = palette.Warning
-		}
-		if _, err := fmt.Fprintf(writer, "  %s %s: %s\n", palette.Accent("="), style(label), fix.Message); err != nil {
-			return err
-		}
-	}
 	return nil
+}
+
+func diagnosticFixability(item diagnostic.Diagnostic) fixability {
+	result := notFixable
+	for _, fix := range item.Fixes {
+		if !fix.Automatic {
+			continue
+		}
+		if fix.Safety == diagnostic.Safe {
+			return safelyFixable
+		}
+		result = unsafelyFixable
+	}
+	return result
+}
+
+func fixabilityWidth(value fixability) int {
+	if value == notFixable {
+		return 0
+	}
+	return 1
+}
+
+func fixabilityMarker(value fixability, palette ui.Palette) string {
+	switch value {
+	case safelyFixable:
+		return palette.Success("*")
+	case unsafelyFixable:
+		return palette.Accent("*")
+	default:
+		return ""
+	}
 }
 
 func sourceContext(line, lineCount int) (int, int) {
@@ -217,21 +252,27 @@ func styledSeverity(severity diagnostic.Severity, text string, palette ui.Palett
 	}
 }
 
-func summary(diagnostics []diagnostic.Diagnostic, counts map[diagnostic.Severity]int, palette ui.Palette) string {
+func summary(diagnostics []diagnostic.Diagnostic, counts map[diagnostic.Severity]int, fixCounts map[fixability]int, palette ui.Palette) string {
 	label := "issues"
 	if len(diagnostics) == 1 {
 		label = "issue"
 	}
-	prefix := fmt.Sprintf("found %d %s", len(diagnostics), label)
+	prefix := fmt.Sprintf("%d %s", len(diagnostics), label)
 	if len(diagnostics) == 0 {
 		return palette.Success(prefix)
 	}
-	parts := make([]string, 0, 4)
+	parts := make([]string, 0, 6)
 	for _, severity := range []diagnostic.Severity{diagnostic.SeverityError, diagnostic.SeverityWarning, diagnostic.SeverityNote, diagnostic.SeverityNone} {
 		if count := counts[severity]; count != 0 {
 			part := fmt.Sprintf("%d %s", count, plural(string(severity), count))
 			parts = append(parts, styledSeverity(severity, part, palette))
 		}
+	}
+	if count := fixCounts[safelyFixable]; count != 0 {
+		parts = append(parts, palette.Success(fmt.Sprintf("%d fixable", count)))
+	}
+	if count := fixCounts[unsafelyFixable]; count != 0 {
+		parts = append(parts, palette.Accent(fmt.Sprintf("%d unsafe fixable", count)))
 	}
 	return palette.White(prefix+": ") + strings.Join(parts, palette.White(", "))
 }

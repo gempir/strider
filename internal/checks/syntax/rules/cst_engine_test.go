@@ -345,6 +345,47 @@ func TestDoubleNegationDoesNotOfferCommentedAutomaticFix(t *testing.T) {
 	}
 }
 
+func TestRedundantSwitchBreakFixRemovesOnlyCleanStatementLine(t *testing.T) {
+	tests := []struct {
+		name        string
+		statement   string
+		wantOldText string
+	}{
+		{name: "clean line", statement: "\t\tbreak\n", wantOldText: "\t\tbreak\n"},
+		{name: "explicit semicolon", statement: "\t\tbreak;\n", wantOldText: "\t\tbreak;\n"},
+		{name: "trailing comment", statement: "\t\tbreak // keep\n", wantOldText: "break"},
+		{name: "inline", statement: "\tcase 1: break\n", wantOldText: "break"},
+	}
+	rules, err := Select([]string{"redundant-switch-break"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, test := range tests {
+		t.Run(
+			test.name,
+			func(t *testing.T) {
+				source := []byte("package sample\n\nfunc choose(value int) {\n\tswitch value {\n\tcase 1:\n" + test.statement + "\t}\n}\n")
+				if test.name == "inline" {
+					source = []byte("package sample\n\nfunc choose(value int) {\n\tswitch value {\n" + test.statement + "\t}\n}\n")
+				}
+				tree,
+					parseErr := cst.Parse("sample.go", source)
+				if parseErr != nil {
+					t.Fatal(parseErr)
+				}
+				findings := analyzeCSTFindings("sample.go", tree, rules)
+				if len(findings) != 1 || len(findings[0].Fixes) != 1 || len(findings[0].Fixes[0].Edits) != 1 {
+					t.Fatalf("findings = %#v", findings)
+				}
+				edit := findings[0].Fixes[0].Edits[0]
+				if edit.OldText != test.wantOldText || string(source[edit.Start:edit.End]) != test.wantOldText {
+					t.Fatalf("edit = %#v, source text = %q, want %q", edit, source[edit.Start:edit.End], test.wantOldText)
+				}
+			},
+		)
+	}
+}
+
 func analyzeCSTFindings(filename string, tree *cst.Tree, rules []Rule) []Finding {
 	result := []Finding{}
 	AnalyzeCST(CSTInput{Filename: filename, Tree: tree, Rules: rules, Report: func(finding Finding) {

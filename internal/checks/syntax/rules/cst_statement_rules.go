@@ -1,6 +1,8 @@
 package rules
 
 import (
+	"bytes"
+
 	"github.com/gempir/strider/internal/cst"
 	"github.com/gempir/strider/internal/diagnostic"
 )
@@ -54,18 +56,30 @@ func (a *cstAnalyzer) checkConcreteBreak(statement *cst.BreakStmt) {
 		statements := concreteStatementsFromList(list)
 		if len(statements) != 0 && statements[len(statements)-1] == statement {
 			start, end := cst.Range(statement)
+			edit := a.redundantBreakEdit(start, end)
 			a.reportFix(
 				"redundant-switch-break",
 				statement,
 				"omit unnecessary break at the end of a case clause",
-				diagnostic.Fix{
-					Message:   "remove the redundant break",
-					Safety:    diagnostic.Safe,
-					Automatic: true,
-					Edits:     []diagnostic.TextEdit{{Start: start, End: end, OldText: "break"}},
-				},
+				diagnostic.Fix{Message: "remove the redundant break", Safety: diagnostic.Safe, Automatic: true, Edits: []diagnostic.TextEdit{edit}},
 			)
 		}
 		return
 	}
+}
+
+func (a *cstAnalyzer) redundantBreakEdit(start, end int) diagnostic.TextEdit {
+	edit := diagnostic.TextEdit{Start: start, End: end, OldText: "break"}
+	lineStart := bytes.LastIndexByte(a.content[:start], '\n') + 1
+	newline := bytes.IndexByte(a.content[end:], '\n')
+	if newline < 0 {
+		return edit
+	}
+	lineEnd := end + newline + 1
+	before := bytes.TrimSpace(a.content[lineStart:start])
+	after := bytes.TrimSpace(a.content[end : lineEnd-1])
+	if len(before) != 0 || len(after) != 0 && !bytes.Equal(after, []byte(";")) {
+		return edit
+	}
+	return diagnostic.TextEdit{Start: lineStart, End: lineEnd, OldText: string(a.content[lineStart:lineEnd])}
 }

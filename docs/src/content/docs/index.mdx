@@ -24,17 +24,19 @@ hero:
 import Terminal from '../../components/Terminal.astro';
 
 export const checkDemo = `<span class="t-dim">$</span> <span class="t-cmd">strider check ./...</span>
-<span class="t-warn">warning[no-defer-in-loop]</span>: <strong>avoid defer inside loops</strong>
-  <span class="t-path">┌─ internal/server/pool.go:88:9</span>
+<span class="t-warn">no-defer-in-loop</span>: <strong>avoid defer inside loops</strong>
+   <span class="t-path">┌─ internal/server/pool.go:88:9</span>
    <span class="t-path">│</span>
-88 <span class="t-path">│</span>         defer rows.Close()
-   <span class="t-path">│</span>         <span class="t-warn">^^^^^^^^^^^^^^^^^^</span>
+87 <span class="t-path">│</span>     for rows.Next() {
+88 <span class="t-path">│</span>         <span class="t-warn">defer rows.Close()</span>
+89 <span class="t-path">│</span>     }
 
-<span class="t-err">error[possible-nil-dereference]</span>: <strong>conn may be nil on this path</strong>
-  <span class="t-path">┌─ internal/server/pool.go:41:2</span>
+<span class="t-err">possible-nil-dereference</span>: <strong>conn may be nil on this path</strong>
+   <span class="t-path">┌─ internal/server/pool.go:41:2</span>
    <span class="t-path">│</span>
-41 <span class="t-path">│</span>  conn.Close()
-   <span class="t-path">│</span>  <span class="t-err">^^^^^^^^^^^^</span>
+40 <span class="t-path">│</span>  }
+41 <span class="t-path">│</span>  <span class="t-err">conn.Close()</span>
+42 <span class="t-path">│</span>  return nil
 
 <span class="t-warn">no-defer-in-loop</span>          <span class="t-warn">1</span>
 <span class="t-err">possible-nil-dereference</span>  <span class="t-err">1</span>

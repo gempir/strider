@@ -31,6 +31,7 @@
     --sl-color-gray-6: #171c18;
     --sl-color-black: #0e120f;
     --sl-color-text: #d9dbd2;
+    --strider-terminal-code: #d783ff;
 
     --sl-font: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
     --sl-font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
@@ -62,6 +63,7 @@
     --sl-color-gray-7: #f6f2ea;
     --sl-color-black: #fdfbf7;
     --sl-color-text: #2c322c;
+    --strider-terminal-code: #8a3dab;
 
 }
 
@@ -391,7 +393,8 @@ h1[data-page-title],
 }
 
 .land-terminal .t-path {
-    color: var(--sl-color-text-accent);
+    color: var(--strider-terminal-code);
+    font-weight: 600;
 }
 
 /* Feature grid */

@@ -55,7 +55,10 @@ func concreteSwitchCases(node cst.Node) []concreteCase {
 		func(child cst.Node) bool {
 			switch clause := child.(type) {
 			case *cst.ExprCaseClause:
-				item := concreteCase{node: clause, body: clause.StatementList}
+				item := concreteCase{
+					node: clause,
+					body: clause.StatementList,
+				}
 				if clause.ExprSwitchCase != nil {
 					item.isDefault = strings.HasPrefix(cst.Spelling(clause.ExprSwitchCase), "default")
 					switch header := clause.ExprSwitchCase.(type) {
@@ -74,7 +77,10 @@ func concreteSwitchCases(node cst.Node) []concreteCase {
 				result = append(result, item)
 				return false
 			case *cst.TypeCaseClause:
-				item := concreteCase{node: clause, body: clause.StatementList}
+				item := concreteCase{
+					node: clause,
+					body: clause.StatementList,
+				}
 				if clause.TypeSwitchCase != nil {
 					item.isDefault = clause.TypeSwitchCase.DEFAULT.IsValid()
 					if clause.TypeSwitchCase.TypeList != nil {

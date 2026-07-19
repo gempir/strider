@@ -19,7 +19,15 @@ var benchmarkStaticCallCount int
 func TestStaticCallIndexMatchesInstructionScan(t *testing.T) {
 	functions := staticCallFixture(t)
 	indexed := buildPackageSSAFacts(functions, FactStaticCalls).staticCallsByPackage
-	for _, packagePath := range []string{"bytes", "context", "regexp", "strconv", "strings", "time", "missing/package"} {
+	for _, packagePath := range []string{
+		"bytes",
+		"context",
+		"regexp",
+		"strconv",
+		"strings",
+		"time",
+		"missing/package",
+	} {
 		want := scanStaticCallsInPackage(functions, packagePath)
 		got := indexed[packagePath]
 		if len(got) != len(want) {
@@ -35,7 +43,9 @@ func TestStaticCallIndexMatchesInstructionScan(t *testing.T) {
 
 func TestStaticCallIndexFiltersUnselectedPackages(t *testing.T) {
 	functions := staticCallFixture(t)
-	indexed := buildPackageSSAFacts(functions, FactStaticCalls, map[string]bool{"regexp": true}).staticCallsByPackage
+	indexed := buildPackageSSAFacts(functions, FactStaticCalls, map[string]bool{
+		"regexp": true,
+	}).staticCallsByPackage
 	if len(indexed["regexp"]) == 0 {
 		t.Fatal("selected regexp calls were not indexed")
 	}
@@ -46,7 +56,14 @@ func TestStaticCallIndexFiltersUnselectedPackages(t *testing.T) {
 
 func BenchmarkStaticCallCohort(benchmark *testing.B) {
 	functions := staticCallFixture(benchmark)
-	packagePaths := []string{"regexp", "time", "strings", "bytes", "strconv", "context"}
+	packagePaths := []string{
+		"regexp",
+		"time",
+		"strings",
+		"bytes",
+		"strconv",
+		"context",
+	}
 	const consumers = 23
 	benchmark.Run(
 		"repeated-instruction-scans",
@@ -155,14 +172,20 @@ import (
 		testingObject.Fatal(err)
 	}
 	ssaPackage, _, err := ssautil.BuildPackage(
-		&types.Config{Importer: importer.Default()},
+		&types.Config{
+			Importer: importer.Default(),
+		},
 		fileSet,
 		types.NewPackage("example.com/fixture", "fixture"),
-		[]*ast.File{file},
+		[]*ast.File{
+			file,
+		},
 		ssa.InstantiateGenerics,
 	)
 	if err != nil {
 		testingObject.Fatal(err)
 	}
-	return collectPackageFunctions(ssaPackage.Prog, []*ssa.Package{ssaPackage})[ssaPackage]
+	return collectPackageFunctions(ssaPackage.Prog, []*ssa.Package{
+		ssaPackage,
+	})[ssaPackage]
 }

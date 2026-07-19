@@ -185,7 +185,20 @@ func TestAdditionalResearchRuleSeverities(t *testing.T) {
 	tests := []struct {
 		rule     Rule
 		severity diagnostic.Severity
-	}{{discardedErrorResultRule{}, diagnostic.SeverityError}, {testParallelismRule{}, diagnostic.SeverityNote}, {topLevelDeclarationOrderRule{}, diagnostic.SeverityWarning}}
+	}{
+		{
+			discardedErrorResultRule{},
+			diagnostic.SeverityError,
+		},
+		{
+			testParallelismRule{},
+			diagnostic.SeverityNote,
+		},
+		{
+			topLevelDeclarationOrderRule{},
+			diagnostic.SeverityWarning,
+		},
+	}
 	for _, test := range tests {
 		if got := test.rule.Meta().DefaultSeverity; got != test.severity {
 			t.Errorf("%s severity = %s, want %s", test.rule.Meta().Code, got, test.severity)
@@ -197,7 +210,9 @@ func runStandaloneAnalysisRule(t *testing.T, root string, rule Rule) []diagnosti
 	t.Helper()
 	meta := rule.Meta()
 	previous, existed := requirementsByCode[meta.Code]
-	requirementsByCode[meta.Code] = Requirements{Stage: AnalysisStageTypes}
+	requirementsByCode[meta.Code] = Requirements{
+		Stage: AnalysisStageTypes,
+	}
 	defer func() {
 		if existed {
 			requirementsByCode[meta.Code] = previous
@@ -205,8 +220,22 @@ func runStandaloneAnalysisRule(t *testing.T, root string, rule Rule) []diagnosti
 			delete(requirementsByCode, meta.Code)
 		}
 	}()
-	registry := &Registry{rules: []Rule{rule}, settings: map[string]configuredRule{meta.Code: {severity: meta.DefaultSeverity}}, knownCodes: map[string]bool{meta.Code: true}}
-	diagnostics, err := Run([]string{root}, registry)
+	registry := &Registry{
+		rules: []Rule{
+			rule,
+		},
+		settings: map[string]configuredRule{
+			meta.Code: {
+				severity: meta.DefaultSeverity,
+			},
+		},
+		knownCodes: map[string]bool{
+			meta.Code: true,
+		},
+	}
+	diagnostics, err := Run([]string{
+		root,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}

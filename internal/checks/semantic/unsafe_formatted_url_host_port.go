@@ -110,7 +110,11 @@ func formatsURLHostAndPort(format string) bool {
 	}
 	authority := format[scheme+3:]
 	end := len(authority)
-	for _, separator := range []string{"/", "?", "#"} {
+	for _, separator := range []string{
+		"/",
+		"?",
+		"#",
+	} {
 		if index := strings.Index(authority, separator); index >= 0 && index < end {
 			end = index
 		}

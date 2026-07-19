@@ -81,7 +81,9 @@ func newAnalysisProbeScope(paths []string, registry *Registry) (analysisProbeSco
 	}
 	effectivePaths := paths
 	if len(effectivePaths) == 0 {
-		effectivePaths = []string{"."}
+		effectivePaths = []string{
+			".",
+		}
 	}
 	recursiveRoots := make(map[string]bool)
 	for _, item := range targets {
@@ -98,7 +100,12 @@ func newAnalysisProbeScope(paths []string, registry *Registry) (analysisProbeSco
 	writer.addStrings(patterns)
 	writer.addStrings(roots)
 	addRegistryFingerprint(writer, registry)
-	return analysisProbeScope{key: writer.sum(), cwd: cwd, patterns: patterns, recursiveRoots: roots}, nil
+	return analysisProbeScope{
+		key:            writer.sum(),
+		cwd:            cwd,
+		patterns:       patterns,
+		recursiveRoots: roots,
+	}, nil
 }
 
 func buildAnalysisProbe(scope analysisProbeScope) (*analysisProbe, error) {
@@ -106,14 +113,20 @@ func buildAnalysisProbe(scope analysisProbeScope) (*analysisProbe, error) {
 	if err != nil {
 		return nil, err
 	}
-	loaded, err := packages.Load(&packages.Config{Mode: fingerprintLoadMode, Tests: true}, scope.patterns...)
+	loaded, err := packages.Load(&packages.Config{
+		Mode:  fingerprintLoadMode,
+		Tests: true,
+	}, scope.patterns...)
 	if err != nil {
 		return nil, err
 	}
 	if err := packageError(loaded); err != nil {
 		return nil, err
 	}
-	probe := &analysisProbe{scope: scope, resolvedEnvironment: resolved}
+	probe := &analysisProbe{
+		scope:               scope,
+		resolvedEnvironment: resolved,
+	}
 	staticWriter := newFingerprintWriter()
 	staticWriter.addString(probeFingerprintVersion)
 	staticWriter.addUint64(uint64(len(loaded)))
@@ -217,7 +230,11 @@ func (probe *analysisProbe) collectConfigurationFiles() error {
 		return fmt.Errorf("decode Go build environment: %w", err)
 	}
 	optional := make(map[string]bool)
-	for _, variable := range []string{"GOENV", "GOMOD", "GOWORK"} {
+	for _, variable := range []string{
+		"GOENV",
+		"GOMOD",
+		"GOWORK",
+	} {
 		value := values[variable]
 		if value != "" && value != "off" && value != os.DevNull {
 			optional[value] = true
@@ -383,7 +400,10 @@ func addDirectoryFingerprint(writer *fingerprintWriter, directory string, recurs
 			if err != nil {
 				return err
 			}
-			entries = append(entries, directoryEntry{path: relative, mode: entry.Type()})
+			entries = append(entries, directoryEntry{
+				path: relative,
+				mode: entry.Type(),
+			})
 			return nil
 		},
 	)

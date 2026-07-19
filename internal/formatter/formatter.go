@@ -19,7 +19,9 @@ type Options struct {
 }
 
 func DefaultOptions() Options {
-	return Options{PrintWidth: PrintWidth}
+	return Options{
+		PrintWidth: PrintWidth,
+	}
 }
 
 type unsupportedErrorValue string
@@ -72,7 +74,10 @@ func FormatWithOptions(filename string, source []byte, options Options) (Result,
 func (s *Session) FormatWithOptions(filename string, source []byte, options Options) (Result, error) {
 	if IsIgnored(source) {
 		copyOfSource := append([]byte(nil), source...)
-		return Result{Source: copyOfSource, Ignored: true}, nil
+		return Result{
+			Source:  copyOfSource,
+			Ignored: true,
+		}, nil
 	}
 	originalTree, err := cst.Parse(filename, source)
 	if err != nil {
@@ -149,7 +154,10 @@ func (s *Session) previewTree(filename string, originalTree *cst.Tree, options O
 	source := originalTree.Bytes()
 	if IsIgnored(source) {
 		copyOfSource := append([]byte(nil), source...)
-		return Result{Source: copyOfSource, Ignored: true}, "", nil
+		return Result{
+			Source:  copyOfSource,
+			Ignored: true,
+		}, "", nil
 	}
 	hasImports, err := validateConcreteSyntax(filename, originalTree)
 	if err != nil {
@@ -176,7 +184,10 @@ func (s *Session) previewTree(filename string, originalTree *cst.Tree, options O
 			return Result{}, "", fmt.Errorf("formatter gofmt compatibility: %w", formatErr)
 		}
 		if bytes.Equal(formatted, next) {
-			return Result{Source: formatted, Changed: !bytes.Equal(source, formatted)}, module, nil
+			return Result{
+				Source:  formatted,
+				Changed: !bytes.Equal(source, formatted),
+			}, module, nil
 		}
 		formatted = next
 	}

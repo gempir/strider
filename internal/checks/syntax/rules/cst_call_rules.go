@@ -67,7 +67,44 @@ func (a *cstAnalyzer) checkConcreteTimeDate(arguments []cst.Node) {
 	limits := []struct {
 		index, minimum, maximum int
 		label                   string
-	}{{1, 1, 12, "month"}, {2, 1, 31, "day"}, {3, 0, 23, "hour"}, {4, 0, 59, "minute"}, {5, 0, 59, "second"}, {6, 0, 999999999, "nanosecond"}}
+	}{
+		{
+			1,
+			1,
+			12,
+			"month",
+		},
+		{
+			2,
+			1,
+			31,
+			"day",
+		},
+		{
+			3,
+			0,
+			23,
+			"hour",
+		},
+		{
+			4,
+			0,
+			59,
+			"minute",
+		},
+		{
+			5,
+			0,
+			59,
+			"second",
+		},
+		{
+			6,
+			0,
+			999999999,
+			"nanosecond",
+		},
+	}
 	for _, limit := range limits {
 		if limit.index >= len(arguments) {
 			continue

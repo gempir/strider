@@ -80,9 +80,11 @@ Strider uses tabs for indentation, LF line endings, one final newline, and a
 third-party, and current-module groups. Lists that break across lines use one
 item per line and a trailing comma.
 
-Function signatures, calls, composite literals, and expressions use the same
-bounded group-fitting algorithm. Binary operators remain on the preceding line
-so automatic semicolon insertion cannot change the program.
+Function signatures, calls, and expressions use the same bounded group-fitting
+algorithm. Every non-empty composite literal uses one element per line with a
+trailing comma, including structs, maps, slices, and arrays. Binary operators
+remain on the preceding line so automatic semicolon insertion cannot change the
+program.
 
 Configure the wrap target and excluded filesystem paths in `strider.toml`:
 

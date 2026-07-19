@@ -56,7 +56,11 @@ func NewSession(registry *Registry, options RunOptions, sessionOptions SessionOp
 	if options.Formatter.PrintWidth == 0 {
 		options.Formatter = formatter.DefaultOptions()
 	}
-	return &Session{registry: registry, options: options, analyzer: semantic.NewSession(sessionOptions.Analysis)}, nil
+	return &Session{
+		registry: registry,
+		options:  options,
+		analyzer: semantic.NewSession(sessionOptions.Analysis),
+	}, nil
 }
 
 // Run checks one immutable workspace generation and returns an owned result.
@@ -107,7 +111,11 @@ func (session *Session) Stats() SessionStats {
 	}
 	session.mu.Lock()
 	defer session.mu.Unlock()
-	return SessionStats{ConcreteHits: session.hits, ConcreteMisses: session.misses, Analysis: session.analyzer.Stats()}
+	return SessionStats{
+		ConcreteHits:   session.hits,
+		ConcreteMisses: session.misses,
+		Analysis:       session.analyzer.Stats(),
+	}
 }
 
 // Invalidate drops all results retained for future generations.
@@ -160,7 +168,10 @@ func addFormatterModuleFingerprint(writer hash.Hash, files []*workspace.File) {
 			state, seen := states[path]
 			if !seen {
 				contents, err := os.ReadFile(path)
-				state = moduleFileState{exists: err == nil, contents: contents}
+				state = moduleFileState{
+					exists:   err == nil,
+					contents: contents,
+				}
 				states[path] = state
 			}
 			if state.exists {
@@ -202,7 +213,9 @@ func writeUint64(writer hash.Hash, value uint64) {
 }
 
 func cloneResult(original Result) Result {
-	result := Result{Diagnostics: cloneDiagnostics(original.Diagnostics)}
+	result := Result{
+		Diagnostics: cloneDiagnostics(original.Diagnostics),
+	}
 	if original.Candidates != nil {
 		result.Candidates = make(map[string]formatter.Result, len(original.Candidates))
 		for filename, candidate := range original.Candidates {

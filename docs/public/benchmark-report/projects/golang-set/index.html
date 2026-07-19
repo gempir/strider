@@ -100,7 +100,7 @@ html.embedded main{padding:0 14px 24px}
 <main>
 </header>
 <section class="tally" aria-label="Diagnostic summary">
-<span class="timings" aria-label="Operation timings"><span class="stat timing"><strong>25 <small>ms</small></strong><span>format</span></span><span class="stat timing"><strong>216 <small>ms</small></strong><span>check</span></span></span>
+<span class="timings" aria-label="Operation timings"><span class="stat timing"><strong>25 <small>ms</small></strong><span>format</span></span><span class="stat timing"><strong>213 <small>ms</small></strong><span>check</span></span></span>
 <span class="stat"><strong>464</strong><span>total</span></span>
 <span class="stat error"><strong>43</strong><span>errors</span></span>
 <span class="stat warning"><strong>171</strong><span>warnings</span></span>
@@ -124,8 +124,11 @@ html.embedded main{padding:0 14px 24px}
 </span>
 </section>
 <section id="diagnostics">
-<section class="file"><h2 class="file-head"><code>bench_helper_test.go</code><span>6</span></h2>
-<details class="diagnostic" data-severity="error" data-search="package-directory-mismatch package mapset does not match directory golang-set bench_helper_test.go">
+<section class="file"><h2 class="file-head"><code>bench_helper_test.go</code><span>7</span></h2>
+<details class="diagnostic" data-severity="warning" data-search="format file is not formatted bench_helper_test.go">
+<summary><code class="where">1:1</code><code class="rule">format</code><span class="message">file is not formatted</span></summary>
+<div class="details"><p class="location"><code>bench_helper_test.go:1:1</code></p><div class="source"><div class="source-line current"><span class="line-number">1</span><code><mark>package mapset</mark></code></div><div class="source-line"><span class="line-number">2</span><code></code></div></div><ul class="extras"><li><strong>Fix (safe):</strong> run `strider fmt bench_helper_test.go`</li></ul></div>
+</details><details class="diagnostic" data-severity="error" data-search="package-directory-mismatch package mapset does not match directory golang-set bench_helper_test.go">
 <summary><code class="where">1:9</code><code class="rule">package-directory-mismatch</code><span class="message">package mapset does not match directory golang-set</span></summary>
 <div class="details"><p class="location"><code>bench_helper_test.go:1:9</code></p><div class="source"><div class="source-line current"><span class="line-number">1</span><code>package <mark>mapset</mark></code></div><div class="source-line"><span class="line-number">2</span><code></code></div></div></div>
 </details><details class="diagnostic" data-severity="note" data-search="flag-parameter boolean parameter safe controls function flow bench_helper_test.go">
@@ -201,11 +204,8 @@ html.embedded main{padding:0 14px 24px}
 <summary><code class="where">7:53</code><code class="rule">nested-structs</code><span class="message">move nested anonymous struct types to named declarations</span></summary>
 <div class="details"><p class="location"><code>helper_1_21.go:7:53</code></p><div class="source"><div class="source-line"><span class="line-number">6</span><code></code></div><div class="source-line current"><span class="line-number">7</span><code>func mapclone[T comparable](m map[T]struct{}) map[T]<mark>struct{}</mark> {</code></div><div class="source-line"><span class="line-number">8</span><code>	return maps.Clone(m)</code></div></div></div>
 </details>
-</section><section class="file"><h2 class="file-head"><code>iterator.go</code><span>7</span></h2>
-<details class="diagnostic" data-severity="warning" data-search="format file is not formatted iterator.go">
-<summary><code class="where">1:1</code><code class="rule">format</code><span class="message">file is not formatted</span></summary>
-<div class="details"><p class="location"><code>iterator.go:1:1</code></p><div class="source"><div class="source-line current"><span class="line-number">1</span><code><mark>/*</mark></code></div><div class="source-line"><span class="line-number">2</span><code>Open Source Initiative OSI - The MIT License (MIT):Licensing</code></div></div><ul class="extras"><li><strong>Fix (safe):</strong> run `strider fmt iterator.go`</li></ul></div>
-</details><details class="diagnostic" data-severity="note" data-search="package-comments package should have a documentation comment iterator.go">
+</section><section class="file"><h2 class="file-head"><code>iterator.go</code><span>6</span></h2>
+<details class="diagnostic" data-severity="note" data-search="package-comments package should have a documentation comment iterator.go">
 <summary><code class="where">26:9</code><code class="rule">package-comments</code><span class="message">package should have a documentation comment</span></summary>
 <div class="details"><p class="location"><code>iterator.go:26:9</code></p><div class="source"><div class="source-line"><span class="line-number">25</span><code></code></div><div class="source-line current"><span class="line-number">26</span><code>package <mark>mapset</mark></code></div><div class="source-line"><span class="line-number">27</span><code></code></div></div></div>
 </details><details class="diagnostic" data-severity="error" data-search="package-directory-mismatch package mapset does not match directory golang-set iterator.go">

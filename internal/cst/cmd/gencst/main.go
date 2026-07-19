@@ -73,7 +73,9 @@ func main() {
 }
 
 func generate() ([]byte, error) {
-	configuration := &packages.Config{Mode: packages.NeedName | packages.NeedTypes | packages.NeedTypesSizes | packages.NeedModule}
+	configuration := &packages.Config{
+		Mode: packages.NeedName | packages.NeedTypes | packages.NeedTypesSizes | packages.NeedModule,
+	}
 	loaded, err := packages.Load(configuration, parserPackage)
 	if err != nil {
 		return nil, err
@@ -165,7 +167,11 @@ func discoverNodes(pkg *types.Package, nodeInterface *types.Interface, tokenType
 			continue
 		}
 
-		current := nodeType{name: name, value: valueImplementation, pointer: pointerImplementation}
+		current := nodeType{
+			name:    name,
+			value:   valueImplementation,
+			pointer: pointerImplementation,
+		}
 		fmt.Fprintf(&schema, "type:%s:value=%t:pointer=%t\n", name, valueImplementation, pointerImplementation)
 		for index := 0; index < structure.NumFields(); index++ {
 			field := structure.Field(index)
@@ -179,7 +185,11 @@ func discoverNodes(pkg *types.Package, nodeInterface *types.Interface, tokenType
 				}
 				return imported.Name()
 			})
-			current.fields = append(current.fields, nodeField{name: field.Name(), typeName: typeName, kind: kind})
+			current.fields = append(current.fields, nodeField{
+				name:     field.Name(),
+				typeName: typeName,
+				kind:     kind,
+			})
 			fmt.Fprintf(&schema, "field:%s:%s:%d\n", field.Name(), typeName, kind)
 			if kind == fieldOpaque && containsNode(field.Type(), nodeInterface, map[types.Type]bool{}) {
 				return nil, "", fmt.Errorf("unsupported Node-containing field %s.%s (%s)", name, field.Name(), typeName)

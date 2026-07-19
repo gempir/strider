@@ -77,20 +77,62 @@ func TestLoadRejectsUnknownAndInvalidSettings(t *testing.T) {
 		contents string
 		wanted   string
 	}{
-		"unknown":          {"version = 1\nunknown = true\n", "unknown configuration key"},
-		"version":          {"version = 9\n", "expected 1"},
-		"width":            {"version = 1\n[formatter]\nprint-width = 20\n", "print-width"},
-		"indent-width":     {"version = 1\n[formatter]\nindent-width = 4\n", "unknown configuration key"},
-		"end-of-line":      {"version = 1\n[formatter]\nend-of-line = \"crlf\"\n", "unknown configuration key"},
-		"max-empty-lines":  {"version = 1\n[formatter]\nmax-empty-lines = 1\n", "unknown configuration key"},
-		"severity":         {"version = 1\n[checks.rules.no-init]\nseverity = \"fatal\"\n", "severity"},
-		"minimum-severity": {"version = 1\n[checks]\nminimum-severity = \"fatal\"\n", "minimum-severity"},
-		"checks-unknown":   {"version = 1\n[checks]\nunknown = true\n", "unknown configuration key"},
-		"baseline-variant": {"version = 1\n[checks]\nbaseline-variant = \"strict\"\n", "unknown configuration key"},
-		"enabled":          {"version = 1\n[checks.rules.no-init]\nenabled = false\n", "unknown configuration key"},
-		"legacy-linter":    {"version = 1\n[linter]\n", "unknown configuration key"},
-		"legacy-analyzer":  {"version = 1\n[analyzer]\n", "unknown configuration key"},
-		"color":            {"version = 1\ncolor = \"sometimes\"\n", "color"},
+		"unknown": {
+			"version = 1\nunknown = true\n",
+			"unknown configuration key",
+		},
+		"version": {
+			"version = 9\n",
+			"expected 1",
+		},
+		"width": {
+			"version = 1\n[formatter]\nprint-width = 20\n",
+			"print-width",
+		},
+		"indent-width": {
+			"version = 1\n[formatter]\nindent-width = 4\n",
+			"unknown configuration key",
+		},
+		"end-of-line": {
+			"version = 1\n[formatter]\nend-of-line = \"crlf\"\n",
+			"unknown configuration key",
+		},
+		"max-empty-lines": {
+			"version = 1\n[formatter]\nmax-empty-lines = 1\n",
+			"unknown configuration key",
+		},
+		"severity": {
+			"version = 1\n[checks.rules.no-init]\nseverity = \"fatal\"\n",
+			"severity",
+		},
+		"minimum-severity": {
+			"version = 1\n[checks]\nminimum-severity = \"fatal\"\n",
+			"minimum-severity",
+		},
+		"checks-unknown": {
+			"version = 1\n[checks]\nunknown = true\n",
+			"unknown configuration key",
+		},
+		"baseline-variant": {
+			"version = 1\n[checks]\nbaseline-variant = \"strict\"\n",
+			"unknown configuration key",
+		},
+		"enabled": {
+			"version = 1\n[checks.rules.no-init]\nenabled = false\n",
+			"unknown configuration key",
+		},
+		"legacy-linter": {
+			"version = 1\n[linter]\n",
+			"unknown configuration key",
+		},
+		"legacy-analyzer": {
+			"version = 1\n[analyzer]\n",
+			"unknown configuration key",
+		},
+		"color": {
+			"version = 1\ncolor = \"sometimes\"\n",
+			"color",
+		},
 	} {
 		t.Run(
 			name,

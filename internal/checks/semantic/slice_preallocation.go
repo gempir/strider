@@ -98,7 +98,10 @@ func declaredEmptySlices(pass *Pass, statement ast.Stmt) []emptySliceCandidate {
 					continue
 				}
 				if len(value.Values) == 0 || (index < len(value.Values) && emptySliceExpression(pass, value.Values[index])) {
-					result = append(result, emptySliceCandidate{identifier: name, variable: variable})
+					result = append(result, emptySliceCandidate{
+						identifier: name,
+						variable:   variable,
+					})
 				}
 			}
 		}
@@ -116,7 +119,10 @@ func declaredEmptySlices(pass *Pass, statement ast.Stmt) []emptySliceCandidate {
 			}
 			variable, ok := pass.TypesInfo.Defs[name].(*types.Var)
 			if ok && isSliceType(variable.Type()) {
-				result = append(result, emptySliceCandidate{identifier: name, variable: variable})
+				result = append(result, emptySliceCandidate{
+					identifier: name,
+					variable:   variable,
+				})
 			}
 		}
 	}

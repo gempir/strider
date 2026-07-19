@@ -128,7 +128,13 @@ func newSession(options SessionOptions, fingerprint sessionFingerprintFunc, runn
 	if maxBytes <= 0 {
 		maxBytes = defaultSessionBytes
 	}
-	return &Session{maxEntries: maxEntries, maxBytes: maxBytes, entries: make(map[analysisCacheKey]*analysisCacheEntry), fingerprint: fingerprint, runner: runner}
+	return &Session{
+		maxEntries:  maxEntries,
+		maxBytes:    maxBytes,
+		entries:     make(map[analysisCacheKey]*analysisCacheEntry),
+		fingerprint: fingerprint,
+		runner:      runner,
+	}
 }
 
 // Run analyzes paths or returns a deep copy of a proven-equivalent cached
@@ -188,7 +194,11 @@ func (session *Session) Run(paths []string, registry *Registry) ([]diagnostic.Di
 		session.publishGenerationLocked(key)
 		if weight <= session.maxBytes {
 			session.clock++
-			session.entries[key] = &analysisCacheEntry{diagnostics: owned, bytes: weight, lastUsed: session.clock}
+			session.entries[key] = &analysisCacheEntry{
+				diagnostics: owned,
+				bytes:       weight,
+				lastUsed:    session.clock,
+			}
 			session.bytes += weight
 			session.evictLocked()
 		}
@@ -205,7 +215,14 @@ func (session *Session) Stats() SessionStats {
 	}
 	session.mu.Lock()
 	defer session.mu.Unlock()
-	return SessionStats{Generation: session.generation, Hits: session.hits, Misses: session.misses, Evictions: session.evictions, Entries: len(session.entries), Bytes: session.bytes}
+	return SessionStats{
+		Generation: session.generation,
+		Hits:       session.hits,
+		Misses:     session.misses,
+		Evictions:  session.evictions,
+		Entries:    len(session.entries),
+		Bytes:      session.bytes,
+	}
 }
 
 // Invalidate drops all completed results. An in-flight Run finishes before
@@ -279,7 +296,10 @@ func analysisFingerprint(paths []string, registry *Registry) (analysisCacheKey, 
 	if err != nil {
 		return analysisCacheKey{}, err
 	}
-	loaded, err := packages.Load(&packages.Config{Mode: fingerprintLoadMode, Tests: true}, patterns...)
+	loaded, err := packages.Load(&packages.Config{
+		Mode:  fingerprintLoadMode,
+		Tests: true,
+	}, patterns...)
 	if err != nil {
 		return analysisCacheKey{}, err
 	}
@@ -293,7 +313,9 @@ func analysisFingerprint(paths []string, registry *Registry) (analysisCacheKey, 
 	writer.addString(cwd)
 	effectivePaths := paths
 	if len(effectivePaths) == 0 {
-		effectivePaths = []string{"."}
+		effectivePaths = []string{
+			".",
+		}
 	}
 	writer.addStrings(effectivePaths)
 	writer.addStrings(patterns)
@@ -312,7 +334,10 @@ func analysisFingerprint(paths []string, registry *Registry) (analysisCacheKey, 
 func analysisEnvironment(cwd string) ([]string, []byte, error) {
 	environment := append([]string(nil), os.Environ()...)
 	sort.Strings(environment)
-	arguments := append([]string{"env", "-json"}, resolvedGoEnvironment...)
+	arguments := append([]string{
+		"env",
+		"-json",
+	}, resolvedGoEnvironment...)
 	command := exec.Command("go", arguments...)
 	command.Dir = cwd
 	resolved, err := command.Output()
@@ -337,7 +362,11 @@ func addRegistryFingerprint(writer *fingerprintWriter, registry *Registry) {
 		setting := registry.settings[code]
 		excludes := append([]string(nil), setting.excludes...)
 		sort.Strings(excludes)
-		rules = append(rules, ruleFingerprint{code: code, severity: string(setting.severity), excludes: excludes})
+		rules = append(rules, ruleFingerprint{
+			code:     code,
+			severity: string(setting.severity),
+			excludes: excludes,
+		})
 	}
 	sort.Slice(rules, func(leftIndex, rightIndex int) bool {
 		return rules[leftIndex].code < rules[rightIndex].code
@@ -469,7 +498,11 @@ func addGoConfigurationFiles(writer *fingerprintWriter, resolved []byte) error {
 		return fmt.Errorf("decode Go build environment: %w", err)
 	}
 	files := make(map[string]bool)
-	for _, variable := range []string{"GOENV", "GOMOD", "GOWORK"} {
+	for _, variable := range []string{
+		"GOENV",
+		"GOMOD",
+		"GOWORK",
+	} {
 		value := values[variable]
 		if value != "" && value != "off" && value != os.DevNull {
 			files[value] = true
@@ -499,7 +532,9 @@ type fingerprintWriter struct {
 }
 
 func newFingerprintWriter() *fingerprintWriter {
-	return &fingerprintWriter{hash: sha256.New()}
+	return &fingerprintWriter{
+		hash: sha256.New(),
+	}
 }
 
 func (writer *fingerprintWriter) addUint64(value uint64) {

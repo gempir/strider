@@ -116,11 +116,15 @@ func TestFormatOwnsIfInitializerLineLayout(t *testing.T) {
 
 func TestFormatOptionsControlWidth(t *testing.T) {
 	source := []byte("package p\nfunc f(){call(alpha,beta,gamma,delta,epsilon)}\n")
-	wide, err := FormatWithOptions("fixture.go", source, Options{PrintWidth: 100})
+	wide, err := FormatWithOptions("fixture.go", source, Options{
+		PrintWidth: 100,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	narrow, err := FormatWithOptions("fixture.go", source, Options{PrintWidth: 40})
+	narrow, err := FormatWithOptions("fixture.go", source, Options{
+		PrintWidth: 40,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -153,7 +157,10 @@ func TestFormatGotoAndFallthrough(t *testing.T) {
 			input: "package p\nfunc F(v int) { switch v { case 1: fallthrough; default: return } }\n",
 			want:  "package p\n\nfunc F(v int) {\n\tswitch v {\n\tcase 1:\n\t\tfallthrough\n\tdefault:\n\t\treturn\n\t}\n}\n",
 		},
-		"goto": {input: "package p\nfunc F() { goto done; done: return }\n", want: "package p\n\nfunc F() {\n\tgoto done\ndone:\n\treturn\n}\n"},
+		"goto": {
+			input: "package p\nfunc F() { goto done; done: return }\n",
+			want:  "package p\n\nfunc F() {\n\tgoto done\ndone:\n\treturn\n}\n",
+		},
 	}
 	for name, test := range tests {
 		t.Run(
@@ -211,7 +218,9 @@ var _ = Map[string, int]
 
 func TestFormatBreaksLongGenericLists(t *testing.T) {
 	input := []byte("package p\nfunc Transform[VeryLongInputType any,VeryLongOutputType comparable](value VeryLongInputType)VeryLongOutputType{return Convert[VeryLongInputType,VeryLongOutputType](value)}\n")
-	result, err := FormatWithOptions("generics.go", input, Options{PrintWidth: 40})
+	result, err := FormatWithOptions("generics.go", input, Options{
+		PrintWidth: 40,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -280,8 +289,14 @@ func TestFormatIgnoreRequiresACommentDirective(t *testing.T) {
 }
 
 func TestFormatRejectsOutOfRangePrintWidthAtAPI(t *testing.T) {
-	for _, width := range []int{0, 39, 501} {
-		_, err := FormatWithOptions("width.go", []byte("package p\n"), Options{PrintWidth: width})
+	for _, width := range []int{
+		0,
+		39,
+		501,
+	} {
+		_, err := FormatWithOptions("width.go", []byte("package p\n"), Options{
+			PrintWidth: width,
+		})
 		if err == nil || !strings.Contains(err.Error(), "print width must be between 40 and 500") {
 			t.Errorf("width %d: got %v, want range error", width, err)
 		}
@@ -419,6 +434,70 @@ var values = map[string]string{
 	}
 }
 
+func TestFormatCompositeLiteralsAlwaysBreak(t *testing.T) {
+	input := []byte(`package p
+
+type options struct {
+	Name    string
+	Enabled bool
+}
+
+var compact = options{Name: "compact", Enabled: true}
+
+var multiline = options{
+	Name: "multiline", Enabled: true,
+}
+
+var empty = options{}
+var mapping = map[string]int{"one": 1, "two": 2}
+var values = []int{1, 2}
+var array = [2]int{1, 2}
+`)
+	want := `package p
+
+type options struct {
+	Name    string
+	Enabled bool
+}
+
+var compact = options{
+	Name:    "compact",
+	Enabled: true,
+}
+
+var multiline = options{
+	Name:    "multiline",
+	Enabled: true,
+}
+
+var empty = options{}
+
+var mapping = map[string]int{
+	"one": 1,
+	"two": 2,
+}
+
+var values = []int{
+	1,
+	2,
+}
+
+var array = [2]int{
+	1,
+	2,
+}
+`
+	result, err := FormatWithOptions("composite_literals.go", input, Options{
+		PrintWidth: 500,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := string(result.Source); got != want {
+		t.Fatalf("formatted source:\n%s\nwant:\n%s", got, want)
+	}
+}
+
 func TestFormatConcreteDeclarationsAndHeaders(t *testing.T) {
 	input := []byte(`package p
 const(alpha=1;beta=2)
@@ -471,7 +550,11 @@ func B() {}
 }
 
 func FuzzFormatRoundTrip(f *testing.F) {
-	seeds := []string{"package p\n", "package p\nfunc F(a, b int) int { return a + b }\n", "package p\ntype T struct { Name string; Values []int }\n"}
+	seeds := []string{
+		"package p\n",
+		"package p\nfunc F(a, b int) int { return a + b }\n",
+		"package p\ntype T struct { Name string; Values []int }\n",
+	}
 	for _, seed := range seeds {
 		f.Add(seed)
 	}

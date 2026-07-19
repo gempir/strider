@@ -120,7 +120,12 @@ func NewCache(options CacheOptions) *Cache {
 	if maxTreeBytes <= 0 {
 		maxTreeBytes = defaultCacheTreeBytes
 	}
-	return &Cache{maxEntries: maxEntries, maxBytes: maxBytes, maxTreeBytes: maxTreeBytes, entries: make(map[cacheKey]*cacheEntry)}
+	return &Cache{
+		maxEntries:   maxEntries,
+		maxBytes:     maxBytes,
+		maxTreeBytes: maxTreeBytes,
+		entries:      make(map[cacheKey]*cacheEntry),
+	}
 }
 
 // Open captures a complete immutable workspace generation. Each discovered
@@ -136,7 +141,9 @@ func (cache *Cache) Open(paths []string, options Options) (*Workspace, error) {
 
 	inputs := append([]string(nil), paths...)
 	if len(inputs) == 0 {
-		inputs = []string{"."}
+		inputs = []string{
+			".",
+		}
 	}
 	filenames, err := source.Discover(inputs, source.Options{})
 	if err != nil {
@@ -159,7 +166,11 @@ func (cache *Cache) Open(paths []string, options Options) (*Workspace, error) {
 		if options.SkipGenerated && generatedSource(contents) {
 			continue
 		}
-		captured = append(captured, capturedFile{path: filename, contents: contents, identity: sha256.Sum256(contents)})
+		captured = append(captured, capturedFile{
+			path:     filename,
+			contents: contents,
+			identity: sha256.Sum256(contents),
+		})
 	}
 
 	cache.mu.Lock()
@@ -167,15 +178,24 @@ func (cache *Cache) Open(paths []string, options Options) (*Workspace, error) {
 	cache.generation++
 	files := make([]*File, 0, len(captured))
 	for _, item := range captured {
-		key := cacheKey{path: item.path, identity: item.identity}
+		key := cacheKey{
+			path:     item.path,
+			identity: item.identity,
+		}
 		entry := cache.entries[key]
 		if entry == nil {
 			cache.misses++
-			snapshot := &fileSnapshot{path: item.path, identity: item.identity, source: item.contents}
+			snapshot := &fileSnapshot{
+				path:     item.path,
+				identity: item.identity,
+				source:   item.contents,
+			}
 			snapshot.onTree = func(treeBytes int64) {
 				cache.recordTree(key, snapshot, treeBytes)
 			}
-			entry = &cacheEntry{snapshot: snapshot}
+			entry = &cacheEntry{
+				snapshot: snapshot,
+			}
 			if int64(len(item.contents)) <= cache.maxBytes {
 				cache.entries[key] = entry
 				cache.bytes += int64(len(item.contents))
@@ -185,10 +205,17 @@ func (cache *Cache) Open(paths []string, options Options) (*Workspace, error) {
 		}
 		cache.clock++
 		entry.lastUsed = cache.clock
-		files = append(files, &File{path: item.path, snapshot: entry.snapshot})
+		files = append(files, &File{
+			path:     item.path,
+			snapshot: entry.snapshot,
+		})
 	}
 	cache.evictLocked()
-	return &Workspace{inputs: inputs, files: files, generation: cache.generation}, nil
+	return &Workspace{
+		inputs:     inputs,
+		files:      files,
+		generation: cache.generation,
+	}, nil
 }
 
 // Stats returns cache counters and current retained resource use.

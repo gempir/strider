@@ -25,7 +25,10 @@ func (randomBoundOneRule) Meta() Meta {
 }
 
 func (randomBoundOneRule) Run(pass *Pass) {
-	for _, packagePath := range []string{"math/rand", "math/rand/v2"} {
+	for _, packagePath := range []string{
+		"math/rand",
+		"math/rand/v2",
+	} {
 		for _, call := range pass.staticCallsInPackage(packagePath) {
 			if len(call.Common().Args) == 0 {
 				continue
@@ -38,7 +41,9 @@ func (randomBoundOneRule) Run(pass *Pass) {
 			if bound == nil || bound.Value == nil || bound.Value.Kind() != constant.Int || !constant.Compare(bound.Value, token.EQL, constant.MakeInt64(1)) {
 				continue
 			}
-			pass.Report(positionNode{position: call.Pos()}, fmt.Sprintf("%s with an upper bound of one always returns zero", name))
+			pass.Report(positionNode{
+				position: call.Pos(),
+			}, fmt.Sprintf("%s with an upper bound of one always returns zero", name))
 		}
 	}
 }

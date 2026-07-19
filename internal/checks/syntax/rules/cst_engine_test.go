@@ -85,7 +85,14 @@ func (item) method() {}
 		t.Fatal(err)
 	}
 	analyzer := &cstAnalyzer{
-		plan: cstExecutionPlan{functions: true, functionTraversal: true, functionComplexity: true, functionCognitive: true, functionStatements: true, functionFinal: true},
+		plan: cstExecutionPlan{
+			functions:          true,
+			functionTraversal:  true,
+			functionComplexity: true,
+			functionCognitive:  true,
+			functionStatements: true,
+			functionFinal:      true,
+		},
 	}
 	cst.WalkProductionsWithAncestors(tree.Root(), func(node cst.Node, ancestors []cst.Node) bool {
 		analyzer.observe(node, ancestors)
@@ -174,7 +181,9 @@ func GetThing(first, second, third, fourth, fifth, sixth int, flag bool, unused 
 			code,
 			func(t *testing.T) {
 				rules,
-					selectErr := Select([]string{code})
+					selectErr := Select([]string{
+					code,
+				})
 				if selectErr != nil {
 					t.Fatal(selectErr)
 				}
@@ -209,13 +218,18 @@ func (value *item) UnmarshalJSON([]byte) error { return nil }
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, code := range []string{"receiver-naming", "marshal-receiver"} {
+	for _, code := range []string{
+		"receiver-naming",
+		"marshal-receiver",
+	} {
 		code := code
 		t.Run(
 			code,
 			func(t *testing.T) {
 				rules,
-					selectErr := Select([]string{code})
+					selectErr := Select([]string{
+					code,
+				})
 				if selectErr != nil {
 					t.Fatal(selectErr)
 				}
@@ -239,7 +253,9 @@ func TestDoubleNegationOnlyOffersOutermostAutomaticFix(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rules, err := Select([]string{"double-negation"})
+	rules, err := Select([]string{
+		"double-negation",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -275,7 +291,9 @@ func TestDoubleNegationDoesNotOfferMultilineAutomaticFix(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rules, err := Select([]string{"double-negation"})
+	rules, err := Select([]string{
+		"double-negation",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -294,7 +312,9 @@ func TestDoubleNegationDoesNotOfferFixAcrossOperandNewline(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rules, err := Select([]string{"double-negation"})
+	rules, err := Select([]string{
+		"double-negation",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -319,7 +339,9 @@ func ready() bool {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rules, err := Select([]string{"double-negation"})
+	rules, err := Select([]string{
+		"double-negation",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -335,7 +357,9 @@ func TestDoubleNegationDoesNotOfferCommentedAutomaticFix(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rules, err := Select([]string{"double-negation"})
+	rules, err := Select([]string{
+		"double-negation",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -351,12 +375,30 @@ func TestRedundantSwitchBreakFixRemovesOnlyCleanStatementLine(t *testing.T) {
 		statement   string
 		wantOldText string
 	}{
-		{name: "clean line", statement: "\t\tbreak\n", wantOldText: "\t\tbreak\n"},
-		{name: "explicit semicolon", statement: "\t\tbreak;\n", wantOldText: "\t\tbreak;\n"},
-		{name: "trailing comment", statement: "\t\tbreak // keep\n", wantOldText: "break"},
-		{name: "inline", statement: "\tcase 1: break\n", wantOldText: "break"},
+		{
+			name:        "clean line",
+			statement:   "\t\tbreak\n",
+			wantOldText: "\t\tbreak\n",
+		},
+		{
+			name:        "explicit semicolon",
+			statement:   "\t\tbreak;\n",
+			wantOldText: "\t\tbreak;\n",
+		},
+		{
+			name:        "trailing comment",
+			statement:   "\t\tbreak // keep\n",
+			wantOldText: "break",
+		},
+		{
+			name:        "inline",
+			statement:   "\tcase 1: break\n",
+			wantOldText: "break",
+		},
 	}
-	rules, err := Select([]string{"redundant-switch-break"})
+	rules, err := Select([]string{
+		"redundant-switch-break",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -388,9 +430,14 @@ func TestRedundantSwitchBreakFixRemovesOnlyCleanStatementLine(t *testing.T) {
 
 func analyzeCSTFindings(filename string, tree *cst.Tree, rules []Rule) []Finding {
 	result := []Finding{}
-	AnalyzeCST(CSTInput{Filename: filename, Tree: tree, Rules: rules, Report: func(finding Finding) {
-		result = append(result, finding)
-	}})
+	AnalyzeCST(CSTInput{
+		Filename: filename,
+		Tree:     tree,
+		Rules:    rules,
+		Report: func(finding Finding) {
+			result = append(result, finding)
+		},
+	})
 	return result
 }
 
@@ -500,9 +547,14 @@ func benchmarkAnalyzeCST(b *testing.B) {
 		b.Fatal(err)
 	}
 	reports := 0
-	input := CSTInput{Filename: "fixture.go", Tree: tree, Rules: rules, Report: func(Finding) {
-		reports++
-	}}
+	input := CSTInput{
+		Filename: "fixture.go",
+		Tree:     tree,
+		Rules:    rules,
+		Report: func(Finding) {
+			reports++
+		},
+	}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for range b.N {

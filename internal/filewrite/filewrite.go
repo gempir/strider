@@ -124,7 +124,9 @@ func planFiles(changes []Change, guards []Guard) ([]plannedFile, error) {
 		raw = append(
 			raw,
 			plannedFile{
-				paths:          []string{filepath.Clean(absolute)},
+				paths: []string{
+					filepath.Clean(absolute),
+				},
 				expectedTarget: expectedTarget,
 				before:         append([]byte(nil), before...),
 				after:          append([]byte(nil), after...),
@@ -289,7 +291,11 @@ func stage(change plannedFile) (stagedFile, error) {
 	if err := temporary.Close(); err != nil {
 		return fail(fmt.Errorf("stage %s: close: %w", change.target, err), true)
 	}
-	return stagedFile{temporary: name, target: change.target, planned: change}, nil
+	return stagedFile{
+		temporary: name,
+		target:    change.target,
+		planned:   change,
+	}, nil
 }
 
 func cleanup(files []stagedFile) error {

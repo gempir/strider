@@ -57,15 +57,30 @@ func TestUnifiedRegistrySelectsEveryCheckByDefault(t *testing.T) {
 }
 
 func TestUnifiedRegistryNoneSeverityDisablesUnlessRequested(t *testing.T) {
-	settings := map[string]config.RuleConfig{"format": {Severity: "none"}, "no-init": {Severity: "none"}, "invalid-regexp": {Severity: "none"}}
-	registry, err := NewRegistry(RegistryOptions{Settings: settings})
+	settings := map[string]config.RuleConfig{
+		"format": {
+			Severity: "none",
+		},
+		"no-init": {
+			Severity: "none",
+		},
+		"invalid-regexp": {
+			Severity: "none",
+		},
+	}
+	registry, err := NewRegistry(RegistryOptions{
+		Settings: settings,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if got, want := len(registry.Rules()), 204; got != want {
 		t.Fatalf("check count with none settings = %d, want %d", got, want)
 	}
-	registry, err = NewRegistry(RegistryOptions{Settings: settings, MinimumSeverity: diagnostic.SeverityNone})
+	registry, err = NewRegistry(RegistryOptions{
+		Settings:        settings,
+		MinimumSeverity: diagnostic.SeverityNone,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -80,7 +95,9 @@ func TestUnifiedRegistryNoneSeverityDisablesUnlessRequested(t *testing.T) {
 }
 
 func TestUnifiedRegistryPolicySeverities(t *testing.T) {
-	registry, err := NewRegistry(RegistryOptions{MinimumSeverity: diagnostic.SeverityNote})
+	registry, err := NewRegistry(RegistryOptions{
+		MinimumSeverity: diagnostic.SeverityNote,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,7 +120,10 @@ func TestUnifiedRegistryPolicySeverities(t *testing.T) {
 			t.Errorf("%s severity = %s, want %s", code, got, severity)
 		}
 	}
-	for _, removed := range []string{"comment-spacings", "cyclomatic"} {
+	for _, removed := range []string{
+		"comment-spacings",
+		"cyclomatic",
+	} {
 		if severity := registry.Severity(removed); severity != "" {
 			t.Errorf("removed check %s still has severity %s", removed, severity)
 		}
@@ -111,7 +131,12 @@ func TestUnifiedRegistryPolicySeverities(t *testing.T) {
 }
 
 func TestUnifiedRegistryExplicitSelectionIsCaseInsensitive(t *testing.T) {
-	registry, err := NewRegistry(RegistryOptions{Only: []string{"FORMAT", "NO-INIT"}})
+	registry, err := NewRegistry(RegistryOptions{
+		Only: []string{
+			"FORMAT",
+			"NO-INIT",
+		},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,7 +150,11 @@ func TestUnifiedRegistryExplicitSelectionIsCaseInsensitive(t *testing.T) {
 }
 
 func TestUnifiedRegistryCapabilitiesAvoidPackageLoadingForCSTChecks(t *testing.T) {
-	registry, err := NewRegistry(RegistryOptions{Only: []string{"no-init"}})
+	registry, err := NewRegistry(RegistryOptions{
+		Only: []string{
+			"no-init",
+		},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -140,12 +169,25 @@ func TestUnifiedRegistryCapabilitiesAvoidPackageLoadingForCSTChecks(t *testing.T
 func TestUnifiedRegistryFiltersEffectiveSeverityBeforeCapabilities(t *testing.T) {
 	registry, err := NewRegistry(
 		RegistryOptions{
-			Only: []string{"format", "no-init", "regexp-match-in-loop", "invalid-template"},
+			Only: []string{
+				"format",
+				"no-init",
+				"regexp-match-in-loop",
+				"invalid-template",
+			},
 			Settings: map[string]config.RuleConfig{
-				"format":               {Severity: "warning"},
-				"no-init":              {Severity: "error"},
-				"regexp-match-in-loop": {Severity: "warning"},
-				"invalid-template":     {Severity: "error"},
+				"format": {
+					Severity: "warning",
+				},
+				"no-init": {
+					Severity: "error",
+				},
+				"regexp-match-in-loop": {
+					Severity: "warning",
+				},
+				"invalid-template": {
+					Severity: "error",
+				},
 			},
 			MinimumSeverity: diagnostic.SeverityError,
 		},
@@ -166,7 +208,14 @@ func TestUnifiedRegistryFiltersEffectiveSeverityBeforeCapabilities(t *testing.T)
 }
 
 func TestUnifiedRegistrySelectionDoesNotBypassMinimumSeverity(t *testing.T) {
-	registry, err := NewRegistry(RegistryOptions{Settings: map[string]config.RuleConfig{"no-init": {Severity: "warning"}}, MinimumSeverity: diagnostic.SeverityError})
+	registry, err := NewRegistry(RegistryOptions{
+		Settings: map[string]config.RuleConfig{
+			"no-init": {
+				Severity: "warning",
+			},
+		},
+		MinimumSeverity: diagnostic.SeverityError,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -178,11 +227,22 @@ func TestUnifiedRegistrySelectionDoesNotBypassMinimumSeverity(t *testing.T) {
 }
 
 func TestUnifiedRegistryRejectsInvalidMinimumSeverity(t *testing.T) {
-	_, err := NewRegistry(RegistryOptions{MinimumSeverity: "fatal"})
+	_, err := NewRegistry(RegistryOptions{
+		MinimumSeverity: "fatal",
+	})
 	if err == nil {
 		t.Fatal("invalid minimum severity was accepted")
 	}
-	_, err = NewRegistry(RegistryOptions{Only: []string{"format"}, Settings: map[string]config.RuleConfig{"no-init": {Severity: "fatal"}}})
+	_, err = NewRegistry(RegistryOptions{
+		Only: []string{
+			"format",
+		},
+		Settings: map[string]config.RuleConfig{
+			"no-init": {
+				Severity: "fatal",
+			},
+		},
+	})
 	if err == nil || !strings.Contains(err.Error(), "severity must be") {
 		t.Fatalf("got %v, want rule severity error", err)
 	}
@@ -190,21 +250,46 @@ func TestUnifiedRegistryRejectsInvalidMinimumSeverity(t *testing.T) {
 
 func TestUnifiedRegistryAcceptsOnlySupportedBehavioralOptions(t *testing.T) {
 	tests := map[string]config.RuleConfig{
-		"banned-characters":      {Characters: []string{"_"}},
-		"file-length-limit":      {MaxLines: 500},
-		"function-length":        {MaxLines: 100, MaxStatements: 60},
-		"function-result-limit":  {MaxResults: 4},
-		"imports-blocklist":      {BlockedImports: []string{"log"}},
-		"interface-method-limit": {MaxMethods: 12},
-		"max-parameters":         {MaxParameters: 10},
-		"max-public-structs":     {MaxPublicStructs: 8},
+		"banned-characters": {
+			Characters: []string{
+				"_",
+			},
+		},
+		"file-length-limit": {
+			MaxLines: 500,
+		},
+		"function-length": {
+			MaxLines:      100,
+			MaxStatements: 60,
+		},
+		"function-result-limit": {
+			MaxResults: 4,
+		},
+		"imports-blocklist": {
+			BlockedImports: []string{
+				"log",
+			},
+		},
+		"interface-method-limit": {
+			MaxMethods: 12,
+		},
+		"max-parameters": {
+			MaxParameters: 10,
+		},
+		"max-public-structs": {
+			MaxPublicStructs: 8,
+		},
 	}
 	for code, setting := range tests {
 		t.Run(
 			code,
 			func(t *testing.T) {
 				if _,
-					err := NewRegistry(RegistryOptions{Settings: map[string]config.RuleConfig{code: setting}}); err != nil {
+					err := NewRegistry(RegistryOptions{
+					Settings: map[string]config.RuleConfig{
+						code: setting,
+					},
+				}); err != nil {
 					t.Fatalf("supported option was rejected: %v", err)
 				}
 			},
@@ -214,18 +299,34 @@ func TestUnifiedRegistryAcceptsOnlySupportedBehavioralOptions(t *testing.T) {
 
 func TestUnifiedRegistryRejectsBehavioralOptionOnWrongCheck(t *testing.T) {
 	tests := map[string]config.RuleConfig{
-		"no-init":                {MaxLines: 10},
-		"invalid-regexp":         {MaxMethods: 3},
-		"format":                 {BlockedImports: []string{}},
-		"function-length":        {Characters: []string{"_"}},
-		"interface-method-limit": {MaxParameters: 4},
+		"no-init": {
+			MaxLines: 10,
+		},
+		"invalid-regexp": {
+			MaxMethods: 3,
+		},
+		"format": {
+			BlockedImports: []string{},
+		},
+		"function-length": {
+			Characters: []string{
+				"_",
+			},
+		},
+		"interface-method-limit": {
+			MaxParameters: 4,
+		},
 	}
 	for code, setting := range tests {
 		t.Run(
 			code,
 			func(t *testing.T) {
 				_,
-					err := NewRegistry(RegistryOptions{Settings: map[string]config.RuleConfig{code: setting}})
+					err := NewRegistry(RegistryOptions{
+					Settings: map[string]config.RuleConfig{
+						code: setting,
+					},
+				})
 				if err == nil || !strings.Contains(err.Error(), "does not support") {
 					t.Fatalf("got %v, want unsupported-option error", err)
 				}
@@ -244,7 +345,9 @@ func TestUnifiedRegistryRejectsExplicitZeroOptionOnWrongCheck(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = NewRegistry(RegistryOptions{Settings: configuration.Checks.Rules})
+	_, err = NewRegistry(RegistryOptions{
+		Settings: configuration.Checks.Rules,
+	})
 	if err == nil || !strings.Contains(err.Error(), "does not support max-lines") {
 		t.Fatalf("got %v, want unsupported max-lines error", err)
 	}

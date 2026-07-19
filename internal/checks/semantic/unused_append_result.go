@@ -31,7 +31,9 @@ func (unusedAppendResultRule) Run(pass *Pass) {
 				if !validAppendOrigin(call.Common().Args[0], origins) || appendOriginEscapes(call, origins) {
 					continue
 				}
-				pass.Report(positionNode{position: call.Pos()}, "result of append is never used or observed")
+				pass.Report(positionNode{
+					position: call.Pos(),
+				}, "result of append is never used or observed")
 			}
 		}
 	}

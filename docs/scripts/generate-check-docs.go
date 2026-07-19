@@ -36,7 +36,9 @@ func main() {
 func generateCatalogStats(docsDirectory string, registry *checks.Registry) {
 	stats := struct {
 		Checks int `json:"checks"`
-	}{Checks: len(registry.Rules())}
+	}{
+		Checks: len(registry.Rules()),
+	}
 	contents, err := json.MarshalIndent(stats, "", "  ")
 	if err != nil {
 		fatal(err)
@@ -82,7 +84,14 @@ func generateSyntaxPages(docsDirectory string) {
 			continue
 		}
 		content := render(
-			pageData{code: meta.Code, summary: meta.Summary, explanation: meta.Explanation, bad: meta.BadExample, good: meta.GoodExample, severity: meta.DefaultSeverity},
+			pageData{
+				code:        meta.Code,
+				summary:     meta.Summary,
+				explanation: meta.Explanation,
+				bad:         meta.BadExample,
+				good:        meta.GoodExample,
+				severity:    meta.DefaultSeverity,
+			},
 		)
 		if string(current) == content {
 			continue
@@ -177,7 +186,9 @@ allow every character.
 }
 
 func synchronizeCheckPages(docsDirectory string) *checks.Registry {
-	registry, err := checks.NewRegistry(checks.RegistryOptions{MinimumSeverity: diagnostic.SeverityNone})
+	registry, err := checks.NewRegistry(checks.RegistryOptions{
+		MinimumSeverity: diagnostic.SeverityNone,
+	})
 	if err != nil {
 		fatal(err)
 	}
@@ -280,7 +291,10 @@ func validateCheckPages(docsDirectory string, registry *checks.Registry) {
 			fatal(fmt.Errorf("check %s documentation has identical Bad and Good examples", meta.Code))
 		}
 	}
-	for _, category := range []string{"lints", "analyzers"} {
+	for _, category := range []string{
+		"lints",
+		"analyzers",
+	} {
 		directory := filepath.Join(docsDirectory, category)
 		entries, err := os.ReadDir(directory)
 		if err != nil {
@@ -322,14 +336,31 @@ func documentedGoExample(contents, heading string) string {
 
 func validateBehaviorConfiguration(docsDirectory string, registry *checks.Registry) {
 	required := map[string][]string{
-		"banned-characters":      {"characters"},
-		"file-length-limit":      {"max-lines"},
-		"function-length":        {"max-lines", "max-statements"},
-		"function-result-limit":  {"max-results"},
-		"imports-blocklist":      {"blocked-imports"},
-		"interface-method-limit": {"max-methods"},
-		"max-parameters":         {"max-parameters"},
-		"max-public-structs":     {"max-public-structs"},
+		"banned-characters": {
+			"characters",
+		},
+		"file-length-limit": {
+			"max-lines",
+		},
+		"function-length": {
+			"max-lines",
+			"max-statements",
+		},
+		"function-result-limit": {
+			"max-results",
+		},
+		"imports-blocklist": {
+			"blocked-imports",
+		},
+		"interface-method-limit": {
+			"max-methods",
+		},
+		"max-parameters": {
+			"max-parameters",
+		},
+		"max-public-structs": {
+			"max-public-structs",
+		},
 	}
 	byCode := make(map[string]checks.Meta, len(registry.Rules()))
 	for _, rule := range registry.Rules() {
@@ -345,7 +376,10 @@ func validateBehaviorConfiguration(docsDirectory string, registry *checks.Regist
 			fatal(err)
 		}
 		page := string(contents)
-		for _, wanted := range append([]string{"## Configuration", "[checks.rules." + code + "]"}, options...) {
+		for _, wanted := range append([]string{
+			"## Configuration",
+			"[checks.rules." + code + "]",
+		}, options...) {
 			if !strings.Contains(page, wanted) {
 				fatal(fmt.Errorf("check %s documentation is missing configuration token %q", code, wanted))
 			}
@@ -372,7 +406,9 @@ func withSeverityMetadata(contents string, severity diagnostic.Severity) string 
 		if strings.HasPrefix(strings.TrimSpace(line), defaultSeverityPrefix) {
 			lines[index] = badge
 			if index+1 < len(lines) && strings.TrimSpace(lines[index+1]) != "" {
-				lines = append(lines[:index+1], append([]string{""}, lines[index+1:]...)...)
+				lines = append(lines[:index+1], append([]string{
+					"",
+				}, lines[index+1:]...)...)
 			}
 			return strings.Join(lines, "\n")
 		}
@@ -388,7 +424,10 @@ func withSeverityMetadata(contents string, severity diagnostic.Severity) string 
 		fatal(fmt.Errorf("documentation page has no frontmatter"))
 	}
 	insertAt := frontmatterEnd + 1
-	addition := []string{"", badge}
+	addition := []string{
+		"",
+		badge,
+	}
 	lines = append(lines[:insertAt], append(addition, lines[insertAt:]...)...)
 	return strings.Join(lines, "\n")
 }
@@ -415,7 +454,12 @@ func withSidebarSeverity(contents string, severity diagnostic.Severity) string {
 			return strings.Join(lines, "\n")
 		}
 	}
-	metadata := []string{"sidebar:", "  badge:", fmt.Sprintf("    text: %s", severity), fmt.Sprintf("    class: severity-indicator severity-%s", severity)}
+	metadata := []string{
+		"sidebar:",
+		"  badge:",
+		fmt.Sprintf("    text: %s", severity),
+		fmt.Sprintf("    class: severity-indicator severity-%s", severity),
+	}
 	lines = append(lines[:frontmatterEnd], append(metadata, lines[frontmatterEnd:]...)...)
 	return strings.Join(lines, "\n")
 }

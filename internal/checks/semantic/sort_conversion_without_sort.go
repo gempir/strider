@@ -55,7 +55,11 @@ func (sortConversionWithoutSortRule) Run(pass *Pass) {
 				if typeName == "" {
 					return true
 				}
-				helper := map[string]string{"Float64Slice": "Float64s", "IntSlice": "Ints", "StringSlice": "Strings"}[typeName]
+				helper := map[string]string{
+					"Float64Slice": "Float64s",
+					"IntSlice":     "Ints",
+					"StringSlice":  "Strings",
+				}[typeName]
 				pass.Report(assignment, fmt.Sprintf("sort.%s is only a type conversion and does not sort; use sort.%s", typeName, helper))
 				return true
 			},

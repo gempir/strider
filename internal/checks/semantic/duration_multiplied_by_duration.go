@@ -51,7 +51,10 @@ func (durationMultipliedByDurationRule) Run(pass *Pass) {
 					if expression.Tok != token.MUL_ASSIGN || len(expression.Lhs) != 1 || len(expression.Rhs) != 1 {
 						return true
 					}
-					candidate = &ast.BinaryExpr{X: expression.Lhs[0], Y: expression.Rhs[0]}
+					candidate = &ast.BinaryExpr{
+						X: expression.Lhs[0],
+						Y: expression.Rhs[0],
+					}
 				default:
 					return true
 				}

@@ -199,7 +199,10 @@ func (rangeValueCaptureRule) Run(pass *Pass) {
 
 func rangeVariableObjects(pass *Pass, loop *ast.RangeStmt) map[types.Object]string {
 	result := make(map[types.Object]string, 2)
-	for _, expression := range []ast.Expr{loop.Key, loop.Value} {
+	for _, expression := range []ast.Expr{
+		loop.Key,
+		loop.Value,
+	} {
 		identifier, ok := ast.Unparen(expression).(*ast.Ident)
 		if !ok || identifier.Name == "_" {
 			continue

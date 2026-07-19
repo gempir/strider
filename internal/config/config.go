@@ -54,14 +54,33 @@ type RuleConfig struct {
 	definedOptions   map[string]bool
 }
 
-var behavioralRuleOptions = []string{"characters", "max-lines", "max-statements", "max-results", "max-parameters", "max-public-structs", "max-methods", "blocked-imports"}
+var behavioralRuleOptions = []string{
+	"characters",
+	"max-lines",
+	"max-statements",
+	"max-results",
+	"max-parameters",
+	"max-public-structs",
+	"max-methods",
+	"blocked-imports",
+}
 
 func Defaults() Config {
-	return Config{Version: 1, Color: string(ui.ColorAuto), Formatter: FormatterConfig{PrintWidth: 180}, Checks: defaultToolConfig()}
+	return Config{
+		Version: 1,
+		Color:   string(ui.ColorAuto),
+		Formatter: FormatterConfig{
+			PrintWidth: 180,
+		},
+		Checks: defaultToolConfig(),
+	}
 }
 
 func defaultToolConfig() ToolConfig {
-	return ToolConfig{MinimumSeverity: string(diagnostic.SeverityWarning), Rules: make(map[string]RuleConfig)}
+	return ToolConfig{
+		MinimumSeverity: string(diagnostic.SeverityWarning),
+		Rules:           make(map[string]RuleConfig),
+	}
 }
 
 // Load reads an explicit path or discovers strider.toml from the working

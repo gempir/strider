@@ -24,9 +24,20 @@ func TestWriteProjectReportLimitsDetailedDiagnostics(t *testing.T) {
 	root := t.TempDir()
 	diagnostics := make([]diagnosticmodel.Diagnostic, projectReportDiagnosticLimit+1)
 	for index := range diagnostics {
-		diagnostics[index] = diagnosticmodel.Diagnostic{Code: "example", Message: "finding"}
+		diagnostics[index] = diagnosticmodel.Diagnostic{
+			Code:    "example",
+			Message: "finding",
+		}
 	}
-	result := projectResult{Name: "example", Operations: []operationResult{{Name: "check", Diagnostics: diagnostics}}}
+	result := projectResult{
+		Name: "example",
+		Operations: []operationResult{
+			{
+				Name:        "check",
+				Diagnostics: diagnostics,
+			},
+		},
+	}
 	if err := writeProjectReport(root, result, ""); err != nil {
 		t.Fatal(err)
 	}
@@ -51,7 +62,19 @@ func TestNonEmptyLines(t *testing.T) {
 
 func TestWriteProjectReportIncludesOperationTimings(t *testing.T) {
 	root := t.TempDir()
-	result := projectResult{Name: "example", Operations: []operationResult{{Name: "format", DurationMS: 14}, {Name: "check", DurationMS: 1190}}}
+	result := projectResult{
+		Name: "example",
+		Operations: []operationResult{
+			{
+				Name:       "format",
+				DurationMS: 14,
+			},
+			{
+				Name:       "check",
+				DurationMS: 1190,
+			},
+		},
+	}
 	if err := writeProjectReport(root, result, ""); err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +82,11 @@ func TestWriteProjectReportIncludesOperationTimings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, wanted := range []string{"format", "14 <small>ms</small>", "1190 <small>ms</small>"} {
+	for _, wanted := range []string{
+		"format",
+		"14 <small>ms</small>",
+		"1190 <small>ms</small>",
+	} {
 		if !strings.Contains(string(contents), wanted) {
 			t.Fatalf("project report missing timing %q", wanted)
 		}
@@ -85,7 +112,20 @@ func TestWriteHomepageStatsExportsMeasuredDurations(t *testing.T) {
 	path := t.TempDir() + "/homepage.json"
 	results := report{
 		Projects: []projectResult{
-			{Name: "kubernetes", Revision: strings.Repeat("a", 40), Operations: []operationResult{{Name: "format", DurationMS: 458}, {Name: "check", DurationMS: 5700}}},
+			{
+				Name:     "kubernetes",
+				Revision: strings.Repeat("a", 40),
+				Operations: []operationResult{
+					{
+						Name:       "format",
+						DurationMS: 458,
+					},
+					{
+						Name:       "check",
+						DurationMS: 5700,
+					},
+				},
+			},
 		},
 	}
 	if err := writeHomepageStats(path, results, "kubernetes"); err != nil {

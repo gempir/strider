@@ -38,8 +38,12 @@ func TestGeneratedAccessorsPreserveNilAndFallbackBehavior(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	wrapper := &fallbackNode{Child: tree.Root()}
-	if got, want := Children(wrapper), []Node{tree.Root()}; !slices.Equal(got, want) {
+	wrapper := &fallbackNode{
+		Child: tree.Root(),
+	}
+	if got, want := Children(wrapper), []Node{
+		tree.Root(),
+	}; !slices.Equal(got, want) {
 		t.Fatalf("fallback children = %#v, want %#v", got, want)
 	}
 	if got, want := NodeTokens(wrapper), NodeTokens(tree.Root()); !slices.Equal(got, want) {
@@ -61,7 +65,24 @@ func TestProductionWalkSkipsTokenValuesAndPointers(t *testing.T) {
 	tests := []struct {
 		name string
 		node Node
-	}{{name: "valid-value", node: valid}, {name: "zero-value", node: zero}, {name: "valid-pointer", node: &valid}, {name: "nil-pointer", node: nilPointer}}
+	}{
+		{
+			name: "valid-value",
+			node: valid,
+		},
+		{
+			name: "zero-value",
+			node: zero,
+		},
+		{
+			name: "valid-pointer",
+			node: &valid,
+		},
+		{
+			name: "nil-pointer",
+			node: nilPointer,
+		},
+	}
 	for _, test := range tests {
 		t.Run(
 			test.name,
@@ -78,13 +99,17 @@ func TestProductionWalkSkipsTokenValuesAndPointers(t *testing.T) {
 		)
 	}
 
-	wrapper := &fallbackNode{Child: &valid}
+	wrapper := &fallbackNode{
+		Child: &valid,
+	}
 	visits := []Node{}
 	WalkProductionsWithAncestors(wrapper, func(node Node, _ []Node) bool {
 		visits = append(visits, node)
 		return true
 	})
-	if !slices.Equal(visits, []Node{wrapper}) {
+	if !slices.Equal(visits, []Node{
+		wrapper,
+	}) {
 		t.Fatalf("fallback production visits = %#v", visits)
 	}
 }

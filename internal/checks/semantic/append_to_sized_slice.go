@@ -45,7 +45,9 @@ func (appendToSizedSliceRule) Run(pass *Pass) {
 				}
 				reported[origin.Pos()] = true
 				pass.Report(
-					positionNode{position: call.Pos()},
+					positionNode{
+						position: call.Pos(),
+					},
 					fmt.Sprintf("%s already has a positive length; use make with length zero and capacity, or reslice to zero before append", candidate.name),
 				)
 			}
@@ -137,7 +139,9 @@ func addPositiveLengthMake(pass *Pass, result map[token.Pos]sizedSliceCandidate,
 	if length == nil || length.Kind() != constant.Int || constant.Sign(length) <= 0 {
 		return
 	}
-	candidate := sizedSliceCandidate{name: identifier.Name}
+	candidate := sizedSliceCandidate{
+		name: identifier.Name,
+	}
 	result[call.Pos()] = candidate
 	result[call.Lparen] = candidate
 }
@@ -168,7 +172,10 @@ type sizedSliceTrace struct {
 
 func traceSizedSliceOrigin(value ssa.Value, visiting map[ssa.Value]bool) sizedSliceTrace {
 	if value == nil || visiting[value] {
-		return sizedSliceTrace{cycle: value != nil, valid: value != nil}
+		return sizedSliceTrace{
+			cycle: value != nil,
+			valid: value != nil,
+		}
 	}
 	visiting[value] = true
 	defer delete(visiting, value)
@@ -179,7 +186,10 @@ func traceSizedSliceOrigin(value ssa.Value, visiting map[ssa.Value]bool) sizedSl
 		if length == nil || length.Value == nil || length.Value.Kind() != constant.Int || constant.Sign(length.Value) <= 0 {
 			return sizedSliceTrace{}
 		}
-		return sizedSliceTrace{origin: value, valid: true}
+		return sizedSliceTrace{
+			origin: value,
+			valid:  true,
+		}
 	case *ssa.ChangeType:
 		return traceSizedSliceOrigin(value.X, visiting)
 	case *ssa.Phi:
@@ -200,12 +210,19 @@ func traceSizedSliceOrigin(value ssa.Value, visiting map[ssa.Value]bool) sizedSl
 				return sizedSliceTrace{}
 			}
 		}
-		return sizedSliceTrace{origin: common, cycle: cycle, valid: common != nil || cycle}
+		return sizedSliceTrace{
+			origin: common,
+			cycle:  cycle,
+			valid:  common != nil || cycle,
+		}
 	case *ssa.Slice:
 		if allocation, ok := value.X.(*ssa.Alloc); ok && allocation.Comment == "makeslice" && value.Low == nil && value.Max == nil {
 			high := ssaConstant(value.High)
 			if high != nil && high.Value != nil && high.Value.Kind() == constant.Int && constant.Sign(high.Value) > 0 {
-				return sizedSliceTrace{origin: allocation, valid: true}
+				return sizedSliceTrace{
+					origin: allocation,
+					valid:  true,
+				}
 			}
 		}
 		// A full slice expression preserves the original non-zero length. Any

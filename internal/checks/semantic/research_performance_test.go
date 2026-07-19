@@ -12,14 +12,38 @@ func TestResearchPerformanceRuleMetadata(t *testing.T) {
 		rule     Rule
 		severity diagnostic.Severity
 	}{
-		{appendToSizedSliceRule{}, diagnostic.SeverityWarning},
-		{redundantConversionRule{}, diagnostic.SeverityWarning},
-		{slicePreallocationRule{}, diagnostic.SeverityWarning},
-		{inefficientSprintfRule{}, diagnostic.SeverityWarning},
-		{interfaceMethodLimitRule{}, diagnostic.SeverityWarning},
-		{constructorInterfaceReturnRule{}, diagnostic.SeverityWarning},
-		{slogArgumentShapeRule{}, diagnostic.SeverityWarning},
-		{externalCallInLoopRule{}, diagnostic.SeverityWarning},
+		{
+			appendToSizedSliceRule{},
+			diagnostic.SeverityWarning,
+		},
+		{
+			redundantConversionRule{},
+			diagnostic.SeverityWarning,
+		},
+		{
+			slicePreallocationRule{},
+			diagnostic.SeverityWarning,
+		},
+		{
+			inefficientSprintfRule{},
+			diagnostic.SeverityWarning,
+		},
+		{
+			interfaceMethodLimitRule{},
+			diagnostic.SeverityWarning,
+		},
+		{
+			constructorInterfaceReturnRule{},
+			diagnostic.SeverityWarning,
+		},
+		{
+			slogArgumentShapeRule{},
+			diagnostic.SeverityWarning,
+		},
+		{
+			externalCallInLoopRule{},
+			diagnostic.SeverityWarning,
+		},
 	}
 	for _, test := range tests {
 		meta := test.rule.Meta()
@@ -246,12 +270,16 @@ func check(db *sql.DB, client *http.Client, request *http.Request, ids []int) {
 			func(t *testing.T) {
 				root := analysisModule(t, test.source)
 				registry,
-					err := NewRegistry([]string{test.code})
+					err := NewRegistry([]string{
+					test.code,
+				})
 				if err != nil {
 					t.Fatal(err)
 				}
 				diagnostics,
-					err := Run([]string{root}, registry)
+					err := Run([]string{
+					root,
+				}, registry)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -269,7 +297,10 @@ func check(db *sql.DB, client *http.Client, request *http.Request, ids []int) {
 }
 
 func TestResearchPerformanceRuleStages(t *testing.T) {
-	ssaRules := map[string]bool{"append-to-sized-slice": true, "external-call-in-loop": true}
+	ssaRules := map[string]bool{
+		"append-to-sized-slice": true,
+		"external-call-in-loop": true,
+	}
 	for _, rule := range []Rule{
 		appendToSizedSliceRule{},
 		redundantConversionRule{},

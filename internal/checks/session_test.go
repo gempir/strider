@@ -15,7 +15,11 @@ func TestSessionReusesAndInvalidatesConcreteGeneration(t *testing.T) {
 	if err := os.WriteFile(filename, []byte("package sample\nfunc init() {}\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	registry, err := NewRegistry(RegistryOptions{Only: []string{"no-init"}})
+	registry, err := NewRegistry(RegistryOptions{
+		Only: []string{
+			"no-init",
+		},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -23,7 +27,10 @@ func TestSessionReusesAndInvalidatesConcreteGeneration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cache := workspace.NewCache(workspace.CacheOptions{MaxEntries: 8, MaxBytes: 1 << 20})
+	cache := workspace.NewCache(workspace.CacheOptions{
+		MaxEntries: 8,
+		MaxBytes:   1 << 20,
+	})
 
 	first := runCachedSession(t, cache, session, filename)
 	if len(first.Diagnostics) != 1 || first.Diagnostics[0].Code != "no-init" {
@@ -60,15 +67,25 @@ func TestSessionOwnsFormattingCandidates(t *testing.T) {
 	if err := os.WriteFile(filename, []byte("package sample\nfunc F( ){return}\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	registry, err := NewRegistry(RegistryOptions{Only: []string{"format"}})
+	registry, err := NewRegistry(RegistryOptions{
+		Only: []string{
+			"format",
+		},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	session, err := NewSession(registry, RunOptions{Formatter: formatter.DefaultOptions(), CollectCandidates: true}, SessionOptions{})
+	session, err := NewSession(registry, RunOptions{
+		Formatter:         formatter.DefaultOptions(),
+		CollectCandidates: true,
+	}, SessionOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	cache := workspace.NewCache(workspace.CacheOptions{MaxEntries: 8, MaxBytes: 1 << 20})
+	cache := workspace.NewCache(workspace.CacheOptions{
+		MaxEntries: 8,
+		MaxBytes:   1 << 20,
+	})
 	first := runCachedSession(t, cache, session, filename)
 	candidate := first.Candidates[filename]
 	if len(candidate.Source) == 0 {
@@ -92,7 +109,11 @@ func TestSessionInvalidatesFormattingWhenModulePathChanges(t *testing.T) {
 	if err := os.WriteFile(module, []byte("module example.com/one\n\ngo 1.26\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	registry, err := NewRegistry(RegistryOptions{Only: []string{"format"}})
+	registry, err := NewRegistry(RegistryOptions{
+		Only: []string{
+			"format",
+		},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,7 +121,10 @@ func TestSessionInvalidatesFormattingWhenModulePathChanges(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cache := workspace.NewCache(workspace.CacheOptions{MaxEntries: 8, MaxBytes: 1 << 20})
+	cache := workspace.NewCache(workspace.CacheOptions{
+		MaxEntries: 8,
+		MaxBytes:   1 << 20,
+	})
 	first := runCachedSession(t, cache, session, filename)
 	if len(first.Candidates) != 0 {
 		t.Fatalf("read-only session retained formatting candidates: %#v", first.Candidates)
@@ -120,7 +144,9 @@ func TestSessionInvalidatesFormattingWhenModulePathChanges(t *testing.T) {
 
 func runCachedSession(t testingTB, cache *workspace.Cache, session *Session, filename string) Result {
 	t.Helper()
-	shared, err := cache.Open([]string{filename}, workspace.Options{})
+	shared, err := cache.Open([]string{
+		filename,
+	}, workspace.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,7 +163,11 @@ func BenchmarkSessionUnchangedConcreteGeneration(b *testing.B) {
 	if err := os.WriteFile(filename, []byte("package sample\nfunc init() { println(\"x\") }\n"), 0o600); err != nil {
 		b.Fatal(err)
 	}
-	registry, err := NewRegistry(RegistryOptions{Only: []string{"no-init"}})
+	registry, err := NewRegistry(RegistryOptions{
+		Only: []string{
+			"no-init",
+		},
+	})
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -145,7 +175,10 @@ func BenchmarkSessionUnchangedConcreteGeneration(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	cache := workspace.NewCache(workspace.CacheOptions{MaxEntries: 8, MaxBytes: 1 << 20})
+	cache := workspace.NewCache(workspace.CacheOptions{
+		MaxEntries: 8,
+		MaxBytes:   1 << 20,
+	})
 	if result := runCachedSession(b, cache, session, filename); len(result.Diagnostics) != 1 {
 		b.Fatalf("warm-up diagnostics = %#v", result.Diagnostics)
 	}

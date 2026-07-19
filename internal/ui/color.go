@@ -29,7 +29,9 @@ type Palette struct {
 // NewPalette resolves mode for writer. FORCE_COLOR and NO_COLOR follow the
 // conventions used by other developer tools, including Mago.
 func NewPalette(writer io.Writer, mode ColorMode) Palette {
-	return Palette{enabled: colorsEnabled(writer, mode)}
+	return Palette{
+		enabled: colorsEnabled(writer, mode),
+	}
 }
 
 // Enabled reports whether this palette emits ANSI escape sequences.

@@ -132,7 +132,12 @@ func NewRegistry(only []string) (*Registry, error) {
 
 // NewRegistryConfigured applies analyzer rule settings.
 func NewRegistryConfigured(only []string, settings map[string]config.RuleConfig, root string) (*Registry, error) {
-	return NewRegistryWithOptions(RegistryOptions{Only: only, Settings: settings, Root: root, MinimumSeverity: diagnostic.SeverityNote})
+	return NewRegistryWithOptions(RegistryOptions{
+		Only:            only,
+		Settings:        settings,
+		Root:            root,
+		MinimumSeverity: diagnostic.SeverityNote,
+	})
 }
 
 // NewRegistryWithOptions applies project settings and a minimum effective
@@ -182,7 +187,11 @@ func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
 	for code, setting := range options.Settings {
 		configured[strings.ToUpper(code)] = setting
 	}
-	registry := &Registry{settings: make(map[string]configuredRule, len(all)), knownCodes: make(map[string]bool, len(all)), root: options.Root}
+	registry := &Registry{
+		settings:   make(map[string]configuredRule, len(all)),
+		knownCodes: make(map[string]bool, len(all)),
+		root:       options.Root,
+	}
 	for _, rule := range all {
 		meta := rule.Meta()
 		registry.knownCodes[meta.Code] = true
@@ -199,7 +208,11 @@ func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
 			continue
 		}
 		registry.rules = append(registry.rules, rule)
-		registry.settings[meta.Code] = configuredRule{severity: severity, excludes: setting.Excludes, config: setting}
+		registry.settings[meta.Code] = configuredRule{
+			severity: severity,
+			excludes: setting.Excludes,
+			config:   setting,
+		}
 	}
 	return registry, nil
 }
@@ -243,11 +256,24 @@ func RequirementsFor(code string) (Requirements, bool) {
 }
 
 func typedDefinition(rule Rule, facts FactSet) ruleDefinition {
-	return ruleDefinition{rule: rule, requirements: Requirements{Stage: AnalysisStageTypes, Facts: facts}}
+	return ruleDefinition{
+		rule: rule,
+		requirements: Requirements{
+			Stage: AnalysisStageTypes,
+			Facts: facts,
+		},
+	}
 }
 
 func ssaDefinition(rule Rule, facts FactSet, features SSAFeatureSet) ruleDefinition {
-	return ruleDefinition{rule: rule, requirements: Requirements{Stage: AnalysisStageSSA, Facts: facts, SSAFeatures: features}}
+	return ruleDefinition{
+		rule: rule,
+		requirements: Requirements{
+			Stage:       AnalysisStageSSA,
+			Facts:       facts,
+			SSAFeatures: features,
+		},
+	}
 }
 
 func ssaStaticCallDefinition(rule Rule, facts FactSet, packagePaths ...string) ruleDefinition {

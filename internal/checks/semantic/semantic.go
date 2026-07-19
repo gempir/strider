@@ -74,7 +74,10 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnos
 		return []diagnostic.Diagnostic{}, nil
 	}
 	plan := registry.executionPlan()
-	loaded, err := packages.Load(&packages.Config{Mode: loadMode, Tests: true}, patterns...)
+	loaded, err := packages.Load(&packages.Config{
+		Mode:  loadMode,
+		Tests: true,
+	}, patterns...)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +147,11 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnos
 					generated,
 						generatedErr := source.IsGenerated(canonical)
 					if generatedErr == nil && !generated {
-						entry.info = analysisFileInfo{filename: canonical, display: source.DisplayPath(canonical), eligible: true}
+						entry.info = analysisFileInfo{
+							filename: canonical,
+							display:  source.DisplayPath(canonical),
+							eligible: true,
+						}
 					}
 				}
 			},
@@ -168,7 +175,10 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnos
 	}
 	for _, pass := range passes {
 		for _, rule := range registry.rules {
-			jobs <- analysisTask{pass: pass, rule: rule}
+			jobs <- analysisTask{
+				pass: pass,
+				rule: rule,
+			}
 		}
 	}
 	close(jobs)
@@ -200,7 +210,10 @@ func (plan executionPlan) ssaBuilderMode() ssa.BuilderMode {
 
 func prepareSSA(initial []*packages.Package, plan executionPlan, build ssaBuildFunc) ssaBuildResult {
 	if !plan.needsSSA() {
-		return ssaBuildResult{packages: make([]*ssa.Package, len(initial)), functionsByPackage: make(map[*ssa.Package][]*ssa.Function)}
+		return ssaBuildResult{
+			packages:           make([]*ssa.Package, len(initial)),
+			functionsByPackage: make(map[*ssa.Package][]*ssa.Function),
+		}
 	}
 	return build(initial, plan.ssaBuilderMode())
 }
@@ -221,7 +234,11 @@ func buildSSA(initial []*packages.Package, mode ssa.BuilderMode) ssaBuildResult 
 			functionsByPackage[function.Pkg] = append(functionsByPackage[function.Pkg], function)
 		}
 	}
-	return ssaBuildResult{program: program, packages: packages, functionsByPackage: functionsByPackage}
+	return ssaBuildResult{
+		program:            program,
+		packages:           packages,
+		functionsByPackage: functionsByPackage,
+	}
 }
 
 // selectInitialPackages avoids analyzing production syntax twice when
@@ -265,8 +282,16 @@ func runAnalysisTask(task analysisTask, registry *Registry, fileInfoFor func(str
 		findings = append(
 			findings,
 			analysisFinding{
-				key:        fmt.Sprintf("%s:%d:%d:%s:%s", info.filename, position.Offset, end.Offset, meta.Code, message),
-				diagnostic: diagnostic.Diagnostic{Code: meta.Code, Message: message, Severity: severity, File: info.display, Start: position, End: end, Fixes: fixes},
+				key: fmt.Sprintf("%s:%d:%d:%s:%s", info.filename, position.Offset, end.Offset, meta.Code, message),
+				diagnostic: diagnostic.Diagnostic{
+					Code:     meta.Code,
+					Message:  message,
+					Severity: severity,
+					File:     info.display,
+					Start:    position,
+					End:      end,
+					Fixes:    fixes,
+				},
 			},
 		)
 	}
@@ -306,7 +331,10 @@ func collectPackageFunctions(program *ssa.Program, ssaPackages []*ssa.Package) m
 			if !ok {
 				continue
 			}
-			for _, receiver := range []types.Type{named, types.NewPointer(named)} {
+			for _, receiver := range []types.Type{
+				named,
+				types.NewPointer(named),
+			} {
 				methodSet := types.NewMethodSet(receiver)
 				for index := range methodSet.Len() {
 					add(program.MethodValue(methodSet.At(index)))
@@ -319,7 +347,9 @@ func collectPackageFunctions(program *ssa.Program, ssaPackages []*ssa.Package) m
 
 func loadInputs(paths []string) ([]string, []target, error) {
 	if len(paths) == 0 {
-		paths = []string{"."}
+		paths = []string{
+			".",
+		}
 	}
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -350,14 +380,19 @@ func loadInputs(paths []string) ([]string, []target, error) {
 		}
 		if info.IsDir() {
 			patterns = append(patterns, recursivePackagePattern(cwd, absolute))
-			targets = append(targets, target{path: absolute, recursive: true})
+			targets = append(targets, target{
+				path:      absolute,
+				recursive: true,
+			})
 			continue
 		}
 		if filepath.Ext(absolute) != ".go" {
 			return nil, nil, fmt.Errorf("%q is not a Go source file", input)
 		}
 		patterns = append(patterns, "file="+filepath.ToSlash(absolute))
-		targets = append(targets, target{path: absolute})
+		targets = append(targets, target{
+			path: absolute,
+		})
 	}
 	return patterns, targets, nil
 }

@@ -55,7 +55,13 @@ func (singleArgumentAppendRule) Run(pass *Pass) {
 						Message:   "replace append with its slice argument",
 						Safety:    diagnostic.Safe,
 						Automatic: true,
-						Edits:     []diagnostic.TextEdit{{Start: start, End: end, OldText: identifier.Name}},
+						Edits: []diagnostic.TextEdit{
+							{
+								Start:   start,
+								End:     end,
+								OldText: identifier.Name,
+							},
+						},
 					},
 				)
 				return true

@@ -193,7 +193,14 @@ func parseGlobalOptions(args []string, stderr io.Writer) ([]string, globalOption
 			args = args[1:]
 		case strings.HasPrefix(args[0], "-") && !strings.HasPrefix(args[0], "--") && len(args[0]) > 2:
 			name := strings.TrimPrefix(strings.SplitN(args[0], "=", 2)[0], "-")
-			aliases := map[string]string{"config": "c", "no-config": "n", "color": "C", "colors": "C", "help": "h", "version": "v"}
+			aliases := map[string]string{
+				"config":    "c",
+				"no-config": "n",
+				"color":     "C",
+				"colors":    "C",
+				"help":      "h",
+				"version":   "v",
+			}
 			replacement := "--" + name
 			if short := aliases[name]; short != "" {
 				replacement += " or -" + short
@@ -244,7 +251,9 @@ func runFormat(args []string, configuration config.Config, colorMode ui.ColorMod
 	if !ok {
 		return exitError
 	}
-	options.formatter = formatter.Options{PrintWidth: configuration.Formatter.PrintWidth}
+	options.formatter = formatter.Options{
+		PrintWidth: configuration.Formatter.PrintWidth,
+	}
 	options.root = configuration.Root
 	options.excludes = configuration.Formatter.Excludes
 	options.colorMode = colorMode
@@ -257,7 +266,14 @@ func runFormat(args []string, configuration config.Config, colorMode ui.ColorMod
 func parseFormatOptions(args []string, colorMode ui.ColorMode, stderr io.Writer) (formatOptions, bool) {
 	flags := flag.NewFlagSet("fmt", flag.ContinueOnError)
 	flags.SetOutput(stderr)
-	aliases := map[string]string{"check": "c", "diff": "d", "write": "w", "stdin": "s", "stdin-filename": "f", "help": "h"}
+	aliases := map[string]string{
+		"check":          "c",
+		"diff":           "d",
+		"write":          "w",
+		"stdin":          "s",
+		"stdin-filename": "f",
+		"help":           "h",
+	}
 	check := boolOption(flags, "check", "c", false, "report files that would change without writing")
 	diffMode := boolOption(flags, "diff", "d", false, "print full unified diffs without writing")
 	write := boolOption(flags, "write", "w", false, "write formatted source in place")
@@ -293,12 +309,21 @@ func parseFormatOptions(args []string, colorMode ui.ColorMode, stderr io.Writer)
 		}
 	}
 	if len(paths) == 0 {
-		paths = []string{"."}
+		paths = []string{
+			".",
+		}
 	}
 	if modeCount == 0 {
 		*write = true
 	}
-	return formatOptions{check: *check, diff: *diffMode, write: *write, stdin: *stdinMode, stdinFilename: *stdinFilename, paths: paths}, true
+	return formatOptions{
+		check:         *check,
+		diff:          *diffMode,
+		write:         *write,
+		stdin:         *stdinMode,
+		stdinFilename: *stdinFilename,
+		paths:         paths,
+	}, true
 }
 
 func flagWasSet(flags *flag.FlagSet, name string) bool {
@@ -435,7 +460,11 @@ func formatStdin(filename string, formatOptions formatter.Options, colorMode ui.
 }
 
 func formatPaths(options formatOptions, stdout, stderr io.Writer) int {
-	shared, err := workspace.Open(options.paths, workspace.Options{SkipGenerated: true, Root: options.root, Excludes: options.excludes})
+	shared, err := workspace.Open(options.paths, workspace.Options{
+		SkipGenerated: true,
+		Root:          options.root,
+		Excludes:      options.excludes,
+	})
 	if err != nil {
 		printCommandError(stderr, options.colorMode, "strider fmt", "%v", err)
 		return exitError
@@ -490,7 +519,10 @@ func formatFiles(files []*workspace.File, options formatter.Options, verify bool
 						formatted[index] = formattedFile{
 							filename: filename,
 							original: original,
-							result:   formatter.Result{Source: append([]byte(nil), original...), Ignored: true},
+							result: formatter.Result{
+								Source:  append([]byte(nil), original...),
+								Ignored: true,
+							},
 						}
 						return
 					}
@@ -509,7 +541,11 @@ func formatFiles(files []*workspace.File, options formatter.Options, verify bool
 						errorsByFile[index] = err
 						return
 					}
-					formatted[index] = formattedFile{filename: filename, original: original, result: result}
+					formatted[index] = formattedFile{
+						filename: filename,
+						original: original,
+						result:   result,
+					}
 				}()
 			}
 		}()
@@ -602,7 +638,10 @@ func stageFile(file formattedFile) (stagedFile, error) {
 	if err != nil {
 		return stagedFile{}, errors.Join(err, os.Remove(name))
 	}
-	return stagedFile{temporary: name, target: file.filename}, nil
+	return stagedFile{
+		temporary: name,
+		target:    file.filename,
+	}, nil
 }
 
 func printDiff(writer io.Writer, filename string, before, after []byte, palette ui.Palette) {
@@ -679,7 +718,12 @@ func runLint(args []string, configuration config.Config, colorMode ui.ColorMode,
 	}
 	var registry *syntax.Registry
 	var err error
-	registry, err = syntax.NewRegistryWithOptions(syntax.RegistryOptions{Only: only, Settings: syntaxSettings, Root: configuration.Root, MinimumSeverity: minimumSeverity})
+	registry, err = syntax.NewRegistryWithOptions(syntax.RegistryOptions{
+		Only:            only,
+		Settings:        syntaxSettings,
+		Root:            configuration.Root,
+		MinimumSeverity: minimumSeverity,
+	})
 	if err != nil {
 		printCommandError(stderr, colorMode, "strider lint", "%v", err)
 		return exitError
@@ -710,7 +754,11 @@ func listLintRules(registry *syntax.Registry, colorMode ui.ColorMode, stdout io.
 	entries := make([]ruleListEntry, 0, len(registry.Rules()))
 	for _, rule := range registry.Rules() {
 		meta := rule.Meta()
-		entries = append(entries, ruleListEntry{code: meta.Code, severity: registry.Severity(meta.Code), summary: meta.Summary})
+		entries = append(entries, ruleListEntry{
+			code:     meta.Code,
+			severity: registry.Severity(meta.Code),
+			summary:  meta.Summary,
+		})
 	}
 	writeRuleList(stdout, palette, entries)
 	return exitSuccess
@@ -751,7 +799,9 @@ func lintPaths(
 	stdout,
 	stderr io.Writer,
 ) int {
-	files, err := source.Discover(paths, source.Options{SkipGenerated: true})
+	files, err := source.Discover(paths, source.Options{
+		SkipGenerated: true,
+	})
 	if err != nil {
 		printCommandError(stderr, colorMode, "strider lint", "%v", err)
 		return exitError
@@ -822,7 +872,12 @@ func runAnalyze(args []string, configuration config.Config, colorMode ui.ColorMo
 	if !ok {
 		return exitError
 	}
-	registry, err := semantic.NewRegistryWithOptions(semantic.RegistryOptions{Only: only, Settings: semanticSettings, Root: configuration.Root, MinimumSeverity: minimumSeverity})
+	registry, err := semantic.NewRegistryWithOptions(semantic.RegistryOptions{
+		Only:            only,
+		Settings:        semanticSettings,
+		Root:            configuration.Root,
+		MinimumSeverity: minimumSeverity,
+	})
 	if err != nil {
 		printCommandError(stderr, colorMode, "strider analyze", "%v", err)
 		return exitError
@@ -853,7 +908,11 @@ func listAnalyzeRules(registry *semantic.Registry, colorMode ui.ColorMode, stdou
 	entries := make([]ruleListEntry, 0, len(registry.Rules()))
 	for _, rule := range registry.Rules() {
 		meta := rule.Meta()
-		entries = append(entries, ruleListEntry{code: meta.Code, severity: registry.Severity(meta.Code), summary: meta.Summary})
+		entries = append(entries, ruleListEntry{
+			code:     meta.Code,
+			severity: registry.Severity(meta.Code),
+			summary:  meta.Summary,
+		})
 	}
 	writeRuleList(stdout, palette, entries)
 	return exitSuccess
@@ -977,7 +1036,10 @@ func resolveMinimumSeverity(flags *flag.FlagSet, flagValue, configured string, c
 }
 
 func commandSettings(settings map[string]config.RuleConfig, capability checkengine.Capability) (map[string]config.RuleConfig, map[string]bool, error) {
-	registry, err := checkengine.NewRegistry(checkengine.RegistryOptions{Settings: settings, MinimumSeverity: diagnostic.SeverityNone})
+	registry, err := checkengine.NewRegistry(checkengine.RegistryOptions{
+		Settings:        settings,
+		MinimumSeverity: diagnostic.SeverityNone,
+	})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1029,7 +1091,11 @@ func resolveBaselineOptions(
 		}
 		path = absolute
 	}
-	return baselineOptions{path: path, generate: generate, prune: prune}, true
+	return baselineOptions{
+		path:     path,
+		generate: generate,
+		prune:    prune,
+	}, true
 }
 
 func applyBaseline(command string, diagnostics []diagnostic.Diagnostic, options baselineOptions, colorMode ui.ColorMode, stderr io.Writer) ([]diagnostic.Diagnostic, bool, error) {

@@ -230,7 +230,11 @@ func (index *deprecationIndex) addObject(fileSet *token.FileSet, object types.Ob
 	parsed := index.declarationFile(filename)
 	needsPhysicalFallback := !index.isPhysicalFile(declaration.Pkg(), filename)
 	for _, owner := range deprecationObjectOwners(declaration) {
-		key := deprecationSourceKey{line: position.Line, name: declaration.Name(), owner: owner}
+		key := deprecationSourceKey{
+			line:  position.Line,
+			name:  declaration.Name(),
+			owner: owner,
+		}
 		message := parsed.declarations[key]
 		if message == "" && needsPhysicalFallback {
 			message = index.physicalDeclarationMessage(declaration.Pkg(), key)
@@ -285,7 +289,9 @@ func deprecationObjectOwners(object types.Object) []string {
 		signature, _ := object.Type().(*types.Signature)
 		if signature != nil && signature.Recv() != nil {
 			if name := deprecationReceiverTypeName(signature.Recv().Type()); name != "" {
-				return []string{name}
+				return []string{
+					name,
+				}
 			}
 			return nil
 		}
@@ -297,7 +303,9 @@ func deprecationObjectOwners(object types.Object) []string {
 			return objectTypeOwners(object)
 		}
 	}
-	return []string{""}
+	return []string{
+		"",
+	}
 }
 
 func deprecationReceiverTypeName(value types.Type) string {
@@ -355,7 +363,9 @@ func (index *deprecationIndex) declarationFile(filename string) parsedDeprecatio
 	if parsed, ok := index.declarationFiles[filename]; ok {
 		return parsed
 	}
-	parsed := parsedDeprecationFile{declarations: make(map[deprecationSourceKey]string)}
+	parsed := parsedDeprecationFile{
+		declarations: make(map[deprecationSourceKey]string),
+	}
 	fileSet := token.NewFileSet()
 	file, err := parser.ParseFile(fileSet, filename, nil, parser.ParseComments|parser.SkipObjectResolution)
 	if err != nil {
@@ -414,7 +424,11 @@ func collectFieldDeprecations(fileSet *token.FileSet, expression ast.Expr, owner
 
 func addDeprecatedDeclaration(fileSet *token.FileSet, declarations map[deprecationSourceKey]string, name *ast.Ident, owner string, message string) {
 	if name != nil && message != "" {
-		declarations[deprecationSourceKey{line: fileSet.Position(name.Pos()).Line, name: name.Name, owner: owner}] = message
+		declarations[deprecationSourceKey{
+			line:  fileSet.Position(name.Pos()).Line,
+			name:  name.Name,
+			owner: owner,
+		}] = message
 	}
 }
 

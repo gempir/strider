@@ -27,6 +27,7 @@ type concreteLayout struct {
 	hardClose     []bool
 	softOpen      []int
 	softClose     []bool
+	forceBreak    []bool
 	softSemis     []bool
 	topSemis      []bool
 	spacedOps     []bool
@@ -60,7 +61,10 @@ type concreteWriter struct {
 
 func renderConcreteWithModule(tree *cst.Tree, options Options, module string) string {
 	layout := newConcreteLayout(tree, module)
-	writer := concreteWriter{lineStart: true, maxEmptyLines: 1}
+	writer := concreteWriter{
+		lineStart:     true,
+		maxEmptyLines: 1,
+	}
 	source := tree.Bytes()
 	writer.output.Grow(len(source))
 	comments := tree.Comments()
@@ -120,8 +124,11 @@ func renderConcreteWithModule(tree *cst.Tree, options Options, module string) st
 			}
 			writer.write(current.Src(), -1)
 			close := layout.softOpen[index]
-			broken := layout.shouldBreak(index, close, writer.column, options.PrintWidth, comments, source, true)
-			groups = append(groups, concreteGroup{close: close, broken: broken})
+			broken := close != index+1 && (layout.forceBreak[index] || layout.shouldBreak(index, close, writer.column, options.PrintWidth, comments, source, true))
+			groups = append(groups, concreteGroup{
+				close:  close,
+				broken: broken,
+			})
 			if broken && close != index+1 {
 				writer.indent++
 				writer.requestNewlines(1)
@@ -204,7 +211,7 @@ func newConcreteLayout(tree *cst.Tree, module string) *concreteLayout {
 	tokens := tree.Tokens()
 	tokenCount := len(tokens)
 	integerStorage := make([]int, tokenCount*2)
-	booleanStorage := make([]bool, tokenCount*12)
+	booleanStorage := make([]bool, tokenCount*13)
 	layout := &concreteLayout{
 		tree:          tree,
 		tokens:        tokens,
@@ -213,16 +220,17 @@ func newConcreteLayout(tree *cst.Tree, module string) *concreteLayout {
 		hardClose:     booleanStorage[:tokenCount],
 		softOpen:      integerStorage[tokenCount:],
 		softClose:     booleanStorage[tokenCount : 2*tokenCount],
-		softSemis:     booleanStorage[2*tokenCount : 3*tokenCount],
-		topSemis:      booleanStorage[3*tokenCount : 4*tokenCount],
-		spacedOps:     booleanStorage[4*tokenCount : 5*tokenCount],
-		spaceBefore:   booleanStorage[5*tokenCount : 6*tokenCount],
-		unaryOps:      booleanStorage[6*tokenCount : 7*tokenCount],
-		channelArrows: booleanStorage[7*tokenCount : 8*tokenCount],
-		spacedAfter:   booleanStorage[8*tokenCount : 9*tokenCount],
-		labelColons:   booleanStorage[9*tokenCount : 10*tokenCount],
-		caseTokens:    booleanStorage[10*tokenCount : 11*tokenCount],
-		caseColons:    booleanStorage[11*tokenCount:],
+		forceBreak:    booleanStorage[2*tokenCount : 3*tokenCount],
+		softSemis:     booleanStorage[3*tokenCount : 4*tokenCount],
+		topSemis:      booleanStorage[4*tokenCount : 5*tokenCount],
+		spacedOps:     booleanStorage[5*tokenCount : 6*tokenCount],
+		spaceBefore:   booleanStorage[6*tokenCount : 7*tokenCount],
+		unaryOps:      booleanStorage[7*tokenCount : 8*tokenCount],
+		channelArrows: booleanStorage[8*tokenCount : 9*tokenCount],
+		spacedAfter:   booleanStorage[9*tokenCount : 10*tokenCount],
+		labelColons:   booleanStorage[10*tokenCount : 11*tokenCount],
+		caseTokens:    booleanStorage[11*tokenCount : 12*tokenCount],
+		caseColons:    booleanStorage[12*tokenCount:],
 		importStart:   -1,
 		importEnd:     -1,
 		module:        module,
@@ -264,6 +272,12 @@ func (l *concreteLayout) indexTree() {
 			default:
 				if strings.HasPrefix(kind, "Arguments") {
 					l.markDelimited(node, token.LPAREN, token.RPAREN, l.softOpen, l.softClose)
+				}
+			}
+			if kind == "LiteralValue" {
+				tokens := cst.NodeTokens(node)
+				if len(tokens) != 0 {
+					l.markToken(tokens[0], l.forceBreak)
 				}
 			}
 			switch kind {
@@ -470,7 +484,10 @@ func (l *concreteLayout) indexImports() {
 					case spec.PackageName.IsValid():
 						name = spec.PackageName.Src()
 					}
-					l.imports = append(l.imports, concreteImport{name: name, path: spec.ImportPath.Src()})
+					l.imports = append(l.imports, concreteImport{
+						name: name,
+						path: spec.ImportPath.Src(),
+					})
 					return false
 				},
 			)
@@ -590,7 +607,9 @@ func (c *modulePathCache) find(filename string) string {
 }
 
 func (c *modulePathCache) store(directories []string, path string) {
-	entry := cachedModulePath{path: path}
+	entry := cachedModulePath{
+		path: path,
+	}
 	for _, directory := range directories {
 		c.entries.LoadOrStore(directory, entry)
 	}
@@ -700,7 +719,17 @@ func normalizeLineComment(comment string) string {
 		return comment
 	}
 	body := comment[2:]
-	for _, prefix := range []string{"go:", "line ", "+build", "nolint", "strider:", "Code generated", "TODO", "FIXME", "#"} {
+	for _, prefix := range []string{
+		"go:",
+		"line ",
+		"+build",
+		"nolint",
+		"strider:",
+		"Code generated",
+		"TODO",
+		"FIXME",
+		"#",
+	} {
 		if strings.HasPrefix(body, prefix) {
 			return comment
 		}

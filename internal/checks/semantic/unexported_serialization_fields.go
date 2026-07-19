@@ -31,7 +31,10 @@ func (unexportedSerializationFieldsRule) Meta() Meta {
 
 func (unexportedSerializationFieldsRule) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
-	for _, packagePath := range []string{"encoding/json", "encoding/xml"} {
+	for _, packagePath := range []string{
+		"encoding/json",
+		"encoding/xml",
+	} {
 		for _, call := range pass.staticCallsInPackage(packagePath) {
 			descriptor, ok := serializationDescriptor(call)
 			if !ok || len(call.Common().Args) <= descriptor.ssaArgument {
@@ -57,7 +60,12 @@ func (unexportedSerializationFieldsRule) Run(pass *Pass) {
 
 func serializationDescriptor(call ssa.CallInstruction) (serializationCall, bool) {
 	if descriptor, ok := marshalDescriptor(call); ok {
-		return serializationCall{format: descriptor.format, direction: "marshaling", ssaArgument: descriptor.ssaArgument, sourceArgument: descriptor.sourceArgument}, true
+		return serializationCall{
+			format:         descriptor.format,
+			direction:      "marshaling",
+			ssaArgument:    descriptor.ssaArgument,
+			sourceArgument: descriptor.sourceArgument,
+		}, true
 	}
 	if descriptor, ok := unmarshalDescriptor(call); ok {
 		format := "JSON"
@@ -65,7 +73,12 @@ func serializationDescriptor(call ssa.CallInstruction) (serializationCall, bool)
 		if callee != nil && callee.Object() != nil && callee.Object().Pkg() != nil && callee.Object().Pkg().Path() == "encoding/xml" {
 			format = "XML"
 		}
-		return serializationCall{format: format, direction: "unmarshaling", ssaArgument: descriptor.ssaArgument, sourceArgument: descriptor.sourceArgument}, true
+		return serializationCall{
+			format:         format,
+			direction:      "unmarshaling",
+			ssaArgument:    descriptor.ssaArgument,
+			sourceArgument: descriptor.sourceArgument,
+		}, true
 	}
 	return serializationCall{}, false
 }
@@ -112,9 +125,13 @@ func hasVisibleSerializationField(structure *types.Struct, seen map[*types.Struc
 }
 
 func hasCustomSerializationMethod(valueType types.Type, descriptor serializationCall) bool {
-	names := []string{"MarshalText"}
+	names := []string{
+		"MarshalText",
+	}
 	if descriptor.direction == "unmarshaling" {
-		names = []string{"UnmarshalText"}
+		names = []string{
+			"UnmarshalText",
+		}
 		if descriptor.format == "JSON" {
 			names = append(names, "UnmarshalJSON")
 		} else {

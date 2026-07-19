@@ -82,7 +82,11 @@ func Capture(shared *workspace.Workspace) (Snapshot, error) {
 	if shared == nil {
 		return Snapshot{}, fmt.Errorf("capture fixes: nil workspace")
 	}
-	snapshot := Snapshot{Inputs: shared.Inputs(), Files: make(map[string]FileSnapshot), aliases: make(map[string]string)}
+	snapshot := Snapshot{
+		Inputs:  shared.Inputs(),
+		Files:   make(map[string]FileSnapshot),
+		aliases: make(map[string]string),
+	}
 	targets := make(map[string]string)
 	type capturedTarget struct {
 		path     string
@@ -126,9 +130,25 @@ func Capture(shared *workspace.Workspace) (Snapshot, error) {
 			}
 		}
 		targets[resolved] = path
-		identities[identity] = append(identities[identity], capturedTarget{path: path, resolved: resolved, info: info})
-		snapshot.Files[path] = FileSnapshot{Path: path, ResolvedPath: resolved, Before: append([]byte(nil), contents...), Identity: identity}
-		for _, alias := range []string{path, resolved, filepath.ToSlash(path), filepath.ToSlash(resolved), source.DisplayPath(path), source.DisplayPath(resolved)} {
+		identities[identity] = append(identities[identity], capturedTarget{
+			path:     path,
+			resolved: resolved,
+			info:     info,
+		})
+		snapshot.Files[path] = FileSnapshot{
+			Path:         path,
+			ResolvedPath: resolved,
+			Before:       append([]byte(nil), contents...),
+			Identity:     identity,
+		}
+		for _, alias := range []string{
+			path,
+			resolved,
+			filepath.ToSlash(path),
+			filepath.ToSlash(resolved),
+			source.DisplayPath(path),
+			source.DisplayPath(resolved),
+		} {
 			if err := snapshot.addAlias(alias, path); err != nil {
 				return Snapshot{}, err
 			}
@@ -195,7 +215,11 @@ func Plan(snapshot Snapshot, diagnostics []diagnostic.Diagnostic, candidates map
 		if !ok {
 			return Result{}, fmt.Errorf("plan fix %s for %s: diagnostic file was not in the analyzed workspace", item.Code, item.File)
 		}
-		current := proposal{code: item.Code, file: file, safety: automatic.Safety}
+		current := proposal{
+			code:   item.Code,
+			file:   file,
+			safety: automatic.Safety,
+		}
 		if item.Code == "format" {
 			if len(automatic.Edits) != 0 {
 				return Result{}, fmt.Errorf("plan fix format for %s: formatter fix must not expose text edits", item.File)
@@ -226,7 +250,11 @@ func Plan(snapshot Snapshot, diagnostics []diagnostic.Diagnostic, candidates map
 		if conflicts[index] {
 			result.Skipped = append(
 				result.Skipped,
-				Skipped{File: source.DisplayPath(current.file.Path), Code: current.code, Reason: "overlaps another non-identical automatic fix"},
+				Skipped{
+					File:   source.DisplayPath(current.file.Path),
+					Code:   current.code,
+					Reason: "overlaps another non-identical automatic fix",
+				},
 			)
 			continue
 		}
@@ -258,7 +286,11 @@ func Plan(snapshot Snapshot, diagnostics []diagnostic.Diagnostic, candidates map
 	for path, file := range snapshot.Files {
 		finalSources[path] = append([]byte(nil), file.Before...)
 		finalSources[file.ResolvedPath] = append([]byte(nil), file.Before...)
-		result.guards = append(result.guards, filewrite.Guard{Path: path, Before: file.Before, ExpectedTarget: file.ResolvedPath})
+		result.guards = append(result.guards, filewrite.Guard{
+			Path:           path,
+			Before:         file.Before,
+			ExpectedTarget: file.ResolvedPath,
+		})
 	}
 	sort.Slice(result.guards, func(left, right int) bool {
 		return result.guards[left].Path < result.guards[right].Path
@@ -286,7 +318,11 @@ func Plan(snapshot Snapshot, diagnostics []diagnostic.Diagnostic, candidates map
 		finalSources[path] = after
 		finalSources[file.ResolvedPath] = after
 		if !bytes.Equal(file.Before, after) {
-			result.Changes = append(result.Changes, Change{Path: path, Before: file.Before, After: after})
+			result.Changes = append(result.Changes, Change{
+				Path:   path,
+				Before: file.Before,
+				After:  after,
+			})
 		}
 	}
 
@@ -492,7 +528,11 @@ func formatterCandidate(snapshot Snapshot, candidates map[string]formatter.Resul
 func Apply(result Result) error {
 	changes := make([]filewrite.Change, 0, len(result.Changes))
 	for _, change := range result.Changes {
-		changes = append(changes, filewrite.Change{Path: change.Path, Before: change.Before, After: change.After})
+		changes = append(changes, filewrite.Change{
+			Path:   change.Path,
+			Before: change.Before,
+			After:  change.After,
+		})
 	}
 	if err := filewrite.WriteBatch(changes, result.guards...); err != nil {
 		return fmt.Errorf("apply fixes: %w", err)

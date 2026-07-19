@@ -42,7 +42,10 @@ type Result struct {
 // Generate constructs a deterministic baseline from diagnostics.
 func Generate(path string, diagnostics []diagnostic.Diagnostic) (File, error) {
 	directory := filepath.Dir(path)
-	baseline := File{Version: Version, Variant: Strict}
+	baseline := File{
+		Version: Version,
+		Variant: Strict,
+	}
 	for _, item := range diagnostics {
 		issue, err := strictIssue(directory, item)
 		if err != nil {
@@ -111,7 +114,12 @@ func ApplyCatalogSelection(path string, baseline File, diagnostics []diagnostic.
 
 func applySelection(path string, baseline File, diagnostics []diagnostic.Diagnostic, selectedCodes, knownCodes map[string]bool) (Result, error) {
 	directory := filepath.Dir(path)
-	result := Result{Matched: File{Version: Version, Variant: baseline.Variant}}
+	result := Result{
+		Matched: File{
+			Version: Version,
+			Variant: baseline.Variant,
+		},
+	}
 	remaining := make(map[string]int, len(baseline.Issues))
 	templates := make(map[string]Issue, len(baseline.Issues))
 	for _, issue := range baseline.Issues {
@@ -185,7 +193,12 @@ func strictIssue(directory string, item diagnostic.Diagnostic) (Issue, error) {
 	if err != nil {
 		return Issue{}, err
 	}
-	return Issue{File: file, Code: item.Code, StartLine: item.Start.Line, EndLine: item.End.Line}, nil
+	return Issue{
+		File:      file,
+		Code:      item.Code,
+		StartLine: item.Start.Line,
+		EndLine:   item.End.Line,
+	}, nil
 }
 
 func relativeFile(directory, filename string) (string, error) {

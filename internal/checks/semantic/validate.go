@@ -14,7 +14,11 @@ func ValidateOverlay(paths []string, overlay map[string][]byte) error {
 	if err != nil {
 		return err
 	}
-	loaded, err := packages.Load(&packages.Config{Mode: loadMode, Tests: true, Overlay: overlay}, patterns...)
+	loaded, err := packages.Load(&packages.Config{
+		Mode:    loadMode,
+		Tests:   true,
+		Overlay: overlay,
+	}, patterns...)
 	if err != nil {
 		return fmt.Errorf("validate fixes: %w", err)
 	}

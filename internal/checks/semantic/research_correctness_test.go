@@ -22,12 +22,36 @@ func TestResearchCorrectnessRuleMetadata(t *testing.T) {
 		code     string
 		severity diagnostic.Severity
 	}{
-		{nilErrorReturnRule{}, "nil-error-return", diagnostic.SeverityError},
-		{nilValueWithNilErrorRule{}, "nil-value-with-nil-error", diagnostic.SeverityWarning},
-		{unclosedHTTPResponseBodyRule{}, "unclosed-http-response-body", diagnostic.SeverityError},
-		{unclosedSQLResourceRule{}, "unclosed-sql-resource", diagnostic.SeverityError},
-		{contextCancelInLoopRule{}, "context-cancel-in-loop", diagnostic.SeverityWarning},
-		{copyLockValueRule{}, "copy-lock-value", diagnostic.SeverityError},
+		{
+			nilErrorReturnRule{},
+			"nil-error-return",
+			diagnostic.SeverityError,
+		},
+		{
+			nilValueWithNilErrorRule{},
+			"nil-value-with-nil-error",
+			diagnostic.SeverityWarning,
+		},
+		{
+			unclosedHTTPResponseBodyRule{},
+			"unclosed-http-response-body",
+			diagnostic.SeverityError,
+		},
+		{
+			unclosedSQLResourceRule{},
+			"unclosed-sql-resource",
+			diagnostic.SeverityError,
+		},
+		{
+			contextCancelInLoopRule{},
+			"context-cancel-in-loop",
+			diagnostic.SeverityWarning,
+		},
+		{
+			copyLockValueRule{},
+			"copy-lock-value",
+			diagnostic.SeverityError,
+		},
 	}
 	for _, test := range tests {
 		meta := test.rule.Meta()
@@ -574,10 +598,14 @@ func runResearchCorrectnessRule(t *testing.T, rule Rule, source string) []resear
 		t.Fatal(err)
 	}
 	ssaPackage, typeInfo, err := ssautil.BuildPackage(
-		&types.Config{Importer: importer.Default()},
+		&types.Config{
+			Importer: importer.Default(),
+		},
 		fileSet,
 		types.NewPackage("example.com/researchfixture", "fixture"),
-		[]*ast.File{file},
+		[]*ast.File{
+			file,
+		},
 		ssa.InstantiateGenerics,
 	)
 	if err != nil {
@@ -586,17 +614,24 @@ func runResearchCorrectnessRule(t *testing.T, rule Rule, source string) []resear
 	reports := make([]researchCorrectnessReport, 0)
 	pass := &Pass{
 		PackagePath: "example.com/researchfixture",
-		Files:       []*ast.File{file},
-		FileSet:     fileSet,
-		Types:       ssaPackage.Pkg,
-		TypesSizes:  types.SizesFor("gc", runtime.GOARCH),
-		TypesInfo:   typeInfo,
-		SSAProgram:  ssaPackage.Prog,
-		SSAPackage:  ssaPackage,
-		Functions:   collectPackageFunctions(ssaPackage.Prog, []*ssa.Package{ssaPackage})[ssaPackage],
+		Files: []*ast.File{
+			file,
+		},
+		FileSet:    fileSet,
+		Types:      ssaPackage.Pkg,
+		TypesSizes: types.SizesFor("gc", runtime.GOARCH),
+		TypesInfo:  typeInfo,
+		SSAProgram: ssaPackage.Prog,
+		SSAPackage: ssaPackage,
+		Functions: collectPackageFunctions(ssaPackage.Prog, []*ssa.Package{
+			ssaPackage,
+		})[ssaPackage],
 	}
 	pass.report = func(node ast.Node, message string, _ []diagnostic.Fix) {
-		reports = append(reports, researchCorrectnessReport{position: fileSet.Position(node.Pos()), message: message})
+		reports = append(reports, researchCorrectnessReport{
+			position: fileSet.Position(node.Pos()),
+			message:  message,
+		})
 	}
 	rule.Run(pass)
 	return reports

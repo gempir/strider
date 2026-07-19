@@ -35,7 +35,9 @@ func (invalidURLRule) Run(pass *Pass) {
 		if _, err := url.Parse(rawURL); err != nil {
 			node := calls[call.Pos()]
 			if node == nil {
-				node = positionNode{position: call.Pos()}
+				node = positionNode{
+					position: call.Pos(),
+				}
 			}
 			pass.Report(node, fmt.Sprintf("%q is not a valid URL: %s", rawURL, err))
 		}

@@ -136,7 +136,9 @@ func run(options options) error {
 	if err != nil {
 		return err
 	}
-	expected := baseline{Version: schemaVersion}
+	expected := baseline{
+		Version: schemaVersion,
+	}
 	if options.mode == "check" {
 		expected, err = readBaseline(options.baselinePath)
 		if err != nil {
@@ -145,21 +147,39 @@ func run(options options) error {
 	}
 
 	started := time.Now()
-	results := report{Passed: true}
-	actual := baseline{Version: schemaVersion}
+	results := report{
+		Passed: true,
+	}
+	actual := baseline{
+		Version: schemaVersion,
+	}
 	projectHTMLPath := options.projectHTMLPath
 	if projectHTMLPath == "" {
 		projectHTMLPath = filepath.Join(filepath.Dir(options.htmlPath), "projects")
 	}
 	for _, item := range configuration.Projects {
 		checkout, checkoutErr := prepareProject(options.cachePath, item)
-		projectReport := projectResult{Name: item.Name, Repository: item.Repository, Revision: item.Revision}
-		projectBaseline := baselineProject{Name: item.Name, Revision: item.Revision, Operations: map[string]signature{}}
+		projectReport := projectResult{
+			Name:       item.Name,
+			Repository: item.Repository,
+			Revision:   item.Revision,
+		}
+		projectBaseline := baselineProject{
+			Name:       item.Name,
+			Revision:   item.Revision,
+			Operations: map[string]signature{},
+		}
 		if checkoutErr != nil {
 			results.Passed = false
-			projectReport.Operations = append(projectReport.Operations, operationResult{Name: "prepare", Error: checkoutErr.Error()})
+			projectReport.Operations = append(projectReport.Operations, operationResult{
+				Name:  "prepare",
+				Error: checkoutErr.Error(),
+			})
 		} else {
-			for _, operation := range []string{"format", "check"} {
+			for _, operation := range []string{
+				"format",
+				"check",
+			} {
 				observed := runOperation(strider, checkout, operation, item)
 				expectedSignature, found := findExpected(expected, item.Name, item.Revision, operation)
 				observed.BaselineMatch = options.mode == "update" || (found && reflect.DeepEqual(expectedSignature, observed.signature()))
@@ -221,7 +241,10 @@ func writeHomepageStats(path string, results report, projectName string) error {
 		if project.Name != projectName {
 			continue
 		}
-		stats := homepageStats{Project: project.Name, Revision: project.Revision}
+		stats := homepageStats{
+			Project:  project.Name,
+			Revision: project.Revision,
+		}
 		for _, operation := range project.Operations {
 			switch operation.Name {
 			case "format":
@@ -255,7 +278,10 @@ func readManifest(path string) (manifest, error) {
 			return result, fmt.Errorf("invalid project entry %q", item.Name)
 		}
 		seen[item.Name] = true
-		for _, operation := range []string{"format", "check"} {
+		for _, operation := range []string{
+			"format",
+			"check",
+		} {
 			if item.BudgetsMS[operation] <= 0 {
 				return result, fmt.Errorf("%s has no positive %s budget", item.Name, operation)
 			}
@@ -338,23 +364,50 @@ func commandOutput(directory, name string, arguments ...string) ([]byte, error) 
 }
 
 func runOperation(strider, checkout, operation string, item project) operationResult {
-	arguments := map[string][]string{"format": {"--no-config", "fmt", "--check"}, "check": {"--no-config", "check", "--minimum-severity", "note", "--format", "json"}}[operation]
+	arguments := map[string][]string{
+		"format": {
+			"--no-config",
+			"fmt",
+			"--check",
+		},
+		"check": {
+			"--no-config",
+			"check",
+			"--minimum-severity",
+			"note",
+			"--format",
+			"json",
+		},
+	}[operation]
 	if len(item.FormatExcludes) != 0 {
 		configPath := filepath.Join(checkout, ".strider-corpus.toml")
 		encoded, err := json.Marshal(item.FormatExcludes)
 		if err != nil {
-			return operationResult{Name: operation, BudgetMS: item.BudgetsMS[operation], Error: err.Error()}
+			return operationResult{
+				Name:     operation,
+				BudgetMS: item.BudgetsMS[operation],
+				Error:    err.Error(),
+			}
 		}
 		contents := []byte("version = 1\n[formatter]\nexcludes = " + string(encoded) + "\n")
 		if err := os.WriteFile(configPath, contents, 0o600); err != nil {
-			return operationResult{Name: operation, BudgetMS: item.BudgetsMS[operation], Error: err.Error()}
+			return operationResult{
+				Name:     operation,
+				BudgetMS: item.BudgetsMS[operation],
+				Error:    err.Error(),
+			}
 		}
 		defer os.Remove(configPath)
-		arguments = append([]string{"--config", configPath}, arguments[1:]...)
+		arguments = append([]string{
+			"--config",
+			configPath,
+		}, arguments[1:]...)
 	}
 	paths := item.Paths
 	if len(paths) == 0 {
-		paths = []string{"."}
+		paths = []string{
+			".",
+		}
 	}
 	arguments = append(arguments, paths...)
 	budget := item.BudgetsMS[operation]
@@ -375,10 +428,21 @@ func runOperation(strider, checkout, operation string, item project) operationRe
 		if errors.As(err, &exitError) {
 			exitCode = exitError.ExitCode()
 		} else {
-			return operationResult{Name: operation, DurationMS: duration, BudgetMS: budget, Error: err.Error()}
+			return operationResult{
+				Name:       operation,
+				DurationMS: duration,
+				BudgetMS:   budget,
+				Error:      err.Error(),
+			}
 		}
 	}
-	result := operationResult{Name: operation, ExitCode: exitCode, DurationMS: duration, BudgetMS: budget, WithinBudget: duration <= int64(budget)}
+	result := operationResult{
+		Name:         operation,
+		ExitCode:     exitCode,
+		DurationMS:   duration,
+		BudgetMS:     budget,
+		WithinBudget: duration <= int64(budget),
+	}
 	if exitCode > 1 {
 		result.Error = strings.TrimSpace(stderr.String())
 		if result.Error == "" {
@@ -410,7 +474,10 @@ func writeProjectReport(htmlRoot string, project projectResult, sourceRoot strin
 	diagnostics := make([]diagnosticmodel.Diagnostic, 0)
 	timings := make([]reporter.HTMLTiming, 0, len(project.Operations))
 	for _, operation := range project.Operations {
-		timings = append(timings, reporter.HTMLTiming{Name: operation.Name, DurationMS: operation.DurationMS})
+		timings = append(timings, reporter.HTMLTiming{
+			Name:       operation.Name,
+			DurationMS: operation.DurationMS,
+		})
 		if operation.Name != "check" {
 			continue
 		}
@@ -427,7 +494,12 @@ func writeProjectReport(htmlRoot string, project projectResult, sourceRoot strin
 	defer file.Close()
 	return reporter.HTMLWithOptions(
 		file,
-		reporter.HTMLOptions{Title: "Strider corpus: " + project.Name, SourceRoot: sourceRoot, Timings: timings, MaxDiagnostics: projectReportDiagnosticLimit},
+		reporter.HTMLOptions{
+			Title:          "Strider corpus: " + project.Name,
+			SourceRoot:     sourceRoot,
+			Timings:        timings,
+			MaxDiagnostics: projectReportDiagnosticLimit,
+		},
 		diagnostics,
 	)
 }
@@ -452,7 +524,12 @@ func nonEmptyLines(value string) int {
 }
 
 func (result operationResult) signature() signature {
-	return signature{ExitCode: result.ExitCode, Digest: result.Digest, Findings: result.Findings, ByCode: result.ByCode}
+	return signature{
+		ExitCode: result.ExitCode,
+		Digest:   result.Digest,
+		Findings: result.Findings,
+		ByCode:   result.ByCode,
+	}
 }
 
 func findExpected(data baseline, name, revision, operation string) (signature, bool) {

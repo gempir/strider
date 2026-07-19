@@ -38,7 +38,9 @@ func (regexpMatchInLoopRule) Run(pass *Pass) {
 					continue
 				}
 				pass.Report(
-					positionNode{position: call.Pos()},
+					positionNode{
+						position: call.Pos(),
+					},
 					fmt.Sprintf("regexp.%s recompiles a constant pattern on every loop iteration; compile it once before the loop", name),
 				)
 			}

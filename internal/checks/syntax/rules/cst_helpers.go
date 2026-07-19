@@ -73,7 +73,21 @@ func isErrorConstructor(name string) bool {
 
 func hasTimeUnitSuffix(name string) bool {
 	lower := strings.ToLower(name)
-	for _, suffix := range []string{"ns", "us", "ms", "sec", "secs", "second", "seconds", "min", "mins", "minute", "minutes", "hour", "hours"} {
+	for _, suffix := range []string{
+		"ns",
+		"us",
+		"ms",
+		"sec",
+		"secs",
+		"second",
+		"seconds",
+		"min",
+		"mins",
+		"minute",
+		"minutes",
+		"hour",
+		"hours",
+	} {
 		if strings.HasSuffix(lower, suffix) {
 			return true
 		}

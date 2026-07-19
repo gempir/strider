@@ -88,5 +88,8 @@ func concreteFingerprint(tree *cst.Tree) syntaxFingerprint {
 	}
 	visit(tree.Root())
 	sort.Strings(imports)
-	return syntaxFingerprint{imports: imports, syntax: output}
+	return syntaxFingerprint{
+		imports: imports,
+		syntax:  output,
+	}
 }

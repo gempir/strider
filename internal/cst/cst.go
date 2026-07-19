@@ -123,7 +123,11 @@ func Parse(filename string, source []byte) (*Tree, error) {
 	// modernc's parser takes ownership of source and its tokens retain offsets
 	// into that buffer. Keeping the same immutable slice avoids a redundant
 	// full-file copy while preserving the parser's existing ownership contract.
-	return &Tree{filename: filename, root: root, source: source}, nil
+	return &Tree{
+		filename: filename,
+		root:     root,
+		source:   source,
+	}, nil
 }
 
 // Root returns the source-file production. The EOF token is available through
@@ -177,7 +181,13 @@ func (t *Tree) Comments() []Comment {
 				}
 				start := file.Offset(position)
 				location := file.Position(position)
-				t.comments = append(t.comments, Comment{Text: literal, Start: start, End: start + len(literal), Line: location.Line, Column: location.Column})
+				t.comments = append(t.comments, Comment{
+					Text:   literal,
+					Start:  start,
+					End:    start + len(literal),
+					Line:   location.Line,
+					Column: location.Column,
+				})
 			}
 		},
 	)
@@ -291,7 +301,12 @@ func (t *Tree) Position(offset int) token.Position {
 	if lineIndex < 0 {
 		lineIndex = 0
 	}
-	return token.Position{Filename: t.filename, Offset: offset, Line: lineIndex + 1, Column: offset - t.lines[lineIndex] + 1}
+	return token.Position{
+		Filename: t.filename,
+		Offset:   offset,
+		Line:     lineIndex + 1,
+		Column:   offset - t.lines[lineIndex] + 1,
+	}
 }
 
 // Tokens returns every token in source order, including the EOF token. Trivia
@@ -395,7 +410,9 @@ func WalkWithAncestors(node Node, visit func(Node, []Node) bool) {
 		if !visit(current.node, ancestors) {
 			continue
 		}
-		stack = append(stack, item{exit: true})
+		stack = append(stack, item{
+			exit: true,
+		})
 		ancestors = append(ancestors, current.node)
 		stack = appendChildItemsReverse(stack, current.node)
 	}
@@ -429,7 +446,9 @@ func WalkProductionsWithAncestors(node Node, visit func(Node, []Node) bool) {
 		if !visit(current.node, ancestors) {
 			continue
 		}
-		stack = append(stack, item{exit: true})
+		stack = append(stack, item{
+			exit: true,
+		})
 		ancestors = append(ancestors, current.node)
 		stack = appendProductionChildItemsReverse(stack, current.node)
 	}
@@ -472,7 +491,10 @@ func childFields(valueType reflect.Type) []childField {
 		if !field.IsExported() {
 			continue
 		}
-		fields = append(fields, childField{index: index, slice: field.Type.Kind() == reflect.Slice})
+		fields = append(fields, childField{
+			index: index,
+			slice: field.Type.Kind() == reflect.Slice,
+		})
 	}
 	childFieldsCache.Store(valueType, fields)
 	return fields
@@ -527,13 +549,17 @@ func appendChildItemsReverse[T ~struct {
 		plan := fields[fieldIndex]
 		field := value.Field(plan.index)
 		if child, ok := nodeValue(field); ok {
-			stack = append(stack, T{node: child})
+			stack = append(stack, T{
+				node: child,
+			})
 			continue
 		}
 		if plan.slice {
 			for item := field.Len() - 1; item >= 0; item-- {
 				if child, ok := nodeValue(field.Index(item)); ok {
-					stack = append(stack, T{node: child})
+					stack = append(stack, T{
+						node: child,
+					})
 				}
 			}
 		}
@@ -561,14 +587,18 @@ func appendProductionChildItemsReverse[T ~struct {
 		field := value.Field(plan.index)
 		if child, ok := nodeValue(field); ok {
 			if !tokenNode(child) {
-				stack = append(stack, T{node: child})
+				stack = append(stack, T{
+					node: child,
+				})
 			}
 			continue
 		}
 		if plan.slice {
 			for item := field.Len() - 1; item >= 0; item-- {
 				if child, ok := nodeValue(field.Index(item)); ok && !tokenNode(child) {
-					stack = append(stack, T{node: child})
+					stack = append(stack, T{
+						node: child,
+					})
 				}
 			}
 		}

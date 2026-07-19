@@ -3,7 +3,12 @@ package diagnostic
 import "testing"
 
 func TestSeverityOrdering(t *testing.T) {
-	severities := []Severity{SeverityNone, SeverityNote, SeverityWarning, SeverityError}
+	severities := []Severity{
+		SeverityNone,
+		SeverityNote,
+		SeverityWarning,
+		SeverityError,
+	}
 	for index, severity := range severities {
 		if !ValidSeverity(severity) {
 			t.Fatalf("known severity %q is invalid", severity)

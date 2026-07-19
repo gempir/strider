@@ -38,7 +38,9 @@ func (testingFatalInGoroutineRule) Run(pass *Pass) {
 				if method == "" {
 					continue
 				}
-				pass.Report(positionNode{position: started.Pos()}, fmt.Sprintf("%s must be called from the test goroutine, not a child goroutine", method))
+				pass.Report(positionNode{
+					position: started.Pos(),
+				}, fmt.Sprintf("%s must be called from the test goroutine, not a child goroutine", method))
 			}
 		}
 	}

@@ -24,7 +24,10 @@ func (zeroReplacementLimitRule) Meta() Meta {
 
 func (zeroReplacementLimitRule) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
-	for _, packagePath := range []string{"bytes", "strings"} {
+	for _, packagePath := range []string{
+		"bytes",
+		"strings",
+	} {
 		for _, call := range pass.staticCallsInPackage(packagePath) {
 			if len(call.Common().Args) <= 3 || !isReplacementCall(call) {
 				continue

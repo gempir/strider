@@ -84,13 +84,22 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 	syntaxSettings := selectedSettings(normalizedSettings, syntaxCodes)
 	semanticSettings := selectedSettings(normalizedSettings, semanticCodes)
 
-	registry := &Registry{settings: make(map[string]configuredRule, len(available)), knownCodes: make(map[string]bool, len(available)), root: options.Root}
+	registry := &Registry{
+		settings:   make(map[string]configuredRule, len(available)),
+		knownCodes: make(map[string]bool, len(available)),
+		root:       options.Root,
+	}
 	for _, meta := range available {
 		registry.knownCodes[meta.Code] = true
 	}
 	if !explicit || len(syntaxOnly) != 0 {
 		registry.syntax, err = syntax.NewRegistryWithOptions(
-			syntax.RegistryOptions{Only: syntaxOnly, Settings: syntaxSettings, Root: options.Root, MinimumSeverity: minimumSeverity},
+			syntax.RegistryOptions{
+				Only:            syntaxOnly,
+				Settings:        syntaxSettings,
+				Root:            options.Root,
+				MinimumSeverity: minimumSeverity,
+			},
 		)
 		if err != nil {
 			return nil, err
@@ -98,7 +107,12 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 	}
 	if !explicit || len(semanticOnly) != 0 {
 		registry.semantic, err = semantic.NewRegistryWithOptions(
-			semantic.RegistryOptions{Only: semanticOnly, Settings: semanticSettings, Root: options.Root, MinimumSeverity: minimumSeverity},
+			semantic.RegistryOptions{
+				Only:            semanticOnly,
+				Settings:        semanticSettings,
+				Root:            options.Root,
+				MinimumSeverity: minimumSeverity,
+			},
 		)
 		if err != nil {
 			return nil, err
@@ -120,14 +134,31 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 }
 
 var supportedBehavioralOptions = map[string]map[string]bool{
-	"banned-characters":      {"characters": true},
-	"file-length-limit":      {"max-lines": true},
-	"function-length":        {"max-lines": true, "max-statements": true},
-	"function-result-limit":  {"max-results": true},
-	"imports-blocklist":      {"blocked-imports": true},
-	"interface-method-limit": {"max-methods": true},
-	"max-parameters":         {"max-parameters": true},
-	"max-public-structs":     {"max-public-structs": true},
+	"banned-characters": {
+		"characters": true,
+	},
+	"file-length-limit": {
+		"max-lines": true,
+	},
+	"function-length": {
+		"max-lines":      true,
+		"max-statements": true,
+	},
+	"function-result-limit": {
+		"max-results": true,
+	},
+	"imports-blocklist": {
+		"blocked-imports": true,
+	},
+	"interface-method-limit": {
+		"max-methods": true,
+	},
+	"max-parameters": {
+		"max-parameters": true,
+	},
+	"max-public-structs": {
+		"max-public-structs": true,
+	},
 }
 
 func validateBehavioralOptions(code string, setting config.RuleConfig) error {
@@ -135,14 +166,38 @@ func validateBehavioralOptions(code string, setting config.RuleConfig) error {
 		name    string
 		present bool
 	}{
-		{"characters", setting.Characters != nil},
-		{"max-lines", setting.MaxLines != 0},
-		{"max-statements", setting.MaxStatements != 0},
-		{"max-results", setting.MaxResults != 0},
-		{"max-parameters", setting.MaxParameters != 0},
-		{"max-public-structs", setting.MaxPublicStructs != 0},
-		{"max-methods", setting.MaxMethods != 0},
-		{"blocked-imports", setting.BlockedImports != nil},
+		{
+			"characters",
+			setting.Characters != nil,
+		},
+		{
+			"max-lines",
+			setting.MaxLines != 0,
+		},
+		{
+			"max-statements",
+			setting.MaxStatements != 0,
+		},
+		{
+			"max-results",
+			setting.MaxResults != 0,
+		},
+		{
+			"max-parameters",
+			setting.MaxParameters != 0,
+		},
+		{
+			"max-public-structs",
+			setting.MaxPublicStructs != 0,
+		},
+		{
+			"max-methods",
+			setting.MaxMethods != 0,
+		},
+		{
+			"blocked-imports",
+			setting.BlockedImports != nil,
+		},
 	}
 	for index := range configured {
 		configured[index].present = configured[index].present || setting.HasExplicitOption(configured[index].name)
@@ -168,7 +223,9 @@ func normalizedMinimumSeverity(minimum diagnostic.Severity) (diagnostic.Severity
 }
 
 func availableRules() (map[string]Meta, map[string]bool, map[string]bool, error) {
-	available := map[string]Meta{formatMeta.Code: formatMeta}
+	available := map[string]Meta{
+		formatMeta.Code: formatMeta,
+	}
 	syntaxCodes := make(map[string]bool)
 	semanticCodes := make(map[string]bool)
 	syntaxRegistry, err := syntax.NewRegistry(nil)
@@ -245,25 +302,38 @@ func selectedSettings(settings map[string]config.RuleConfig, category map[string
 
 func (registry *Registry) addSelectedRules(available map[string]Meta, formatSetting config.RuleConfig) {
 	if registry.format {
-		registry.rules = append(registry.rules, Rule{meta: formatMeta})
+		registry.rules = append(registry.rules, Rule{
+			meta: formatMeta,
+		})
 		severity := formatMeta.DefaultSeverity
 		if formatSetting.Severity != "" {
 			severity = diagnostic.Severity(formatSetting.Severity)
 		}
-		registry.settings[formatMeta.Code] = configuredRule{severity: severity, excludes: formatSetting.Excludes}
+		registry.settings[formatMeta.Code] = configuredRule{
+			severity: severity,
+			excludes: formatSetting.Excludes,
+		}
 	}
 	if registry.syntax != nil {
 		for _, selected := range registry.syntax.Rules() {
 			meta := available[strings.ToLower(selected.Meta().Code)]
-			registry.rules = append(registry.rules, Rule{meta: meta})
-			registry.settings[meta.Code] = configuredRule{severity: registry.syntax.Severity(meta.Code)}
+			registry.rules = append(registry.rules, Rule{
+				meta: meta,
+			})
+			registry.settings[meta.Code] = configuredRule{
+				severity: registry.syntax.Severity(meta.Code),
+			}
 		}
 	}
 	if registry.semantic != nil {
 		for _, selected := range registry.semantic.Rules() {
 			meta := available[strings.ToLower(selected.Meta().Code)]
-			registry.rules = append(registry.rules, Rule{meta: meta})
-			registry.settings[meta.Code] = configuredRule{severity: registry.semantic.Severity(meta.Code)}
+			registry.rules = append(registry.rules, Rule{
+				meta: meta,
+			})
+			registry.settings[meta.Code] = configuredRule{
+				severity: registry.semantic.Severity(meta.Code),
+			}
 		}
 	}
 	sort.Slice(registry.rules, func(left, right int) bool {

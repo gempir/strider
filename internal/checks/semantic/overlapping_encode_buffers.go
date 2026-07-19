@@ -30,7 +30,12 @@ func (overlappingEncodeBuffersRule) Meta() Meta {
 
 func (overlappingEncodeBuffersRule) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
-	for _, packagePath := range []string{"encoding/ascii85", "encoding/base32", "encoding/base64", "encoding/hex"} {
+	for _, packagePath := range []string{
+		"encoding/ascii85",
+		"encoding/base32",
+		"encoding/base64",
+		"encoding/hex",
+	} {
 		for _, call := range pass.staticCallsInPackage(packagePath) {
 			descriptor, ok := encodeBufferDescriptor(call)
 			if !ok || len(call.Common().Args) <= descriptor.sourceSSA {
@@ -49,7 +54,11 @@ func (overlappingEncodeBuffersRule) Run(pass *Pass) {
 
 func encodeBufferDescriptor(call ssa.CallInstruction) (encodeBufferCall, bool) {
 	if isStaticFunction(call, "encoding/ascii85", "Encode") || isStaticFunction(call, "encoding/hex", "Encode") {
-		return encodeBufferCall{destinationSSA: 0, sourceSSA: 1, destinationSource: 0}, true
+		return encodeBufferCall{
+			destinationSSA:    0,
+			sourceSSA:         1,
+			destinationSource: 0,
+		}, true
 	}
 	callee := call.Common().StaticCallee()
 	if callee == nil || callee.Object() == nil || callee.Object().Pkg() == nil || callee.Object().Name() != "Encode" {
@@ -57,7 +66,11 @@ func encodeBufferDescriptor(call ssa.CallInstruction) (encodeBufferCall, bool) {
 	}
 	switch callee.Object().Pkg().Path() {
 	case "encoding/base32", "encoding/base64":
-		return encodeBufferCall{destinationSSA: 1, sourceSSA: 2, destinationSource: 0}, true
+		return encodeBufferCall{
+			destinationSSA:    1,
+			sourceSSA:         2,
+			destinationSource: 0,
+		}, true
 	default:
 		return encodeBufferCall{}, false
 	}

@@ -56,21 +56,77 @@ func strconvConstraints(call ssa.CallInstruction) []strconvConstraint {
 	}
 	switch callee.Object().Name() {
 	case "ParseComplex":
-		return []strconvConstraint{{1, validateComplexBitSize}}
+		return []strconvConstraint{
+			{
+				1,
+				validateComplexBitSize,
+			},
+		}
 	case "ParseFloat":
-		return []strconvConstraint{{1, validateFloatBitSize}}
+		return []strconvConstraint{
+			{
+				1,
+				validateFloatBitSize,
+			},
+		}
 	case "ParseInt", "ParseUint":
-		return []strconvConstraint{{1, validateParsingBase}, {2, validateIntegerBitSize}}
+		return []strconvConstraint{
+			{
+				1,
+				validateParsingBase,
+			},
+			{
+				2,
+				validateIntegerBitSize,
+			},
+		}
 	case "FormatComplex":
-		return []strconvConstraint{{1, validateFloatFormat}, {3, validateComplexBitSize}}
+		return []strconvConstraint{
+			{
+				1,
+				validateFloatFormat,
+			},
+			{
+				3,
+				validateComplexBitSize,
+			},
+		}
 	case "FormatFloat":
-		return []strconvConstraint{{1, validateFloatFormat}, {3, validateFloatBitSize}}
+		return []strconvConstraint{
+			{
+				1,
+				validateFloatFormat,
+			},
+			{
+				3,
+				validateFloatBitSize,
+			},
+		}
 	case "FormatInt", "FormatUint":
-		return []strconvConstraint{{1, validateFormattingBase}}
+		return []strconvConstraint{
+			{
+				1,
+				validateFormattingBase,
+			},
+		}
 	case "AppendFloat":
-		return []strconvConstraint{{2, validateFloatFormat}, {4, validateFloatBitSize}}
+		return []strconvConstraint{
+			{
+				2,
+				validateFloatFormat,
+			},
+			{
+				4,
+				validateFloatBitSize,
+			},
+		}
 	case "AppendInt", "AppendUint":
-		return []strconvConstraint{{2, validateFormattingBase}}
+		return []strconvConstraint{
+			{
+				2,
+				validateFormattingBase,
+			},
+		}
 	default:
 		return nil
 	}

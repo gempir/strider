@@ -182,7 +182,13 @@ func (a *cstAnalyzer) observe(node cst.Node, ancestors []cst.Node) {
 }
 
 func (a *cstAnalyzer) addFunctionFacts(node cst.Node, name cst.Token, signature *cst.Signature, body cst.Node, receiver *cst.Parameters) *cstFunctionFacts {
-	facts := &cstFunctionFacts{node: node, name: name, signature: signature, body: body, receiver: receiver}
+	facts := &cstFunctionFacts{
+		node:      node,
+		name:      name,
+		signature: signature,
+		body:      body,
+		receiver:  receiver,
+	}
 	if a.plan.functionFinal {
 		facts.finalStatement = concreteDirectFinalStatement(body)
 	}

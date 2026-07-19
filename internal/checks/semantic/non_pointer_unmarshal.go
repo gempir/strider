@@ -30,7 +30,10 @@ func (nonPointerUnmarshalRule) Meta() Meta {
 
 func (nonPointerUnmarshalRule) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
-	for _, packagePath := range []string{"encoding/json", "encoding/xml"} {
+	for _, packagePath := range []string{
+		"encoding/json",
+		"encoding/xml",
+	} {
 		for _, call := range pass.staticCallsInPackage(packagePath) {
 			descriptor, ok := unmarshalDescriptor(call)
 			if !ok || len(call.Common().Args) <= descriptor.ssaArgument {
@@ -57,16 +60,32 @@ func unmarshalDescriptor(call ssa.CallInstruction) (unmarshalCall, bool) {
 	if !isMethod && name == "Unmarshal" {
 		switch path {
 		case "encoding/json":
-			return unmarshalCall{name: "json.Unmarshal", ssaArgument: 1, sourceArgument: 1}, true
+			return unmarshalCall{
+				name:           "json.Unmarshal",
+				ssaArgument:    1,
+				sourceArgument: 1,
+			}, true
 		case "encoding/xml":
-			return unmarshalCall{name: "xml.Unmarshal", ssaArgument: 1, sourceArgument: 1}, true
+			return unmarshalCall{
+				name:           "xml.Unmarshal",
+				ssaArgument:    1,
+				sourceArgument: 1,
+			}, true
 		}
 	}
 	if isMethod && path == "encoding/json" && name == "Decode" {
-		return unmarshalCall{name: "Decode", ssaArgument: 1, sourceArgument: 0}, true
+		return unmarshalCall{
+			name:           "Decode",
+			ssaArgument:    1,
+			sourceArgument: 0,
+		}, true
 	}
 	if isMethod && path == "encoding/xml" && (name == "Decode" || name == "DecodeElement") {
-		return unmarshalCall{name: name, ssaArgument: 1, sourceArgument: 0}, true
+		return unmarshalCall{
+			name:           name,
+			ssaArgument:    1,
+			sourceArgument: 0,
+		}, true
 	}
 	return unmarshalCall{}, false
 }

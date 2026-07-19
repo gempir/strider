@@ -444,21 +444,38 @@ func (a *cstAnalyzer) report(code string, node cst.Node, message string) {
 	if !a.enabled[code] || node == nil || a.reporter == nil {
 		return
 	}
-	a.reporter(Finding{ConcreteNode: node, Code: code, Message: message})
+	a.reporter(Finding{
+		ConcreteNode: node,
+		Code:         code,
+		Message:      message,
+	})
 }
 
 func (a *cstAnalyzer) reportFix(code string, node cst.Node, message string, fix diagnostic.Fix) {
 	if !a.enabled[code] || node == nil || a.reporter == nil {
 		return
 	}
-	a.reporter(Finding{ConcreteNode: node, Code: code, Message: message, Fixes: []diagnostic.Fix{fix}})
+	a.reporter(Finding{
+		ConcreteNode: node,
+		Code:         code,
+		Message:      message,
+		Fixes: []diagnostic.Fix{
+			fix,
+		},
+	})
 }
 
 func (a *cstAnalyzer) reportRange(code string, start, end int, message string) {
 	if !a.enabled[code] || a.reporter == nil {
 		return
 	}
-	a.reporter(Finding{ConcreteStart: start, ConcreteEnd: end, HasConcreteRange: true, Code: code, Message: message})
+	a.reporter(Finding{
+		ConcreteStart:    start,
+		ConcreteEnd:      end,
+		HasConcreteRange: true,
+		Code:             code,
+		Message:          message,
+	})
 }
 
 func (a *cstAnalyzer) checkFile() {

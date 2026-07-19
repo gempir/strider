@@ -29,7 +29,9 @@ func (nanComparisonRule) Run(pass *Pass) {
 				if !ok || !comparisonOperator(binary.Op) || (!isNaNValue(flattenEquivalentPhi(binary.X)) && !isNaNValue(flattenEquivalentPhi(binary.Y))) {
 					continue
 				}
-				pass.Report(positionNode{position: binary.Pos()}, "direct comparison with NaN can never test for NaN; use math.IsNaN")
+				pass.Report(positionNode{
+					position: binary.Pos(),
+				}, "direct comparison with NaN can never test for NaN; use math.IsNaN")
 			}
 		}
 	}

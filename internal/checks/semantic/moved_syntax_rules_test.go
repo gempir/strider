@@ -26,11 +26,15 @@ func compare(left, right time.Time, alias TimeAlias, localLeft, localRight local
 }
 `,
 	)
-	registry, err := NewRegistry([]string{"time-value-equality"})
+	registry, err := NewRegistry([]string{
+		"time-value-equality",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{root}, registry)
+	diagnostics, err := Run([]string{
+		root,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,11 +85,15 @@ func check(group *sync.WaitGroup, fake fakeGroup) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{"waitgroup-go-forbidden-call"})
+	registry, err := NewRegistry([]string{
+		"waitgroup-go-forbidden-call",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{root}, registry)
+	diagnostics, err := Run([]string{
+		root,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -187,12 +195,16 @@ func capture(values []int) {
 			func(t *testing.T) {
 				root := analysisModuleVersion(t, test.goVersion, test.source)
 				registry,
-					err := NewRegistry([]string{"range-value-capture"})
+					err := NewRegistry([]string{
+					"range-value-capture",
+				})
 				if err != nil {
 					t.Fatal(err)
 				}
 				diagnostics,
-					err := Run([]string{root}, registry)
+					err := Run([]string{
+					root,
+				}, registry)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -214,9 +226,18 @@ func TestMovedSyntaxRuleMetadata(t *testing.T) {
 		rule     Rule
 		severity diagnostic.Severity
 	}{
-		{timeValueEqualityRule{}, diagnostic.SeverityWarning},
-		{waitGroupGoForbiddenCallRule{}, diagnostic.SeverityError},
-		{rangeValueCaptureRule{}, diagnostic.SeverityWarning},
+		{
+			timeValueEqualityRule{},
+			diagnostic.SeverityWarning,
+		},
+		{
+			waitGroupGoForbiddenCallRule{},
+			diagnostic.SeverityError,
+		},
+		{
+			rangeValueCaptureRule{},
+			diagnostic.SeverityWarning,
+		},
 	}
 	for _, test := range tests {
 		meta := test.rule.Meta()

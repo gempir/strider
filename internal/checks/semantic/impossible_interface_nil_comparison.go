@@ -47,7 +47,9 @@ func (impossibleInterfaceNilComparisonRule) Run(pass *Pass) {
 				if binary.Op == token.NEQ {
 					truth = "always"
 				}
-				pass.Report(positionNode{position: binary.Pos()}, "interface has a concrete dynamic type; this comparison is "+truth+" true")
+				pass.Report(positionNode{
+					position: binary.Pos(),
+				}, "interface has a concrete dynamic type; this comparison is "+truth+" true")
 			}
 		}
 	}
@@ -84,7 +86,11 @@ type interfaceNilChecker struct {
 }
 
 func newInterfaceNilChecker(pass *Pass) *interfaceNilChecker {
-	return &interfaceNilChecker{pass: pass, checking: make(map[interfaceResultKey]bool), results: make(map[interfaceResultKey]interfaceNilProof)}
+	return &interfaceNilChecker{
+		pass:     pass,
+		checking: make(map[interfaceResultKey]bool),
+		results:  make(map[interfaceResultKey]interfaceNilProof),
+	}
 }
 
 func (checker *interfaceNilChecker) neverNil(value ssa.Value, seen map[ssa.Value]bool) interfaceNilProof {
@@ -133,7 +139,10 @@ func (checker *interfaceNilChecker) neverNil(value ssa.Value, seen map[ssa.Value
 }
 
 func (checker *interfaceNilChecker) resultNeverNil(function *ssa.Function, index int) interfaceNilProof {
-	key := interfaceResultKey{function: function, index: index}
+	key := interfaceResultKey{
+		function: function,
+		index:    index,
+	}
 	if proof, known := checker.results[key]; known {
 		return proof
 	}

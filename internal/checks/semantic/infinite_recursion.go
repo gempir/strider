@@ -37,7 +37,9 @@ func (infiniteRecursionRule) Run(pass *Pass) {
 				) {
 					continue
 				}
-				pass.Report(positionNode{position: call.Pos()}, "recursive call has no path to a function exit")
+				pass.Report(positionNode{
+					position: call.Pos(),
+				}, "recursive call has no path to a function exit")
 			}
 		}
 	}

@@ -44,7 +44,9 @@ func closeThing() {}
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{filename}, registry)
+	diagnostics, err := Run([]string{
+		filename,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +54,14 @@ func closeThing() {}
 	for _, item := range diagnostics {
 		codes = append(codes, item.Code)
 	}
-	for _, wanted := range []string{"cyclomatic-complexity", "no-defer-in-loop", "no-else-after-return", "no-init", "no-naked-return", "no-package-var"} {
+	for _, wanted := range []string{
+		"cyclomatic-complexity",
+		"no-defer-in-loop",
+		"no-else-after-return",
+		"no-init",
+		"no-naked-return",
+		"no-package-var",
+	} {
 		if !slices.Contains(codes, wanted) {
 			t.Errorf("missing %s in %v", wanted, codes)
 		}
@@ -75,11 +84,17 @@ func named[T any]() (result T) {
 func closeThing() {}
 `
 	filename := writeFixture(t, source)
-	registry, err := NewRegistry([]string{"max-parameters", "no-defer-in-loop", "no-naked-return"})
+	registry, err := NewRegistry([]string{
+		"max-parameters",
+		"no-defer-in-loop",
+		"no-naked-return",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{filename}, registry)
+	diagnostics, err := Run([]string{
+		filename,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,11 +133,16 @@ func loop() {
 func closeThing() {}
 `
 	filename := writeFixture(t, source)
-	registry, err := NewRegistry([]string{"no-init", "no-package-var"})
+	registry, err := NewRegistry([]string{
+		"no-init",
+		"no-package-var",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{filename}, registry)
+	diagnostics, err := Run([]string{
+		filename,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -132,25 +152,33 @@ func closeThing() {}
 }
 
 func TestOnlyAndUnknownRule(t *testing.T) {
-	registry, err := NewRegistry([]string{"no-init"})
+	registry, err := NewRegistry([]string{
+		"no-init",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(registry.Rules()) != 1 || registry.Rules()[0].Meta().Code != "no-init" {
 		t.Fatalf("unexpected registry: %#v", registry.Rules())
 	}
-	if _, err := NewRegistry([]string{"not-a-rule"}); err == nil {
+	if _, err := NewRegistry([]string{
+		"not-a-rule",
+	}); err == nil {
 		t.Fatal("expected unknown rule error")
 	}
 }
 
 func TestIneffectivePointerCopyReportsPointerRoundTrips(t *testing.T) {
 	fixture := writeFixture(t, "package sample\nfunc copy(pointer *int, value int) { _ = &*pointer; _ = *&value }\n")
-	registry, err := NewRegistry([]string{"ineffective-pointer-copy"})
+	registry, err := NewRegistry([]string{
+		"ineffective-pointer-copy",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{fixture}, registry)
+	diagnostics, err := Run([]string{
+		fixture,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -161,11 +189,15 @@ func TestIneffectivePointerCopyReportsPointerRoundTrips(t *testing.T) {
 
 func TestDoubleNegationReportsRedundantBooleanNegation(t *testing.T) {
 	fixture := writeFixture(t, "package sample\nfunc ready(value bool) bool { return !!value }\n")
-	registry, err := NewRegistry([]string{"double-negation"})
+	registry, err := NewRegistry([]string{
+		"double-negation",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{fixture}, registry)
+	diagnostics, err := Run([]string{
+		fixture,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -198,11 +230,15 @@ func changing(next func() bool) int {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{"identical-if-chain-conditions"})
+	registry, err := NewRegistry([]string{
+		"identical-if-chain-conditions",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{fixture}, registry)
+	diagnostics, err := Run([]string{
+		fixture,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -217,11 +253,15 @@ func TestRedundantBuildTagReportsEquivalentLegacyConstraints(t *testing.T) {
 
 package sample
 `)
-	registry, err := NewRegistry([]string{"redundant-build-tag"})
+	registry, err := NewRegistry([]string{
+		"redundant-build-tag",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{fixture}, registry)
+	diagnostics, err := Run([]string{
+		fixture,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -237,11 +277,15 @@ func ratio() int { return 2 / 3 }
 func useful() int { return 4 / 3 }
 func floating() float64 { return 2 / 3.0 }
 `)
-	registry, err := NewRegistry([]string{"zero-integer-division"})
+	registry, err := NewRegistry([]string{
+		"zero-integer-division",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{fixture}, registry)
+	diagnostics, err := Run([]string{
+		fixture,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -256,11 +300,15 @@ func TestModuloOneReportsConstantZeroRemainder(t *testing.T) {
 func remainder(value int) int { return value % 1 }
 func useful(value int) int { return value % 2 }
 `)
-	registry, err := NewRegistry([]string{"modulo-one"})
+	registry, err := NewRegistry([]string{
+		"modulo-one",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{fixture}, registry)
+	diagnostics, err := Run([]string{
+		fixture,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -281,11 +329,15 @@ func spin(messages <-chan string) {
 	}
 }
 `)
-	registry, err := NewRegistry([]string{"spinning-select-default"})
+	registry, err := NewRegistry([]string{
+		"spinning-select-default",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{fixture}, registry)
+	diagnostics, err := Run([]string{
+		fixture,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -306,11 +358,15 @@ type tagged struct {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{"invalid-struct-tag"})
+	registry, err := NewRegistry([]string{
+		"invalid-struct-tag",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{fixture}, registry)
+	diagnostics, err := Run([]string{
+		fixture,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -334,11 +390,15 @@ func runes(text string) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{"simplify-range"})
+	registry, err := NewRegistry([]string{
+		"simplify-range",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{fixture}, registry)
+	diagnostics, err := Run([]string{
+		fixture,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -365,11 +425,15 @@ func branches(value bool) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{"empty-conditional-block"})
+	registry, err := NewRegistry([]string{
+		"empty-conditional-block",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{fixture}, registry)
+	diagnostics, err := Run([]string{
+		fixture,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -390,11 +454,15 @@ func active() {}
 func local() { // go:noinline
 }
 `)
-	registry, err := NewRegistry([]string{"spaced-compiler-directive"})
+	registry, err := NewRegistry([]string{
+		"spaced-compiler-directive",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{fixture}, registry)
+	diagnostics, err := Run([]string{
+		fixture,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -409,11 +477,16 @@ func TestDeferAllowsReturnedFunctionInvocation(t *testing.T) {
 func setup() func() { return func() {} }
 func run() { defer setup()() }
 `)
-	registry, err := NewRegistry([]string{"deferred-recover-call", "discarded-deferred-result"})
+	registry, err := NewRegistry([]string{
+		"deferred-recover-call",
+		"discarded-deferred-result",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{fixture}, registry)
+	diagnostics, err := Run([]string{
+		fixture,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -431,11 +504,16 @@ func run() {
 	defer func() error { return cleanup() }()
 }
 `)
-	registry, err := NewRegistry([]string{"deferred-recover-call", "discarded-deferred-result"})
+	registry, err := NewRegistry([]string{
+		"deferred-recover-call",
+		"discarded-deferred-result",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{fixture}, registry)
+	diagnostics, err := Run([]string{
+		fixture,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -443,7 +521,10 @@ func run() {
 	for _, item := range diagnostics {
 		counts[item.Code]++
 	}
-	for _, code := range []string{"deferred-recover-call", "discarded-deferred-result"} {
+	for _, code := range []string{
+		"deferred-recover-call",
+		"discarded-deferred-result",
+	} {
 		if counts[code] != 1 {
 			t.Errorf("%s produced %d findings; want 1: %#v", code, counts[code], diagnostics)
 		}
@@ -461,12 +542,18 @@ func choose(value int) {
 	}
 }
 `)
-	codes := []string{"redundant-final-return", "redundant-switch-break", "single-case-switch"}
+	codes := []string{
+		"redundant-final-return",
+		"redundant-switch-break",
+		"single-case-switch",
+	}
 	registry, err := NewRegistry(codes)
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{fixture}, registry)
+	diagnostics, err := Run([]string{
+		fixture,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -483,11 +570,15 @@ func choose(value int) {
 
 func TestBidirectionalControlCharacterReportsInvisibleSourceControl(t *testing.T) {
 	fixture := writeFixture(t, "package sample\n\n// visible text \u202e hidden ordering\nfunc safe() {}\n")
-	registry, err := NewRegistry([]string{"bidirectional-control-character"})
+	registry, err := NewRegistry([]string{
+		"bidirectional-control-character",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{fixture}, registry)
+	diagnostics, err := Run([]string{
+		fixture,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -508,12 +599,20 @@ type record struct { Name int; name int }
 func use(fmt int, len int, bad_name int) { _, _, _ = fmt, len, bad_name }
 `,
 	)
-	codes := []string{"confusing-naming", "import-shadowing", "redefines-builtin-id", "unexported-naming", "var-naming"}
+	codes := []string{
+		"confusing-naming",
+		"import-shadowing",
+		"redefines-builtin-id",
+		"unexported-naming",
+		"var-naming",
+	}
 	registry, err := NewRegistry(codes)
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{fixture}, registry)
+	diagnostics, err := Run([]string{
+		fixture,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -573,7 +672,9 @@ func (other *item) UnmarshalJSON([]byte) error { _ = other; return nil }
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{fixture}, registry)
+	diagnostics, err := Run([]string{
+		fixture,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -607,11 +708,15 @@ func controlsFlow(flag bool) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{"flag-parameter"})
+	registry, err := NewRegistry([]string{
+		"flag-parameter",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{fixture}, registry)
+	diagnostics, err := Run([]string{
+		fixture,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -641,11 +746,15 @@ func assertions(input any) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{"unchecked-type-assertion"})
+	registry, err := NewRegistry([]string{
+		"unchecked-type-assertion",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{fixture}, registry)
+	diagnostics, err := Run([]string{
+		fixture,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -672,12 +781,23 @@ func helper() {
 `,
 	)
 	registry, err := NewRegistry(
-		[]string{"call-to-gc", "deep-exit", "error-strings", "prefer-fmt-errorf", "unnecessary-format", "use-errors-new", "use-fmt-print", "use-slices-sort"},
+		[]string{
+			"call-to-gc",
+			"deep-exit",
+			"error-strings",
+			"prefer-fmt-errorf",
+			"unnecessary-format",
+			"use-errors-new",
+			"use-fmt-print",
+			"use-slices-sort",
+		},
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{fixture}, registry)
+	diagnostics, err := Run([]string{
+		fixture,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -712,11 +832,19 @@ import (
 	strings "strings"
 )
 `)
-	registry, err := NewRegistry([]string{"blank-imports", "dot-imports", "duplicated-imports", "import-alias-naming", "redundant-import-alias"})
+	registry, err := NewRegistry([]string{
+		"blank-imports",
+		"dot-imports",
+		"duplicated-imports",
+		"import-alias-naming",
+		"redundant-import-alias",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{fixture}, registry)
+	diagnostics, err := Run([]string{
+		fixture,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -724,7 +852,13 @@ import (
 	for _, item := range diagnostics {
 		counts[item.Code]++
 	}
-	for _, code := range []string{"blank-imports", "dot-imports", "duplicated-imports", "import-alias-naming", "redundant-import-alias"} {
+	for _, code := range []string{
+		"blank-imports",
+		"dot-imports",
+		"duplicated-imports",
+		"import-alias-naming",
+		"redundant-import-alias",
+	} {
 		if counts[code] != 1 {
 			t.Errorf("%s produced %d findings; want 1: %#v", code, counts[code], diagnostics)
 		}
@@ -740,11 +874,16 @@ func TestExternalTestPackageMatchesNamingAndDirectory(t *testing.T) {
 	if err := os.WriteFile(filename, []byte("package sample_test\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	registry, err := NewRegistry([]string{"package-naming", "package-directory-mismatch"})
+	registry, err := NewRegistry([]string{
+		"package-naming",
+		"package-directory-mismatch",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{filename}, registry)
+	diagnostics, err := Run([]string{
+		filename,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -755,14 +894,18 @@ func TestExternalTestPackageMatchesNamingAndDirectory(t *testing.T) {
 
 func TestFileLengthLimitDefaultsTo500AndExplicitZeroDisables(t *testing.T) {
 	fixture := writeFixture(t, "package sample\n"+strings.Repeat("// line\n", 500))
-	defaultRegistry, err := NewRegistry([]string{"file-length-limit"})
+	defaultRegistry, err := NewRegistry([]string{
+		"file-length-limit",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if got := defaultRegistry.limits()["file-length-limit"]; got != 500 {
 		t.Fatalf("default max lines = %d, want 500", got)
 	}
-	diagnostics, err := Run([]string{fixture}, defaultRegistry)
+	diagnostics, err := Run([]string{
+		fixture,
+	}, defaultRegistry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -770,7 +913,16 @@ func TestFileLengthLimitDefaultsTo500AndExplicitZeroDisables(t *testing.T) {
 		t.Fatalf("default file length produced %d diagnostics, want 1: %#v", len(diagnostics), diagnostics)
 	}
 	configuredRegistry, err := NewRegistryWithOptions(
-		RegistryOptions{Only: []string{"file-length-limit"}, Settings: map[string]config.RuleConfig{"file-length-limit": {MaxLines: 12}}},
+		RegistryOptions{
+			Only: []string{
+				"file-length-limit",
+			},
+			Settings: map[string]config.RuleConfig{
+				"file-length-limit": {
+					MaxLines: 12,
+				},
+			},
+		},
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -789,14 +941,20 @@ func TestFileLengthLimitDefaultsTo500AndExplicitZeroDisables(t *testing.T) {
 		t.Fatal(err)
 	}
 	setting := configuration.Checks.Rules["file-length-limit"]
-	disabledRegistry, err := NewRegistryConfigured([]string{"file-length-limit"}, map[string]config.RuleConfig{"file-length-limit": setting}, configuration.Root)
+	disabledRegistry, err := NewRegistryConfigured([]string{
+		"file-length-limit",
+	}, map[string]config.RuleConfig{
+		"file-length-limit": setting,
+	}, configuration.Root)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if got := disabledRegistry.limits()["file-length-limit"]; got != 0 {
 		t.Fatalf("explicit max lines = %d, want disabled value 0", got)
 	}
-	diagnostics, err = Run([]string{fixture}, disabledRegistry)
+	diagnostics, err = Run([]string{
+		fixture,
+	}, disabledRegistry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -849,12 +1007,16 @@ func TestCatalogIsCompleteDocumentedAndRunnable(t *testing.T) {
 		if _, err := os.Stat(filepath.Join(docsDirectory, meta.Code+".md")); err != nil {
 			t.Errorf("rule %s has no documentation: %v", meta.Code, err)
 		}
-		registry, err := NewRegistry([]string{meta.Code})
+		registry, err := NewRegistry([]string{
+			meta.Code,
+		})
 		if err != nil {
 			t.Errorf("select %s: %v", meta.Code, err)
 			continue
 		}
-		if _, err := Run([]string{fixture}, registry); err != nil {
+		if _, err := Run([]string{
+			fixture,
+		}, registry); err != nil {
 			t.Errorf("run %s: %v", meta.Code, err)
 		}
 	}
@@ -875,7 +1037,9 @@ func TestEveryLintRuleAcceptsCommonConfiguration(t *testing.T) {
 	}
 	settings := make(map[string]config.RuleConfig, len(all.Rules()))
 	for _, rule := range all.Rules() {
-		settings[rule.Meta().Code] = config.RuleConfig{Severity: "note"}
+		settings[rule.Meta().Code] = config.RuleConfig{
+			Severity: "note",
+		}
 	}
 	configured, err := NewRegistryConfigured(nil, settings, "")
 	if err != nil {
@@ -896,17 +1060,38 @@ func TestBannedCharactersUsesDefaultsAndConfiguration(t *testing.T) {
 	for name, test := range map[string]struct {
 		settings map[string]config.RuleConfig
 		wanted   string
-	}{"defaults": {wanted: "ᐸ"}, "configured": {settings: map[string]config.RuleConfig{"banned-characters": {Characters: []string{"_"}}}, wanted: "_"}} {
+	}{
+		"defaults": {
+			wanted: "ᐸ",
+		},
+		"configured": {
+			settings: map[string]config.RuleConfig{
+				"banned-characters": {
+					Characters: []string{
+						"_",
+					},
+				},
+			},
+			wanted: "_",
+		},
+	} {
 		t.Run(
 			name,
 			func(t *testing.T) {
 				registry,
-					err := NewRegistryWithOptions(RegistryOptions{Only: []string{"banned-characters"}, Settings: test.settings})
+					err := NewRegistryWithOptions(RegistryOptions{
+					Only: []string{
+						"banned-characters",
+					},
+					Settings: test.settings,
+				})
 				if err != nil {
 					t.Fatal(err)
 				}
 				diagnostics,
-					err := Run([]string{filename}, registry)
+					err := Run([]string{
+					filename,
+				}, registry)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -923,14 +1108,28 @@ func TestBannedCharactersUsesDefaultsAndConfiguration(t *testing.T) {
 
 func TestBannedCharactersRejectsInvalidConfiguration(t *testing.T) {
 	for name, settings := range map[string]map[string]config.RuleConfig{
-		"multiple runes": {"banned-characters": {Characters: []string{"ab"}}},
-		"unrelated rule": {"no-init": {Characters: []string{"_"}}},
+		"multiple runes": {
+			"banned-characters": {
+				Characters: []string{
+					"ab",
+				},
+			},
+		},
+		"unrelated rule": {
+			"no-init": {
+				Characters: []string{
+					"_",
+				},
+			},
+		},
 	} {
 		t.Run(
 			name,
 			func(t *testing.T) {
 				if _,
-					err := NewRegistryWithOptions(RegistryOptions{Settings: settings}); err == nil {
+					err := NewRegistryWithOptions(RegistryOptions{
+					Settings: settings,
+				}); err == nil {
 					t.Fatal("expected invalid character configuration to fail")
 				}
 			},
@@ -940,8 +1139,25 @@ func TestBannedCharactersRejectsInvalidConfiguration(t *testing.T) {
 
 func TestLintRegistryFiltersByEffectiveSeverityBeforeExecution(t *testing.T) {
 	for name, options := range map[string]RegistryOptions{
-		"only": {Only: []string{"no-init"}, Settings: map[string]config.RuleConfig{"no-init": {Severity: "warning"}}, MinimumSeverity: diagnostic.SeverityError},
-		"all":  {Settings: map[string]config.RuleConfig{"no-init": {Severity: "warning"}}, MinimumSeverity: diagnostic.SeverityError},
+		"only": {
+			Only: []string{
+				"no-init",
+			},
+			Settings: map[string]config.RuleConfig{
+				"no-init": {
+					Severity: "warning",
+				},
+			},
+			MinimumSeverity: diagnostic.SeverityError,
+		},
+		"all": {
+			Settings: map[string]config.RuleConfig{
+				"no-init": {
+					Severity: "warning",
+				},
+			},
+			MinimumSeverity: diagnostic.SeverityError,
+		},
 	} {
 		t.Run(
 			name,
@@ -958,7 +1174,9 @@ func TestLintRegistryFiltersByEffectiveSeverityBeforeExecution(t *testing.T) {
 				}
 				if name == "only" {
 					diagnostics,
-						runErr := Run([]string{filepath.Join(t.TempDir(), "missing.go")}, registry)
+						runErr := Run([]string{
+						filepath.Join(t.TempDir(), "missing.go"),
+					}, registry)
 					if runErr != nil {
 						t.Fatalf("empty registry attempted CST execution: %v", runErr)
 					}
@@ -971,7 +1189,17 @@ func TestLintRegistryFiltersByEffectiveSeverityBeforeExecution(t *testing.T) {
 	}
 
 	registry, err := NewRegistryWithOptions(
-		RegistryOptions{Only: []string{"no-init"}, Settings: map[string]config.RuleConfig{"no-init": {Severity: "error"}}, MinimumSeverity: diagnostic.SeverityError},
+		RegistryOptions{
+			Only: []string{
+				"no-init",
+			},
+			Settings: map[string]config.RuleConfig{
+				"no-init": {
+					Severity: "error",
+				},
+			},
+			MinimumSeverity: diagnostic.SeverityError,
+		},
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -985,11 +1213,19 @@ func TestLintRegistryFiltersByEffectiveSeverityBeforeExecution(t *testing.T) {
 }
 
 func TestLintRegistryRejectsInvalidMinimumSeverity(t *testing.T) {
-	_, err := NewRegistryWithOptions(RegistryOptions{MinimumSeverity: "fatal"})
+	_, err := NewRegistryWithOptions(RegistryOptions{
+		MinimumSeverity: "fatal",
+	})
 	if err == nil || !strings.Contains(err.Error(), "minimum severity") {
 		t.Fatalf("got %v, want minimum severity error", err)
 	}
-	_, err = NewRegistryWithOptions(RegistryOptions{Settings: map[string]config.RuleConfig{"no-init": {Severity: "fatal"}}})
+	_, err = NewRegistryWithOptions(RegistryOptions{
+		Settings: map[string]config.RuleConfig{
+			"no-init": {
+				Severity: "fatal",
+			},
+		},
+	})
 	if err == nil || !strings.Contains(err.Error(), "severity must be") {
 		t.Fatalf("got %v, want rule severity error", err)
 	}
@@ -997,11 +1233,21 @@ func TestLintRegistryRejectsInvalidMinimumSeverity(t *testing.T) {
 
 func TestLintRuleConfigurationCanExcludePaths(t *testing.T) {
 	fixture := writeFixture(t, "package p\nfunc init() {}\n")
-	registry, err := NewRegistryConfigured([]string{"no-init"}, map[string]config.RuleConfig{"no-init": {Excludes: []string{"**/*.go"}}}, filepath.Dir(fixture))
+	registry, err := NewRegistryConfigured([]string{
+		"no-init",
+	}, map[string]config.RuleConfig{
+		"no-init": {
+			Excludes: []string{
+				"**/*.go",
+			},
+		},
+	}, filepath.Dir(fixture))
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{fixture}, registry)
+	diagnostics, err := Run([]string{
+		fixture,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1052,7 +1298,9 @@ func Assert(v interface{}) { _ = v.(string) }
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{filename}, registry)
+	diagnostics, err := Run([]string{
+		filename,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1103,11 +1351,18 @@ func (current item) mutate(value int, group sync.WaitGroup, closer interface{ Cl
 }
 `,
 	)
-	registry, err := NewRegistry([]string{"redundant-atomic-result-assignment", "inefficient-map-lookup", "modifies-parameter", "modifies-value-receiver"})
+	registry, err := NewRegistry([]string{
+		"redundant-atomic-result-assignment",
+		"inefficient-map-lookup",
+		"modifies-parameter",
+		"modifies-value-receiver",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{filename}, registry)
+	diagnostics, err := Run([]string{
+		filename,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1115,7 +1370,12 @@ func (current item) mutate(value int, group sync.WaitGroup, closer interface{ Cl
 	for _, item := range diagnostics {
 		codes[item.Code] = true
 	}
-	for _, code := range []string{"redundant-atomic-result-assignment", "inefficient-map-lookup", "modifies-parameter", "modifies-value-receiver"} {
+	for _, code := range []string{
+		"redundant-atomic-result-assignment",
+		"inefficient-map-lookup",
+		"modifies-parameter",
+		"modifies-value-receiver",
+	} {
 		if !codes[code] {
 			t.Errorf("expected %s finding; got codes %v", code, codes)
 		}
@@ -1130,13 +1390,17 @@ func f(values map[string]int) {
 	}
 }
 `)
-	registry, err := NewRegistry([]string{"range-value-address"})
+	registry, err := NewRegistry([]string{
+		"range-value-address",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	var expected []diagnostic.Diagnostic
 	for range 20 {
-		diagnostics, err := Run([]string{filename}, registry)
+		diagnostics, err := Run([]string{
+			filename,
+		}, registry)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1170,7 +1434,9 @@ func BenchmarkLint(b *testing.B) {
 	}
 	b.ReportAllocs()
 	for range b.N {
-		if _, err := Run([]string{filename}, registry); err != nil {
+		if _, err := Run([]string{
+			filename,
+		}, registry); err != nil {
 			b.Fatal(err)
 		}
 	}
@@ -1178,7 +1444,9 @@ func BenchmarkLint(b *testing.B) {
 
 func TestAnalyzeTreeMatchesFileRun(t *testing.T) {
 	filename := writeFixture(t, "package p\nfunc init() {}\n")
-	registry, err := NewRegistry([]string{"no-init"})
+	registry, err := NewRegistry([]string{
+		"no-init",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1191,7 +1459,9 @@ func TestAnalyzeTreeMatchesFileRun(t *testing.T) {
 		t.Fatal(err)
 	}
 	fromTree := AnalyzeTree(filename, tree, registry)
-	fromFile, err := Run([]string{filename}, registry)
+	fromFile, err := Run([]string{
+		filename,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1202,8 +1472,28 @@ func TestAnalyzeTreeMatchesFileRun(t *testing.T) {
 
 func TestSortDiagnosticsUsesEndOffsetAsTieBreaker(t *testing.T) {
 	diagnostics := []diagnostic.Diagnostic{
-		{File: "main.go", Code: "example", Message: "same", Start: token.Position{Offset: 10}, End: token.Position{Offset: 30}},
-		{File: "main.go", Code: "example", Message: "same", Start: token.Position{Offset: 10}, End: token.Position{Offset: 20}},
+		{
+			File:    "main.go",
+			Code:    "example",
+			Message: "same",
+			Start: token.Position{
+				Offset: 10,
+			},
+			End: token.Position{
+				Offset: 30,
+			},
+		},
+		{
+			File:    "main.go",
+			Code:    "example",
+			Message: "same",
+			Start: token.Position{
+				Offset: 10,
+			},
+			End: token.Position{
+				Offset: 20,
+			},
+		},
 	}
 	sortDiagnostics(diagnostics)
 	if diagnostics[0].End.Offset != 20 || diagnostics[1].End.Offset != 30 {

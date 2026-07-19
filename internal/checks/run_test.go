@@ -17,15 +17,25 @@ func TestRunSharesCSTBetweenFormattingAndSyntaxChecks(t *testing.T) {
 	if err := os.WriteFile(filename, original, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	shared, err := workspace.Open([]string{filename}, workspace.Options{})
+	shared, err := workspace.Open([]string{
+		filename,
+	}, workspace.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	registry, err := NewRegistry(RegistryOptions{Only: []string{"format", "no-init"}})
+	registry, err := NewRegistry(RegistryOptions{
+		Only: []string{
+			"format",
+			"no-init",
+		},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	result, err := Run(shared, registry, RunOptions{Formatter: formatter.DefaultOptions(), CollectCandidates: true})
+	result, err := Run(shared, registry, RunOptions{
+		Formatter:         formatter.DefaultOptions(),
+		CollectCandidates: true,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,11 +64,17 @@ func TestRunCSTOnlyDoesNotRequireGoPackage(t *testing.T) {
 	if err := os.WriteFile(filename, []byte("package standalone\nfunc init() {}\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	shared, err := workspace.Open([]string{filename}, workspace.Options{})
+	shared, err := workspace.Open([]string{
+		filename,
+	}, workspace.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	registry, err := NewRegistry(RegistryOptions{Only: []string{"no-init"}})
+	registry, err := NewRegistry(RegistryOptions{
+		Only: []string{
+			"no-init",
+		},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,11 +93,17 @@ func TestRunFormatIgnoreFastPathDoesNotParse(t *testing.T) {
 	if err := os.WriteFile(filename, []byte("//strider:format-ignore\nthis is intentionally not Go\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	shared, err := workspace.Open([]string{filename}, workspace.Options{})
+	shared, err := workspace.Open([]string{
+		filename,
+	}, workspace.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	registry, err := NewRegistry(RegistryOptions{Only: []string{"format"}})
+	registry, err := NewRegistry(RegistryOptions{
+		Only: []string{
+			"format",
+		},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}

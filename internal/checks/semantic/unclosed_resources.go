@@ -125,7 +125,11 @@ func resourceClosedOnEveryExit(pass *Pass, resource acquiredResource, body *ast.
 	graph := cfg.New(body, func(*ast.CallExpr) bool {
 		return true
 	})
-	queue := []resourcePathState{{block: graph.Blocks[0]}}
+	queue := []resourcePathState{
+		{
+			block: graph.Blocks[0],
+		},
+	}
 	ownerIDs := resourceOwnerIDs(resource, closes, transfers, assignments)
 	seen := make(map[resourcePathKey]bool)
 	for len(queue) != 0 {
@@ -134,7 +138,12 @@ func resourceClosedOnEveryExit(pass *Pass, resource acquiredResource, body *ast.
 		if state.block == nil || !state.block.Live {
 			continue
 		}
-		key := resourcePathKey{block: state.block, next: state.next, active: state.active, owners: resourceOwnersKey(state.owners, ownerIDs)}
+		key := resourcePathKey{
+			block:  state.block,
+			next:   state.next,
+			active: state.active,
+			owners: resourceOwnersKey(state.owners, ownerIDs),
+		}
 		if seen[key] {
 			continue
 		}
@@ -144,7 +153,11 @@ func resourceClosedOnEveryExit(pass *Pass, resource acquiredResource, body *ast.
 				return false
 			}
 			for _, successor := range state.block.Succs {
-				queue = append(queue, resourcePathState{block: successor, active: state.active, owners: state.owners})
+				queue = append(queue, resourcePathState{
+					block:  successor,
+					active: state.active,
+					owners: state.owners,
+				})
 			}
 			continue
 		}
@@ -171,7 +184,12 @@ func resourceClosedOnEveryExit(pass *Pass, resource acquiredResource, body *ast.
 				}
 			}
 		}
-		queue = append(queue, resourcePathState{block: state.block, next: state.next + 1, active: active, owners: owners})
+		queue = append(queue, resourcePathState{
+			block:  state.block,
+			next:   state.next + 1,
+			active: active,
+			owners: owners,
+		})
 	}
 	return true
 }
@@ -299,7 +317,9 @@ func applyResourceAssignments(resource acquiredResource, node ast.Node, assignme
 					return active, owners, true
 				}
 				active = true
-				next = map[types.Object]bool{assignment.target: true}
+				next = map[types.Object]bool{
+					assignment.target: true,
+				}
 				continue
 			}
 			if active {
@@ -393,7 +413,12 @@ func collectAcquiredResources(pass *Pass, body *ast.BlockStmt, wanted acquiredRe
 			acquired := resourcesFromAssignment(pass, left, right, node, wanted)
 			resources = append(resources, acquired...)
 			for _, resource := range acquired {
-				assignments = append(assignments, resourceAssignment{target: resource.object, kind: resource.kind, pos: resource.start, acquisition: resource.start})
+				assignments = append(assignments, resourceAssignment{
+					target:      resource.object,
+					kind:        resource.kind,
+					pos:         resource.start,
+					acquisition: resource.start,
+				})
 			}
 			return true
 		},
@@ -471,7 +496,13 @@ func appendAcquiredResource(
 	if object == nil || object.Parent() == pass.Types.Scope() {
 		return resources
 	}
-	return append(resources, acquiredResource{kind: kind, object: object, acquisitionError: acquisitionError, node: node, start: node.Pos()})
+	return append(resources, acquiredResource{
+		kind:             kind,
+		object:           object,
+		acquisitionError: acquisitionError,
+		node:             node,
+		start:            node.Pos(),
+	})
 }
 
 func knownResourceAcquisition(pass *Pass, call *ast.CallExpr, kind acquiredResourceKind) bool {
@@ -574,15 +605,29 @@ func collectResourceAssignments(pass *Pass, left, right []ast.Expr, node ast.Nod
 			if rightIdentifier, rightOK := ast.Unparen(rightExpression).(*ast.Ident); rightOK && acquiredResourceKindForType(pass.TypesInfo.TypeOf(rightIdentifier)) == leftKind {
 				source = pass.TypesInfo.ObjectOf(rightIdentifier)
 			}
-			*assignments = append(*assignments, resourceAssignment{target: leftObject, source: source, kind: leftKind, pos: node.Pos()})
+			*assignments = append(*assignments, resourceAssignment{
+				target: leftObject,
+				source: source,
+				kind:   leftKind,
+				pos:    node.Pos(),
+			})
 		}
 
 		bodySource := httpBodyAssignmentSource(pass, rightExpression, httpBodies)
 		if bodySource != nil {
 			httpBodies[leftObject] = true
-			*assignments = append(*assignments, resourceAssignment{target: leftObject, source: bodySource, kind: httpResponseResource, pos: node.Pos()})
+			*assignments = append(*assignments, resourceAssignment{
+				target: leftObject,
+				source: bodySource,
+				kind:   httpResponseResource,
+				pos:    node.Pos(),
+			})
 		} else if httpBodies[leftObject] {
-			*assignments = append(*assignments, resourceAssignment{target: leftObject, kind: httpResponseResource, pos: node.Pos()})
+			*assignments = append(*assignments, resourceAssignment{
+				target: leftObject,
+				kind:   httpResponseResource,
+				pos:    node.Pos(),
+			})
 		}
 	}
 }
@@ -628,7 +673,11 @@ func collectResourceUses(pass *Pass, body *ast.BlockStmt, signature *types.Signa
 					ok := ast.Unparen(node.Fun).(*ast.SelectorExpr); ok && selector.Sel.Name == "Close" {
 					if object,
 						kind := closedResourceObject(pass, selector.X, node.Pos(), assignments); object != nil {
-						closes = append(closes, resourceUse{object: object, kind: kind, pos: node.Pos()})
+						closes = append(closes, resourceUse{
+							object: object,
+							kind:   kind,
+							pos:    node.Pos(),
+						})
 					}
 				}
 			case *ast.ReturnStmt:
@@ -638,7 +687,11 @@ func collectResourceUses(pass *Pass, body *ast.BlockStmt, signature *types.Signa
 				for _, expression := range node.Results {
 					if object,
 						kind := transferredResourceObject(pass, expression, assignments); object != nil {
-						transfers = append(transfers, resourceUse{object: object, kind: kind, pos: expression.Pos()})
+						transfers = append(transfers, resourceUse{
+							object: object,
+							kind:   kind,
+							pos:    expression.Pos(),
+						})
 					}
 				}
 			case *ast.AssignStmt:
@@ -655,13 +708,21 @@ func collectResourceUses(pass *Pass, body *ast.BlockStmt, signature *types.Signa
 					}
 					if object,
 						kind := transferredResourceObject(pass, expression, assignments); object != nil {
-						transfers = append(transfers, resourceUse{object: object, kind: kind, pos: expression.Pos()})
+						transfers = append(transfers, resourceUse{
+							object: object,
+							kind:   kind,
+							pos:    expression.Pos(),
+						})
 					}
 				}
 			case *ast.SendStmt:
 				if object,
 					kind := transferredResourceObject(pass, node.Value, assignments); object != nil {
-					transfers = append(transfers, resourceUse{object: object, kind: kind, pos: node.Value.Pos()})
+					transfers = append(transfers, resourceUse{
+						object: object,
+						kind:   kind,
+						pos:    node.Value.Pos(),
+					})
 				}
 			}
 			return true
@@ -685,7 +746,11 @@ func namedResultResourceUses(signature *types.Signature, assignments []resourceA
 			kind = httpResponseResource
 		}
 		if kind != 0 {
-			uses = append(uses, resourceUse{object: result, kind: kind, pos: position})
+			uses = append(uses, resourceUse{
+				object: result,
+				kind:   kind,
+				pos:    position,
+			})
 		}
 	}
 	return uses
@@ -736,7 +801,12 @@ func collectLiteralResourceCloses(pass *Pass, body *ast.BlockStmt, assignments [
 			object,
 				kind := closedResourceObject(pass, selector.X, call.Pos(), assignments)
 			if object != nil {
-				*closes = append(*closes, resourceUse{object: object, kind: kind, pos: call.Pos(), deferredClosure: deferred})
+				*closes = append(*closes, resourceUse{
+					object:          object,
+					kind:            kind,
+					pos:             call.Pos(),
+					deferredClosure: deferred,
+				})
 			}
 			return true
 		},
@@ -753,7 +823,11 @@ func literalPositionReachedOnEveryExit(body *ast.BlockStmt, position token.Pos) 
 	graph := cfg.New(body, func(*ast.CallExpr) bool {
 		return true
 	})
-	queue := []literalPathState{{block: graph.Blocks[0]}}
+	queue := []literalPathState{
+		{
+			block: graph.Blocks[0],
+		},
+	}
 	seen := make(map[literalPathState]bool)
 	for len(queue) != 0 {
 		state := queue[0]
@@ -767,12 +841,19 @@ func literalPositionReachedOnEveryExit(body *ast.BlockStmt, position token.Pos) 
 				return false
 			}
 			for _, successor := range state.block.Succs {
-				queue = append(queue, literalPathState{block: successor, reached: state.reached})
+				queue = append(queue, literalPathState{
+					block:   successor,
+					reached: state.reached,
+				})
 			}
 			continue
 		}
 		node := state.block.Nodes[state.next]
-		queue = append(queue, literalPathState{block: state.block, next: state.next + 1, reached: state.reached || nodeContainsPosition(node, position)})
+		queue = append(queue, literalPathState{
+			block:   state.block,
+			next:    state.next + 1,
+			reached: state.reached || nodeContainsPosition(node, position),
+		})
 	}
 	return true
 }

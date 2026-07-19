@@ -32,7 +32,10 @@ type configuredRule struct {
 	config     config.RuleConfig
 }
 
-var defaultBannedCharacters = []rune{'ᐸ', 'ᐳ'}
+var defaultBannedCharacters = []rune{
+	'ᐸ',
+	'ᐳ',
+}
 
 // RegistryOptions selects and configures concrete-syntax rules.
 type RegistryOptions struct {
@@ -48,7 +51,12 @@ func NewRegistry(only []string) (*Registry, error) {
 
 // NewRegistryConfigured applies project rule settings.
 func NewRegistryConfigured(only []string, settings map[string]config.RuleConfig, root string) (*Registry, error) {
-	return NewRegistryWithOptions(RegistryOptions{Only: only, Settings: settings, Root: root, MinimumSeverity: diagnostic.SeverityNote})
+	return NewRegistryWithOptions(RegistryOptions{
+		Only:            only,
+		Settings:        settings,
+		Root:            root,
+		MinimumSeverity: diagnostic.SeverityNote,
+	})
 }
 
 // NewRegistryWithOptions applies project settings and a minimum effective
@@ -81,7 +89,11 @@ func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
 	for _, code := range options.Only {
 		wanted[code] = true
 	}
-	registry := &Registry{settings: make(map[string]configuredRule, len(all)), knownCodes: make(map[string]bool, len(all)), root: options.Root}
+	registry := &Registry{
+		settings:   make(map[string]configuredRule, len(all)),
+		knownCodes: make(map[string]bool, len(all)),
+		root:       options.Root,
+	}
 	for _, rule := range all {
 		meta := rule.Meta()
 		registry.knownCodes[meta.Code] = true
@@ -97,7 +109,11 @@ func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
 			continue
 		}
 		registry.rules = append(registry.rules, rule)
-		configured := configuredRule{severity: severity, excludes: ruleConfig.Excludes, config: ruleConfig}
+		configured := configuredRule{
+			severity: severity,
+			excludes: ruleConfig.Excludes,
+			config:   ruleConfig,
+		}
 		if meta.Code == "banned-characters" {
 			configured.characters = defaultBannedCharacters
 			if ruleConfig.Characters != nil {
@@ -254,7 +270,11 @@ func Run(files []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
 			defer group.Done()
 			for filename := range jobs {
 				diagnostics, err := lintFile(filename, registry)
-				results <- fileResult{filename: filename, diagnostics: diagnostics, err: err}
+				results <- fileResult{
+					filename:    filename,
+					diagnostics: diagnostics,
+					err:         err,
+				}
 			}
 		}()
 	}
@@ -342,7 +362,12 @@ func analyzeTree(filename string, concreteTree *cst.Tree, activeRules []builtinr
 		return nil
 	}
 	concreteIgnores, concreteNodes := concreteSuppressions(concreteTree)
-	context := &Context{filename: filename, displayFilename: source.DisplayPath(filename), concreteIgnores: concreteIgnores, concreteNodes: concreteNodes}
+	context := &Context{
+		filename:        filename,
+		displayFilename: source.DisplayPath(filename),
+		concreteIgnores: concreteIgnores,
+		concreteNodes:   concreteNodes,
+	}
 	builtinrules.AnalyzeCST(
 		builtinrules.CSTInput{
 			Filename:         filename,
@@ -374,7 +399,15 @@ func (c *Context) reportConcrete(tree *cst.Tree, finding builtinrules.Finding, s
 	end.Filename = display
 	c.diagnostics = append(
 		c.diagnostics,
-		diagnostic.Diagnostic{Code: finding.Code, Message: finding.Message, Severity: severity, File: display, Start: start, End: end, Fixes: finding.Fixes},
+		diagnostic.Diagnostic{
+			Code:     finding.Code,
+			Message:  finding.Message,
+			Severity: severity,
+			File:     display,
+			Start:    start,
+			End:      end,
+			Fixes:    finding.Fixes,
+		},
 	)
 }
 
@@ -417,7 +450,11 @@ func concreteSuppressions(tree *cst.Tree) (map[string]bool, []concreteSuppressio
 		if index == len(candidates) {
 			continue
 		}
-		ignored := concreteSuppression{start: candidates[index].start, end: candidates[index].end, codes: make(map[string]bool, len(codes))}
+		ignored := concreteSuppression{
+			start: candidates[index].start,
+			end:   candidates[index].end,
+			codes: make(map[string]bool, len(codes)),
+		}
 		for _, code := range codes {
 			ignored.codes[code] = true
 		}
@@ -438,7 +475,10 @@ func concreteSuppressionCandidates(tree *cst.Tree) []concreteSuppression {
 			start,
 				end := cst.Range(node)
 			if end > start {
-				result = append(result, concreteSuppression{start: start, end: end})
+				result = append(result, concreteSuppression{
+					start: start,
+					end:   end,
+				})
 			}
 			return true
 		},

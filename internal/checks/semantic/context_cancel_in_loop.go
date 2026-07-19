@@ -84,11 +84,16 @@ func reportLoopContextCancellations(pass *Pass, body *ast.BlockStmt) {
 				acquisitions = append(acquisitions, contextAcquisitionsFromAssignment(pass, left, node.Values)...)
 			case *ast.ExprStmt:
 				if object := calledCancelObject(pass, node.X); object != nil {
-					uses[object] = append(uses[object], contextCancelUse{position: node.Pos()})
+					uses[object] = append(uses[object], contextCancelUse{
+						position: node.Pos(),
+					})
 				}
 			case *ast.DeferStmt:
 				if object := calledCancelObject(pass, node.Call); object != nil {
-					uses[object] = append(uses[object], contextCancelUse{position: node.Pos(), deferred: true})
+					uses[object] = append(uses[object], contextCancelUse{
+						position: node.Pos(),
+						deferred: true,
+					})
 				}
 			}
 			return true
@@ -122,7 +127,9 @@ func reportLoopContextCancellations(pass *Pass, body *ast.BlockStmt) {
 		}
 		if deferred != nil {
 			pass.Report(
-				positionNode{position: deferred.position},
+				positionNode{
+					position: deferred.position,
+				},
 				"cancellation deferred inside a loop runs only when the surrounding function returns; cancel before the iteration ends",
 			)
 			continue
@@ -141,7 +148,11 @@ func contextCancelledOnEveryLoopPath(body *ast.BlockStmt, acquisition contextCan
 	graph := cfg.New(body, func(*ast.CallExpr) bool {
 		return true
 	})
-	queue := []contextCancelPathState{{block: graph.Blocks[0]}}
+	queue := []contextCancelPathState{
+		{
+			block: graph.Blocks[0],
+		},
+	}
 	seen := make(map[contextCancelPathState]bool)
 	for len(queue) != 0 {
 		state := queue[0]
@@ -155,7 +166,10 @@ func contextCancelledOnEveryLoopPath(body *ast.BlockStmt, acquisition contextCan
 				return false
 			}
 			for _, successor := range state.block.Succs {
-				queue = append(queue, contextCancelPathState{block: successor, active: state.active})
+				queue = append(queue, contextCancelPathState{
+					block:  successor,
+					active: state.active,
+				})
 			}
 			continue
 		}
@@ -179,7 +193,11 @@ func contextCancelledOnEveryLoopPath(body *ast.BlockStmt, acquisition contextCan
 		if active && end != token.NoPos && nodeContainsPosition(node, end) {
 			return false
 		}
-		queue = append(queue, contextCancelPathState{block: state.block, next: state.next + 1, active: active})
+		queue = append(queue, contextCancelPathState{
+			block:  state.block,
+			next:   state.next + 1,
+			active: active,
+		})
 	}
 	return true
 }
@@ -198,13 +216,28 @@ func contextAcquisitionsFromAssignment(pass *Pass, left, right []ast.Expr) []con
 	}
 	identifier, ok := ast.Unparen(left[1]).(*ast.Ident)
 	if !ok || identifier.Name == "_" {
-		return []contextCancelAcquisition{{call: call, name: name}}
+		return []contextCancelAcquisition{
+			{
+				call: call,
+				name: name,
+			},
+		}
 	}
-	return []contextCancelAcquisition{{call: call, cancel: pass.TypesInfo.ObjectOf(identifier), name: name}}
+	return []contextCancelAcquisition{
+		{
+			call:   call,
+			cancel: pass.TypesInfo.ObjectOf(identifier),
+			name:   name,
+		},
+	}
 }
 
 func contextDerivationName(pass *Pass, call *ast.CallExpr) string {
-	for _, name := range []string{"WithCancel", "WithTimeout", "WithDeadline"} {
+	for _, name := range []string{
+		"WithCancel",
+		"WithTimeout",
+		"WithDeadline",
+	} {
 		if isPackageFunction(pass.TypesInfo, call.Fun, "context", name) {
 			return "context." + name
 		}

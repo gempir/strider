@@ -39,7 +39,13 @@ func TestWalkIncludesProductionsAndTokens(t *testing.T) {
 		kinds = append(kinds, Kind(node))
 		return true
 	})
-	for _, wanted := range []string{"SourceFile", "FunctionDecl", "IfElseStmt", "func", "IDENT"} {
+	for _, wanted := range []string{
+		"SourceFile",
+		"FunctionDecl",
+		"IfElseStmt",
+		"func",
+		"IDENT",
+	} {
 		if !slices.Contains(kinds, wanted) {
 			t.Errorf("walk did not include %q in %v", wanted, kinds)
 		}
@@ -296,7 +302,10 @@ func TestWalkWithAncestors(t *testing.T) {
 	want := []visitRecord{}
 	var collect func(Node, []Node)
 	collect = func(node Node, ancestors []Node) {
-		want = append(want, visitRecord{node: node, ancestors: append([]Node(nil), ancestors...)})
+		want = append(want, visitRecord{
+			node:      node,
+			ancestors: append([]Node(nil), ancestors...),
+		})
 		ancestors = append(ancestors, node)
 		for _, child := range referenceChildren(node) {
 			collect(child, ancestors)
@@ -305,7 +314,10 @@ func TestWalkWithAncestors(t *testing.T) {
 	collect(tree.Root(), nil)
 	got := []visitRecord{}
 	WalkWithAncestors(tree.Root(), func(node Node, ancestors []Node) bool {
-		got = append(got, visitRecord{node: node, ancestors: append([]Node(nil), ancestors...)})
+		got = append(got, visitRecord{
+			node:      node,
+			ancestors: append([]Node(nil), ancestors...),
+		})
 		return true
 	})
 	if len(got) != len(want) {
@@ -329,7 +341,10 @@ func TestWalkWithAncestors(t *testing.T) {
 			if referenceTokenNode(node) {
 				t.Fatalf("production walk visited token %s", Kind(node))
 			}
-			gotProductions = append(gotProductions, visitRecord{node: node, ancestors: append([]Node(nil), ancestors...)})
+			gotProductions = append(gotProductions, visitRecord{
+				node:      node,
+				ancestors: append([]Node(nil), ancestors...),
+			})
 			return true
 		},
 	)
@@ -370,7 +385,9 @@ func BenchmarkReflectionWalk(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for range b.N {
-		stack := []Node{tree.Root()}
+		stack := []Node{
+			tree.Root(),
+		}
 		for len(stack) != 0 {
 			last := len(stack) - 1
 			current := stack[last]

@@ -93,5 +93,7 @@ func binaryWriteDataNode(arguments []ast.Node, position token.Pos) ast.Node {
 	if len(arguments) != 0 {
 		return arguments[0]
 	}
-	return positionNode{position: position}
+	return positionNode{
+		position: position,
+	}
 }

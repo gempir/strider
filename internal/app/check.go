@@ -97,7 +97,9 @@ func runCheck(args []string, configuration config.Config, colorMode ui.ColorMode
 	}
 	selected := []string(only)
 	if *explain != "" {
-		selected = []string{*explain}
+		selected = []string{
+			*explain,
+		}
 		minimumSeverity = diagnostic.SeverityNone
 	}
 	registry, err := checkengine.NewRegistry(
@@ -129,9 +131,15 @@ func runCheck(args []string, configuration config.Config, colorMode ui.ColorMode
 		baselineConfig.selectedCodes[rule.Meta().Code] = true
 	}
 	baselineConfig.knownCodes = registry.KnownCodes()
-	workspaceOptions := workspace.Options{SkipGenerated: true, Root: configuration.Root, Excludes: checkConfig.Excludes}
+	workspaceOptions := workspace.Options{
+		SkipGenerated: true,
+		Root:          configuration.Root,
+		Excludes:      checkConfig.Excludes,
+	}
 	runOptions := checkengine.RunOptions{
-		Formatter:         formatter.Options{PrintWidth: configuration.Formatter.PrintWidth},
+		Formatter: formatter.Options{
+			PrintWidth: configuration.Formatter.PrintWidth,
+		},
 		Root:              configuration.Root,
 		Excludes:          checkConfig.Excludes,
 		CollectCandidates: fixMode,
@@ -184,7 +192,12 @@ func runCheck(args []string, configuration config.Config, colorMode ui.ColorMode
 			snapshot,
 			diagnostics,
 			result.Candidates,
-			fixengine.Options{Mode: mode, Formatter: runOptions.Formatter, Root: configuration.Root, FormatExcludes: formatExcludes},
+			fixengine.Options{
+				Mode:           mode,
+				Formatter:      runOptions.Formatter,
+				Root:           configuration.Root,
+				FormatExcludes: formatExcludes,
+			},
 		)
 		if fixErr != nil {
 			printCommandError(stderr, colorMode, "strider check", "%v", fixErr)
@@ -360,7 +373,11 @@ func listChecksInRegistry(registry *checkengine.Registry, colorMode ui.ColorMode
 	entries := make([]ruleListEntry, 0, len(registry.Rules()))
 	for _, rule := range registry.Rules() {
 		meta := rule.Meta()
-		entries = append(entries, ruleListEntry{code: meta.Code, severity: registry.Severity(meta.Code), summary: meta.Summary})
+		entries = append(entries, ruleListEntry{
+			code:     meta.Code,
+			severity: registry.Severity(meta.Code),
+			summary:  meta.Summary,
+		})
 	}
 	writeRuleList(stdout, palette, entries)
 	return exitSuccess

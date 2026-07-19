@@ -30,12 +30,20 @@ func TestDiscoverSkipsGeneratedAndVendor(t *testing.T) {
 	write(".cache/cached.go", "package cache\n")
 	write("_scratch/scratch.go", "package scratch\n")
 	write("notes.txt", "not go")
-	files, err := Discover([]string{root + string(filepath.Separator) + "..."}, Options{SkipGenerated: true})
+	files, err := Discover([]string{
+		root + string(filepath.Separator) + "...",
+	}, Options{
+		SkipGenerated: true,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Equal(files, []string{wanted}) {
-		t.Fatalf("got %v, want %v", files, []string{wanted})
+	if !slices.Equal(files, []string{
+		wanted,
+	}) {
+		t.Fatalf("got %v, want %v", files, []string{
+			wanted,
+		})
 	}
 }
 
@@ -49,7 +57,9 @@ func TestDiscoverAllowsExplicitHiddenDirectory(t *testing.T) {
 	if err := os.WriteFile(filename, []byte("package main\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	files, err := Discover([]string{hidden}, Options{})
+	files, err := Discover([]string{
+		hidden,
+	}, Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +67,9 @@ func TestDiscoverAllowsExplicitHiddenDirectory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Equal(files, []string{absolute}) {
+	if !slices.Equal(files, []string{
+		absolute,
+	}) {
 		t.Fatalf("got %v, want explicit hidden source %s", files, absolute)
 	}
 }

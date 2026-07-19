@@ -85,7 +85,11 @@ func concreteResultDecls(result *cst.Result) []*cst.ParameterDecl {
 		return concreteParameterDecls(result.Parameters)
 	}
 	if result.TypeNode != nil {
-		return []*cst.ParameterDecl{{TypeNode: result.TypeNode}}
+		return []*cst.ParameterDecl{
+			{
+				TypeNode: result.TypeNode,
+			},
+		}
 	}
 	return nil
 }

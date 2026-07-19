@@ -84,7 +84,10 @@ func typeSwitchCases(pass *Pass, statement *ast.TypeSwitchStmt) []typedCaseClaus
 				caseTypes = append(caseTypes, caseType)
 			}
 		}
-		cases = append(cases, typedCaseClause{clause: clause, types: caseTypes})
+		cases = append(cases, typedCaseClause{
+			clause: clause,
+			types:  caseTypes,
+		})
 	}
 	return cases
 }

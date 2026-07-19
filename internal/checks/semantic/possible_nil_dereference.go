@@ -58,7 +58,12 @@ func (possibleNilDereferenceRule) Run(pass *Pass) {
 					}
 				}
 				if matched && !protected {
-					pass.Report(positionNode{position: instruction.Pos()}, "pointer is dereferenced on a path where its nil check does not prove it is non-nil")
+					pass.Report(
+						positionNode{
+							position: instruction.Pos(),
+						},
+						"pointer is dereferenced on a path where its nil check does not prove it is non-nil",
+					)
 				}
 			}
 		}
@@ -98,7 +103,10 @@ func collectNilChecks(function *ssa.Function) []nilCheck {
 			// it does not prove that the comparison selected the non-nil edge.
 			nonNilPath = nil
 		}
-		checks = append(checks, nilCheck{value: value, nonNilPath: nonNilPath})
+		checks = append(checks, nilCheck{
+			value:      value,
+			nonNilPath: nonNilPath,
+		})
 	}
 	return checks
 }

@@ -19,7 +19,12 @@ func (a *cstAnalyzer) checkConcreteIf(statement *cst.IfStmt) {
 	if statement == nil {
 		return
 	}
-	a.checkConcreteConditional(concreteIf{node: statement, init: statement.SimpleStmt, condition: statement.Expression, body: statement.Block})
+	a.checkConcreteConditional(concreteIf{
+		node:      statement,
+		init:      statement.SimpleStmt,
+		condition: statement.Expression,
+		body:      statement.Block,
+	})
 }
 
 func (a *cstAnalyzer) checkConcreteIfElse(statement *cst.IfElseStmt) {
@@ -118,9 +123,21 @@ func (a *cstAnalyzer) checkConcreteIfChain(first concreteIf) {
 func concreteIfFromNode(node cst.Node) (concreteIf, bool) {
 	switch current := node.(type) {
 	case *cst.IfStmt:
-		return concreteIf{node: current, init: current.SimpleStmt, condition: current.Expression, body: current.Block}, true
+		return concreteIf{
+			node:      current,
+			init:      current.SimpleStmt,
+			condition: current.Expression,
+			body:      current.Block,
+		}, true
 	case *cst.IfElseStmt:
-		return concreteIf{node: current, init: current.SimpleStmt, condition: current.Expression, body: current.Block, elseToken: current.ELSE, elseClause: current.ElseClause}, true
+		return concreteIf{
+			node:       current,
+			init:       current.SimpleStmt,
+			condition:  current.Expression,
+			body:       current.Block,
+			elseToken:  current.ELSE,
+			elseClause: current.ElseClause,
+		}, true
 	default:
 		return concreteIf{}, false
 	}

@@ -48,19 +48,39 @@ func TestExecutionPlanSelectsNamedFacts(t *testing.T) {
 		code  string
 		facts FactSet
 	}{
-		{code: "invalid-regexp", facts: FactFirstCallArgument | FactStaticCalls},
-		{code: "unsupported-binary-write", facts: FactCallArguments | FactStaticCalls},
-		{code: "identical-binary-operands", facts: FactParents},
-		{code: "range-value-capture", facts: FactParents},
-		{code: "deprecated-api-usage", facts: FactDeprecations},
-		{code: "invalid-template", facts: 0},
+		{
+			code:  "invalid-regexp",
+			facts: FactFirstCallArgument | FactStaticCalls,
+		},
+		{
+			code:  "unsupported-binary-write",
+			facts: FactCallArguments | FactStaticCalls,
+		},
+		{
+			code:  "identical-binary-operands",
+			facts: FactParents,
+		},
+		{
+			code:  "range-value-capture",
+			facts: FactParents,
+		},
+		{
+			code:  "deprecated-api-usage",
+			facts: FactDeprecations,
+		},
+		{
+			code:  "invalid-template",
+			facts: 0,
+		},
 	}
 	for _, test := range tests {
 		t.Run(
 			test.code,
 			func(t *testing.T) {
 				registry,
-					err := NewRegistry([]string{test.code})
+					err := NewRegistry([]string{
+					test.code,
+				})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -73,7 +93,10 @@ func TestExecutionPlanSelectsNamedFacts(t *testing.T) {
 }
 
 func TestExecutionPlanSelectsStaticCallPackages(t *testing.T) {
-	registry, err := NewRegistry([]string{"invalid-regexp", "unsupported-marshal-type"})
+	registry, err := NewRegistry([]string{
+		"invalid-regexp",
+		"unsupported-marshal-type",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -91,9 +114,17 @@ func TestStaticCallFactsInitializeOnce(t *testing.T) {
 		if !required.Has(FactStaticCalls) {
 			t.Fatal("static-call capability missing from fact builder")
 		}
-		return packageSSAFactData{staticCallsByPackage: map[string][]ssa.CallInstruction{"strings": {nil}}}
+		return packageSSAFactData{
+			staticCallsByPackage: map[string][]ssa.CallInstruction{
+				"strings": {
+					nil,
+				},
+			},
+		}
 	}
-	pass := &Pass{facts: facts}
+	pass := &Pass{
+		facts: facts,
+	}
 	var group sync.WaitGroup
 	for range 32 {
 		group.Add(1)
@@ -115,12 +146,16 @@ func TestTypedOnlyPlanDoesNotBuildSSA(t *testing.T) {
 
 func valid() string { return "ok" }
 `)
-	registry, err := NewRegistry([]string{"invalid-template"})
+	registry, err := NewRegistry([]string{
+		"invalid-template",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	calls := 0
-	_, err = run([]string{root}, registry, func([]*packages.Package, ssa.BuilderMode) ssaBuildResult {
+	_, err = run([]string{
+		root,
+	}, registry, func([]*packages.Package, ssa.BuilderMode) ssaBuildResult {
 		calls++
 		return ssaBuildResult{}
 	})
@@ -136,13 +171,23 @@ func TestSSADebugMetadataIsCapabilityDriven(t *testing.T) {
 	tests := []struct {
 		code        string
 		globalDebug bool
-	}{{code: "invalid-regexp"}, {code: "overwritten-before-use", globalDebug: true}}
+	}{
+		{
+			code: "invalid-regexp",
+		},
+		{
+			code:        "overwritten-before-use",
+			globalDebug: true,
+		},
+	}
 	for _, test := range tests {
 		t.Run(
 			test.code,
 			func(t *testing.T) {
 				registry,
-					err := NewRegistry([]string{test.code})
+					err := NewRegistry([]string{
+					test.code,
+				})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -179,7 +224,12 @@ func TestNamedPackageFactsInitializeOnce(t *testing.T) {
 		builds.Add(1)
 		return buildPackageFacts(files, required)
 	}
-	pass := &Pass{Files: []*ast.File{file}, facts: facts}
+	pass := &Pass{
+		Files: []*ast.File{
+			file,
+		},
+		facts: facts,
+	}
 	var group sync.WaitGroup
 	for index := range 32 {
 		group.Add(1)

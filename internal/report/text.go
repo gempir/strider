@@ -262,7 +262,12 @@ func summary(diagnostics []diagnostic.Diagnostic, counts map[diagnostic.Severity
 		return palette.Success(prefix)
 	}
 	parts := make([]string, 0, 6)
-	for _, severity := range []diagnostic.Severity{diagnostic.SeverityError, diagnostic.SeverityWarning, diagnostic.SeverityNote, diagnostic.SeverityNone} {
+	for _, severity := range []diagnostic.Severity{
+		diagnostic.SeverityError,
+		diagnostic.SeverityWarning,
+		diagnostic.SeverityNote,
+		diagnostic.SeverityNone,
+	} {
 		if count := counts[severity]; count != 0 {
 			part := fmt.Sprintf("%d %s", count, plural(string(severity), count))
 			parts = append(parts, styledSeverity(severity, part, palette))

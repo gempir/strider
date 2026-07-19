@@ -61,7 +61,14 @@ func (a *cstAnalyzer) checkConcreteBreak(statement *cst.BreakStmt) {
 				"redundant-switch-break",
 				statement,
 				"omit unnecessary break at the end of a case clause",
-				diagnostic.Fix{Message: "remove the redundant break", Safety: diagnostic.Safe, Automatic: true, Edits: []diagnostic.TextEdit{edit}},
+				diagnostic.Fix{
+					Message:   "remove the redundant break",
+					Safety:    diagnostic.Safe,
+					Automatic: true,
+					Edits: []diagnostic.TextEdit{
+						edit,
+					},
+				},
 			)
 		}
 		return
@@ -69,7 +76,11 @@ func (a *cstAnalyzer) checkConcreteBreak(statement *cst.BreakStmt) {
 }
 
 func (a *cstAnalyzer) redundantBreakEdit(start, end int) diagnostic.TextEdit {
-	edit := diagnostic.TextEdit{Start: start, End: end, OldText: "break"}
+	edit := diagnostic.TextEdit{
+		Start:   start,
+		End:     end,
+		OldText: "break",
+	}
 	lineStart := bytes.LastIndexByte(a.content[:start], '\n') + 1
 	newline := bytes.IndexByte(a.content[end:], '\n')
 	if newline < 0 {
@@ -81,5 +92,9 @@ func (a *cstAnalyzer) redundantBreakEdit(start, end int) diagnostic.TextEdit {
 	if len(before) != 0 || len(after) != 0 && !bytes.Equal(after, []byte(";")) {
 		return edit
 	}
-	return diagnostic.TextEdit{Start: lineStart, End: lineEnd, OldText: string(a.content[lineStart:lineEnd])}
+	return diagnostic.TextEdit{
+		Start:   lineStart,
+		End:     lineEnd,
+		OldText: string(a.content[lineStart:lineEnd]),
+	}
 }

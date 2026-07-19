@@ -20,7 +20,9 @@ type Options struct {
 
 func Discover(paths []string, opts Options) ([]string, error) {
 	if len(paths) == 0 {
-		paths = []string{"."}
+		paths = []string{
+			".",
+		}
 	}
 	seen := make(map[string]struct{})
 	for _, input := range paths {

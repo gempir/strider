@@ -39,7 +39,9 @@ func (invalidTimeParseRule) Run(pass *Pass) {
 		if _, err := time.Parse(layout, layout); err != nil {
 			node := calls[call.Pos()]
 			if node == nil {
-				node = positionNode{position: call.Pos()}
+				node = positionNode{
+					position: call.Pos(),
+				}
 			}
 			pass.Report(node, err.Error())
 		}

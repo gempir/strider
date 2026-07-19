@@ -35,7 +35,11 @@ func (a *cstAnalyzer) checkConcreteStringLiteral(literal *cst.BasicLit) {
 		return
 	}
 	lower := strings.ToLower(value)
-	for _, scheme := range []string{"http://", "ws://", "ftp://"} {
+	for _, scheme := range []string{
+		"http://",
+		"ws://",
+		"ftp://",
+	} {
 		if strings.HasPrefix(lower, scheme) {
 			a.report("insecure-url-scheme", literal, fmt.Sprintf("URL uses insecure %s scheme", strings.TrimSuffix(scheme, "://")))
 			return
@@ -66,7 +70,14 @@ func (a *cstAnalyzer) checkConcreteStructTag(literal cst.Token) {
 		}
 	}
 	tag := reflect.StructTag(value)
-	for _, key := range []string{"json", "xml", "yaml", "toml", "form", "validate"} {
+	for _, key := range []string{
+		"json",
+		"xml",
+		"yaml",
+		"toml",
+		"form",
+		"validate",
+	} {
 		raw, ok := tag.Lookup(key)
 		if !ok {
 			continue

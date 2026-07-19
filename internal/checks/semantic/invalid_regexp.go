@@ -36,7 +36,9 @@ func (invalidRegexpRule) Run(pass *Pass) {
 		if _, err := regexp.Compile(constant.StringVal(value.Value)); err != nil {
 			node := calls[call.Pos()]
 			if node == nil {
-				node = positionNode{position: call.Pos()}
+				node = positionNode{
+					position: call.Pos(),
+				}
 			}
 			pass.Report(node, err.Error())
 		}

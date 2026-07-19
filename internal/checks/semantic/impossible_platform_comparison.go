@@ -86,7 +86,10 @@ func parsedFileConstraint(file *ast.File) (constraint.Expr, bool) {
 	}
 	expression := legacy[0]
 	for _, next := range legacy[1:] {
-		expression = &constraint.AndExpr{X: expression, Y: next}
+		expression = &constraint.AndExpr{
+			X: expression,
+			Y: next,
+		}
 	}
 	return expression, true
 }

@@ -43,7 +43,9 @@ func (ineffectiveValueReceiverAssignmentRule) Run(pass *Pass) {
 					continue
 				}
 				pass.Report(
-					positionNode{position: store.Pos()},
+					positionNode{
+						position: store.Pos(),
+					},
 					fmt.Sprintf(
 						"assignment to value receiver field %s.%s has no observable effect",
 						receiverTypeName(receiver.Type()),
@@ -165,7 +167,9 @@ func instructionOffset(instruction ssa.Instruction) int {
 
 func blockReachable(start, target *ssa.BasicBlock) bool {
 	seen := make(map[*ssa.BasicBlock]bool)
-	work := []*ssa.BasicBlock{start}
+	work := []*ssa.BasicBlock{
+		start,
+	}
 	for len(work) != 0 {
 		block := work[len(work)-1]
 		work = work[:len(work)-1]

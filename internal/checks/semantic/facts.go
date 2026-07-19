@@ -43,7 +43,9 @@ func newPackageFacts(required FactSet, staticCallPackages ...map[string]bool) *p
 	if required == 0 {
 		return nil
 	}
-	facts := &packageFacts{required: required}
+	facts := &packageFacts{
+		required: required,
+	}
 	if len(staticCallPackages) != 0 {
 		facts.staticCallPackages = staticCallPackages[0]
 	}

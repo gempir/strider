@@ -21,7 +21,13 @@ func TestWriteBatchRejectsStaleSameSizeContent(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err := WriteBatch([]Change{{Path: path, Before: before, After: []byte("package fixed\n")}})
+	err := WriteBatch([]Change{
+		{
+			Path:   path,
+			Before: before,
+			After:  []byte("package fixed\n"),
+		},
+	})
 	if !errors.Is(err, ErrStale) {
 		t.Fatalf("WriteBatch error = %v, want ErrStale", err)
 	}
@@ -55,7 +61,16 @@ func TestWriteBatchStaleGuardPreventsAllWrites(t *testing.T) {
 		createTemporary = originalCreateTemporary
 	})
 
-	err := WriteBatch([]Change{{Path: target, Before: targetBefore, After: []byte("package fixed\n")}}, Guard{Path: guarded, Before: guardBefore})
+	err := WriteBatch([]Change{
+		{
+			Path:   target,
+			Before: targetBefore,
+			After:  []byte("package fixed\n"),
+		},
+	}, Guard{
+		Path:   guarded,
+		Before: guardBefore,
+	})
 	if !errors.Is(err, ErrStale) {
 		t.Fatalf("WriteBatch error = %v, want ErrStale", err)
 	}
@@ -98,7 +113,16 @@ func TestWriteBatchRechecksGuardAfterStaging(t *testing.T) {
 		createTemporary = originalCreateTemporary
 	})
 
-	err := WriteBatch([]Change{{Path: target, Before: targetBefore, After: []byte("package fixed\n")}}, Guard{Path: guarded, Before: guardBefore})
+	err := WriteBatch([]Change{
+		{
+			Path:   target,
+			Before: targetBefore,
+			After:  []byte("package fixed\n"),
+		},
+	}, Guard{
+		Path:   guarded,
+		Before: guardBefore,
+	})
 	if !errors.Is(err, ErrStale) {
 		t.Fatalf("WriteBatch error = %v, want ErrStale", err)
 	}
@@ -120,7 +144,16 @@ func TestWriteBatchCoalescesMatchingGuardAndChange(t *testing.T) {
 		t.Skipf("create symlink: %v", err)
 	}
 
-	if err := WriteBatch([]Change{{Path: target, Before: before, After: after}}, Guard{Path: link, Before: before}); err != nil {
+	if err := WriteBatch([]Change{
+		{
+			Path:   target,
+			Before: before,
+			After:  after,
+		},
+	}, Guard{
+		Path:   link,
+		Before: before,
+	}); err != nil {
 		t.Fatal(err)
 	}
 	assertContents(t, target, after)
@@ -145,7 +178,16 @@ func TestWriteBatchRejectsConflictingGuardAndChange(t *testing.T) {
 		t.Skipf("create symlink: %v", err)
 	}
 
-	err := WriteBatch([]Change{{Path: target, Before: before, After: []byte("package after\n")}}, Guard{Path: link, Before: []byte("package other\n")})
+	err := WriteBatch([]Change{
+		{
+			Path:   target,
+			Before: before,
+			After:  []byte("package after\n"),
+		},
+	}, Guard{
+		Path:   link,
+		Before: []byte("package other\n"),
+	})
 	if err == nil || !strings.Contains(err.Error(), "conflicting Before") {
 		t.Fatalf("WriteBatch error = %v, want conflicting Before error", err)
 	}
@@ -158,7 +200,10 @@ func TestWriteBatchRejectsRetargetedGuardWithIdenticalContents(t *testing.T) {
 	second := filepath.Join(directory, "second.go")
 	link := filepath.Join(directory, "guard.go")
 	before := []byte("package same\n")
-	for _, path := range []string{first, second} {
+	for _, path := range []string{
+		first,
+		second,
+	} {
 		if err := os.WriteFile(path, before, 0o600); err != nil {
 			t.Fatal(err)
 		}
@@ -177,7 +222,17 @@ func TestWriteBatchRejectsRetargetedGuardWithIdenticalContents(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = WriteBatch([]Change{{Path: first, Before: before, After: []byte("package changed\n")}}, Guard{Path: link, Before: before, ExpectedTarget: expectedTarget})
+	err = WriteBatch([]Change{
+		{
+			Path:   first,
+			Before: before,
+			After:  []byte("package changed\n"),
+		},
+	}, Guard{
+		Path:           link,
+		Before:         before,
+		ExpectedTarget: expectedTarget,
+	})
 	if !errors.Is(err, ErrStale) {
 		t.Fatalf("WriteBatch error = %v, want ErrStale", err)
 	}
@@ -198,7 +253,13 @@ func TestWriteBatchPreservesPermissions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := WriteBatch([]Change{{Path: path, Before: before, After: after}}); err != nil {
+	if err := WriteBatch([]Change{
+		{
+			Path:   path,
+			Before: before,
+			After:  after,
+		},
+	}); err != nil {
 		t.Fatal(err)
 	}
 	assertContents(t, path, after)
@@ -224,7 +285,13 @@ func TestWriteBatchPreservesSymlink(t *testing.T) {
 		t.Skipf("create symlink: %v", err)
 	}
 
-	if err := WriteBatch([]Change{{Path: link, Before: before, After: after}}); err != nil {
+	if err := WriteBatch([]Change{
+		{
+			Path:   link,
+			Before: before,
+			After:  after,
+		},
+	}); err != nil {
 		t.Fatal(err)
 	}
 	assertContents(t, target, after)
@@ -249,7 +316,10 @@ func TestWriteBatchStagesEveryFileBeforeReplacingTargets(t *testing.T) {
 	first := filepath.Join(directory, "a.go")
 	second := filepath.Join(directory, "z.go")
 	before := []byte("package before\n")
-	for _, path := range []string{first, second} {
+	for _, path := range []string{
+		first,
+		second,
+	} {
 		if err := os.WriteFile(path, before, 0o600); err != nil {
 			t.Fatal(err)
 		}
@@ -268,7 +338,18 @@ func TestWriteBatchStagesEveryFileBeforeReplacingTargets(t *testing.T) {
 		createTemporary = originalCreateTemporary
 	})
 
-	err := WriteBatch([]Change{{Path: second, Before: before, After: []byte("package second\n")}, {Path: first, Before: before, After: []byte("package first\n")}})
+	err := WriteBatch([]Change{
+		{
+			Path:   second,
+			Before: before,
+			After:  []byte("package second\n"),
+		},
+		{
+			Path:   first,
+			Before: before,
+			After:  []byte("package first\n"),
+		},
+	})
 	if err == nil || !strings.Contains(err.Error(), "injected staging failure") {
 		t.Fatalf("WriteBatch error = %v, want injected failure", err)
 	}
@@ -289,7 +370,10 @@ func TestWriteBatchRechecksContentsAfterStaging(t *testing.T) {
 	if len(before) != len(stale) {
 		t.Fatal("fixture contents must have equal lengths")
 	}
-	for _, path := range []string{first, second} {
+	for _, path := range []string{
+		first,
+		second,
+	} {
 		if err := os.WriteFile(path, before, 0o600); err != nil {
 			t.Fatal(err)
 		}
@@ -314,7 +398,18 @@ func TestWriteBatchRechecksContentsAfterStaging(t *testing.T) {
 		createTemporary = originalCreateTemporary
 	})
 
-	err := WriteBatch([]Change{{Path: first, Before: before, After: []byte("package first\n")}, {Path: second, Before: before, After: []byte("package second\n")}})
+	err := WriteBatch([]Change{
+		{
+			Path:   first,
+			Before: before,
+			After:  []byte("package first\n"),
+		},
+		{
+			Path:   second,
+			Before: before,
+			After:  []byte("package second\n"),
+		},
+	})
 	if !errors.Is(err, ErrStale) {
 		t.Fatalf("WriteBatch error = %v, want ErrStale", err)
 	}
@@ -329,7 +424,10 @@ func TestWriteBatchRechecksEachTargetImmediatelyBeforeRename(t *testing.T) {
 	second := filepath.Join(directory, "z.go")
 	before := []byte("package before\n")
 	stale := []byte("package stale\n")
-	for _, path := range []string{first, second} {
+	for _, path := range []string{
+		first,
+		second,
+	} {
 		if err := os.WriteFile(path, before, 0o600); err != nil {
 			t.Fatal(err)
 		}
@@ -351,7 +449,18 @@ func TestWriteBatchRechecksEachTargetImmediatelyBeforeRename(t *testing.T) {
 		renameFile = originalRenameFile
 	})
 
-	err := WriteBatch([]Change{{Path: first, Before: before, After: []byte("package first\n")}, {Path: second, Before: before, After: []byte("package second\n")}})
+	err := WriteBatch([]Change{
+		{
+			Path:   first,
+			Before: before,
+			After:  []byte("package first\n"),
+		},
+		{
+			Path:   second,
+			Before: before,
+			After:  []byte("package second\n"),
+		},
+	})
 	if !errors.Is(err, ErrStale) {
 		t.Fatalf("WriteBatch error = %v, want ErrStale", err)
 	}
@@ -375,7 +484,18 @@ func TestWriteBatchRejectsDuplicateResolvedTargets(t *testing.T) {
 		t.Skipf("create symlink: %v", err)
 	}
 
-	err := WriteBatch([]Change{{Path: target, Before: before, After: []byte("package target\n")}, {Path: link, Before: before, After: []byte("package link\n")}})
+	err := WriteBatch([]Change{
+		{
+			Path:   target,
+			Before: before,
+			After:  []byte("package target\n"),
+		},
+		{
+			Path:   link,
+			Before: before,
+			After:  []byte("package link\n"),
+		},
+	})
 	if err == nil || !strings.Contains(err.Error(), "resolve to the same target") {
 		t.Fatalf("WriteBatch error = %v, want duplicate target error", err)
 	}
@@ -394,7 +514,18 @@ func TestWriteBatchRejectsDuplicateFilesystemIdentity(t *testing.T) {
 		t.Skipf("create hard link: %v", err)
 	}
 
-	err := WriteBatch([]Change{{Path: first, Before: before, After: []byte("package first\n")}, {Path: second, Before: before, After: []byte("package second\n")}})
+	err := WriteBatch([]Change{
+		{
+			Path:   first,
+			Before: before,
+			After:  []byte("package first\n"),
+		},
+		{
+			Path:   second,
+			Before: before,
+			After:  []byte("package second\n"),
+		},
+	})
 	if err == nil || !strings.Contains(err.Error(), "same filesystem file") {
 		t.Fatalf("WriteBatch error = %v, want duplicate filesystem identity error", err)
 	}
@@ -406,7 +537,10 @@ func TestWriteBatchUsesDeterministicTargetOrder(t *testing.T) {
 	root := t.TempDir()
 	firstDirectory := filepath.Join(root, "a")
 	secondDirectory := filepath.Join(root, "z")
-	for _, directory := range []string{firstDirectory, secondDirectory} {
+	for _, directory := range []string{
+		firstDirectory,
+		secondDirectory,
+	} {
 		if err := os.Mkdir(directory, 0o700); err != nil {
 			t.Fatal(err)
 		}
@@ -414,7 +548,10 @@ func TestWriteBatchUsesDeterministicTargetOrder(t *testing.T) {
 	first := filepath.Join(firstDirectory, "main.go")
 	second := filepath.Join(secondDirectory, "main.go")
 	before := []byte("package before\n")
-	for _, path := range []string{first, second} {
+	for _, path := range []string{
+		first,
+		second,
+	} {
 		if err := os.WriteFile(path, before, 0o600); err != nil {
 			t.Fatal(err)
 		}
@@ -430,14 +567,28 @@ func TestWriteBatchUsesDeterministicTargetOrder(t *testing.T) {
 		createTemporary = originalCreateTemporary
 	})
 
-	if err := WriteBatch([]Change{{Path: second, Before: before, After: []byte("package second\n")}, {Path: first, Before: before, After: []byte("package first\n")}}); err != nil {
+	if err := WriteBatch([]Change{
+		{
+			Path:   second,
+			Before: before,
+			After:  []byte("package second\n"),
+		},
+		{
+			Path:   first,
+			Before: before,
+			After:  []byte("package first\n"),
+		},
+	}); err != nil {
 		t.Fatal(err)
 	}
 	resolvedRoot, err := filepath.EvalSymlinks(root)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{filepath.Join(resolvedRoot, "a"), filepath.Join(resolvedRoot, "z")}
+	want := []string{
+		filepath.Join(resolvedRoot, "a"),
+		filepath.Join(resolvedRoot, "z"),
+	}
 	if strings.Join(order, "\n") != strings.Join(want, "\n") {
 		t.Fatalf("staging order = %v, want %v", order, want)
 	}
@@ -446,7 +597,13 @@ func TestWriteBatchUsesDeterministicTargetOrder(t *testing.T) {
 func TestWriteBatchIgnoresUnchangedChanges(t *testing.T) {
 	missing := filepath.Join(t.TempDir(), "missing.go")
 	contents := []byte("package same\n")
-	if err := WriteBatch([]Change{{Path: missing, Before: contents, After: bytes.Clone(contents)}}); err != nil {
+	if err := WriteBatch([]Change{
+		{
+			Path:   missing,
+			Before: contents,
+			After:  bytes.Clone(contents),
+		},
+	}); err != nil {
 		t.Fatalf("unchanged change returned %v", err)
 	}
 }

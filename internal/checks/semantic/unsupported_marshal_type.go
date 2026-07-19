@@ -32,7 +32,10 @@ func (unsupportedMarshalTypeRule) Meta() Meta {
 
 func (unsupportedMarshalTypeRule) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
-	for _, packagePath := range []string{"encoding/json", "encoding/xml"} {
+	for _, packagePath := range []string{
+		"encoding/json",
+		"encoding/xml",
+	} {
 		for _, call := range pass.staticCallsInPackage(packagePath) {
 			descriptor, ok := marshalDescriptor(call)
 			if !ok || len(call.Common().Args) <= descriptor.ssaArgument {
@@ -56,9 +59,17 @@ func (unsupportedMarshalTypeRule) Run(pass *Pass) {
 func marshalDescriptor(call ssa.CallInstruction) (marshalCall, bool) {
 	switch {
 	case isStaticFunction(call, "encoding/json", "Marshal"), isStaticFunction(call, "encoding/json", "MarshalIndent"):
-		return marshalCall{format: "JSON", ssaArgument: 0, sourceArgument: 0}, true
+		return marshalCall{
+			format:         "JSON",
+			ssaArgument:    0,
+			sourceArgument: 0,
+		}, true
 	case isStaticFunction(call, "encoding/xml", "Marshal"), isStaticFunction(call, "encoding/xml", "MarshalIndent"):
-		return marshalCall{format: "XML", ssaArgument: 0, sourceArgument: 0}, true
+		return marshalCall{
+			format:         "XML",
+			ssaArgument:    0,
+			sourceArgument: 0,
+		}, true
 	}
 	callee := call.Common().StaticCallee()
 	if callee == nil || callee.Object() == nil || callee.Object().Pkg() == nil || callee.Object().Name() != "Encode" {
@@ -71,9 +82,17 @@ func marshalDescriptor(call ssa.CallInstruction) (marshalCall, bool) {
 	path := callee.Object().Pkg().Path()
 	switch path {
 	case "encoding/json":
-		return marshalCall{format: "JSON", ssaArgument: 1, sourceArgument: 0}, true
+		return marshalCall{
+			format:         "JSON",
+			ssaArgument:    1,
+			sourceArgument: 0,
+		}, true
 	case "encoding/xml":
-		return marshalCall{format: "XML", ssaArgument: 1, sourceArgument: 0}, true
+		return marshalCall{
+			format:         "XML",
+			ssaArgument:    1,
+			sourceArgument: 0,
+		}, true
 	default:
 		return marshalCall{}, false
 	}
@@ -131,13 +150,18 @@ func unsupportedMarshalType(valueType types.Type, format string, seen map[types.
 }
 
 func hasCustomMarshaler(named *types.Named, format string) bool {
-	names := []string{"MarshalText"}
+	names := []string{
+		"MarshalText",
+	}
 	if format == "JSON" {
 		names = append(names, "MarshalJSON")
 	} else {
 		names = append(names, "MarshalXML")
 	}
-	for _, valueType := range []types.Type{named, types.NewPointer(named)} {
+	for _, valueType := range []types.Type{
+		named,
+		types.NewPointer(named),
+	} {
 		methodSet := types.NewMethodSet(valueType)
 		for index := range methodSet.Len() {
 			name := methodSet.At(index).Obj().Name()

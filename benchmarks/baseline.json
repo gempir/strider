@@ -7,8 +7,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "f4278881f2e9168af41e966f02011171865315758f9aee2a1e5b9a596b3b479b",
-          "findings": 1110,
+          "digest": "cbf5cc029568cd50277a5dd0e310a381e78e93c7e365f7d9bc81a58c5ac2fc37",
+          "findings": 1113,
           "by_code": {
             "add-constant": 175,
             "boolean-literal-comparison": 10,
@@ -27,7 +27,7 @@
             "external-call-in-loop": 3,
             "file-length-limit": 5,
             "flag-parameter": 1,
-            "format": 43,
+            "format": 46,
             "function-length": 19,
             "function-result-limit": 1,
             "get-function-return-value": 1,
@@ -63,8 +63,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "813c4c2c514d07302d0778c92c3696887bac899208ac7004bc9fd15857727f3b",
-          "findings": 43
+          "digest": "9f245158665b35294b517176db19c3d1c571d53b466e3b2745e81aa8722fb981",
+          "findings": 46
         }
       }
     },
@@ -74,8 +74,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "9f08b439a9e303f381f70f183c5dbbe13391cdfef71cea1b09e35df9f4b54cd4",
-          "findings": 2851,
+          "digest": "3362de247c5eb5d0d497125ab9edd4cd4788b04142808b7cb070631926e4ddda",
+          "findings": 2860,
           "by_code": {
             "add-constant": 503,
             "boolean-literal-comparison": 1,
@@ -92,7 +92,7 @@
             "external-call-in-loop": 4,
             "file-length-limit": 12,
             "flag-parameter": 6,
-            "format": 50,
+            "format": 59,
             "function-length": 20,
             "import-alias-naming": 1,
             "import-shadowing": 7,
@@ -129,8 +129,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "9a03af3397440f4ccb853f3a808d026bf180a94684fd17dbcb4d3966b3bfcd4b",
-          "findings": 50
+          "digest": "d8c5ab4add9e3225dae2c350d5d8e04404595c7d675ed757ca3865086202bb31",
+          "findings": 59
         }
       }
     },
@@ -140,8 +140,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "ce200107401365b61462f72cd079423a4dea8b5164ce458b59c6c83ad7dabba7",
-          "findings": 814,
+          "digest": "b0ab76ffa4ee74fe600f9c0a9740aae1f1350749f9d7e9a63f75d0d0c30835fc",
+          "findings": 819,
           "by_code": {
             "add-constant": 42,
             "byte-string-write": 1,
@@ -156,7 +156,7 @@
             "external-call-in-loop": 1,
             "file-length-limit": 5,
             "flag-parameter": 8,
-            "format": 21,
+            "format": 26,
             "function-length": 10,
             "import-shadowing": 7,
             "increment-decrement": 1,
@@ -190,8 +190,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "4cc9a9a22b679275c803bb518194e76ca65cac8ca46970ff4795d7cd02504b51",
-          "findings": 21
+          "digest": "45789d6c2df09d12783a270de1013d062c7ee4b34cd2b3aef61d2b2dadce5077",
+          "findings": 26
         }
       }
     },
@@ -253,8 +253,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "1b2e26e0be92074f629c2f3f4701de8c7767e890ad9bb656afe210cdbdbff725",
-          "findings": 276,
+          "digest": "b118f20a6e9ceedcaab82ffd0cd6258293483ea9b5ff12bf3db80a2cac6c89a7",
+          "findings": 277,
           "by_code": {
             "add-constant": 8,
             "cognitive-complexity": 11,
@@ -264,7 +264,7 @@
             "doc-comment-period": 15,
             "error-strings": 6,
             "exported-declaration-comment": 34,
-            "format": 7,
+            "format": 8,
             "import-alias-naming": 1,
             "ineffective-bitwise-zero": 1,
             "marshal-receiver": 2,
@@ -293,8 +293,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "04e4287bdc87ba82a3c61e569008e484d3fba113da8497a40d14323bb745a642",
-          "findings": 7
+          "digest": "ca0a7b1c1b4df0ef44d598890531d610f32f794a1ea96c24511e04423ec236dd",
+          "findings": 8
         }
       }
     },
@@ -304,8 +304,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "bb4d725ff512cc183895476556c67611ee0f47dd9a609fa4e0b1d5e03cff862d",
-          "findings": 319,
+          "digest": "323a45e459d1e9e2f75afeaffb4d51b5661ed503772e4e457db1fe8103170ed7",
+          "findings": 320,
           "by_code": {
             "add-constant": 13,
             "cognitive-complexity": 8,
@@ -319,7 +319,7 @@
             "exported-declaration-comment": 103,
             "file-length-limit": 1,
             "filename-format": 2,
-            "format": 13,
+            "format": 14,
             "import-shadowing": 4,
             "insecure-url-scheme": 2,
             "max-public-structs": 1,
@@ -346,8 +346,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "8eebadea301f0dc4edd67336f81a34e7fa7a4bf258f28400db871c0275b54900",
-          "findings": 13
+          "digest": "ac322f6bff9f6fd2ca2d0da333be8c6c034fb519e1c277bf8d9fba3c2909f8b0",
+          "findings": 14
         }
       }
     },
@@ -357,8 +357,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "933b7980d7c568104e3a58c86d187610f868c0788e1518719e3971efa6720262",
-          "findings": 531,
+          "digest": "f353c2c9b9960bfec2ea797f08fc446cba066f677ced2752abcd775c7fa85867",
+          "findings": 533,
           "by_code": {
             "add-constant": 38,
             "append-to-sized-slice": 1,
@@ -373,7 +373,7 @@
             "exported-declaration-comment": 18,
             "file-length-limit": 2,
             "flag-parameter": 1,
-            "format": 16,
+            "format": 18,
             "get-function-return-value": 2,
             "increment-decrement": 2,
             "insecure-url-scheme": 1,
@@ -400,8 +400,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "705c7e938f1963e3801c9695d5c5b66af9933e2d1dc1d6fae093fadf3b6beb9a",
-          "findings": 16
+          "digest": "ff1cec9802b14f7774ac1af8af0b56a15a355bcb72369fc8364b10ea26cec74b",
+          "findings": 18
         }
       }
     },
@@ -411,8 +411,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "b9ea6d0fb9621df982e9be9d22fce754de590faf685d9d2df653ee336dd045b5",
-          "findings": 210,
+          "digest": "24c98fe49ef964c2f1e3560a18e6aadee08689009a218f7934c57f35cfadb969",
+          "findings": 208,
           "by_code": {
             "add-constant": 1,
             "cognitive-complexity": 5,
@@ -424,7 +424,7 @@
             "error-type-naming": 1,
             "exported-declaration-comment": 64,
             "flag-parameter": 2,
-            "format": 21,
+            "format": 19,
             "function-length": 9,
             "import-shadowing": 1,
             "modifies-value-receiver": 2,
@@ -443,8 +443,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "92c8519bf76d56b9ac11b781f510147a6c0970ec86738963c78b6652073d806d",
-          "findings": 21
+          "digest": "626480bd973d4c1131edf99596a8003d8bf2b8cd2979c948c94b573a2eee1e1f",
+          "findings": 19
         }
       }
     },
@@ -454,7 +454,7 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "617c205416c3363053680ff42e250055e0758be385c519bf395b1b6bae1c35c4",
+          "digest": "d6e6a0c86e65d3745f77455a0bfddab64d635bf11d7a2a4a87b2aecf5a43d069",
           "findings": 464,
           "by_code": {
             "add-constant": 35,
@@ -492,7 +492,7 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "30d82e25d66cd6d2f1781427ad8eb4b3be7ab45bbeab5d041b78e20ddec73469",
+          "digest": "7e8100cabf9b454af4319fff2671ad2495ff7e0bc7f41cea26e7596a9c5eff77",
           "findings": 9
         }
       }
@@ -560,8 +560,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "61d1b480f92ba1a12e0f4829d3ecde158a128fad8a056cc866445d61168e14a6",
-          "findings": 24945,
+          "digest": "24798f0794d8b68b9d46aba07fbed6bbc09b6b35b4a35033bf503359c25efc14",
+          "findings": 24949,
           "by_code": {
             "add-constant": 3608,
             "blank-imports": 1,
@@ -587,7 +587,7 @@
             "exported-declaration-comment": 2436,
             "file-length-limit": 135,
             "flag-parameter": 84,
-            "format": 627,
+            "format": 631,
             "function-length": 758,
             "function-result-limit": 24,
             "identical-switch-branches": 2,
@@ -643,8 +643,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "5f6ab00195d1d506850e408ae666baa32a58d361774f2dddfdc6964b0363fe56",
-          "findings": 627
+          "digest": "df26a672944187d871900ebaf1cea205bdc996c00c7f40490b1a19ba776af2a3",
+          "findings": 631
         }
       }
     }

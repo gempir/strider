@@ -139,8 +139,16 @@ func (a *cstAnalyzer) checkUnaryExpression(expression *cst.UnaryExpr) {
 				Safety:    diagnostic.Safe,
 				Automatic: true,
 				Edits: []diagnostic.TextEdit{
-					{Start: expression.Op.Position().Offset, End: expression.Op.Position().Offset + len(expression.Op.Src()), OldText: expression.Op.Src()},
-					{Start: inner.Op.Position().Offset, End:      inner.Op.Position().Offset + len(inner.Op.Src()), OldText:           inner.Op.Src()},
+					{
+						Start:   expression.Op.Position().Offset,
+						End:     expression.Op.Position().Offset + len(expression.Op.Src()),
+						OldText: expression.Op.Src(),
+					},
+					{
+						Start:   inner.Op.Position().Offset,
+						End:     inner.Op.Position().Offset + len(inner.Op.Src()),
+						OldText: inner.Op.Src(),
+					},
 				},
 			},
 		)

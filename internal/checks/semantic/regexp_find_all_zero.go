@@ -67,5 +67,7 @@ func explicitCallArgument(arguments []ast.Node, index int, position token.Pos) a
 	if len(arguments) != 0 {
 		return arguments[0]
 	}
-	return positionNode{position: position}
+	return positionNode{
+		position: position,
+	}
 }

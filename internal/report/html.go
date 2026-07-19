@@ -80,13 +80,19 @@ type HTMLOptions struct {
 // HTML writes a deterministic, self-contained diagnostic report. The report
 // has no external assets and can be saved directly from stdout.
 func HTML(writer io.Writer, title string, diagnostics []diagnostic.Diagnostic) error {
-	return HTMLWithOptions(writer, HTMLOptions{Title: title}, diagnostics)
+	return HTMLWithOptions(writer, HTMLOptions{
+		Title: title,
+	}, diagnostics)
 }
 
 // HTMLWithOptions writes a deterministic, self-contained diagnostic report
 // and resolves relative diagnostic filenames against SourceRoot.
 func HTMLWithOptions(writer io.Writer, options HTMLOptions, diagnostics []diagnostic.Diagnostic) error {
-	data := htmlReport{Title: options.Title, Timings: options.Timings, Total: len(diagnostics)}
+	data := htmlReport{
+		Title:   options.Title,
+		Timings: options.Timings,
+		Total:   len(diagnostics),
+	}
 	counts := make(map[string]int)
 	severities := make(map[string]diagnostic.Severity)
 	for _, item := range diagnostics {
@@ -133,7 +139,12 @@ func HTMLWithOptions(writer io.Writer, options HTMLOptions, diagnostics []diagno
 			data.Files[count-1].Diagnostics = append(data.Files[count-1].Diagnostics, entry)
 			continue
 		}
-		data.Files = append(data.Files, htmlFileGroup{File: item.File, Diagnostics: []htmlDiagnostic{entry}})
+		data.Files = append(data.Files, htmlFileGroup{
+			File: item.File,
+			Diagnostics: []htmlDiagnostic{
+				entry,
+			},
+		})
 	}
 	return htmlTemplate.Execute(writer, data)
 }
@@ -141,7 +152,11 @@ func HTMLWithOptions(writer io.Writer, options HTMLOptions, diagnostics []diagno
 func sortedRuleCounts(counts map[string]int, severities map[string]diagnostic.Severity) []htmlRuleCount {
 	result := make([]htmlRuleCount, 0, len(counts))
 	for code, count := range counts {
-		result = append(result, htmlRuleCount{Code: code, Count: count, Severity: severities[code]})
+		result = append(result, htmlRuleCount{
+			Code:     code,
+			Count:    count,
+			Severity: severities[code],
+		})
 	}
 	sort.Slice(
 		result,
@@ -240,7 +255,9 @@ func htmlSourceContext(item diagnostic.Diagnostic, root string, cache map[string
 	last := min(len(lines), item.Start.Line+1)
 	result := make([]htmlSourceLine, 0, last-first+1)
 	for number := first; number <= last; number++ {
-		line := htmlSourceLine{Number: number}
+		line := htmlSourceLine{
+			Number: number,
+		}
 		contents := lines[number-1]
 		if number != item.Start.Line {
 			line.Before = contents

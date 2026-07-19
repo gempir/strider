@@ -95,7 +95,9 @@ func runConcreteChecks(files []*workspace.File, registry *Registry, formatOption
 			applicable = append(applicable, file)
 		}
 	}
-	result := Result{Diagnostics: []diagnostic.Diagnostic{}}
+	result := Result{
+		Diagnostics: []diagnostic.Diagnostic{},
+	}
 	if len(applicable) == 0 {
 		return result, nil
 	}
@@ -154,17 +156,27 @@ func runConcreteFile(file *workspace.File, registry *Registry, session *formatte
 	if registry.formatApplies(filename) && !lintApplies {
 		contents, readErr := file.Bytes()
 		if readErr != nil {
-			return fileResult{filename: filename, err: readErr}
+			return fileResult{
+				filename: filename,
+				err:      readErr,
+			}
 		}
 		if formatter.IsIgnored(contents) {
-			return fileResult{filename: filename}
+			return fileResult{
+				filename: filename,
+			}
 		}
 	}
 	tree, err := file.CST()
 	if err != nil {
-		return fileResult{filename: filename, err: err}
+		return fileResult{
+			filename: filename,
+			err:      err,
+		}
 	}
-	result := fileResult{filename: filename}
+	result := fileResult{
+		filename: filename,
+	}
 	if registry.formatApplies(filename) {
 		var formatted formatter.Result
 		var formatErr error
@@ -192,7 +204,12 @@ func runConcreteFile(file *workspace.File, registry *Registry, session *formatte
 
 func formatDiagnostic(filename string, severity diagnostic.Severity) diagnostic.Diagnostic {
 	display := source.DisplayPath(filename)
-	position := token.Position{Filename: display, Offset: 0, Line: 1, Column: 1}
+	position := token.Position{
+		Filename: display,
+		Offset:   0,
+		Line:     1,
+		Column:   1,
+	}
 	return diagnostic.Diagnostic{
 		Code:     formatMeta.Code,
 		Message:  "file is not formatted",
@@ -200,7 +217,13 @@ func formatDiagnostic(filename string, severity diagnostic.Severity) diagnostic.
 		File:     display,
 		Start:    position,
 		End:      position,
-		Fixes:    []diagnostic.Fix{{Message: fmt.Sprintf("run `strider fmt %s`", display), Safety: diagnostic.Safe, Automatic: true}},
+		Fixes: []diagnostic.Fix{
+			{
+				Message:   fmt.Sprintf("run `strider fmt %s`", display),
+				Safety:    diagnostic.Safe,
+				Automatic: true,
+			},
+		},
 	}
 }
 

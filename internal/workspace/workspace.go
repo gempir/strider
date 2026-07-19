@@ -49,9 +49,13 @@ type File struct {
 func Open(paths []string, options Options) (*Workspace, error) {
 	inputs := append([]string(nil), paths...)
 	if len(inputs) == 0 {
-		inputs = []string{"."}
+		inputs = []string{
+			".",
+		}
 	}
-	filenames, err := source.Discover(inputs, source.Options{SkipGenerated: options.SkipGenerated})
+	filenames, err := source.Discover(inputs, source.Options{
+		SkipGenerated: options.SkipGenerated,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -60,9 +64,14 @@ func Open(paths []string, options Options) (*Workspace, error) {
 		if pathfilter.Matches(options.Root, filename, options.Excludes) {
 			continue
 		}
-		files = append(files, &File{path: filename})
+		files = append(files, &File{
+			path: filename,
+		})
 	}
-	return &Workspace{inputs: inputs, files: files}, nil
+	return &Workspace{
+		inputs: inputs,
+		files:  files,
+	}, nil
 }
 
 // Inputs returns the original file and directory inputs. The returned slice is

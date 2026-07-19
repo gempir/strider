@@ -29,12 +29,21 @@ func Exported() {
 func results() (int, int, int, int) { return 0, 0, 0, 0 }
 `,
 	)
-	codes := []string{"excessive-blank-identifiers", "task-comment", "doc-comment-period", "error-type-naming", "standard-http-method-constant", "weak-cryptography"}
+	codes := []string{
+		"excessive-blank-identifiers",
+		"task-comment",
+		"doc-comment-period",
+		"error-type-naming",
+		"standard-http-method-constant",
+		"weak-cryptography",
+	}
 	registry, err := NewRegistry(codes)
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{root}, registry)
+	diagnostics, err := Run([]string{
+		root,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,12 +90,21 @@ func results() (int, int, int, int) { return 0, 0, 0, 0 }
 func use(...int) {}
 `,
 	)
-	codes := []string{"excessive-blank-identifiers", "task-comment", "doc-comment-period", "error-type-naming", "standard-http-method-constant", "weak-cryptography"}
+	codes := []string{
+		"excessive-blank-identifiers",
+		"task-comment",
+		"doc-comment-period",
+		"error-type-naming",
+		"standard-http-method-constant",
+		"weak-cryptography",
+	}
 	registry, err := NewRegistry(codes)
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{root}, registry)
+	diagnostics, err := Run([]string{
+		root,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,11 +123,15 @@ const (
 	Second = 2
 )
 `)
-	registry, err := NewRegistry([]string{"doc-comment-period"})
+	registry, err := NewRegistry([]string{
+		"doc-comment-period",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	diagnostics, err := Run([]string{root}, registry)
+	diagnostics, err := Run([]string{
+		root,
+	}, registry)
 	if err != nil {
 		t.Fatal(err)
 	}

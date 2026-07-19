@@ -38,7 +38,9 @@ func (pointlessIntegerMathRule) Run(pass *Pass) {
 				if !ok || !allIntegerTypes(conversion.X.Type()) {
 					continue
 				}
-				pass.Report(positionNode{position: call.Pos()}, fmt.Sprintf("calling math.%s on a converted integer is pointless", name))
+				pass.Report(positionNode{
+					position: call.Pos(),
+				}, fmt.Sprintf("calling math.%s on a converted integer is pointless", name))
 			}
 		}
 	}

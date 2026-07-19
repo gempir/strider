@@ -27,7 +27,9 @@ func (nilMapAssignmentRule) Run(pass *Pass) {
 				if !ok || !isNilSSAConstant(flattenEquivalentPhi(update.Map)) {
 					continue
 				}
-				pass.Report(positionNode{position: update.Pos()}, "assignment to nil map will panic")
+				pass.Report(positionNode{
+					position: update.Pos(),
+				}, "assignment to nil map will panic")
 			}
 		}
 	}

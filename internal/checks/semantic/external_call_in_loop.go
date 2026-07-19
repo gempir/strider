@@ -38,7 +38,9 @@ func (externalCallInLoopRule) Run(pass *Pass) {
 					continue
 				}
 				pass.Report(
-					positionNode{position: call.Pos()},
+					positionNode{
+						position: call.Pos(),
+					},
 					fmt.Sprintf("%s is called synchronously inside a loop; batch or move the external operation outside the loop", description),
 				)
 			}

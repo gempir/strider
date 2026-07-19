@@ -164,7 +164,12 @@ func parsePrintfUses(formatText string) ([]printfUse, bool, error) {
 			}
 			nextArgument = valueIndex + 1
 		}
-		uses = append(uses, printfUse{raw: formatText[start:offset], verb: verb, value: valueIndex, stars: stars})
+		uses = append(uses, printfUse{
+			raw:   formatText[start:offset],
+			verb:  verb,
+			value: valueIndex,
+			stars: stars,
+		})
 	}
 	return uses, anyIndex, nil
 }

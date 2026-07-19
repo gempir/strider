@@ -24,7 +24,12 @@ func TestValidateOverlayTypeChecksFileQueryForInactiveSource(t *testing.T) {
 	if err := os.WriteFile(inactive, inactiveSource, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	err := ValidateOverlay([]string{inactive}, map[string][]byte{active: activeSource, inactive: inactiveSource})
+	err := ValidateOverlay([]string{
+		inactive,
+	}, map[string][]byte{
+		active:   activeSource,
+		inactive: inactiveSource,
+	})
 	if err == nil {
 		t.Fatal("invalid inactive source unexpectedly passed overlay validation")
 	}
@@ -39,12 +44,26 @@ func TestOverlayPresenceRequiresCompiledGoFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	wanted := map[string]bool{canonical: true}
-	removeCompiledPaths(wanted, []*packages.Package{{GoFiles: []string{path}}})
+	wanted := map[string]bool{
+		canonical: true,
+	}
+	removeCompiledPaths(wanted, []*packages.Package{
+		{
+			GoFiles: []string{
+				path,
+			},
+		},
+	})
 	if !wanted[canonical] {
 		t.Fatal("GoFiles-only source was treated as type-checked")
 	}
-	removeCompiledPaths(wanted, []*packages.Package{{CompiledGoFiles: []string{path}}})
+	removeCompiledPaths(wanted, []*packages.Package{
+		{
+			CompiledGoFiles: []string{
+				path,
+			},
+		},
+	})
 	if wanted[canonical] {
 		t.Fatal("compiled source was not recognized as type-checked")
 	}

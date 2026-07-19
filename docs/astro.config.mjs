@@ -48,8 +48,8 @@ export default defineConfig({
         {
           label: 'Checks',
           items: [
-            { slug: 'formatter', label: 'The formatter' },
             { slug: 'checks', label: 'Running checks' },
+            { slug: 'formatter', label: 'Formatter' },
             {
               label: 'Style and maintainability',
               collapsed: true,

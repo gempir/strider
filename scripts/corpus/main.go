@@ -360,7 +360,9 @@ func runOperation(strider, checkout, operation string, item project) operationRe
 	budget := item.BudgetsMS[operation]
 	cmd := exec.Command(strider, arguments...)
 	cmd.Dir = checkout
-	cmd.Env = append(os.Environ(), "GOMAXPROCS=2", "GOWORK=off")
+	// Pin the analysis target so build-tagged files produce the same corpus on
+	// developer machines and the Linux GitHub Actions runner.
+	cmd.Env = append(os.Environ(), "CGO_ENABLED=0", "GOARCH=amd64", "GOMAXPROCS=2", "GOOS=linux", "GOWORK=off")
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr

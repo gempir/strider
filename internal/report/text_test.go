@@ -35,19 +35,32 @@ func TestTextRendersSourceAnnotationAndSummary(t *testing.T) {
 	if err := Text(&output, diagnostics, ui.ColorAlways); err != nil {
 		t.Fatal(err)
 	}
-	for _, wanted := range []string{
-		"\x1b[",
-		"warning",
-		"\x1b[1;33m[no-init]\x1b[0m",
-		"┌─",
-		"func init() {}",
-		"^^^^^^^^^^^^^^",
-		"  \x1b[1;36m│",
-		"note",
-		"found 1 issue:",
-		"no-init",
-		"1",
-	} {
+	for _, wanted := range []string{"\x1b[", "\x1b[1;33mno-init\x1b[0m", "┌─", "func init() {}", "━━━━━━━━━━━━━━", "  \x1b[1;36m│", "note", "found 1 issue:", "no-init", "1"} {
+		if !strings.Contains(output.String(), wanted) {
+			t.Fatalf("output missing %q:\n%s", wanted, output.String())
+		}
+	}
+}
+
+func TestTextAlignsLocationConnectorWithSourceGutter(t *testing.T) {
+	filename := filepath.Join(t.TempDir(), "main.go")
+	lines := strings.Repeat("\n", 549) + "value := broken()\n"
+	if err := os.WriteFile(filename, []byte(lines), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	item := diagnostic.Diagnostic{
+		Code:     "example",
+		Message:  "broken",
+		Severity: diagnostic.SeverityError,
+		File:     filename,
+		Start:    token.Position{Line: 550, Column: 10},
+		End:      token.Position{Line: 550, Column: 16},
+	}
+	var output bytes.Buffer
+	if err := Text(&output, []diagnostic.Diagnostic{item}, ui.ColorNever); err != nil {
+		t.Fatal(err)
+	}
+	for _, wanted := range []string{"example: broken", "    ┌─ " + filename + ":550:10", "    │", "550 │ value := broken()", "    │          ━━━━━━"} {
 		if !strings.Contains(output.String(), wanted) {
 			t.Fatalf("output missing %q:\n%s", wanted, output.String())
 		}

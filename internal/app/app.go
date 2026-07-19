@@ -269,7 +269,7 @@ func parseFormatOptions(args []string, colorMode ui.ColorMode, stderr io.Writer)
 	flags.Usage = func() {
 		palette := ui.NewPalette(stderr, colorMode)
 		fmt.Fprintln(stderr, palette.Accent("Usage:")+" strider fmt [--check|--diff|--write|--stdin] [FILE|DIR]...")
-		printFlagDefaults(stderr, flags, aliases)
+		printFlagDefaults(stderr, flags, aliases, palette)
 	}
 	if !parseCommandFlags(flags, args, aliases, "fmt", colorMode, stderr) {
 		return formatOptions{}, false
@@ -396,10 +396,13 @@ func isShortOptionAssignment(argument string, aliases map[string]string) bool {
 	return false
 }
 
-func printFlagDefaults(writer io.Writer, flags *flag.FlagSet, aliases map[string]string) {
+func printFlagDefaults(writer io.Writer, flags *flag.FlagSet, aliases map[string]string, palette ui.Palette) {
 	flags.VisitAll(
 		func(option *flag.Flag) {
 			if len(option.Name) == 1 {
+				return
+			}
+			if option.Name == "list-rules" || option.Name == "all-rules" {
 				return
 			}
 			value := " VALUE"
@@ -417,7 +420,7 @@ func printFlagDefaults(writer io.Writer, flags *flag.FlagSet, aliases map[string
 			if option.DefValue != "" && option.DefValue != "false" {
 				usage += fmt.Sprintf(" (default %q)", option.DefValue)
 			}
-			fmt.Fprintf(writer, "  %s--%s%s\n      %s\n", short, option.Name, value, usage)
+			fmt.Fprintf(writer, "  %s%s%s\n      %s\n", palette.Code(short), palette.Code("--"+option.Name), palette.Muted(value), usage)
 		},
 	)
 }
@@ -668,7 +671,7 @@ func runLint(args []string, configuration config.Config, colorMode ui.ColorMode,
 	flags.Usage = func() {
 		palette := ui.NewPalette(stderr, colorMode)
 		fmt.Fprintln(stderr, palette.Accent("Usage:")+" strider lint [OPTIONS] [FILE|DIR]...")
-		printFlagDefaults(stderr, flags, aliases)
+		printFlagDefaults(stderr, flags, aliases, palette)
 	}
 	if !parseCommandFlags(flags, args, aliases, "lint", colorMode, stderr) {
 		return exitError
@@ -835,7 +838,7 @@ func runAnalyze(args []string, configuration config.Config, colorMode ui.ColorMo
 	flags.Usage = func() {
 		palette := ui.NewPalette(stderr, colorMode)
 		fmt.Fprintln(stderr, palette.Accent("Usage:")+" strider analyze [OPTIONS] [FILE|DIR]...")
-		printFlagDefaults(stderr, flags, aliases)
+		printFlagDefaults(stderr, flags, aliases, palette)
 	}
 	if !parseCommandFlags(flags, args, aliases, "analyze", colorMode, stderr) {
 		return exitError

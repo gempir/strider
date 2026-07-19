@@ -60,7 +60,7 @@ func runCheck(args []string, configuration config.Config, colorMode ui.ColorMode
 	flags.Usage = func() {
 		palette := ui.NewPalette(stderr, colorMode)
 		fmt.Fprintln(stderr, palette.Accent("Usage:")+" strider check [OPTIONS] [FILE|DIR]...")
-		printFlagDefaults(stderr, flags, aliases)
+		printFlagDefaults(stderr, flags, aliases, palette)
 	}
 	if !parseCommandFlags(flags, args, aliases, "check", colorMode, stderr) {
 		return exitError

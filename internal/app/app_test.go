@@ -119,6 +119,32 @@ func TestCommandUsageShowsShortAndLongOptions(t *testing.T) {
 	}
 }
 
+func TestCommandUsageColorsOptionsAndHidesLegacyRuleFlags(t *testing.T) {
+	t.Setenv("FORCE_COLOR", "")
+	t.Setenv("NO_COLOR", "")
+	for _, command := range []string{"fmt", "check", "lint", "analyze"} {
+		t.Run(
+			command,
+			func(t *testing.T) {
+				var stdout,
+					stderr bytes.Buffer
+				code := Run([]string{"--color", "always", "--no-config", command, "--help"}, strings.NewReader(""), &stdout, &stderr)
+				if code != exitError {
+					t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+				}
+				if !strings.Contains(stderr.String(), "\x1b[") {
+					t.Fatalf("usage is not colored: %q", stderr.String())
+				}
+				for _, hidden := range []string{"--list-rules", "--all-rules"} {
+					if strings.Contains(stderr.String(), hidden) {
+						t.Fatalf("usage contains hidden legacy option %q: %q", hidden, stderr.String())
+					}
+				}
+			},
+		)
+	}
+}
+
 func TestDoubleDashAllowsDashPrefixedPaths(t *testing.T) {
 	options, ok := parseFormatOptions([]string{"--", "-generated.go"}, ui.ColorNever, &bytes.Buffer{})
 	if !ok || len(options.paths) != 1 || options.paths[0] != "-generated.go" {
@@ -883,7 +909,7 @@ enabled = false
 
 	var stdout, stderr bytes.Buffer
 	code := Run([]string{"lint", "--only", "no-init", filename}, strings.NewReader(""), &stdout, &stderr)
-	if code != exitFindings || !strings.Contains(stdout.String(), "error[no-init]") {
+	if code != exitFindings || !strings.Contains(stdout.String(), "no-init:") {
 		t.Fatalf("lint exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 	stdout.Reset()
@@ -938,10 +964,10 @@ func TestLintBaselineGenerateApplyIgnoreAndPrune(t *testing.T) {
 		t.Fatalf("apply exit %d, stdout %q, stderr %q", code, stdout, stderr)
 	}
 	write("package p\nfunc init() {}\nfunc init() {}\n")
-	if code, stdout, stderr := run(); code != exitFindings || strings.Count(stdout, "note[no-init]") != 1 || stderr != "" {
+	if code, stdout, stderr := run(); code != exitFindings || strings.Count(stdout, "no-init:") != 1 || stderr != "" {
 		t.Fatalf("new issue exit %d, stdout %q, stderr %q", code, stdout, stderr)
 	}
-	if code, stdout, stderr := run("--ignore-baseline"); code != exitFindings || strings.Count(stdout, "note[no-init]") != 2 || stderr != "" {
+	if code, stdout, stderr := run("--ignore-baseline"); code != exitFindings || strings.Count(stdout, "no-init:") != 2 || stderr != "" {
 		t.Fatalf("ignore exit %d, stdout %q, stderr %q", code, stdout, stderr)
 	}
 	write("package p\n")

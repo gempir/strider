@@ -112,20 +112,19 @@ func writeCheckCounts(writer io.Writer, diagnostics []diagnostic.Diagnostic, pal
 }
 
 func writeDiagnostic(writer io.Writer, item diagnostic.Diagnostic, palette ui.Palette, sources map[string][]string, missing map[string]bool) error {
-	severity := styledSeverity(item.Severity, string(item.Severity), palette)
-	code := styledSeverity(item.Severity, "["+item.Code+"]", palette)
-	if _, err := fmt.Fprintf(writer, "%s%s: %s\n", severity, code, palette.Bold(item.Message)); err != nil {
+	code := styledSeverity(item.Severity, item.Code, palette)
+	if _, err := fmt.Fprintf(writer, "%s: %s\n", code, palette.Bold(item.Message)); err != nil {
 		return err
 	}
 	location := fmt.Sprintf("%s:%d:%d", item.File, item.Start.Line, item.Start.Column)
-	if _, err := fmt.Fprintf(writer, "  %s %s\n", palette.Accent("┌─"), palette.Path(location)); err != nil {
+	width := len(strconv.Itoa(max(item.Start.Line, 1)))
+	if _, err := fmt.Fprintf(writer, "%*s %s %s\n", width, "", palette.Accent("┌─"), palette.Path(location)); err != nil {
 		return err
 	}
 
 	lines := sourceLines(item.File, sources, missing)
 	if item.Start.Line > 0 && item.Start.Line <= len(lines) {
 		line := lines[item.Start.Line-1]
-		width := len(strconv.Itoa(item.Start.Line))
 		gutter := palette.Accent("│")
 		if _, err := fmt.Fprintf(writer, "%*s %s\n", width, "", gutter); err != nil {
 			return err
@@ -135,7 +134,7 @@ func writeDiagnostic(writer io.Writer, item diagnostic.Diagnostic, palette ui.Pa
 		}
 		column := max(item.Start.Column, 1)
 		markerWidth := markerWidth(item, line, column)
-		marker := styledSeverity(item.Severity, strings.Repeat("^", markerWidth), palette)
+		marker := styledSeverity(item.Severity, strings.Repeat("━", markerWidth), palette)
 		if _, err := fmt.Fprintf(writer, "%*s %s %s%s\n", width, "", gutter, markerIndent(line, column), marker); err != nil {
 			return err
 		}

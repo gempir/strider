@@ -291,9 +291,6 @@ code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font
 main{max-width:1600px;margin:0 auto;padding:0 20px 64px}
 a{color:var(--accent-text)}
 
-header.top{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 18px;padding:14px 0 10px;border-bottom:1px solid var(--line)}
-header.top h1{margin:0;font-size:15px;font-weight:650;letter-spacing:-.01em}
-header.top h1::before{content:"";display:inline-block;width:8px;height:8px;margin-right:8px;background:var(--accent)}
 .timings{display:inline-flex;flex-wrap:wrap;gap:6px 18px;padding-right:18px;border-right:1px solid var(--line)}
 .timing strong{color:var(--text)}
 .timing small{color:var(--muted);font-weight:400;font-size:11px}
@@ -364,15 +361,12 @@ details[open] .message{white-space:normal}
 .hidden{display:none}
 
 html.embedded main{padding:0 14px 24px}
-html.embedded header.top h1{display:none}
 @media(max-width:900px){.layout{grid-template-columns:1fr}aside.rules{position:static;max-height:none}}
 @media(max-width:640px){summary{grid-template-columns:3.2rem 1fr}.message{grid-column:1/-1;padding-left:0}.details{padding-left:0}}
 </style>
 </head>
 <body>
 <main>
-<header class="top">
-<h1>{{.Title}}</h1>
 </header>
 <section class="tally" aria-label="Diagnostic summary">
 {{if .Timings}}<span class="timings" aria-label="Operation timings">{{range .Timings}}<span class="stat timing"><strong>{{.DurationMS}} <small>ms</small></strong><span>{{.Name}}</span></span>{{end}}</span>{{end}}

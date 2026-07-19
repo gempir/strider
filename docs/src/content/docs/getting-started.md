@@ -3,6 +3,28 @@ title: Getting started
 description: Build Strider, check a project, and format Go source.
 ---
 
+## Download
+
+Download and unpack the latest nightly binary for your Linux or macOS machine:
+
+```bash
+set -euo pipefail
+
+case "$(uname -s)-$(uname -m)" in
+  Darwin-arm64)  asset="strider-nightly-darwin-arm64.tar.gz" ;;
+  Darwin-x86_64) asset="strider-nightly-darwin-amd64.tar.gz" ;;
+  Linux-aarch64) asset="strider-nightly-linux-arm64.tar.gz" ;;
+  Linux-x86_64)  asset="strider-nightly-linux-amd64.tar.gz" ;;
+  *) echo "Unsupported platform: $(uname -s)-$(uname -m)" >&2; exit 1 ;;
+esac
+
+url="https://github.com/gempir/strider/releases/download/nightly/$asset"
+curl -fL "$url" -o "/tmp/$asset"
+tar -xzf "/tmp/$asset"
+rm "/tmp/$asset"
+sudo mv strider /usr/local/bin/strider
+```
+
 ## Build
 
 Strider currently targets Go 1.26 and builds as a statically linked binary.

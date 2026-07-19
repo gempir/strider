@@ -213,27 +213,3 @@ Each JSON diagnostic includes `code`, `message`, `severity`, `file`, `start`,
 and `end`; diagnostics may also carry notes and suggested remedies. HTML reports
 include severity totals, search, filters, and source context without external
 assets or timestamps.
-
-## Suppressions
-
-Source-local checks support directives on the next declaration or statement:
-
-```go
-//strider:ignore no-package-var
-var registry = newRegistry()
-```
-
-Suppress supported checks for a whole file by placing the directive before
-`package`:
-
-```go
-//strider:ignore-file no-package-var,no-init
-package legacy
-```
-
-Use `all` in place of a code to suppress all checks that participate in
-source-local suppression at that location. Checks that reason across packages
-currently use per-rule exclusions or a baseline instead.
-
-Suppressions should document intentional exceptions. Strider does not yet
-report stale or unused suppression codes.

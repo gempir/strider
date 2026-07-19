@@ -243,27 +243,5 @@ See [Baselines](/baselines/) for generation, matching, pruning, and CI adoption.
 ## Source directives
 
 Configuration controls project policy; source directives record local
-exceptions.
-
-Skip formatting for an entire file:
-
-```go
-//strider:format-ignore
-```
-
-Suppress supported source-local checks for the next declaration or statement:
-
-```go
-//strider:ignore no-package-var,no-init
-```
-
-Place a file-level directive before the package clause:
-
-```go
-//strider:ignore-file no-package-var
-package example
-```
-
-Use the special code `all` to suppress every check that participates in
-source-local suppression at that location. Other checks use per-rule exclusions
-or the baseline.
+exceptions. See [Suppress checks](/suppress/) for inline, file-level, and
+formatter directives.

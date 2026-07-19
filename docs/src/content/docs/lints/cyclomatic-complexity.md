@@ -10,7 +10,6 @@ sidebar:
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
 **Maximum:** `10`  
-**Configuration:** `severity` and path `excludes`; maximum remains `10`
 
 Reports a declared function when its calculated complexity is greater than
 10. A low complexity score makes control flow easier to understand, test, and
@@ -61,11 +60,13 @@ func route(value any, state routeState) string {
 Extract cohesive decisions into named helpers. Avoid splitting code solely to
 satisfy the number; each helper should represent a meaningful unit.
 
-## Suppress
+## Configuration
 
-```go
-//strider:ignore cyclomatic-complexity
-func generatedStateMachine() {
-	// Intentionally mirrors an external state table.
-}
+The maximum cyclomatic-complexity score is fixed at `10`. Configure the rule's
+severity and path exclusions in `strider.toml`:
+
+```toml
+[checks.rules.cyclomatic-complexity]
+severity = "error"
+excludes = ["generated/**"]
 ```

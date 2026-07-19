@@ -43,6 +43,7 @@ export default defineConfig({
             { slug: 'getting-started', label: 'Getting started' },
             { slug: 'configuration', label: 'Configuration' },
             { slug: 'baselines', label: 'Baselines' },
+            { slug: 'suppress', label: 'Suppress' },
           ],
         },
         {

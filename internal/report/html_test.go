@@ -119,8 +119,8 @@ func TestHTMLLimitsDetailsButSummarizesAllDiagnostics(t *testing.T) {
 	for _, wanted := range []string{
 		"Showing 2 of 3 detailed findings",
 		"The summary includes all 3 findings",
-		"common-rule</code></td><td>2",
-		"rare-rule</code></td><td>1",
+		"common-rule</code><i style=\"width:100%\"></i></button></td><td>2",
+		"rare-rule</code><i style=\"width:50%\"></i></button></td><td>1",
 		"common one",
 		"rare one",
 	} {
@@ -131,7 +131,7 @@ func TestHTMLLimitsDetailsButSummarizesAllDiagnostics(t *testing.T) {
 	if strings.Contains(page, "common two") {
 		t.Fatal("report rendered a diagnostic beyond the detail limit")
 	}
-	if strings.Index(page, "common-rule</code></td><td>2") > strings.Index(page, "rare-rule</code></td><td>1") {
+	if strings.Index(page, "data-rule=\"common-rule\"") > strings.Index(page, "data-rule=\"rare-rule\"") {
 		t.Fatal("rule summary was not sorted by descending finding count")
 	}
 }

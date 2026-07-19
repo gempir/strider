@@ -14,22 +14,32 @@ import (
 )
 
 type htmlReport struct {
-	Title       string
-	Timings     []HTMLTiming
+	Title      string
+	Timings    []HTMLTiming
+	Files      []htmlFileGroup
+	Total      int
+	Errors     int
+	Warnings   int
+	Notes      int
+	Nones      int
+	ErrorPct   int
+	WarningPct int
+	NotePct    int
+	NonePct    int
+	Shown      int
+	Omitted    int
+	Rules      []htmlRuleCount
+}
+
+type htmlFileGroup struct {
+	File        string
 	Diagnostics []htmlDiagnostic
-	Total       int
-	Errors      int
-	Warnings    int
-	Notes       int
-	Nones       int
-	Shown       int
-	Omitted     int
-	Rules       []htmlRuleCount
 }
 
 type htmlRuleCount struct {
-	Code  string
-	Count int
+	Code    string
+	Count   int
+	Percent int
 }
 
 type htmlDiagnostic struct {
@@ -38,6 +48,7 @@ type htmlDiagnostic struct {
 	Severity diagnostic.Severity
 	File     string
 	Location string
+	Where    string
 	Source   []htmlSourceLine
 	Notes    []diagnostic.Note
 	Fixes    []diagnostic.Fix
@@ -90,26 +101,34 @@ func HTMLWithOptions(writer io.Writer, options HTMLOptions, diagnostics []diagno
 		}
 	}
 	data.Rules = sortedRuleCounts(counts)
+	if data.Total > 0 {
+		data.ErrorPct = data.Errors * 100 / data.Total
+		data.WarningPct = data.Warnings * 100 / data.Total
+		data.NotePct = data.Notes * 100 / data.Total
+		data.NonePct = data.Nones * 100 / data.Total
+	}
 	displayed := limitedDiagnostics(diagnostics, options.MaxDiagnostics)
 	data.Shown = len(displayed)
 	data.Omitted = len(diagnostics) - len(displayed)
-	data.Diagnostics = make([]htmlDiagnostic, 0, len(displayed))
 	sources := make(map[string][]string)
 	missing := make(map[string]bool)
 	for _, item := range displayed {
-		data.Diagnostics = append(
-			data.Diagnostics,
-			htmlDiagnostic{
-				Code:     item.Code,
-				Message:  item.Message,
-				Severity: item.Severity,
-				File:     item.File,
-				Location: htmlLocation(item),
-				Source:   htmlSourceContext(item, options.SourceRoot, sources, missing),
-				Notes:    item.Notes,
-				Fixes:    item.Fixes,
-			},
-		)
+		entry := htmlDiagnostic{
+			Code:     item.Code,
+			Message:  item.Message,
+			Severity: item.Severity,
+			File:     item.File,
+			Location: htmlLocation(item),
+			Where:    htmlWhere(item),
+			Source:   htmlSourceContext(item, options.SourceRoot, sources, missing),
+			Notes:    item.Notes,
+			Fixes:    item.Fixes,
+		}
+		if count := len(data.Files); count > 0 && data.Files[count-1].File == item.File {
+			data.Files[count-1].Diagnostics = append(data.Files[count-1].Diagnostics, entry)
+			continue
+		}
+		data.Files = append(data.Files, htmlFileGroup{File: item.File, Diagnostics: []htmlDiagnostic{entry}})
 	}
 	return htmlTemplate.Execute(writer, data)
 }
@@ -128,6 +147,11 @@ func sortedRuleCounts(counts map[string]int) []htmlRuleCount {
 			return result[left].Code < result[right].Code
 		},
 	)
+	if len(result) > 0 && result[0].Count > 0 {
+		for index := range result {
+			result[index].Percent = result[index].Count * 100 / result[0].Count
+		}
+	}
 	return result
 }
 
@@ -173,6 +197,17 @@ func htmlLocation(item diagnostic.Diagnostic) string {
 		}
 	}
 	return location
+}
+
+func htmlWhere(item diagnostic.Diagnostic) string {
+	if item.Start.Line <= 0 {
+		return ""
+	}
+	where := strconv.Itoa(item.Start.Line)
+	if item.Start.Column > 0 {
+		where += ":" + strconv.Itoa(item.Start.Column)
+	}
+	return where
 }
 
 func htmlSourceContext(item diagnostic.Diagnostic, root string, cache map[string][]string, missing map[string]bool) []htmlSourceLine {
@@ -235,35 +270,152 @@ var htmlTemplate = template.Must(
 <title>{{.Title}}</title>
 <script>if(self!==top)document.documentElement.classList.add('embedded')</script>
 <style>
-:root{color-scheme:dark;--bg:#0d1117;--panel:#121820;--panel-strong:#171e27;--text:#e6edf3;--muted:#8f9baa;--line:#2a3440;--accent:#54d6b0;--error:#ff7b72;--warning:#e6b85c;--note:#79c0ff;--code:#0a0f14;--marked:#f0c75e}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-feature-settings:"ss01","cv02","cv11"}main{width:min(1440px,calc(100% - 48px));margin:56px auto 88px}header{border-left:2px solid var(--accent);padding-left:20px}h1{margin:0;font-size:clamp(2rem,5vw,3.6rem);line-height:1.04;letter-spacing:-.045em}.lede{color:var(--muted);margin:.6rem 0 2.25rem}.timings{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0 0 16px;border-block:1px solid var(--line)}.timing{min-width:0;padding:17px 20px;border-right:1px solid var(--line)}.timing:last-child{border-right:0}.timing span{display:block;color:var(--muted);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase}.timing strong{display:block;margin-top:2px;font-size:1.45rem;line-height:1.2;letter-spacing:-.03em}.timing small{color:var(--muted);font-size:.72em;font-weight:500;letter-spacing:0}.summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));margin:0 0 24px;border-block:1px solid var(--line)}.card{min-width:0;padding:18px 20px;border-right:1px solid var(--line)}.card:last-child{border-right:0}.card strong{display:block;font-size:1.85rem;line-height:1.1;letter-spacing:-.035em}.card span{color:var(--muted);font-size:.8rem;letter-spacing:.05em;text-transform:uppercase}.card.error strong{color:var(--error)}.card.warning strong{color:var(--warning)}.card.note strong{color:var(--note)}.card.none strong{color:var(--muted)}.controls{position:sticky;top:0;z-index:5;display:grid;grid-template-columns:1fr 190px;gap:10px;margin-bottom:14px;padding:12px 0;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(14px)}.controls input,.controls select{width:100%;min-height:43px;border:1px solid var(--line);border-radius:3px;outline:0;background:var(--panel);color:var(--text);font:inherit;padding:9px 12px}.controls input:focus,.controls select:focus{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}.diagnostic{background:var(--panel);border:1px solid var(--line);border-left:2px solid var(--warning);border-radius:3px;margin:8px 0;overflow:hidden}.diagnostic:hover{border-color:color-mix(in srgb,var(--accent) 40%,var(--line));border-left-color:var(--warning)}.diagnostic[data-severity="error"]{border-left-color:var(--error)}.diagnostic[data-severity="note"]{border-left-color:var(--note)}.diagnostic[data-severity="none"]{border-left-color:var(--muted)}summary{display:grid;grid-template-columns:6.2rem minmax(12rem,auto) 1fr;gap:14px;align-items:baseline;cursor:pointer;padding:15px 17px;list-style:none}summary::-webkit-details-marker{display:none}.severity{font-size:.69rem;font-weight:750;letter-spacing:.1em;text-transform:uppercase;color:var(--warning)}[data-severity="error"] .severity{color:var(--error)}[data-severity="note"] .severity{color:var(--note)}[data-severity="none"] .severity{color:var(--muted)}code{font:13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}.rule{color:var(--accent)}.message{font-weight:620}.details{border-top:1px solid var(--line);padding:15px 17px 18px}.location{color:var(--muted);margin:0 0 10px}.source{background:var(--code);border:1px solid color-mix(in srgb,var(--line) 75%,transparent);border-radius:2px;margin:0;padding:10px 0;overflow:auto}.source-line{display:grid;grid-template-columns:4rem 1fr;min-width:max-content;padding:2px 14px}.source-line.current{background:color-mix(in srgb,var(--accent) 9%,transparent)}.line-number{color:var(--muted);padding-right:14px;text-align:right;user-select:none}.source code{white-space:pre}.source mark{background:color-mix(in srgb,var(--marked) 78%,transparent);color:#111820;border-radius:1px;padding:1px 0}.extras{margin:12px 0 0;padding-left:20px}.empty{border-block:1px solid var(--line);text-align:center;padding:56px 20px}.hidden{display:none}html.embedded main{width:100%;margin:0;padding:24px}html.embedded header{display:none}html.embedded .timings{margin-top:0}:root[data-theme="light"]{color-scheme:light;--bg:#f7f9f8;--panel:#fff;--panel-strong:#f0f4f2;--text:#17201d;--muted:#65736d;--line:#ced9d4;--accent:#087a5c;--error:#c93c37;--warning:#a05a00;--note:#0969a9;--code:#f0f4f2;--marked:#f5d765}@media(max-width:700px){main{width:min(100% - 28px,1440px);margin-top:28px}.timing{padding:14px 10px}.summary{grid-template-columns:repeat(2,1fr)}.card:nth-child(2){border-right:0}.card:nth-child(-n+2){border-bottom:1px solid var(--line)}.controls{grid-template-columns:1fr}.controls select{min-height:43px}summary{grid-template-columns:auto 1fr;gap:8px 12px}.message{grid-column:1/-1}html.embedded main{padding:14px}}
-.rule-summary{margin:0 0 24px}.rule-summary h2{font-size:1rem;letter-spacing:-.01em}.rule-summary table{border-collapse:collapse;width:100%;background:var(--panel)}.rule-summary th,.rule-summary td{border-top:1px solid var(--line);padding:9px 12px;text-align:left}.rule-summary th:last-child,.rule-summary td:last-child{text-align:right}.rule-summary th{color:var(--muted);font-size:.69rem;letter-spacing:.09em;text-transform:uppercase}.limit-note{color:var(--muted);margin:-8px 0 20px}
+:root{color-scheme:dark;
+--bg:#0e120f;--panel:#121713;--panel-2:#0c100d;--code:#0b0f0c;
+--text:#d9dbd2;--muted:#8a8f86;--faint:#565c55;--line:#232b24;--line-soft:#1c231d;
+--accent:#3cad4c;--accent-text:#65cc73;--accent-low:#123819;
+--error:#e5695e;--warning:#f0b13c;--note:#5794d8;--mark:#f0b13c}
+:root[data-theme="light"]{color-scheme:light;
+--bg:#faf7f1;--panel:#f4f0e7;--panel-2:#f6f2ea;--code:#eee9de;
+--text:#2c322c;--muted:#5c635c;--faint:#8a908a;--line:#ddd6c8;--line-soft:#e7e1d4;
+--accent:#3cad4c;--accent-text:#287d34;--accent-low:#daf2de;
+--error:#b8433a;--warning:#95660a;--note:#2f6cad;--mark:#f0b13c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:13px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}
+main{max-width:1600px;margin:0 auto;padding:0 20px 64px}
+a{color:var(--accent-text)}
+
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 18px;padding:14px 0 10px;border-bottom:1px solid var(--line)}
+header.top h1{margin:0;font-size:15px;font-weight:650;letter-spacing:-.01em}
+header.top h1::before{content:"";display:inline-block;width:8px;height:8px;margin-right:8px;background:var(--accent)}
+.timings{display:inline-flex;gap:14px;color:var(--muted);margin-left:auto}
+.timing strong{color:var(--text);font-weight:600}
+.timing small{color:var(--muted);font-weight:400}
+
+.tally{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;padding:10px 0;border-bottom:1px solid var(--line)}
+.tally .stat{display:inline-flex;align-items:baseline;gap:6px;white-space:nowrap}
+.tally .stat strong{font-size:15px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.tally .stat span{color:var(--muted);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.stat.error strong{color:var(--error)}.stat.warning strong{color:var(--warning)}.stat.note strong{color:var(--note)}.stat.none strong{color:var(--muted)}
+.bar{flex:1 1 220px;display:flex;height:6px;min-width:160px;background:var(--line-soft);overflow:hidden}
+.bar i{display:block;height:100%}
+.bar .b-error{background:var(--error)}.bar .b-warning{background:var(--warning)}.bar .b-note{background:var(--note)}.bar .b-none{background:var(--faint)}
+.limit-note{color:var(--muted);margin:10px 0 0}
+
+.layout{display:grid;grid-template-columns:minmax(220px,300px) 1fr;gap:0 28px;align-items:start;margin-top:14px}
+aside.rules{position:sticky;top:10px;max-height:calc(100vh - 20px);overflow:auto}
+aside.rules h2{margin:0 0 6px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.rules table{width:100%;border-collapse:collapse}
+.rules td{padding:3px 0;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+.rules td:last-child{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;padding-left:10px;width:1%}
+.rules button{all:unset;display:block;width:100%;cursor:pointer;color:var(--accent-text)}
+.rules button:hover code{text-decoration:underline}
+.rules i{display:block;height:2px;margin-top:2px;background:var(--accent);opacity:.55}
+
+.controls{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:8px;padding:8px 0;background:var(--bg);border-bottom:1px solid var(--line)}
+.controls input{flex:1 1 220px;min-height:30px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);font:inherit;padding:4px 9px;outline:0}
+.controls input:focus{border-color:var(--accent)}
+.seg{display:inline-flex;border:1px solid var(--line)}
+.seg button{all:unset;cursor:pointer;padding:4px 10px;color:var(--muted);border-right:1px solid var(--line);font-size:12px;font-variant-numeric:tabular-nums}
+.seg button:last-child{border-right:0}
+.seg button:hover{color:var(--text)}
+.seg button[aria-pressed="true"]{background:var(--accent-low);color:var(--accent-text)}
+.seg button b{font-weight:600}
+.seg .n-error b{color:var(--error)}.seg .n-warning b{color:var(--warning)}.seg .n-note b{color:var(--note)}
+
+.file{margin:0}
+.file-head{display:flex;align-items:baseline;gap:10px;margin:0;padding:9px 0 4px;font-size:12px;font-weight:600}
+.file-head code{color:var(--accent-text);font-weight:600}
+.file-head span{color:var(--faint);font-weight:400;font-variant-numeric:tabular-nums}
+details.diagnostic{border-top:1px solid var(--line-soft)}
+details.diagnostic:last-child{border-bottom:1px solid var(--line-soft)}
+summary{display:grid;grid-template-columns:3.2rem 4.5rem minmax(11rem,16rem) 1fr;gap:12px;align-items:baseline;cursor:pointer;padding:4px 6px 4px 0;list-style:none}
+summary:hover{background:var(--panel-2)}
+summary::-webkit-details-marker{display:none}
+.where{color:var(--faint);text-align:right;font-variant-numeric:tabular-nums}
+.severity{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--warning)}
+[data-severity="error"] .severity{color:var(--error)}
+[data-severity="note"] .severity{color:var(--note)}
+[data-severity="none"] .severity{color:var(--muted)}
+.rule{color:var(--muted)}
+details[open] summary{background:var(--panel-2)}
+.message{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+details[open] .message{white-space:normal}
+.details{padding:6px 0 12px 3.2rem}
+.location{color:var(--muted);margin:0 0 6px}
+.source{background:var(--code);border:1px solid var(--line-soft);margin:0;padding:5px 0;overflow:auto}
+.source-line{display:grid;grid-template-columns:3.4rem 1fr;min-width:max-content;padding:1px 12px 1px 0}
+.source-line.current{background:var(--accent-low)}
+.line-number{color:var(--faint);padding-right:12px;text-align:right;user-select:none}
+.source code{white-space:pre}
+.source mark{background:var(--mark);color:#141810;padding:0}
+.extras{margin:8px 0 0;padding-left:18px;color:var(--muted)}
+.extras strong{color:var(--text);font-weight:600}
+.empty{border-block:1px solid var(--line);text-align:center;padding:48px 20px;color:var(--muted)}
+.empty strong{color:var(--text)}
+.hidden{display:none}
+
+html.embedded main{padding:0 14px 24px}
+html.embedded header.top h1{display:none}
+@media(max-width:900px){.layout{grid-template-columns:1fr}aside.rules{position:static;max-height:none}}
+@media(max-width:640px){summary{grid-template-columns:3.2rem 4.5rem 1fr}.rule{grid-column:3}.message{grid-column:1/-1;padding-left:0}.details{padding-left:0}}
 </style>
 </head>
 <body>
 <main>
-<header><h1>{{.Title}}</h1><p class="lede">Deterministic diagnostics generated by Strider.</p></header>
-{{if .Timings}}<section class="timings" aria-label="Operation timings">{{range .Timings}}<div class="timing"><span>{{.Name}}</span><strong>{{.DurationMS}} <small>ms</small></strong></div>{{end}}</section>{{end}}
-<section class="summary" aria-label="Diagnostic summary">
-<div class="card"><strong>{{.Total}}</strong><span>Total</span></div>
-<div class="card error"><strong>{{.Errors}}</strong><span>Errors</span></div>
-<div class="card warning"><strong>{{.Warnings}}</strong><span>Warnings</span></div>
-<div class="card note"><strong>{{.Notes}}</strong><span>Notes</span></div>
-<div class="card none"><strong>{{.Nones}}</strong><span>None</span></div>
+<header class="top">
+<h1>{{.Title}}</h1>
+{{if .Timings}}<span class="timings" aria-label="Operation timings">{{range .Timings}}<span class="timing">{{.Name}} <strong>{{.DurationMS}} <small>ms</small></strong></span>{{end}}</span>{{end}}
+</header>
+<section class="tally" aria-label="Diagnostic summary">
+<span class="stat"><strong>{{.Total}}</strong><span>total</span></span>
+<span class="stat error"><strong>{{.Errors}}</strong><span>errors</span></span>
+<span class="stat warning"><strong>{{.Warnings}}</strong><span>warnings</span></span>
+<span class="stat note"><strong>{{.Notes}}</strong><span>notes</span></span>
+{{if .Nones}}<span class="stat none"><strong>{{.Nones}}</strong><span>none</span></span>{{end}}
+{{if .Total}}<span class="bar" role="img" aria-label="Severity distribution"><i class="b-error" style="width:{{.ErrorPct}}%"></i><i class="b-warning" style="width:{{.WarningPct}}%"></i><i class="b-note" style="width:{{.NotePct}}%"></i><i class="b-none" style="width:{{.NonePct}}%"></i></span>{{end}}
 </section>
 {{if .Omitted}}<p class="limit-note">Showing {{.Shown}} of {{.Total}} detailed findings. The summary includes all {{.Total}} findings.</p>{{end}}
-{{if .Rules}}<section class="rule-summary"><h2>Findings by rule</h2><table><thead><tr><th>Rule</th><th>Findings</th></tr></thead><tbody>{{range .Rules}}<tr><td><code>{{.Code}}</code></td><td>{{.Count}}</td></tr>{{end}}</tbody></table></section>{{end}}
-{{if .Diagnostics}}
-<section class="controls" aria-label="Report filters"><input id="search" type="search" placeholder="Search code, message, or file…" aria-label="Search diagnostics"><select id="severity" aria-label="Filter by severity"><option value="">All severities</option><option value="error">Errors</option><option value="warning">Warnings</option><option value="note">Notes</option><option value="none">None</option></select></section>
+<div class="layout">
+{{if .Rules}}<aside class="rules" aria-label="Findings by rule"><h2>Findings by rule</h2><table><tbody>{{range .Rules}}<tr><td><button type="button" data-rule="{{.Code}}"><code>{{.Code}}</code><i style="width:{{.Percent}}%"></i></button></td><td>{{.Count}}</td></tr>{{end}}</tbody></table></aside>{{else}}<aside class="rules"></aside>{{end}}
+<div class="findings">
+{{if .Files}}
+<section class="controls" aria-label="Report filters">
+<input id="search" type="search" placeholder="Filter by rule, message, or file…" aria-label="Search diagnostics">
+<span class="seg" id="severity" role="group" aria-label="Filter by severity">
+<button type="button" data-severity="" aria-pressed="true">all</button>
+<button type="button" class="n-error" data-severity="error" aria-pressed="false"><b>{{.Errors}}</b> error</button>
+<button type="button" class="n-warning" data-severity="warning" aria-pressed="false"><b>{{.Warnings}}</b> warning</button>
+<button type="button" class="n-note" data-severity="note" aria-pressed="false"><b>{{.Notes}}</b> note</button>
+{{if .Nones}}<button type="button" data-severity="none" aria-pressed="false"><b>{{.Nones}}</b> none</button>{{end}}
+</span>
+</section>
 <section id="diagnostics">
+{{range .Files}}<section class="file">{{if .File}}<h2 class="file-head"><code>{{.File}}</code><span>{{len .Diagnostics}}</span></h2>{{end}}
 {{range .Diagnostics}}<details class="diagnostic" data-severity="{{.Severity}}" data-search="{{.Code}} {{.Message}} {{.File}}">
-<summary><span class="severity">{{.Severity}}</span><code class="rule">{{.Code}}</code><span class="message">{{.Message}}</span></summary>
+<summary><code class="where">{{.Where}}</code><span class="severity">{{.Severity}}</span><code class="rule">{{.Code}}</code><span class="message">{{.Message}}</span></summary>
 <div class="details"><p class="location"><code>{{.Location}}</code></p>{{if .Source}}<div class="source">{{range .Source}}<div class="source-line{{if .Current}} current{{end}}"><span class="line-number">{{.Number}}</span><code>{{.Before}}{{if .Highlight}}<mark>{{.Highlight}}</mark>{{end}}{{.After}}</code></div>{{end}}</div>{{end}}{{if or .Notes .Fixes}}<ul class="extras">{{range .Notes}}<li><strong>Note:</strong> {{.Message}}</li>{{end}}{{range .Fixes}}<li><strong>Fix ({{.Safety}}):</strong> {{.Message}}</li>{{end}}</ul>{{end}}</div>
 </details>{{end}}
+</section>{{end}}
 </section>
-{{else}}<section class="empty"><strong>No diagnostics found.</strong><br><span class="lede">This run completed cleanly.</span></section>{{end}}
+{{else}}<section class="empty"><strong>No diagnostics found.</strong><br><span>This run completed cleanly.</span></section>{{end}}
+</div>
+</div>
 </main>
 <script>
-(()=>{const search=document.querySelector('#search'),severity=document.querySelector('#severity'),items=[...document.querySelectorAll('.diagnostic')];if(!search)return;const filter=()=>{const query=search.value.toLocaleLowerCase(),level=severity.value;for(const item of items)item.classList.toggle('hidden',!!((level&&item.dataset.severity!==level)||(query&&!item.dataset.search.toLocaleLowerCase().includes(query))))};search.addEventListener('input',filter);severity.addEventListener('change',filter)})();
+(()=>{const search=document.querySelector('#search');if(!search)return;
+const buttons=[...document.querySelectorAll('#severity button')];
+const items=[...document.querySelectorAll('.diagnostic')];
+const groups=[...document.querySelectorAll('.file')];
+let level='';
+const filter=()=>{const query=search.value.toLocaleLowerCase();
+for(const item of items)item.classList.toggle('hidden',!!((level&&item.dataset.severity!==level)||(query&&!item.dataset.search.toLocaleLowerCase().includes(query))));
+for(const group of groups)group.classList.toggle('hidden',!group.querySelector('.diagnostic:not(.hidden)'))};
+search.addEventListener('input',filter);
+for(const button of buttons)button.addEventListener('click',()=>{level=button.dataset.severity;for(const other of buttons)other.setAttribute('aria-pressed',String(other===button));filter()});
+for(const rule of document.querySelectorAll('.rules button'))rule.addEventListener('click',()=>{search.value=search.value===rule.dataset.rule?'':rule.dataset.rule;filter()});
+})();
 </script>
 </body>
 </html>

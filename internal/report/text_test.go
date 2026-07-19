@@ -16,7 +16,7 @@ func TestTextRendersSourceAnnotationAndSummary(t *testing.T) {
 	t.Setenv("FORCE_COLOR", "")
 	t.Setenv("NO_COLOR", "")
 	filename := filepath.Join(t.TempDir(), "main.go")
-	if err := os.WriteFile(filename, []byte("package p\nfunc init() {}\n"), 0o600); err != nil {
+	if err := os.WriteFile(filename, []byte("package p\nfunc init() {}\nfunc run() {}\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	diagnostics := []diagnostic.Diagnostic{
@@ -35,9 +35,34 @@ func TestTextRendersSourceAnnotationAndSummary(t *testing.T) {
 	if err := Text(&output, diagnostics, ui.ColorAlways); err != nil {
 		t.Fatal(err)
 	}
-	for _, wanted := range []string{"\x1b[", "\x1b[1;33mno-init\x1b[0m", "┌─", "func init() {}", "━━━━━━━━━━━━━━", "  \x1b[1;36m│", "note", "found 1 issue:", "no-init", "1"} {
+	for _, wanted := range []string{
+		"\x1b[",
+		"\x1b[1;33mno-init\x1b[0m",
+		"┌─",
+		"1 \x1b[1;35m│\x1b[0m package p",
+		"2 \x1b[1;35m│\x1b[0m \x1b[1;33mfunc init() {}\x1b[0m",
+		"3 \x1b[1;35m│\x1b[0m func run() {}",
+		"  \x1b[1;35m│",
+		"note",
+		"found 1 issue:",
+		"no-init",
+		"1",
+	} {
 		if !strings.Contains(output.String(), wanted) {
 			t.Fatalf("output missing %q:\n%s", wanted, output.String())
+		}
+	}
+}
+
+func TestSourceContextClampsAtFileEdges(t *testing.T) {
+	for _, test := range []struct {
+		line      int
+		wantStart int
+		wantEnd   int
+	}{{line: 1, wantStart: 1, wantEnd: 2}, {line: 2, wantStart: 1, wantEnd: 3}, {line: 3, wantStart: 2, wantEnd: 3}, {line: 4, wantStart: 0, wantEnd: 0}} {
+		start, end := sourceContext(test.line, 3)
+		if start != test.wantStart || end != test.wantEnd {
+			t.Errorf("sourceContext(%d, 3) = (%d, %d), want (%d, %d)", test.line, start, end, test.wantStart, test.wantEnd)
 		}
 	}
 }
@@ -60,7 +85,7 @@ func TestTextAlignsLocationConnectorWithSourceGutter(t *testing.T) {
 	if err := Text(&output, []diagnostic.Diagnostic{item}, ui.ColorNever); err != nil {
 		t.Fatal(err)
 	}
-	for _, wanted := range []string{"example: broken", "    ┌─ " + filename + ":550:10", "    │", "550 │ value := broken()", "    │          ━━━━━━"} {
+	for _, wanted := range []string{"example: broken", "    ┌─ " + filename + ":550:10", "    │", "549 │", "550 │ value := broken()", "551 │"} {
 		if !strings.Contains(output.String(), wanted) {
 			t.Fatalf("output missing %q:\n%s", wanted, output.String())
 		}
@@ -142,9 +167,10 @@ func TestTextNeverDoesNotEmitANSI(t *testing.T) {
 	}
 }
 
-func TestMarkerWidthUsesRuneColumnsFromBytePositions(t *testing.T) {
+func TestSourceSpanUsesByteColumns(t *testing.T) {
 	item := diagnostic.Diagnostic{Start: token.Position{Line: 1, Column: 4}, End: token.Position{Line: 1, Column: 7}}
-	if got := markerWidth(item, "é abc", item.Start.Column); got != 3 {
-		t.Fatalf("marker width %d; want 3", got)
+	start, end := sourceSpan(item, "é abc")
+	if start != 3 || end != 6 {
+		t.Fatalf("source span = (%d, %d), want (3, 6)", start, end)
 	}
 }

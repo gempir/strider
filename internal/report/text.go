@@ -116,27 +116,31 @@ func writeDiagnostic(writer io.Writer, item diagnostic.Diagnostic, palette ui.Pa
 	if _, err := fmt.Fprintf(writer, "%s: %s\n", code, palette.Bold(item.Message)); err != nil {
 		return err
 	}
+	lines := sourceLines(item.File, sources, missing)
+	contextStart, contextEnd := sourceContext(item.Start.Line, len(lines))
+	widthLine := max(item.Start.Line, 1)
+	if contextEnd > 0 {
+		widthLine = contextEnd
+	}
 	location := fmt.Sprintf("%s:%d:%d", item.File, item.Start.Line, item.Start.Column)
-	width := len(strconv.Itoa(max(item.Start.Line, 1)))
-	if _, err := fmt.Fprintf(writer, "%*s %s %s\n", width, "", palette.Accent("┌─"), palette.Path(location)); err != nil {
+	width := len(strconv.Itoa(widthLine))
+	if _, err := fmt.Fprintf(writer, "%*s %s %s\n", width, "", palette.Code("┌─"), palette.Code(location)); err != nil {
 		return err
 	}
 
-	lines := sourceLines(item.File, sources, missing)
-	if item.Start.Line > 0 && item.Start.Line <= len(lines) {
-		line := lines[item.Start.Line-1]
-		gutter := palette.Accent("│")
+	if contextStart > 0 {
+		gutter := palette.Code("│")
 		if _, err := fmt.Fprintf(writer, "%*s %s\n", width, "", gutter); err != nil {
 			return err
 		}
-		if _, err := fmt.Fprintf(writer, "%*d %s %s\n", width, item.Start.Line, gutter, line); err != nil {
-			return err
-		}
-		column := max(item.Start.Column, 1)
-		markerWidth := markerWidth(item, line, column)
-		marker := styledSeverity(item.Severity, strings.Repeat("━", markerWidth), palette)
-		if _, err := fmt.Fprintf(writer, "%*s %s %s%s\n", width, "", gutter, markerIndent(line, column), marker); err != nil {
-			return err
+		for lineNumber := contextStart; lineNumber <= contextEnd; lineNumber++ {
+			line := lines[lineNumber-1]
+			if lineNumber == item.Start.Line {
+				line = styledSourceSpan(item, line, palette)
+			}
+			if _, err := fmt.Fprintf(writer, "%*d %s %s\n", width, lineNumber, gutter, line); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -159,17 +163,11 @@ func writeDiagnostic(writer io.Writer, item diagnostic.Diagnostic, palette ui.Pa
 	return nil
 }
 
-func markerIndent(line string, column int) string {
-	prefixLength := min(max(column-1, 0), len(line))
-	var indent strings.Builder
-	for _, character := range line[:prefixLength] {
-		if character == '\t' {
-			indent.WriteByte('\t')
-		} else {
-			indent.WriteByte(' ')
-		}
+func sourceContext(line, lineCount int) (int, int) {
+	if line <= 0 || line > lineCount {
+		return 0, 0
 	}
-	return indent.String()
+	return max(line-1, 1), min(line+1, lineCount)
 }
 
 func sourceLines(filename string, cache map[string][]string, missing map[string]bool) []string {
@@ -189,14 +187,21 @@ func sourceLines(filename string, cache map[string][]string, missing map[string]
 	return lines
 }
 
-func markerWidth(item diagnostic.Diagnostic, line string, column int) int {
-	start := min(max(column-1, 0), len(line))
-	remaining := max(utf8.RuneCountInString(line[start:]), 1)
+func sourceSpan(item diagnostic.Diagnostic, line string) (int, int) {
+	start := min(max(item.Start.Column-1, 0), len(line))
 	if item.End.Line == item.Start.Line && item.End.Column > item.Start.Column {
 		end := min(max(item.End.Column-1, start), len(line))
-		return min(max(utf8.RuneCountInString(line[start:end]), 1), remaining)
+		return start, end
 	}
-	return remaining
+	return start, len(line)
+}
+
+func styledSourceSpan(item diagnostic.Diagnostic, line string, palette ui.Palette) string {
+	start, end := sourceSpan(item, line)
+	if start == end {
+		return line
+	}
+	return line[:start] + styledSeverity(item.Severity, line[start:end], palette) + line[end:]
 }
 
 func styledSeverity(severity diagnostic.Severity, text string, palette ui.Palette) string {

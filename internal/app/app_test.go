@@ -754,7 +754,7 @@ func TestColorFlagRendersRichDiagnosticsAndLeavesJSONPlain(t *testing.T) {
 	if code != exitFindings || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
-	for _, wanted := range []string{"\x1b[", "func init() {}", "┌─", "found 1 issue"} {
+	for _, wanted := range []string{"\x1b[", "func \x1b[1;34minit\x1b[0m() {}", "┌─", "found 1 issue"} {
 		if !strings.Contains(stdout.String(), wanted) {
 			t.Fatalf("rich output missing %q: %q", wanted, stdout.String())
 		}

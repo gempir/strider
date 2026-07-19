@@ -18,17 +18,15 @@ excludes = ["internal/generated/**"]
 [checks]
 excludes = ["testdata/**"]
 baseline = "strider-baseline.toml"
-baseline-variant = "loose"
 minimum-severity = "warning"
 
 [checks.rules.format]
 severity = "warning"
 
 [checks.rules.no-init]
-enabled = false
+severity = "none"
 
 [checks.rules.line-length-limit]
-enabled = true
 severity = "error"
 excludes = ["cmd/migrations/**"]
 
@@ -67,9 +65,9 @@ The configuration version is `1`; new files should declare it explicitly.
 There is no alternate or legacy schema.
 
 Strider rejects malformed TOML, unsupported versions, unknown section keys,
-unknown check names, invalid severities, invalid baseline variants, and
-formatter values outside their accepted ranges. A configuration error exits
-with status `2` before source files are changed or diagnostics are reported.
+unknown check names, invalid severities, and formatter values outside their
+accepted ranges. A configuration error exits with status `2` before source
+files are changed or diagnostics are reported.
 
 This strictness catches misspellings such as `severty = "error"` instead of
 silently running with a different policy.
@@ -83,16 +81,15 @@ Effective behavior is assembled in this order:
 
 1. Built-in defaults.
 2. The discovered or explicitly selected `strider.toml`.
-3. Command-line selection and baseline flags.
+3. Command-line selection, severity, and baseline flags.
 
-`check --only CODE` and `check --all` enable requested checks even when their
-configuration says `enabled = false`. Configured severity and per-rule
-exclusions still apply. This makes `--only` useful for investigating a disabled
-check without editing the project file.
+`check --only CODE` narrows the catalog but still applies configured severity
+and per-rule exclusions. To investigate checks configured with
+`severity = "none"`, use `--minimum-severity none`, optionally together with
+`--only`.
 
-An explicit `--baseline PATH` overrides `[checks].baseline`.
-`--baseline-variant` overrides the configured variant for generation. The
-global `--color` option similarly overrides the top-level `color` setting.
+An explicit `--baseline PATH` overrides `[checks].baseline`. The global
+`--color` option similarly overrides the top-level `color` setting.
 
 ## Terminal output
 
@@ -170,47 +167,42 @@ Tool-wide settings live under `[checks]`.
 | --- | --- | --- | --- |
 | `excludes` | string list | `[]` | Skip matching files for all checks. |
 | `baseline` | string | unset | Apply this baseline unless the CLI overrides or ignores it. Relative paths resolve from `strider.toml`. |
-| `baseline-variant` | string | `"loose"` | Shape used the next time a baseline is generated: `"loose"` or `"strict"`. |
-| `minimum-severity` | string | `"warning"` | Run only checks whose effective severity is at least `"note"`, `"warning"`, or `"error"`. |
+| `minimum-severity` | string | `"warning"` | Run only checks whose effective severity is at least `"none"`, `"note"`, `"warning"`, or `"error"`. |
 | `rules` | table | `{}` | Common configuration keyed by any registered check code. |
 
-The built-in profile selects 118 checks: `format`, seven style and
-maintainability checks, and all 110 package-aware correctness checks. The
-default warning floor runs 96 of them. The other 109 style and maintainability
-checks are optional. `strider check --all --minimum-severity note` enables all
-227 checks.
+All 225 checks are eligible. The default warning floor runs the 151 checks whose
+effective severity is warning or error. `strider check --minimum-severity note`
+also runs note checks, while `strider check --minimum-severity none` additionally
+runs checks configured with severity `none`.
 
-Every code accepts the same three options:
+Every code accepts the same two common options:
 
 | Setting | Type | Default | Effect |
 | --- | --- | --- | --- |
-| `enabled` | boolean | Check profile default | Include or omit the check during an ordinary configured run. |
-| `severity` | string | Check default | Report as `"note"`, `"warning"`, or `"error"`; every visible severity still exits `1`. |
+| `severity` | string | Check default | Report as `"none"`, `"note"`, `"warning"`, or `"error"`; `"none"` suppresses the check at ordinary minimum severities. Every reported finding still exits `1`. |
 | `excludes` | string list | `[]` | Skip only this check on matching paths. |
 
 ```toml
 [checks.rules.format]
-enabled = true
 severity = "warning"
 
 [checks.rules.line-length-limit]
-enabled = true
 severity = "warning"
 excludes = ["testdata/golden/**"]
 
 [checks.rules.invalid-regexp]
-enabled = false
+severity = "none"
 ```
 
-Changing the severity of an optional check does not implicitly enable it. Set
-`enabled = true` as well, or select it on the CLI. Behavioral thresholds remain
-part of each check's contract and are not yet generally configurable.
+Behavioral thresholds remain part of each check's contract and are not yet
+generally configurable.
 
 Strider resolves selection and each rule's severity before applying
-`minimum-severity`, using `note < warning < error`. A note promoted to error is
+`minimum-severity`, using `none < note < warning < error`. A note promoted to error is
 therefore included in an error-only run; an error demoted to note is excluded
-from a warning-only run. Explicit `--only` and `--all` selection still respects
-the minimum. Override it for one command with `--minimum-severity`.
+from a warning-only run. A check set to none is omitted unless the minimum is
+explicitly lowered to none. Explicit `--only` selection still respects the
+minimum. Override it for one command with `--minimum-severity`.
 
 Strider may satisfy selected checks from source text, syntax, type information,
 or control-flow data. These capabilities are internal scheduling details: they
@@ -224,13 +216,11 @@ Configure one baseline for the unified diagnostic set:
 ```toml
 [checks]
 baseline = "strider-baseline.toml"
-baseline-variant = "loose"
 ```
 
 Relative baseline paths resolve from the configuration directory, not the
 shell's current directory. The `format` check is never stored in a baseline.
-See [Baselines](/baselines/) for generation, matching, pruning, backups, and CI
-adoption.
+See [Baselines](/baselines/) for generation, matching, pruning, and CI adoption.
 
 ## Source directives
 

@@ -9,7 +9,7 @@ import (
 )
 
 func TestUnifiedRegistryHasGloballyUniqueCodes(t *testing.T) {
-	registry, err := NewRegistry(RegistryOptions{All: true})
+	registry, err := NewRegistry(RegistryOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -30,34 +30,41 @@ func TestUnifiedRegistryHasGloballyUniqueCodes(t *testing.T) {
 	}
 }
 
-func TestUnifiedRegistryPreservesDefaults(t *testing.T) {
+func TestUnifiedRegistrySelectsEveryCheckByDefault(t *testing.T) {
 	registry, err := NewRegistry(RegistryOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := len(registry.Rules()), 118; got != want {
-		t.Fatalf("default check count = %d, want %d", got, want)
+	if got, want := len(registry.Rules()), 225; got != want {
+		t.Fatalf("check count = %d, want %d", got, want)
 	}
 }
 
-func TestUnifiedRegistryAllOverridesConfiguredDisable(t *testing.T) {
-	disabled := false
-	registry, err := NewRegistry(
-		RegistryOptions{
-			All:      true,
-			Settings: map[string]config.RuleConfig{"format": {Enabled: &disabled}, "no-init": {Enabled: &disabled}, "invalid-regexp": {Enabled: &disabled}},
-		},
-	)
+func TestUnifiedRegistryNoneSeverityDisablesUnlessRequested(t *testing.T) {
+	settings := map[string]config.RuleConfig{"format": {Severity: "none"}, "no-init": {Severity: "none"}, "invalid-regexp": {Severity: "none"}}
+	registry, err := NewRegistry(RegistryOptions{Settings: settings})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := len(registry.Rules()), 222; got != want {
+		t.Fatalf("check count with none settings = %d, want %d", got, want)
+	}
+	registry, err = NewRegistry(RegistryOptions{Settings: settings, MinimumSeverity: diagnostic.SeverityNone})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if got, want := len(registry.Rules()), 225; got != want {
-		t.Fatalf("all check count with disabled settings = %d, want %d", got, want)
+		t.Fatalf("none-threshold check count = %d, want %d", got, want)
+	}
+	for code := range settings {
+		if severity := registry.Severity(code); severity != diagnostic.SeverityNone {
+			t.Errorf("%s severity = %s, want none", code, severity)
+		}
 	}
 }
 
 func TestUnifiedRegistryPolicySeverities(t *testing.T) {
-	registry, err := NewRegistry(RegistryOptions{All: true, MinimumSeverity: diagnostic.SeverityNote})
+	registry, err := NewRegistry(RegistryOptions{MinimumSeverity: diagnostic.SeverityNote})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -142,14 +149,14 @@ func TestUnifiedRegistryFiltersEffectiveSeverityBeforeCapabilities(t *testing.T)
 	}
 }
 
-func TestUnifiedRegistryAllDoesNotBypassMinimumSeverity(t *testing.T) {
-	registry, err := NewRegistry(RegistryOptions{All: true, Settings: map[string]config.RuleConfig{"no-init": {Severity: "warning"}}, MinimumSeverity: diagnostic.SeverityError})
+func TestUnifiedRegistrySelectionDoesNotBypassMinimumSeverity(t *testing.T) {
+	registry, err := NewRegistry(RegistryOptions{Settings: map[string]config.RuleConfig{"no-init": {Severity: "warning"}}, MinimumSeverity: diagnostic.SeverityError})
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, rule := range registry.Rules() {
 		if rule.Meta().Code == "no-init" || rule.Meta().Code == "format" {
-			t.Fatalf("--all retained below-threshold check %q", rule.Meta().Code)
+			t.Fatalf("registry retained below-threshold check %q", rule.Meta().Code)
 		}
 	}
 }

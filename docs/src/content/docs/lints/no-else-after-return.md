@@ -9,7 +9,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-**Configuration:** `enabled`, `severity`, and path `excludes`
+**Configuration:** `severity` and path `excludes`
 
 Reports an `else` when the final direct statement of the corresponding `if`
 body is a `return`. Since control flow cannot continue past that return, the

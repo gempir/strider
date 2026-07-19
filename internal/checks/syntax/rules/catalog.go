@@ -14,7 +14,7 @@ type spec struct {
 	Defaults string
 }
 
-var defaultCatalog = []definition{
+var coreCatalog = []definition{
 	{
 		meta: Meta{
 			Code:            "cyclomatic-complexity",
@@ -24,7 +24,6 @@ var defaultCatalog = []definition{
 			GoodExample:     "func sign(n int) int { if n < 0 { return -1 }; return 1 }",
 			BadExample:      "func tangled() { /* more than ten branches */ }",
 		},
-		defaultRule: true,
 	},
 	{
 		meta: Meta{
@@ -35,7 +34,6 @@ var defaultCatalog = []definition{
 			GoodExample:     "func Open(path string, flags Flags) error",
 			BadExample:      "func Open(path string, read, write, create, truncate, appendMode bool) error",
 		},
-		defaultRule: true,
 	},
 	{
 		meta: Meta{
@@ -46,7 +44,6 @@ var defaultCatalog = []definition{
 			GoodExample:     "func value() (n int) { n = 1; return n }",
 			BadExample:      "func value() (n int) { n = 1; return }",
 		},
-		defaultRule: true,
 	},
 	{
 		meta: Meta{
@@ -57,7 +54,6 @@ var defaultCatalog = []definition{
 			GoodExample:     "func Configure() error { return register() }",
 			BadExample:      "func init() { register() }",
 		},
-		defaultRule: true,
 	},
 	{
 		meta: Meta{
@@ -68,7 +64,6 @@ var defaultCatalog = []definition{
 			GoodExample:     "const defaultLimit = 10",
 			BadExample:      "var defaultClient = newClient()",
 		},
-		defaultRule: true,
 	},
 	{
 		meta: Meta{
@@ -79,7 +74,6 @@ var defaultCatalog = []definition{
 			GoodExample:     "for rows.Next() { if err := handleRow(rows); err != nil { return err } }",
 			BadExample:      "for rows.Next() { defer rows.Close() }",
 		},
-		defaultRule: true,
 	},
 	{
 		meta: Meta{
@@ -90,13 +84,12 @@ var defaultCatalog = []definition{
 			GoodExample:     "if err != nil { return err }\nuse(value)",
 			BadExample:      "if err != nil { return err } else { use(value) }",
 		},
-		defaultRule: true,
 	},
 }
 
-// The non-default rules share the same native analysis pass as the default
-// profile. Examples live in examples.go because they are also used to generate
-// the lint reference pages.
+// The extended rules share the same native analysis pass as the core rules.
+// Examples live in examples.go because they are also used to generate the lint
+// reference pages.
 var extendedCatalog = []spec{
 	{"add-constant", "suggest named constants for repeated literals", "strings after 2 repetitions"},
 	{"argument-limit", "limit function parameter count", "maximum 8"},
@@ -279,9 +272,8 @@ func extendedDefaultSeverity(code string) diagnostic.Severity {
 	return diagnostic.SeverityNote
 }
 
-// Select returns the rules requested by the CLI. With no explicit selection it
-// returns the default profile; enableAll selects the complete catalog.
-func Select(only []string, enableAll bool) ([]Rule, error) {
+// Select returns every rule, or only the explicitly requested rules.
+func Select(only []string) ([]Rule, error) {
 	all := allRules()
 	wanted := make(map[string]bool, len(only))
 	for _, code := range only {
@@ -305,17 +297,14 @@ func Select(only []string, enableAll bool) ([]Rule, error) {
 		if len(only) != 0 && !contains(only, meta.Code) {
 			continue
 		}
-		if len(only) == 0 && !enableAll && !rule.defaultEnabled() {
-			continue
-		}
 		selected = append(selected, rule)
 	}
 	return selected, nil
 }
 
 func allRules() []Rule {
-	rules := make([]Rule, 0, len(defaultCatalog)+len(extendedCatalog))
-	for _, rule := range defaultCatalog {
+	rules := make([]Rule, 0, len(coreCatalog)+len(extendedCatalog))
+	for _, rule := range coreCatalog {
 		rules = append(rules, rule)
 	}
 	for _, item := range extendedCatalog {

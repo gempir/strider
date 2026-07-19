@@ -7,6 +7,7 @@ import "go/token"
 type Severity string
 
 const (
+	SeverityNone    Severity = "none"
 	SeverityNote    Severity = "note"
 	SeverityWarning Severity = "warning"
 	SeverityError   Severity = "error"
@@ -16,7 +17,7 @@ const (
 // diagnostic levels.
 func ValidSeverity(severity Severity) bool {
 	switch severity {
-	case SeverityNote, SeverityWarning, SeverityError:
+	case SeverityNone, SeverityNote, SeverityWarning, SeverityError:
 		return true
 	default:
 		return false
@@ -24,7 +25,7 @@ func ValidSeverity(severity Severity) bool {
 }
 
 // AtLeast reports whether severity meets minimum. Diagnostic severity is
-// ordered note < warning < error.
+// ordered none < note < warning < error.
 func (severity Severity) AtLeast(minimum Severity) bool {
 	if !ValidSeverity(severity) || !ValidSeverity(minimum) {
 		return false
@@ -34,6 +35,8 @@ func (severity Severity) AtLeast(minimum Severity) bool {
 
 func severityRank(severity Severity) uint8 {
 	switch severity {
+	case SeverityNone:
+		return 0
 	case SeverityNote:
 		return 1
 	case SeverityWarning:

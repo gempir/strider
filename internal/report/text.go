@@ -210,6 +210,8 @@ func styledSeverity(severity diagnostic.Severity, text string, palette ui.Palett
 		return palette.Error(text)
 	case diagnostic.SeverityNote:
 		return palette.Note(text)
+	case diagnostic.SeverityNone:
+		return palette.Muted(text)
 	default:
 		return palette.Warning(text)
 	}
@@ -224,8 +226,8 @@ func summary(diagnostics []diagnostic.Diagnostic, counts map[diagnostic.Severity
 	if len(diagnostics) == 0 {
 		return palette.Success(prefix)
 	}
-	parts := make([]string, 0, 3)
-	for _, severity := range []diagnostic.Severity{diagnostic.SeverityError, diagnostic.SeverityWarning, diagnostic.SeverityNote} {
+	parts := make([]string, 0, 4)
+	for _, severity := range []diagnostic.Severity{diagnostic.SeverityError, diagnostic.SeverityWarning, diagnostic.SeverityNote, diagnostic.SeverityNone} {
 		if count := counts[severity]; count != 0 {
 			part := fmt.Sprintf("%d %s", count, plural(string(severity), count))
 			parts = append(parts, styledSeverity(severity, part, palette))

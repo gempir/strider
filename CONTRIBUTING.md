@@ -21,7 +21,7 @@ their Go modules outside the timed section, and then runs these commands with
 
 ```sh
 strider --no-config fmt --check .
-strider --no-config check --all --format json .
+strider --no-config check --minimum-severity note --format json .
 ```
 
 Exit codes 0 and 1 are valid outcomes: formatting differences and diagnostics

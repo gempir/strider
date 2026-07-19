@@ -22,7 +22,7 @@ its speed, configuration design, and reporting.
 
 ## Check
 
-Run all checks enabled by the project configuration:
+Run all checks at or above the configured severity floor:
 
 ```sh
 strider check ./...
@@ -40,11 +40,11 @@ Long options always require two dashes. Every option also has a scoped
 one-character alias, such as `-s warning` for `--minimum-severity warning` and
 `-w` for `--watch`.
 
-The built-in profile selects 118 checks. With the default warning severity
-floor, 96 warning and error checks run; use `--minimum-severity note` to include
-the profile's notes. `strider check --all --minimum-severity note` enables the
-complete 227-check catalog. `--only` selects exactly the named codes and avoids
-building program information that those checks do not need.
+All 225 checks are eligible. The default warning severity floor runs the 151
+warning and error checks; use `--minimum-severity note` to include notes too.
+Checks configured with `severity = "none"` are suppressed unless the command
+uses `--minimum-severity none`. `--only` selects exactly the named codes and
+avoids building program information that those checks do not need.
 
 Formatting is the `format` check. It reports an unformatted file without
 modifying it and suggests `strider fmt` as the remedy. Strider internally
@@ -76,8 +76,8 @@ current syntax boundary.
 ## Configuration
 
 Strider discovers the nearest `strider.toml` from the current directory upward.
-Version 1 uses one `[checks]` namespace. Every check supports `enabled`,
-`severity`, and path `excludes`; the formatter exposes print width and
+Version 1 uses one `[checks]` namespace. Every check supports `severity` and
+path `excludes`; the formatter exposes print width and
 filesystem exclusions.
 
 ```toml
@@ -92,7 +92,6 @@ baseline = "strider-baseline.toml"
 minimum-severity = "warning"
 
 [checks.rules.line-length-limit]
-enabled = true
 severity = "warning"
 
 [checks.rules.possible-nil-dereference]
@@ -101,9 +100,11 @@ excludes = ["internal/legacy/**"]
 ```
 
 Checks resolve their built-in or configured severity before applying
-`minimum-severity`. The order is `note < warning < error`, so a rule promoted
+`minimum-severity`. The order is `none < note < warning < error`, so a rule promoted
 to `error` still runs in an error-only profile and one demoted to `note` does
-not. `--minimum-severity` overrides the configured threshold for one run.
+not. A rule set to `none` is normally disabled, while `--minimum-severity none`
+still provides an explicit way to run it. `--minimum-severity` overrides the
+configured threshold for one run.
 
 Use `strider --config PATH COMMAND` to select a file explicitly or
 `strider --no-config COMMAND` to run with built-in defaults. Rich terminal
@@ -125,14 +126,12 @@ Configure the path for ordinary runs:
 ```toml
 [checks]
 baseline = "strider-baseline.toml"
-baseline-variant = "loose"
 ```
 
-Formatting findings are intentionally never captured in a baseline. Loose
-baselines match file, code, message, and count while surviving line movement;
-strict baselines match exact line ranges. Use `--ignore-baseline` to see the
-full backlog and `--remove-outdated-baseline-entries` to prune fixed issues
-without absorbing new findings.
+Formatting findings are intentionally never captured in a baseline. Baselines
+strictly match exact file, code, and line ranges. Use
+`--remove-outdated-baseline-entries` to prune fixed issues without absorbing
+new findings.
 
 ## Exit codes
 

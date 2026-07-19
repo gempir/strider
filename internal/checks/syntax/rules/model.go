@@ -19,20 +19,14 @@ type Meta struct {
 // built-in syntax check.
 type Rule interface {
 	Meta() Meta
-	defaultEnabled() bool
 }
 
 type definition struct {
-	meta        Meta
-	defaultRule bool
+	meta Meta
 }
 
 func (rule definition) Meta() Meta {
 	return rule.meta
-}
-
-func (rule definition) defaultEnabled() bool {
-	return rule.defaultRule
 }
 
 // Finding is a rule result before the syntax package converts source positions

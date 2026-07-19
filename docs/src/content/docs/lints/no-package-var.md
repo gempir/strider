@@ -9,7 +9,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-**Configuration:** `enabled`, `severity`, and path `excludes`; blank identifiers remain exempt
+**Configuration:** `severity` and path `excludes`; blank identifiers remain exempt
 
 Reports every non-blank name declared by a package-level `var`. Package
 variables create shared mutable state and hide dependencies, making tests and

@@ -9,7 +9,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-**Configuration:** `enabled`, `severity`, and path `excludes`
+**Configuration:** `severity` and path `excludes`
 
 Reports a bare `return` when the nearest function declaration or function
 literal has at least one named result. Naked returns make data flow implicit:

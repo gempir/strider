@@ -154,7 +154,7 @@ func GetThing(first, second, third, fourth, fifth, sixth int, flag bool, unused 
 	if err != nil {
 		t.Fatal(err)
 	}
-	all, err := Select(nil, true)
+	all, err := Select(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -172,7 +172,7 @@ func GetThing(first, second, third, fourth, fifth, sixth int, flag bool, unused 
 			code,
 			func(t *testing.T) {
 				rules,
-					selectErr := Select([]string{code}, false)
+					selectErr := Select([]string{code})
 				if selectErr != nil {
 					t.Fatal(selectErr)
 				}
@@ -213,7 +213,7 @@ func (value *item) UnmarshalJSON([]byte) error { return nil }
 			code,
 			func(t *testing.T) {
 				rules,
-					selectErr := Select([]string{code}, false)
+					selectErr := Select([]string{code})
 				if selectErr != nil {
 					t.Fatal(selectErr)
 				}
@@ -338,9 +338,9 @@ func referenceFinalStatement(body cst.Node) cst.Node {
 	return final
 }
 
-func benchmarkAnalyzeCST(b *testing.B, all bool) {
+func benchmarkAnalyzeCST(b *testing.B) {
 	tree := benchmarkCSTTree(b)
-	rules, err := Select(nil, all)
+	rules, err := Select(nil)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -358,10 +358,6 @@ func benchmarkAnalyzeCST(b *testing.B, all bool) {
 	}
 }
 
-func BenchmarkAnalyzeCSTDefaults(b *testing.B) {
-	benchmarkAnalyzeCST(b, false)
-}
-
-func BenchmarkAnalyzeCSTAll(b *testing.B) {
-	benchmarkAnalyzeCST(b, true)
+func BenchmarkAnalyzeCST(b *testing.B) {
+	benchmarkAnalyzeCST(b)
 }

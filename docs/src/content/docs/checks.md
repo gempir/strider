@@ -16,16 +16,17 @@ changing its public code.
 
 ## Run checks
 
-Run the configured profile. Its default warning floor runs 96 checks:
+Run every check at or above the configured severity floor. The default warning
+floor runs 151 checks:
 
 ```sh
 strider check [PATH]...
 ```
 
-Run the complete 227-check catalog, including notes:
+Run all 225 checks whose effective severity is note or higher:
 
 ```sh
-strider check --all --minimum-severity note [PATH]...
+strider check --minimum-severity note [PATH]...
 ```
 
 Run exactly a subset of codes:
@@ -40,10 +41,9 @@ Comma-separated codes are equivalent:
 strider check --only format,no-init,invalid-regexp [PATH]...
 ```
 
-Explicit selection is case-insensitive and overrides configured `enabled`
-states while retaining configured severities, the minimum-severity threshold,
-and path exclusions. It also lets Strider avoid preparing capabilities the
-selected checks do not need.
+Explicit selection is case-insensitive and retains configured severities, the
+minimum-severity threshold, and path exclusions. It also lets Strider avoid
+preparing capabilities the selected checks do not need.
 
 Run only checks whose effective severity is warning or higher:
 
@@ -52,7 +52,7 @@ strider check --minimum-severity warning ./...
 ```
 
 Selection happens first, then per-rule severity overrides, then the minimum
-threshold (`note < warning < error`). `--only` and `--all` do not bypass the
+threshold (`none < note < warning < error`). `--only` does not bypass the
 threshold. Checks filtered this way are omitted before Strider plans CST, type,
 or SSA work.
 
@@ -70,11 +70,11 @@ one-shot operations and cannot be combined with `--watch`.
 
 ## Discover checks
 
-Inspect the enabled profile or the complete catalog:
+Inspect the checks admitted by the effective severity floor:
 
 ```sh
 strider check --list-checks
-strider check --all --list-checks
+strider check --minimum-severity none --list-checks
 strider check --explain invalid-regexp
 ```
 
@@ -84,7 +84,7 @@ grouped by purpose in the documentation sidebar.
 
 ## Configure checks
 
-Every check code accepts `enabled`, `severity`, and path `excludes` under the
+Every check code accepts `severity` and path `excludes` under the
 version-1 `[checks.rules]` namespace:
 
 ```toml
@@ -94,16 +94,17 @@ version = 1
 minimum-severity = "warning"
 
 [checks.rules.format]
-enabled = true
 severity = "note"
 
 [checks.rules.line-length-limit]
-enabled = true
 severity = "error"
 excludes = ["testdata/golden/**"]
 
 [checks.rules.possible-nil-dereference]
 severity = "error"
+
+[checks.rules.no-init]
+severity = "none"
 ```
 
 The tool-wide minimum severity, exclusions, and default baseline live under

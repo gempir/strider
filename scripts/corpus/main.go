@@ -302,7 +302,7 @@ func commandOutput(directory, name string, arguments ...string) ([]byte, error) 
 }
 
 func runOperation(strider, checkout, operation string, item project) operationResult {
-	arguments := map[string][]string{"format": {"--no-config", "fmt", "--check"}, "check": {"--no-config", "check", "--all", "--minimum-severity", "note", "--format", "json"}}[operation]
+	arguments := map[string][]string{"format": {"--no-config", "fmt", "--check"}, "check": {"--no-config", "check", "--minimum-severity", "note", "--format", "json"}}[operation]
 	if len(item.FormatExcludes) != 0 {
 		configPath := filepath.Join(checkout, ".strider-corpus.toml")
 		encoded, err := json.Marshal(item.FormatExcludes)

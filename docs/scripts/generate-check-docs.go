@@ -29,7 +29,7 @@ func main() {
 }
 
 func generateSyntaxPages(docsDirectory string) {
-	all, err := rules.Select(nil, true)
+	all, err := rules.Select(nil)
 	if err != nil {
 		fatal(err)
 	}
@@ -147,7 +147,7 @@ allow every character.
 }
 
 func synchronizeSeverityBadges(docsDirectory string) {
-	registry, err := checks.NewRegistry(checks.RegistryOptions{All: true})
+	registry, err := checks.NewRegistry(checks.RegistryOptions{MinimumSeverity: diagnostic.SeverityNone})
 	if err != nil {
 		fatal(err)
 	}

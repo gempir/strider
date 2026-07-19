@@ -2847,10 +2847,9 @@ func TestRegistryRejectsUnknownRule(t *testing.T) {
 }
 
 func TestEveryAnalyzerAcceptsCommonConfiguration(t *testing.T) {
-	enabled := true
 	settings := make(map[string]config.RuleConfig, len(allRules()))
 	for _, rule := range allRules() {
-		settings[rule.Meta().Code] = config.RuleConfig{Enabled: &enabled, Severity: "note"}
+		settings[rule.Meta().Code] = config.RuleConfig{Severity: "note"}
 	}
 	registry, err := NewRegistryConfigured(nil, settings, "")
 	if err != nil {

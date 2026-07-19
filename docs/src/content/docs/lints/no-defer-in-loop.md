@@ -9,7 +9,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-**Configuration:** `enabled`, `severity`, and path `excludes`
+**Configuration:** `severity` and path `excludes`
 
 Reports `defer` statements nested inside `for` or `range` loops. Deferred calls
 run when the surrounding function returns, not when the current iteration

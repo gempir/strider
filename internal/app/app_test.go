@@ -348,7 +348,7 @@ func TestCheckCombinesFormattingSyntaxAndPackageChecks(t *testing.T) {
 
 func TestCheckListsOneUnifiedCatalog(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{"--no-config", "check", "--all", "--minimum-severity", "note", "--list-checks"}, strings.NewReader(""), &stdout, &stderr)
+	code := Run([]string{"--no-config", "check", "--minimum-severity", "note", "--list-checks"}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitSuccess || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
@@ -495,11 +495,11 @@ func TestVersionOneCheckConfigurationControlsUnifiedRegistry(t *testing.T) {
 	configurationPath := filepath.Join(root, "strider.toml")
 	configuration := `version = 1
 [checks.rules.format]
-enabled = false
+severity = "none"
 [checks.rules.no-init]
 severity = "error"
 [checks.rules.invalid-regexp]
-enabled = false
+severity = "none"
 `
 	if err := os.WriteFile(configurationPath, []byte(configuration), 0o600); err != nil {
 		t.Fatal(err)
@@ -512,10 +512,17 @@ enabled = false
 	_, formatListed := listedSeverity(stdout.String(), "format")
 	_, regexpListed := listedSeverity(stdout.String(), "invalid-regexp")
 	if formatListed || regexpListed {
-		t.Fatalf("disabled checks are still listed: %s", stdout.String())
+		t.Fatalf("none-severity checks are still listed: %s", stdout.String())
 	}
 	if severity, ok := listedSeverity(stdout.String(), "no-init"); !ok || severity != "error" {
 		t.Fatalf("configured severity is missing: %s", stdout.String())
+	}
+	stdout.Reset()
+	code = Run([]string{"--config", configurationPath, "check", "--minimum-severity", "none", "--list-checks"}, strings.NewReader(""), &stdout, &stderr)
+	formatSeverity, formatListed := listedSeverity(stdout.String(), "format")
+	regexpSeverity, regexpListed := listedSeverity(stdout.String(), "invalid-regexp")
+	if code != exitSuccess || !formatListed || formatSeverity != "none" || !regexpListed || regexpSeverity != "none" {
+		t.Fatalf("none threshold did not restore suppressed checks: exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 }
 
@@ -558,12 +565,34 @@ severity = "warning"
 	}
 }
 
+func TestMinimumSeverityNoneExecutesSuppressedCheck(t *testing.T) {
+	root := t.TempDir()
+	configurationPath := filepath.Join(root, "strider.toml")
+	if err := os.WriteFile(configurationPath, []byte("version = 1\n[checks.rules.no-init]\nseverity = \"none\"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	filename := filepath.Join(root, "main.go")
+	if err := os.WriteFile(filename, []byte("package sample\nfunc init() {}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	code := Run([]string{"--config", configurationPath, "check", "--only", "no-init", filename}, strings.NewReader(""), &stdout, &stderr)
+	if code != exitSuccess || stdout.String() != "found 0 issues\n" || stderr.Len() != 0 {
+		t.Fatalf("ordinary run: exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	stdout.Reset()
+	code = Run([]string{"--config", configurationPath, "check", "--minimum-severity", "none", "--only", "no-init", filename}, strings.NewReader(""), &stdout, &stderr)
+	if code != exitFindings || !strings.Contains(stdout.String(), "no-init:") || !strings.Contains(stdout.String(), "1 none") || stderr.Len() != 0 {
+		t.Fatalf("none run: exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+}
+
 func TestCategoryCommandsFilterUnifiedRuleSettings(t *testing.T) {
 	root := t.TempDir()
 	configurationPath := filepath.Join(root, "strider.toml")
 	configuration := `version = 1
 [checks.rules.format]
-enabled = false
+severity = "none"
 [checks.rules.no-init]
 severity = "error"
 [checks.rules.invalid-regexp]
@@ -607,7 +636,7 @@ func TestCategoryCommandsRejectUnknownUnifiedRules(t *testing.T) {
 	configurationPath := filepath.Join(root, "strider.toml")
 	configuration := `version = 1
 [checks.rules.removed-check]
-enabled = false
+severity = "none"
 `
 	if err := os.WriteFile(configurationPath, []byte(configuration), 0o600); err != nil {
 		t.Fatal(err)
@@ -816,9 +845,9 @@ func TestLintWithoutPathsScansCurrentDirectory(t *testing.T) {
 	}
 }
 
-func TestLintAllRulesListsCompleteRegistry(t *testing.T) {
+func TestLintListsCompleteRegistry(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{"lint", "--all-rules", "--minimum-severity", "note", "--list-rules"}, strings.NewReader(""), &stdout, &stderr)
+	code := Run([]string{"lint", "--minimum-severity", "note", "--list-rules"}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitSuccess {
 		t.Fatalf("exit %d, stderr %s", code, stderr.String())
 	}
@@ -832,11 +861,29 @@ func TestLintAllRulesListsCompleteRegistry(t *testing.T) {
 	}
 }
 
-func TestLintAllRulesAndOnlyAreMutuallyExclusive(t *testing.T) {
-	var stdout, stderr bytes.Buffer
-	code := Run([]string{"lint", "--all-rules", "--only", "atomic"}, strings.NewReader(""), &stdout, &stderr)
-	if code != exitError || !strings.Contains(stderr.String(), "mutually exclusive") {
-		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+func TestAllFlagsAreRemoved(t *testing.T) {
+	for _, args := range [][]string{
+		{"check", "-a"},
+		{"check", "--all"},
+		{"lint", "--all-rules"},
+		{"check", "-v", "strict"},
+		{"check", "--baseline-variant", "strict"},
+		{"lint", "--baseline-variant", "strict"},
+		{"analyze", "--baseline-variant", "strict"},
+		{"check", "-B"},
+		{"check", "--backup-baseline"},
+		{"check", "-i"},
+		{"check", "--ignore-baseline"},
+		{"lint", "--backup-baseline"},
+		{"lint", "--ignore-baseline"},
+		{"analyze", "--backup-baseline"},
+		{"analyze", "--ignore-baseline"},
+	} {
+		var stdout, stderr bytes.Buffer
+		code := Run(args, strings.NewReader(""), &stdout, &stderr)
+		if code != exitError || !strings.Contains(stderr.String(), "flag provided but not defined") {
+			t.Fatalf("args %v: exit %d, stdout %q, stderr %q", args, code, stdout.String(), stderr.String())
+		}
 	}
 }
 
@@ -884,7 +931,7 @@ func TestProjectConfigurationControlsFormatterLintAndAnalyzer(t *testing.T) {
 [checks.rules.no-init]
 severity = "error"
 [checks.rules.invalid-regexp]
-enabled = false
+severity = "none"
 `
 	if err := os.WriteFile(filepath.Join(root, "strider.toml"), []byte(configuration), 0o600); err != nil {
 		t.Fatal(err)
@@ -967,9 +1014,6 @@ func TestLintBaselineGenerateApplyIgnoreAndPrune(t *testing.T) {
 	if code, stdout, stderr := run(); code != exitFindings || strings.Count(stdout, "no-init:") != 1 || stderr != "" {
 		t.Fatalf("new issue exit %d, stdout %q, stderr %q", code, stdout, stderr)
 	}
-	if code, stdout, stderr := run("--ignore-baseline"); code != exitFindings || strings.Count(stdout, "no-init:") != 2 || stderr != "" {
-		t.Fatalf("ignore exit %d, stdout %q, stderr %q", code, stdout, stderr)
-	}
 	write("package p\n")
 	if code, stdout, stderr := run(); code != exitSuccess || stdout != "found 0 issues\n" || !strings.Contains(stderr, "1 outdated issue") {
 		t.Fatalf("stale exit %d, stdout %q, stderr %q", code, stdout, stderr)
@@ -997,13 +1041,9 @@ func TestSeverityFilteredBaselinePrunePreservesKnownAndRemovesUnknownCodes(t *te
 		baselinePath,
 		baseline.File{
 			Version: baseline.Version,
-			Variant: baseline.Loose,
-			Issues: []baseline.Issue{
-				{File: "main.go", Code: "no-init", Message: "known inactive finding", Count: 1},
-				{File: "main.go", Code: "removed-check", Message: "removed finding", Count: 1},
-			},
+			Variant: baseline.Strict,
+			Issues:  []baseline.Issue{{File: "main.go", Code: "no-init", StartLine: 1, EndLine: 1}, {File: "main.go", Code: "removed-check", StartLine: 1, EndLine: 1}},
 		},
-		false,
 	); err != nil {
 		t.Fatal(err)
 	}

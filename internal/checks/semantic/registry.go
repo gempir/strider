@@ -129,22 +129,20 @@ func NewRegistry(only []string) (*Registry, error) {
 	return NewRegistryConfigured(only, nil, "")
 }
 
-// NewRegistryConfigured applies analyzer rule settings. Explicit --only
-// selection enables the named analyzers even when configuration disables them.
+// NewRegistryConfigured applies analyzer rule settings.
 func NewRegistryConfigured(only []string, settings map[string]config.RuleConfig, root string) (*Registry, error) {
 	return NewRegistryWithOptions(RegistryOptions{Only: only, Settings: settings, Root: root, MinimumSeverity: diagnostic.SeverityNote})
 }
 
 // NewRegistryWithOptions applies project settings and a minimum effective
-// severity. Explicit selection changes enabled state, but never bypasses the
-// severity threshold.
+// severity. Explicit selection never bypasses the severity threshold.
 func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
 	minimumSeverity := options.MinimumSeverity
 	if minimumSeverity == "" {
 		minimumSeverity = diagnostic.SeverityNote
 	}
 	if !diagnostic.ValidSeverity(minimumSeverity) {
-		return nil, fmt.Errorf("minimum severity must be note, warning, or error")
+		return nil, fmt.Errorf("minimum severity must be none, note, warning, or error")
 	}
 	all := allRules()
 	byCode := make(map[string]Rule, len(all))
@@ -171,7 +169,7 @@ func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
 			unknown = append(unknown, code)
 		}
 		if setting.Severity != "" && !diagnostic.ValidSeverity(diagnostic.Severity(setting.Severity)) {
-			return nil, fmt.Errorf("analysis rule %q severity must be note, warning, or error", code)
+			return nil, fmt.Errorf("analysis rule %q severity must be none, note, warning, or error", code)
 		}
 	}
 	if len(unknown) != 0 {
@@ -190,9 +188,6 @@ func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
 		normalized := strings.ToUpper(meta.Code)
 		setting := configured[normalized]
 		if len(wanted) != 0 && !wanted[normalized] {
-			continue
-		}
-		if len(wanted) == 0 && setting.Enabled != nil && !*setting.Enabled {
 			continue
 		}
 		severity := meta.DefaultSeverity

@@ -32,11 +32,9 @@ print-width = 120
 [checks]
 excludes = ["generated/**"]
 baseline = "strider-baseline.toml"
-baseline-variant = "strict"
 minimum-severity = "warning"
 [checks.rules.no-init]
-enabled = false
-severity = "error"
+severity = "none"
 excludes = ["legacy/**"]
 [checks.rules.banned-characters]
 characters = ["ᐸ", "ᐳ"]
@@ -52,11 +50,11 @@ characters = ["ᐸ", "ᐳ"]
 	if configuration.Formatter.PrintWidth != 120 {
 		t.Fatalf("unexpected formatter config: %#v", configuration.Formatter)
 	}
-	if configuration.Checks.Baseline != "strider-baseline.toml" || configuration.Checks.BaselineVariant != "strict" || configuration.Checks.MinimumSeverity != "warning" {
+	if configuration.Checks.Baseline != "strider-baseline.toml" || configuration.Checks.MinimumSeverity != "warning" {
 		t.Fatalf("unexpected checks config: %#v", configuration.Checks)
 	}
 	rule := configuration.EffectiveCheckRule("no-init")
-	if rule.Enabled == nil || *rule.Enabled || rule.Severity != "error" {
+	if rule.Severity != "none" {
 		t.Fatalf("unexpected effective rule: %#v", rule)
 	}
 	if strings.Join(rule.Excludes, ",") != "generated/**,legacy/**" {
@@ -88,6 +86,8 @@ func TestLoadRejectsUnknownAndInvalidSettings(t *testing.T) {
 		"severity":         {"version = 1\n[checks.rules.no-init]\nseverity = \"fatal\"\n", "severity"},
 		"minimum-severity": {"version = 1\n[checks]\nminimum-severity = \"fatal\"\n", "minimum-severity"},
 		"checks-unknown":   {"version = 1\n[checks]\nunknown = true\n", "unknown configuration key"},
+		"baseline-variant": {"version = 1\n[checks]\nbaseline-variant = \"strict\"\n", "unknown configuration key"},
+		"enabled":          {"version = 1\n[checks.rules.no-init]\nenabled = false\n", "unknown configuration key"},
 		"legacy-linter":    {"version = 1\n[linter]\n", "unknown configuration key"},
 		"legacy-analyzer":  {"version = 1\n[analyzer]\n", "unknown configuration key"},
 		"color":            {"version = 1\ncolor = \"sometimes\"\n", "color"},

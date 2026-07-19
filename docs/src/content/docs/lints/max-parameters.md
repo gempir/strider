@@ -10,7 +10,7 @@ sidebar:
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
 **Maximum:** `5`  
-**Configuration:** `enabled`, `severity`, and path `excludes`; maximum remains `5`
+**Configuration:** `severity` and path `excludes`; maximum remains `5`
 
 Reports function declarations with more than five parameters. Long parameter
 lists are difficult to call correctly and often reveal a missing domain type.

@@ -18,10 +18,7 @@ const Version = 1
 
 type Variant string
 
-const (
-	Loose  Variant = "loose"
-	Strict Variant = "strict"
-)
+const Strict Variant = "strict"
 
 type File struct {
 	Version int     `toml:"version"`
@@ -32,8 +29,6 @@ type File struct {
 type Issue struct {
 	File      string `toml:"file"`
 	Code      string `toml:"code"`
-	Message   string `toml:"message,omitempty"`
-	Count     int    `toml:"count,omitzero"`
 	StartLine int    `toml:"start-line,omitzero"`
 	EndLine   int    `toml:"end-line,omitzero"`
 }
@@ -45,38 +40,17 @@ type Result struct {
 }
 
 // Generate constructs a deterministic baseline from diagnostics.
-func Generate(path string, variant Variant, diagnostics []diagnostic.Diagnostic) (File, error) {
-	if err := validateVariant(variant); err != nil {
-		return File{}, err
-	}
+func Generate(path string, diagnostics []diagnostic.Diagnostic) (File, error) {
 	directory := filepath.Dir(path)
-	baseline := File{Version: Version, Variant: variant}
-	if variant == Loose {
-		counts := make(map[string]int)
-		issues := make(map[string]Issue)
-		for _, item := range diagnostics {
-			issue, err := looseIssue(directory, item)
-			if err != nil {
-				return File{}, err
-			}
-			key := looseKey(issue)
-			counts[key]++
-			issues[key] = issue
+	baseline := File{Version: Version, Variant: Strict}
+	for _, item := range diagnostics {
+		issue, err := strictIssue(directory, item)
+		if err != nil {
+			return File{}, err
 		}
-		for key, issue := range issues {
-			issue.Count = counts[key]
-			baseline.Issues = append(baseline.Issues, issue)
-		}
-	} else {
-		for _, item := range diagnostics {
-			issue, err := strictIssue(directory, item)
-			if err != nil {
-				return File{}, err
-			}
-			baseline.Issues = append(baseline.Issues, issue)
-		}
+		baseline.Issues = append(baseline.Issues, issue)
 	}
-	sortIssues(baseline.Issues, variant)
+	sortIssues(baseline.Issues)
 	return baseline, nil
 }
 
@@ -98,21 +72,18 @@ func Load(path string) (File, error) {
 	if baseline.Version != Version {
 		return File{}, fmt.Errorf("unsupported baseline version %d; expected %d", baseline.Version, Version)
 	}
-	if err := validateVariant(baseline.Variant); err != nil {
-		return File{}, err
+	if baseline.Variant != Strict {
+		return File{}, fmt.Errorf("baseline variant must be \"strict\"")
 	}
 	for index, issue := range baseline.Issues {
 		if issue.File == "" || issue.Code == "" {
 			return File{}, fmt.Errorf("issue %d requires file and code", index+1)
 		}
-		if baseline.Variant == Loose && (issue.Message == "" || issue.Count < 1) {
-			return File{}, fmt.Errorf("loose issue %d requires message and a positive count", index+1)
-		}
-		if baseline.Variant == Strict && (issue.StartLine < 1 || issue.EndLine < issue.StartLine) {
+		if issue.StartLine < 1 || issue.EndLine < issue.StartLine {
 			return File{}, fmt.Errorf("strict issue %d has an invalid line range", index+1)
 		}
 	}
-	sortIssues(baseline.Issues, baseline.Variant)
+	sortIssues(baseline.Issues)
 	return baseline, nil
 }
 
@@ -148,21 +119,17 @@ func applySelection(path string, baseline File, diagnostics []diagnostic.Diagnos
 			result.Matched.Issues = append(result.Matched.Issues, issue)
 			continue
 		}
-		key := issueKey(issue, baseline.Variant)
-		count := 1
-		if baseline.Variant == Loose {
-			count = issue.Count
-		}
-		remaining[key] += count
+		key := issueKey(issue)
+		remaining[key]++
 		templates[key] = issue
 	}
 	matched := make(map[string]int, len(remaining))
 	for _, item := range diagnostics {
-		issue, err := issueFromDiagnostic(directory, baseline.Variant, item)
+		issue, err := strictIssue(directory, item)
 		if err != nil {
 			return Result{}, err
 		}
-		key := issueKey(issue, baseline.Variant)
+		key := issueKey(issue)
 		if remaining[key] == 0 {
 			result.Diagnostics = append(result.Diagnostics, item)
 			continue
@@ -175,36 +142,16 @@ func applySelection(path string, baseline File, diagnostics []diagnostic.Diagnos
 	}
 	for key, count := range matched {
 		issue := templates[key]
-		if baseline.Variant == Loose {
-			issue.Count = count
-		}
-		for range countForVariant(count, baseline.Variant) {
+		for range count {
 			result.Matched.Issues = append(result.Matched.Issues, issue)
 		}
 	}
-	sortIssues(result.Matched.Issues, baseline.Variant)
+	sortIssues(result.Matched.Issues)
 	return result, nil
 }
 
-func countForVariant(count int, variant Variant) int {
-	if variant == Loose {
-		return 1
-	}
-	return count
-}
-
-// Write atomically serializes a baseline. With backup enabled, an existing
-// baseline is copied to path + ".bkp" first.
-func Write(path string, baseline File, backup bool) (err error) {
-	if backup {
-		if content, err := os.ReadFile(path); err == nil {
-			if err := os.WriteFile(path+".bkp", content, 0o600); err != nil {
-				return fmt.Errorf("backup baseline: %w", err)
-			}
-		} else if !os.IsNotExist(err) {
-			return err
-		}
-	}
+// Write atomically serializes a baseline.
+func Write(path string, baseline File) (err error) {
 	temporary, err := os.CreateTemp(filepath.Dir(path), ".strider-baseline-*")
 	if err != nil {
 		return err
@@ -233,21 +180,6 @@ func Write(path string, baseline File, backup bool) (err error) {
 	return nil
 }
 
-func issueFromDiagnostic(directory string, variant Variant, item diagnostic.Diagnostic) (Issue, error) {
-	if variant == Loose {
-		return looseIssue(directory, item)
-	}
-	return strictIssue(directory, item)
-}
-
-func looseIssue(directory string, item diagnostic.Diagnostic) (Issue, error) {
-	file, err := relativeFile(directory, item.File)
-	if err != nil {
-		return Issue{}, err
-	}
-	return Issue{File: file, Code: item.Code, Message: item.Message, Count: 1}, nil
-}
-
 func strictIssue(directory string, item diagnostic.Diagnostic) (Issue, error) {
 	file, err := relativeFile(directory, item.File)
 	if err != nil {
@@ -272,26 +204,12 @@ func relativeFile(directory, filename string) (string, error) {
 	return filepath.ToSlash(relative), nil
 }
 
-func validateVariant(variant Variant) error {
-	if variant != Loose && variant != Strict {
-		return fmt.Errorf("baseline variant must be \"loose\" or \"strict\"")
-	}
-	return nil
-}
-
-func issueKey(issue Issue, variant Variant) string {
-	if variant == Loose {
-		return looseKey(issue)
-	}
+func issueKey(issue Issue) string {
 	return fmt.Sprintf("%s\x00%s\x00%d\x00%d", issue.File, issue.Code, issue.StartLine, issue.EndLine)
 }
 
-func looseKey(issue Issue) string {
-	return issue.File + "\x00" + issue.Code + "\x00" + issue.Message
-}
-
-func sortIssues(issues []Issue, variant Variant) {
+func sortIssues(issues []Issue) {
 	sort.Slice(issues, func(i, j int) bool {
-		return issueKey(issues[i], variant) < issueKey(issues[j], variant)
+		return issueKey(issues[i]) < issueKey(issues[j])
 	})
 }

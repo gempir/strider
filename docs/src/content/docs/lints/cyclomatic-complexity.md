@@ -10,7 +10,7 @@ sidebar:
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
 **Maximum:** `10`  
-**Configuration:** `enabled`, `severity`, and path `excludes`; maximum remains `10`
+**Configuration:** `severity` and path `excludes`; maximum remains `10`
 
 Reports a declared function when its calculated complexity is greater than
 10. A low complexity score makes control flow easier to understand, test, and

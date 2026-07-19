@@ -36,42 +36,31 @@ var defaultBannedCharacters = []rune{'ᐸ', 'ᐳ'}
 // RegistryOptions selects and configures concrete-syntax rules.
 type RegistryOptions struct {
 	Only            []string
-	EnableAll       bool
 	Settings        map[string]config.RuleConfig
 	Root            string
 	MinimumSeverity diagnostic.Severity
 }
 
 func NewRegistry(only []string) (*Registry, error) {
-	return newRegistry(only, false)
+	return NewRegistryConfigured(only, nil, "")
 }
 
-func NewRegistryAll() (*Registry, error) {
-	return newRegistry(nil, true)
-}
-
-func newRegistry(only []string, enableAll bool) (*Registry, error) {
-	return NewRegistryConfigured(only, enableAll, nil, "")
-}
-
-// NewRegistryConfigured applies project rule settings. Explicit CLI selection
-// takes precedence over configured enabled states.
-func NewRegistryConfigured(only []string, enableAll bool, settings map[string]config.RuleConfig, root string) (*Registry, error) {
-	return NewRegistryWithOptions(RegistryOptions{Only: only, EnableAll: enableAll, Settings: settings, Root: root, MinimumSeverity: diagnostic.SeverityNote})
+// NewRegistryConfigured applies project rule settings.
+func NewRegistryConfigured(only []string, settings map[string]config.RuleConfig, root string) (*Registry, error) {
+	return NewRegistryWithOptions(RegistryOptions{Only: only, Settings: settings, Root: root, MinimumSeverity: diagnostic.SeverityNote})
 }
 
 // NewRegistryWithOptions applies project settings and a minimum effective
-// severity. Explicit selection changes enabled state, but never bypasses the
-// severity threshold.
+// severity. Explicit selection never bypasses the severity threshold.
 func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
 	minimumSeverity := options.MinimumSeverity
 	if minimumSeverity == "" {
 		minimumSeverity = diagnostic.SeverityNote
 	}
 	if !diagnostic.ValidSeverity(minimumSeverity) {
-		return nil, fmt.Errorf("minimum severity must be note, warning, or error")
+		return nil, fmt.Errorf("minimum severity must be none, note, warning, or error")
 	}
-	all, err := builtinrules.Select(nil, true)
+	all, err := builtinrules.Select(nil)
 	if err != nil {
 		return nil, err
 	}
@@ -83,17 +72,9 @@ func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
 		return nil, err
 	}
 	if len(options.Only) != 0 {
-		if _, err := builtinrules.Select(options.Only, false); err != nil {
+		if _, err := builtinrules.Select(options.Only); err != nil {
 			return nil, err
 		}
-	}
-	defaults, err := builtinrules.Select(nil, false)
-	if err != nil {
-		return nil, err
-	}
-	enabledByDefault := make(map[string]bool, len(defaults))
-	for _, rule := range defaults {
-		enabledByDefault[rule.Meta().Code] = true
 	}
 	wanted := make(map[string]bool, len(options.Only))
 	for _, code := range options.Only {
@@ -104,16 +85,7 @@ func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
 		meta := rule.Meta()
 		registry.knownCodes[meta.Code] = true
 		ruleConfig := options.Settings[meta.Code]
-		enabled := enabledByDefault[meta.Code]
-		switch {
-		case len(options.Only) != 0:
-			enabled = wanted[meta.Code]
-		case options.EnableAll:
-			enabled = true
-		case ruleConfig.Enabled != nil:
-			enabled = *ruleConfig.Enabled
-		}
-		if !enabled {
+		if len(options.Only) != 0 && !wanted[meta.Code] {
 			continue
 		}
 		severity := meta.DefaultSeverity
@@ -146,7 +118,7 @@ func validateConfiguredRules(tool string, settings map[string]config.RuleConfig,
 			unknown = append(unknown, code)
 		}
 		if setting.Severity != "" && !diagnostic.ValidSeverity(diagnostic.Severity(setting.Severity)) {
-			return fmt.Errorf("%s rule %q severity must be note, warning, or error", tool, code)
+			return fmt.Errorf("%s rule %q severity must be none, note, warning, or error", tool, code)
 		}
 		if setting.Characters != nil && code != "banned-characters" {
 			return fmt.Errorf("%s rule %q does not support characters", tool, code)

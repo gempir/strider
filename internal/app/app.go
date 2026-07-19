@@ -55,11 +55,8 @@ type globalOptions struct {
 
 type baselineOptions struct {
 	path          string
-	variant       baseline.Variant
 	generate      bool
 	prune         bool
-	ignore        bool
-	backup        bool
 	selectedCodes map[string]bool
 	knownCodes    map[string]bool
 }
@@ -342,23 +339,17 @@ func varOption(flags *flag.FlagSet, value flag.Value, long, short, usage string)
 	flags.Var(value, short, "alias for --"+long)
 }
 
-func checkCommandAliases(includeAll bool) map[string]string {
+func checkCommandAliases() map[string]string {
 	aliases := map[string]string{
 		"format":                           "f",
 		"minimum-severity":                 "s",
 		"list-rules":                       "l",
 		"explain":                          "e",
 		"baseline":                         "b",
-		"baseline-variant":                 "v",
 		"generate-baseline":                "g",
 		"remove-outdated-baseline-entries": "r",
-		"ignore-baseline":                  "i",
-		"backup-baseline":                  "B",
 		"only":                             "o",
 		"help":                             "h",
-	}
-	if includeAll {
-		aliases["all-rules"] = "a"
 	}
 	return aliases
 }
@@ -402,7 +393,7 @@ func printFlagDefaults(writer io.Writer, flags *flag.FlagSet, aliases map[string
 			if len(option.Name) == 1 {
 				return
 			}
-			if option.Name == "list-rules" || option.Name == "all-rules" {
+			if option.Name == "list-rules" {
 				return
 			}
 			value := " VALUE"
@@ -654,18 +645,14 @@ func (values *stringList) Set(value string) error {
 func runLint(args []string, configuration config.Config, colorMode ui.ColorMode, stdout, stderr io.Writer) int {
 	flags := flag.NewFlagSet("lint", flag.ContinueOnError)
 	flags.SetOutput(stderr)
-	aliases := checkCommandAliases(true)
+	aliases := checkCommandAliases()
 	format := stringOption(flags, "format", "f", "text", "report format: text, json, or html")
-	minimumSeverityFlag := stringOption(flags, "minimum-severity", "s", "", "minimum effective severity: note, warning, or error")
-	listRules := boolOption(flags, "list-rules", "l", false, "list enabled lint rules")
-	allRules := boolOption(flags, "all-rules", "a", false, "run every built-in rule")
+	minimumSeverityFlag := stringOption(flags, "minimum-severity", "s", "", "minimum effective severity: none, note, warning, or error")
+	listRules := boolOption(flags, "list-rules", "l", false, "list lint rules admitted by the severity floor")
 	explain := stringOption(flags, "explain", "e", "", "explain a lint rule")
 	baselinePath := stringOption(flags, "baseline", "b", "", "path to the lint baseline")
-	baselineVariant := stringOption(flags, "baseline-variant", "v", "", "generated baseline variant: loose or strict")
 	generateBaseline := boolOption(flags, "generate-baseline", "g", false, "replace the baseline with all current findings")
 	removeOutdated := boolOption(flags, "remove-outdated-baseline-entries", "r", false, "remove baseline entries that no longer match")
-	ignoreBaseline := boolOption(flags, "ignore-baseline", "i", false, "report findings without applying a baseline")
-	backupBaseline := boolOption(flags, "backup-baseline", "B", false, "back up a baseline before replacing it")
 	var only stringList
 	varOption(flags, &only, "only", "o", "run only these rule codes (repeatable or comma-separated)")
 	flags.Usage = func() {
@@ -674,10 +661,6 @@ func runLint(args []string, configuration config.Config, colorMode ui.ColorMode,
 		printFlagDefaults(stderr, flags, aliases, palette)
 	}
 	if !parseCommandFlags(flags, args, aliases, "lint", colorMode, stderr) {
-		return exitError
-	}
-	if *allRules && len(only) != 0 {
-		printCommandError(stderr, colorMode, "strider lint", "--all-rules and --only are mutually exclusive")
 		return exitError
 	}
 	lintConfig := configuration.Checks
@@ -690,28 +673,13 @@ func runLint(args []string, configuration config.Config, colorMode ui.ColorMode,
 	if !ok {
 		return exitError
 	}
-	baselineConfig, ok := resolveBaselineOptions(
-		flags,
-		configuration,
-		lintConfig,
-		*baselinePath,
-		*baselineVariant,
-		*generateBaseline,
-		*removeOutdated,
-		*ignoreBaseline,
-		*backupBaseline,
-		stderr,
-		"lint",
-		colorMode,
-	)
+	baselineConfig, ok := resolveBaselineOptions(flags, configuration, lintConfig, *baselinePath, *generateBaseline, *removeOutdated, stderr, "lint", colorMode)
 	if !ok {
 		return exitError
 	}
 	var registry *syntax.Registry
 	var err error
-	registry, err = syntax.NewRegistryWithOptions(
-		syntax.RegistryOptions{Only: only, EnableAll: *allRules, Settings: syntaxSettings, Root: configuration.Root, MinimumSeverity: minimumSeverity},
-	)
+	registry, err = syntax.NewRegistryWithOptions(syntax.RegistryOptions{Only: only, Settings: syntaxSettings, Root: configuration.Root, MinimumSeverity: minimumSeverity})
 	if err != nil {
 		printCommandError(stderr, colorMode, "strider lint", "%v", err)
 		return exitError
@@ -822,17 +790,14 @@ func lintPaths(
 func runAnalyze(args []string, configuration config.Config, colorMode ui.ColorMode, stdout, stderr io.Writer) int {
 	flags := flag.NewFlagSet("analyze", flag.ContinueOnError)
 	flags.SetOutput(stderr)
-	aliases := checkCommandAliases(false)
+	aliases := checkCommandAliases()
 	format := stringOption(flags, "format", "f", "text", "report format: text, json, or html")
-	minimumSeverityFlag := stringOption(flags, "minimum-severity", "s", "", "minimum effective severity: note, warning, or error")
-	listRules := boolOption(flags, "list-rules", "l", false, "list enabled analysis rules")
+	minimumSeverityFlag := stringOption(flags, "minimum-severity", "s", "", "minimum effective severity: none, note, warning, or error")
+	listRules := boolOption(flags, "list-rules", "l", false, "list analysis rules admitted by the severity floor")
 	explain := stringOption(flags, "explain", "e", "", "explain an analysis rule")
 	baselinePath := stringOption(flags, "baseline", "b", "", "path to the analysis baseline")
-	baselineVariant := stringOption(flags, "baseline-variant", "v", "", "generated baseline variant: loose or strict")
 	generateBaseline := boolOption(flags, "generate-baseline", "g", false, "replace the baseline with all current findings")
 	removeOutdated := boolOption(flags, "remove-outdated-baseline-entries", "r", false, "remove baseline entries that no longer match")
-	ignoreBaseline := boolOption(flags, "ignore-baseline", "i", false, "report findings without applying a baseline")
-	backupBaseline := boolOption(flags, "backup-baseline", "B", false, "back up a baseline before replacing it")
 	var only stringList
 	varOption(flags, &only, "only", "o", "run only these rule codes (repeatable or comma-separated)")
 	flags.Usage = func() {
@@ -853,20 +818,7 @@ func runAnalyze(args []string, configuration config.Config, colorMode ui.ColorMo
 	if !ok {
 		return exitError
 	}
-	baselineConfig, ok := resolveBaselineOptions(
-		flags,
-		configuration,
-		analyzeConfig,
-		*baselinePath,
-		*baselineVariant,
-		*generateBaseline,
-		*removeOutdated,
-		*ignoreBaseline,
-		*backupBaseline,
-		stderr,
-		"analyze",
-		colorMode,
-	)
+	baselineConfig, ok := resolveBaselineOptions(flags, configuration, analyzeConfig, *baselinePath, *generateBaseline, *removeOutdated, stderr, "analyze", colorMode)
 	if !ok {
 		return exitError
 	}
@@ -983,6 +935,8 @@ func colorSeverityText(severity diagnostic.Severity, text string, palette ui.Pal
 		return palette.Error(text)
 	case diagnostic.SeverityNote:
 		return palette.Note(text)
+	case diagnostic.SeverityNone:
+		return palette.Muted(text)
 	default:
 		return palette.Warning(text)
 	}
@@ -1018,12 +972,12 @@ func resolveMinimumSeverity(flags *flag.FlagSet, flagValue, configured string, c
 	if diagnostic.ValidSeverity(severity) {
 		return severity, true
 	}
-	printCommandError(stderr, colorMode, "strider "+command, "--minimum-severity must be note, warning, or error")
+	printCommandError(stderr, colorMode, "strider "+command, "--minimum-severity must be none, note, warning, or error")
 	return "", false
 }
 
 func commandSettings(settings map[string]config.RuleConfig, capability checkengine.Capability) (map[string]config.RuleConfig, map[string]bool, error) {
-	registry, err := checkengine.NewRegistry(checkengine.RegistryOptions{All: true, Settings: settings})
+	registry, err := checkengine.NewRegistry(checkengine.RegistryOptions{Settings: settings, MinimumSeverity: diagnostic.SeverityNone})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1049,12 +1003,9 @@ func resolveBaselineOptions(
 	flags *flag.FlagSet,
 	configuration config.Config,
 	tool config.ToolConfig,
-	path,
-	variant string,
+	path string,
 	generate,
-	prune,
-	ignore,
-	backup bool,
+	prune bool,
 	stderr io.Writer,
 	command string,
 	colorMode ui.ColorMode,
@@ -1062,23 +1013,8 @@ func resolveBaselineOptions(
 	if !flagWasSetAny(flags, "baseline", "b") {
 		path = configuration.Resolve(tool.Baseline)
 	}
-	if !flagWasSetAny(flags, "baseline-variant", "v") {
-		variant = tool.BaselineVariant
-	}
-	if variant != "loose" && variant != "strict" {
-		printCommandError(stderr, colorMode, "strider "+command, "--baseline-variant must be loose or strict")
-		return baselineOptions{}, false
-	}
 	if generate && prune {
 		printCommandError(stderr, colorMode, "strider "+command, "--generate-baseline and --remove-outdated-baseline-entries are mutually exclusive")
-		return baselineOptions{}, false
-	}
-	if ignore && (generate || prune) {
-		printCommandError(stderr, colorMode, "strider "+command, "--ignore-baseline cannot be combined with baseline updates")
-		return baselineOptions{}, false
-	}
-	if backup && !generate && !prune {
-		printCommandError(stderr, colorMode, "strider "+command, "--backup-baseline requires a baseline update option")
 		return baselineOptions{}, false
 	}
 	if path == "" && (generate || prune) {
@@ -1093,19 +1029,19 @@ func resolveBaselineOptions(
 		}
 		path = absolute
 	}
-	return baselineOptions{path: path, variant: baseline.Variant(variant), generate: generate, prune: prune, ignore: ignore, backup: backup}, true
+	return baselineOptions{path: path, generate: generate, prune: prune}, true
 }
 
 func applyBaseline(command string, diagnostics []diagnostic.Diagnostic, options baselineOptions, colorMode ui.ColorMode, stderr io.Writer) ([]diagnostic.Diagnostic, bool, error) {
-	if options.path == "" || options.ignore {
+	if options.path == "" {
 		return diagnostics, false, nil
 	}
 	if options.generate {
-		generated, err := baseline.Generate(options.path, options.variant, diagnostics)
+		generated, err := baseline.Generate(options.path, diagnostics)
 		if err != nil {
 			return nil, false, err
 		}
-		if err := baseline.Write(options.path, generated, options.backup); err != nil {
+		if err := baseline.Write(options.path, generated); err != nil {
 			return nil, false, err
 		}
 		return nil, true, nil
@@ -1119,7 +1055,7 @@ func applyBaseline(command string, diagnostics []diagnostic.Diagnostic, options 
 		return nil, false, err
 	}
 	if options.prune {
-		if err := baseline.Write(options.path, result.Matched, options.backup); err != nil {
+		if err := baseline.Write(options.path, result.Matched); err != nil {
 			return nil, false, err
 		}
 	} else if result.Stale != 0 {

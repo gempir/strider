@@ -10,38 +10,10 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-func TestLooseBaselineSurvivesLineMovementAndUsesCounts(t *testing.T) {
-	root := t.TempDir()
-	path := filepath.Join(root, "lint-baseline.toml")
-	diagnostics := []diagnostic.Diagnostic{
-		item(filepath.Join(root, "main.go"), "no-init", "avoid init", 2, 2),
-		item(filepath.Join(root, "main.go"), "no-init", "avoid init", 8, 8),
-	}
-	baseline, err := Generate(path, Loose, diagnostics)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(baseline.Issues) != 1 || baseline.Issues[0].Count != 2 {
-		t.Fatalf("unexpected baseline: %#v", baseline)
-	}
-	moved := []diagnostic.Diagnostic{
-		item(filepath.Join(root, "main.go"), "no-init", "avoid init", 20, 20),
-		item(filepath.Join(root, "main.go"), "no-init", "avoid init", 30, 30),
-		item(filepath.Join(root, "main.go"), "no-init", "avoid init", 40, 40),
-	}
-	result, err := Apply(path, baseline, moved)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(result.Diagnostics) != 1 || result.Stale != 0 || result.Matched.Issues[0].Count != 2 {
-		t.Fatalf("unexpected result: %#v", result)
-	}
-}
-
 func TestStrictBaselineTracksExactLineRangesAndStaleEntries(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "analysis-baseline.toml")
-	baseline, err := Generate(path, Strict, []diagnostic.Diagnostic{item(filepath.Join(root, "main.go"), "invalid-regexp", "bad", 4, 5)})
+	baseline, err := Generate(path, []diagnostic.Diagnostic{item(filepath.Join(root, "main.go"), "invalid-regexp", "bad", 4, 5)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +31,6 @@ func TestApplySelectedPreservesUnselectedEntriesWithoutMarkingThemStale(t *testi
 	path := filepath.Join(root, "baseline.toml")
 	generated, err := Generate(
 		path,
-		Loose,
 		[]diagnostic.Diagnostic{item(filepath.Join(root, "main.go"), "advisory", "old note", 2, 2), item(filepath.Join(root, "main.go"), "critical", "old error", 3, 3)},
 	)
 	if err != nil {
@@ -68,7 +39,7 @@ func TestApplySelectedPreservesUnselectedEntriesWithoutMarkingThemStale(t *testi
 	result, err := ApplySelected(
 		path,
 		generated,
-		[]diagnostic.Diagnostic{item(filepath.Join(root, "main.go"), "critical", "old error", 30, 30)},
+		[]diagnostic.Diagnostic{item(filepath.Join(root, "main.go"), "critical", "old error", 3, 3)},
 		map[string]bool{"critical": true},
 	)
 	if err != nil {
@@ -91,7 +62,6 @@ func TestApplyCatalogSelectionMakesUnknownCodesStale(t *testing.T) {
 	path := filepath.Join(root, "baseline.toml")
 	generated, err := Generate(
 		path,
-		Loose,
 		[]diagnostic.Diagnostic{
 			item(filepath.Join(root, "main.go"), "advisory", "old note", 2, 2),
 			item(filepath.Join(root, "main.go"), "critical", "old error", 3, 3),
@@ -104,7 +74,7 @@ func TestApplyCatalogSelectionMakesUnknownCodesStale(t *testing.T) {
 	result, err := ApplyCatalogSelection(
 		path,
 		generated,
-		[]diagnostic.Diagnostic{item(filepath.Join(root, "main.go"), "critical", "old error", 30, 30)},
+		[]diagnostic.Diagnostic{item(filepath.Join(root, "main.go"), "critical", "old error", 3, 3)},
 		map[string]bool{"critical": true},
 		map[string]bool{"advisory": true, "critical": true},
 	)
@@ -121,21 +91,14 @@ func TestApplyCatalogSelectionMakesUnknownCodesStale(t *testing.T) {
 	}
 }
 
-func TestWriteLoadAndBackup(t *testing.T) {
+func TestWriteReplacesAndLoads(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "baseline.toml")
-	first := File{Version: Version, Variant: Loose, Issues: []Issue{{File: "main.go", Code: "no-init", Message: "avoid init", Count: 1}}}
-	if err := Write(path, first, false); err != nil {
+	first := File{Version: Version, Variant: Strict, Issues: []Issue{{File: "main.go", Code: "no-init", StartLine: 1, EndLine: 1}}}
+	if err := Write(path, first); err != nil {
 		t.Fatal(err)
-	}
-	looseContent, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if strings.Contains(string(looseContent), "start-line") {
-		t.Fatalf("loose baseline contains strict fields:\n%s", looseContent)
 	}
 	second := File{Version: Version, Variant: Strict, Issues: []Issue{{File: "main.go", Code: "no-init", StartLine: 2, EndLine: 2}}}
-	if err := Write(path, second, true); err != nil {
+	if err := Write(path, second); err != nil {
 		t.Fatal(err)
 	}
 	strictContent, err := os.ReadFile(path)
@@ -152,8 +115,16 @@ func TestWriteLoadAndBackup(t *testing.T) {
 	if loaded.Variant != Strict || len(loaded.Issues) != 1 {
 		t.Fatalf("unexpected load: %#v", loaded)
 	}
-	if _, err := os.Stat(path + ".bkp"); err != nil {
+}
+
+func TestLoadRejectsLooseBaseline(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "baseline.toml")
+	content := "version = 1\nvariant = \"loose\"\n"
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
 		t.Fatal(err)
+	}
+	if _, err := Load(path); err == nil || !strings.Contains(err.Error(), `baseline variant must be "strict"`) {
+		t.Fatalf("Load error = %v, want strict variant error", err)
 	}
 }
 

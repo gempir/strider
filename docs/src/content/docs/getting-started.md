@@ -54,7 +54,7 @@ print-width = 180
 minimum-severity = "warning"
 
 [checks.rules.line-length-limit]
-enabled = true
+severity = "warning"
 
 [checks.rules.possible-nil-dereference]
 severity = "error"
@@ -65,15 +65,15 @@ baseline setting.
 
 ## Check a project
 
-Run the configured check profile recursively from the current directory:
+Run all checks admitted by the configured severity floor recursively from the
+current directory:
 
 ```sh
 strider check
 ```
 
-The built-in profile selects 118 checks. Its default warning floor runs 96;
-select individual codes when investigating a finding or adopting Strider
-incrementally:
+All 225 checks are eligible. The default warning floor runs 151; select
+individual codes when investigating a finding or adopting Strider incrementally:
 
 ```sh
 strider check --only format,no-init,invalid-regexp ./...
@@ -82,10 +82,10 @@ strider check --only format,no-init,invalid-regexp ./...
 Use `--minimum-severity warning` or `--minimum-severity error` to run only the
 corresponding policy layers without changing individual rules.
 
-Enable the complete 227-check catalog, including notes, with:
+Include all note, warning, and error checks with:
 
 ```sh
-strider check --all --minimum-severity note ./...
+strider check --minimum-severity note ./...
 ```
 
 `check` is read-only. If the `format` check reports a file, format it with:

@@ -9,7 +9,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-**Configuration:** `enabled`, `severity`, and path `excludes`
+**Configuration:** `severity` and path `excludes`
 
 Reports package `init` functions. Initialization functions hide side effects
 and ordering constraints from callers, which makes packages harder to test and

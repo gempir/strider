@@ -15,7 +15,6 @@ import (
 // RegistryOptions selects and configures checks.
 type RegistryOptions struct {
 	Only            []string
-	All             bool
 	Settings        map[string]config.RuleConfig
 	MinimumSeverity diagnostic.Severity
 	FormatExcludes  []string
@@ -41,9 +40,6 @@ type configuredRule struct {
 // NewRegistry builds one namespace across formatting, CST, AST, type, and SSA
 // checks. Codes are case-insensitive and globally unique.
 func NewRegistry(options RegistryOptions) (*Registry, error) {
-	if options.All && len(options.Only) != 0 {
-		return nil, fmt.Errorf("all checks and an explicit selection are mutually exclusive")
-	}
 	minimumSeverity, err := normalizedMinimumSeverity(options.MinimumSeverity)
 	if err != nil {
 		return nil, err
@@ -56,7 +52,7 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 	unknown := []string{}
 	for code, setting := range options.Settings {
 		if setting.Severity != "" && !diagnostic.ValidSeverity(diagnostic.Severity(setting.Severity)) {
-			return nil, fmt.Errorf("check %q severity must be note, warning, or error", code)
+			return nil, fmt.Errorf("check %q severity must be none, note, warning, or error", code)
 		}
 		normalized := strings.ToLower(code)
 		if _, ok := available[normalized]; !ok {
@@ -82,12 +78,6 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 	explicit := len(options.Only) != 0
 	syntaxOnly := selectedCodes(wanted, syntaxCodes)
 	semanticOnly := selectedCodes(wanted, semanticCodes)
-	if options.All {
-		// Treat --all as an explicit selection for engines whose configured
-		// registry otherwise honors enabled=false. The public contract is that
-		// every built-in check runs, while severity and exclusions still apply.
-		semanticOnly = selectedCodes(semanticCodes, semanticCodes)
-	}
 	syntaxSettings := selectedSettings(normalizedSettings, syntaxCodes)
 	semanticSettings := selectedSettings(normalizedSettings, semanticCodes)
 
@@ -97,7 +87,7 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 	}
 	if !explicit || len(syntaxOnly) != 0 {
 		registry.syntax, err = syntax.NewRegistryWithOptions(
-			syntax.RegistryOptions{Only: syntaxOnly, EnableAll: options.All, Settings: syntaxSettings, Root: options.Root, MinimumSeverity: minimumSeverity},
+			syntax.RegistryOptions{Only: syntaxOnly, Settings: syntaxSettings, Root: options.Root, MinimumSeverity: minimumSeverity},
 		)
 		if err != nil {
 			return nil, err
@@ -115,12 +105,6 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 	formatSetting := normalizedSettings[formatMeta.Code]
 	formatSetting.Excludes = append(append([]string(nil), options.FormatExcludes...), formatSetting.Excludes...)
 	registry.format = !explicit || wanted[formatMeta.Code]
-	if formatSetting.Enabled != nil && !explicit {
-		registry.format = *formatSetting.Enabled
-	}
-	if options.All {
-		registry.format = true
-	}
 	formatSeverity := formatMeta.DefaultSeverity
 	if formatSetting.Severity != "" {
 		formatSeverity = diagnostic.Severity(formatSetting.Severity)
@@ -137,7 +121,7 @@ func normalizedMinimumSeverity(minimum diagnostic.Severity) (diagnostic.Severity
 		minimum = diagnostic.SeverityNote
 	}
 	if !diagnostic.ValidSeverity(minimum) {
-		return "", fmt.Errorf("minimum severity must be note, warning, or error")
+		return "", fmt.Errorf("minimum severity must be none, note, warning, or error")
 	}
 	return minimum, nil
 }
@@ -146,7 +130,7 @@ func availableRules() (map[string]Meta, map[string]bool, map[string]bool, error)
 	available := map[string]Meta{formatMeta.Code: formatMeta}
 	syntaxCodes := make(map[string]bool)
 	semanticCodes := make(map[string]bool)
-	syntaxRegistry, err := syntax.NewRegistryAll()
+	syntaxRegistry, err := syntax.NewRegistry(nil)
 	if err != nil {
 		return nil, nil, nil, err
 	}

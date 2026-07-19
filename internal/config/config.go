@@ -36,13 +36,11 @@ type FormatterConfig struct {
 type ToolConfig struct {
 	Excludes        []string              `toml:"excludes"`
 	Baseline        string                `toml:"baseline"`
-	BaselineVariant string                `toml:"baseline-variant"`
 	MinimumSeverity string                `toml:"minimum-severity"`
 	Rules           map[string]RuleConfig `toml:"rules"`
 }
 
 type RuleConfig struct {
-	Enabled    *bool    `toml:"enabled"`
 	Severity   string   `toml:"severity"`
 	Excludes   []string `toml:"excludes"`
 	Characters []string `toml:"characters"`
@@ -53,7 +51,7 @@ func Defaults() Config {
 }
 
 func defaultToolConfig() ToolConfig {
-	return ToolConfig{BaselineVariant: "loose", MinimumSeverity: string(diagnostic.SeverityWarning), Rules: make(map[string]RuleConfig)}
+	return ToolConfig{MinimumSeverity: string(diagnostic.SeverityWarning), Rules: make(map[string]RuleConfig)}
 }
 
 // Load reads an explicit path or discovers strider.toml from the working
@@ -137,15 +135,12 @@ func (configuration Config) validate() error {
 }
 
 func validateTool(name string, tool ToolConfig) error {
-	if tool.BaselineVariant != "loose" && tool.BaselineVariant != "strict" {
-		return fmt.Errorf("%s.baseline-variant must be \"loose\" or \"strict\"", name)
-	}
 	if !diagnostic.ValidSeverity(diagnostic.Severity(tool.MinimumSeverity)) {
-		return fmt.Errorf("%s.minimum-severity must be note, warning, or error", name)
+		return fmt.Errorf("%s.minimum-severity must be none, note, warning, or error", name)
 	}
 	for code, rule := range tool.Rules {
-		if rule.Severity != "" && rule.Severity != "note" && rule.Severity != "warning" && rule.Severity != "error" {
-			return fmt.Errorf("%s.rules.%s.severity must be note, warning, or error", name, code)
+		if rule.Severity != "" && !diagnostic.ValidSeverity(diagnostic.Severity(rule.Severity)) {
+			return fmt.Errorf("%s.rules.%s.severity must be none, note, warning, or error", name, code)
 		}
 	}
 	return nil
@@ -170,9 +165,5 @@ func cloneRuleConfig(rule RuleConfig) RuleConfig {
 	cloned := rule
 	cloned.Excludes = append([]string(nil), rule.Excludes...)
 	cloned.Characters = append([]string(nil), rule.Characters...)
-	if rule.Enabled != nil {
-		enabled := *rule.Enabled
-		cloned.Enabled = &enabled
-	}
 	return cloned
 }

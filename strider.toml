@@ -3,7 +3,65 @@ version = 1
 [formatter]
 print-width = 180
 
-# The repository predates the warning-level complexity policy and has existing
-# violations. Keep self-checks focused on newly enforced warnings for now.
+# The repository predates these warning- and error-level policies and has
+# existing violations. Keep them active as advisory checks while ordinary
+# self-checks remain focused on newly enforced warnings.
+[checks.rules.argument-limit]
+severity = "note"
+
+[checks.rules.cognitive-complexity]
+severity = "note"
+
+[checks.rules.confusing-naming]
+severity = "note"
+
+[checks.rules.confusing-results]
+severity = "note"
+
 [checks.rules.cyclomatic-complexity]
+severity = "note"
+
+[checks.rules.datarace]
+severity = "note"
+
+[checks.rules.deep-exit]
+severity = "note"
+
+[checks.rules.early-return]
+severity = "note"
+
+[checks.rules.function-result-limit]
+severity = "note"
+
+[checks.rules.identical-switch-branches]
+severity = "note"
+
+[checks.rules.import-shadowing]
+severity = "note"
+
+[checks.rules.inefficient-map-lookup]
+severity = "note"
+
+[checks.rules.max-control-nesting]
+severity = "note"
+
+[checks.rules.optimize-operands-order]
+severity = "note"
+
+[checks.rules.range-val-address]
+severity = "note"
+
+[checks.rules.range-val-in-closure]
+severity = "note"
+
+[checks.rules.redefines-builtin-id]
+severity = "note"
+
+[checks.rules.unchecked-type-assertion]
+severity = "note"
+
+[checks.rules.unhandled-error]
+severity = "note"
+
+[checks.rules.unsecure-url-scheme]
 severity = "note"

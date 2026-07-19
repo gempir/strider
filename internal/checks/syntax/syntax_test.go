@@ -59,7 +59,7 @@ func closeThing() {}
 	}
 }
 
-func TestDefaultProfileUsesConcreteSyntaxAndExactRanges(t *testing.T) {
+func TestSyntaxChecksUseConcreteSyntaxAndExactRanges(t *testing.T) {
 	source := `package p
 
 func overloaded[T any](one, two T, three, four, five, six int) {}
@@ -75,7 +75,7 @@ func named[T any]() (result T) {
 func closeThing() {}
 `
 	filename := writeFixture(t, source)
-	registry, err := NewRegistry(nil)
+	registry, err := NewRegistry([]string{"max-parameters", "no-defer-in-loop", "no-naked-return"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,7 +118,7 @@ func loop() {
 func closeThing() {}
 `
 	filename := writeFixture(t, source)
-	registry, err := NewRegistry(nil)
+	registry, err := NewRegistry([]string{"no-init", "no-package-var"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -599,7 +599,7 @@ import (
 func TestCatalogIsCompleteDocumentedAndRunnable(t *testing.T) {
 	const expectedCount = 114
 	const expectedNamesSHA256 = "e0c8bdc47bb2f2a569874b9df7764d70b425fab611249f28e61d7716db4b6671"
-	all, err := NewRegistryAll()
+	all, err := NewRegistry(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -643,21 +643,20 @@ func TestCatalogIsCompleteDocumentedAndRunnable(t *testing.T) {
 		t.Errorf("rule-name catalog changed: got digest %s", got)
 	}
 	if got, want := len(all.Rules()), expectedCount; got != want {
-		t.Errorf("all-rules registry contains %d rules; want %d", got, want)
+		t.Errorf("registry contains %d rules; want %d", got, want)
 	}
 }
 
 func TestEveryLintRuleAcceptsCommonConfiguration(t *testing.T) {
-	all, err := NewRegistryAll()
+	all, err := NewRegistry(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	enabled := true
 	settings := make(map[string]config.RuleConfig, len(all.Rules()))
 	for _, rule := range all.Rules() {
-		settings[rule.Meta().Code] = config.RuleConfig{Enabled: &enabled, Severity: "note"}
+		settings[rule.Meta().Code] = config.RuleConfig{Severity: "note"}
 	}
-	configured, err := NewRegistryConfigured(nil, false, settings, "")
+	configured, err := NewRegistryConfigured(nil, settings, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -721,7 +720,7 @@ func TestBannedCharactersRejectsInvalidConfiguration(t *testing.T) {
 func TestLintRegistryFiltersByEffectiveSeverityBeforeExecution(t *testing.T) {
 	for name, options := range map[string]RegistryOptions{
 		"only": {Only: []string{"no-init"}, Settings: map[string]config.RuleConfig{"no-init": {Severity: "warning"}}, MinimumSeverity: diagnostic.SeverityError},
-		"all":  {EnableAll: true, Settings: map[string]config.RuleConfig{"no-init": {Severity: "warning"}}, MinimumSeverity: diagnostic.SeverityError},
+		"all":  {Settings: map[string]config.RuleConfig{"no-init": {Severity: "warning"}}, MinimumSeverity: diagnostic.SeverityError},
 	} {
 		t.Run(
 			name,
@@ -777,8 +776,7 @@ func TestLintRegistryRejectsInvalidMinimumSeverity(t *testing.T) {
 
 func TestLintRuleConfigurationCanExcludePaths(t *testing.T) {
 	fixture := writeFixture(t, "package p\nfunc init() {}\n")
-	enabled := true
-	registry, err := NewRegistryConfigured(nil, false, map[string]config.RuleConfig{"no-init": {Enabled: &enabled, Excludes: []string{"**/*.go"}}}, filepath.Dir(fixture))
+	registry, err := NewRegistryConfigured([]string{"no-init"}, map[string]config.RuleConfig{"no-init": {Excludes: []string{"**/*.go"}}}, filepath.Dir(fixture))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -829,7 +827,7 @@ func Convert() string { return string(123) }
 func Assert(v interface{}) { _ = v.(string) }
 `
 	filename := writeFixture(t, source)
-	registry, err := NewRegistryAll()
+	registry, err := NewRegistry(nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
-Detect ignored error-returning calls. Strider default: common functions.
+Detect ignored error-returning calls.
 
 ## Bad
 

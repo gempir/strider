@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Remove else after returning if branches. Strider default: enabled.
+Remove else after returning if branches.
 
 ## Bad
 

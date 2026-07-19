@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Avoid leading underscores in private names. Strider default: enabled.
+Avoid leading underscores in private names.
 
 ## Bad
 

@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Replace boolean-returning if chains. Strider default: enabled.
+Replace boolean-returning if chains.
 
 ## Bad
 

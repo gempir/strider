@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Avoid unit suffixes on time.Duration values. Strider default: enabled.
+Avoid unit suffixes on time.Duration values.
 
 ## Bad
 

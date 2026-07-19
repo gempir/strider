@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Avoid redefining predeclared identifiers. Strider default: enabled.
+Avoid redefining predeclared identifiers.
 
 ## Bad
 

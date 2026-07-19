@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Enforce idiomatic identifier naming. Strider default: common initialisms.
+Enforce idiomatic identifier naming.
 
 ## Bad
 

@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Avoid taking addresses of range values. Strider default: enabled.
+Avoid taking addresses of range values.
 
 ## Bad
 

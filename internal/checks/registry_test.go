@@ -13,7 +13,7 @@ func TestUnifiedRegistryHasGloballyUniqueCodes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := len(registry.Rules()), 227; got != want {
+	if got, want := len(registry.Rules()), 225; got != want {
 		t.Fatalf("all check count = %d, want %d", got, want)
 	}
 	seen := make(map[string]bool)
@@ -51,8 +51,39 @@ func TestUnifiedRegistryAllOverridesConfiguredDisable(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := len(registry.Rules()), 227; got != want {
+	if got, want := len(registry.Rules()), 225; got != want {
 		t.Fatalf("all check count with disabled settings = %d, want %d", got, want)
+	}
+}
+
+func TestUnifiedRegistryPolicySeverities(t *testing.T) {
+	registry, err := NewRegistry(RegistryOptions{All: true, MinimumSeverity: diagnostic.SeverityNote})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]diagnostic.Severity{
+		"bare-return":           diagnostic.SeverityWarning,
+		"blank-imports":         diagnostic.SeverityWarning,
+		"bool-literal-in-expr":  diagnostic.SeverityWarning,
+		"confusing-naming":      diagnostic.SeverityError,
+		"confusing-results":     diagnostic.SeverityWarning,
+		"context-as-argument":   diagnostic.SeverityWarning,
+		"cyclomatic-complexity": diagnostic.SeverityWarning,
+		"deep-exit":             diagnostic.SeverityError,
+		"dot-imports":           diagnostic.SeverityWarning,
+		"double-negation":       diagnostic.SeverityError,
+		"duplicated-imports":    diagnostic.SeverityError,
+		"early-return":          diagnostic.SeverityWarning,
+	}
+	for code, severity := range want {
+		if got := registry.Severity(code); got != severity {
+			t.Errorf("%s severity = %s, want %s", code, got, severity)
+		}
+	}
+	for _, removed := range []string{"comment-spacings", "cyclomatic"} {
+		if severity := registry.Severity(removed); severity != "" {
+			t.Errorf("removed check %s still has severity %s", removed, severity)
+		}
 	}
 }
 

@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Enforce conventional package names. Strider default: lower-case letters and digits.
+Enforce conventional package names.
 
 ## Bad
 

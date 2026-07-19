@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Suggest named constants for repeated literals. Strider default: strings after 2 repetitions.
+Suggest named constants for repeated literals.
 
 ## Bad
 

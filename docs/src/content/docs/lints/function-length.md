@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Limit function statements and lines. Strider default: 50 statements; 75 lines.
+Limit function statements and lines.
 
 ## Bad
 

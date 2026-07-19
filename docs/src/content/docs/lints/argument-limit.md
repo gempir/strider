@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Limit function parameter count. Strider default: maximum 8.
+Limit function parameter count.
 
 ## Bad
 

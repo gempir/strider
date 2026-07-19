@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Prefer slices.Sort over sort.Slice. Strider default: enabled.
+Prefer slices.Sort over sort.Slice.
 
 ## Bad
 

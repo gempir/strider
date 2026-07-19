@@ -22,9 +22,6 @@ func (a *cstAnalyzer) checkConcreteFunctionRules(name cst.Token, signature *cst.
 	if a.enabled["function-result-limit"] && resultTotal > 3 {
 		a.report("function-result-limit", name, fmt.Sprintf("function returns %d values; maximum is 3", resultTotal))
 	}
-	if a.enabled["cyclomatic"] && facts.complexity > 10 {
-		a.report("cyclomatic", name, fmt.Sprintf("function has cyclomatic complexity %d; maximum is 10", facts.complexity))
-	}
 	if a.enabled["cognitive-complexity"] && facts.cognitiveComplexity > 7 {
 		a.report("cognitive-complexity", name, fmt.Sprintf("function has cognitive complexity %d; maximum is 7", facts.cognitiveComplexity))
 	}

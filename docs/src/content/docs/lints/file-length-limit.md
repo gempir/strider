@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Limit source-file length. Strider default: disabled at 0 lines.
+Limit source-file length.
 
 ## Bad
 

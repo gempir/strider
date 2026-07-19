@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Use lower-case unpunctuated error messages. Strider default: enabled.
+Use lower-case unpunctuated error messages.
 
 ## Bad
 

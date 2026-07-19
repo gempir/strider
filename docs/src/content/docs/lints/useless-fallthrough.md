@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Remove final-case fallthrough. Strider default: enabled.
+Remove final-case fallthrough.
 
 ## Bad
 

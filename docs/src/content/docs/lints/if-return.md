@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Simplify redundant error checks before returning. Strider default: enabled.
+Simplify redundant error checks before returning.
 
 ## Bad
 

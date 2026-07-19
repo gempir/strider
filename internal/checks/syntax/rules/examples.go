@@ -21,7 +21,6 @@ var extendedExamples = map[string]ruleExample{
 	"bool-literal-in-expr":            {Good: "if ready { start() }", Bad: "if ready == true { start() }"},
 	"call-to-gc":                      {Good: "buffer = nil // let Go collect it when appropriate", Bad: "runtime.GC() // in normal application code"},
 	"cognitive-complexity":            {Good: "if !ready { return }\nprocess()", Bad: "if ready {\n\tfor _, item := range items {\n\t\tif valid(item) { process(item) }\n\t}\n}"},
-	"comment-spacings":                {Good: "// Explain why this is necessary.", Bad: "//Explain why this is necessary."},
 	"comments-density": {
 		Good: "// retry reconnects after a transient failure.\nfunc retry() { reconnect() }",
 		Bad:  "func retry() { reconnect() } // with a positive minimum configured",
@@ -30,7 +29,6 @@ var extendedExamples = map[string]ruleExample{
 	"confusing-results":     {Good: "func bounds() (min int, max int)", Bad: "func bounds() (int, int)"},
 	"constant-logical-expr": {Good: "if ready && connected { start() }", Bad: "if false && connected { start() }"},
 	"context-as-argument":   {Good: "func Load(ctx context.Context, id string) error", Bad: "func Load(id string, ctx context.Context) error"},
-	"cyclomatic":            {Good: "func sign(n int) int { if n < 0 { return -1 }; return 1 }", Bad: "func tangled() { /* more than ten independent branches */ }"},
 	"datarace":              {Good: "for _, value := range values { go func(current int) { use(current) }(value) }", Bad: "for _, value := range values { go func() { use(value) }() }"},
 	"deep-exit":             {Good: "func run() error { return load() }", Bad: "func loadConfig() { if failed() { os.Exit(1) } }"},
 	"defer":                 {Good: "defer func() { _ = recover() }()", Bad: "defer recover()"},

@@ -129,18 +129,13 @@ func (a *cstAnalyzer) checkLinesAndComments() {
 		}
 	}
 	comments := a.tree.Comments()
-	a.checkCommentSpacing(comments)
+	a.checkCompilerDirectiveSpacing(comments)
 	a.checkPackageComment(comments)
 	a.checkBuildTags(comments)
 }
 
-func (a *cstAnalyzer) checkCommentSpacing(comments []cst.Comment) {
+func (a *cstAnalyzer) checkCompilerDirectiveSpacing(comments []cst.Comment) {
 	for _, comment := range comments {
-		if a.enabled["comment-spacings"] && strings.HasPrefix(comment.Text, "//") && len(comment.Text) > 2 && comment.Text[2] != ' ' && comment.Text[2] != '\t' && !commentDirective(
-			comment.Text[2:],
-		) {
-			a.reportRange("comment-spacings", comment.Start, comment.End, "line comment should have a space after //")
-		}
 		if !a.enabled["spaced-compiler-directive"] || comment.Column != 1 || !strings.HasPrefix(comment.Text, "//") {
 			continue
 		}

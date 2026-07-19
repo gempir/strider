@@ -12,8 +12,6 @@ sidebar:
 Purpose: detect top-level compiler directives that look intentional but are
 ignored because whitespace appears between `//` and `go:`.
 
-Strider default: available in the optional check catalog at `warning` severity.
-
 ```go
 // go:noinline
 func calculate() {} // reported: the directive is ignored

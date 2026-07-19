@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Document exported declarations. Strider default: enabled.
+Document exported declarations.
 
 ## Bad
 

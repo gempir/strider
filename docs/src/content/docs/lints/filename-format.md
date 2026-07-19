@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Enforce Go source filename format. Strider default: conventional characters.
+Enforce Go source filename format.
 
 ## Bad
 

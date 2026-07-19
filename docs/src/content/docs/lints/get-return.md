@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Require Get-prefixed functions to return values. Strider default: enabled.
+Require Get-prefixed functions to return values.
 
 ## Bad
 

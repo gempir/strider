@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Reject configured imports. Strider default: empty blocklist.
+Reject configured imports.
 
 ## Bad
 

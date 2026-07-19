@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Enforce consistent receiver names. Strider default: no maximum length.
+Enforce consistent receiver names.
 
 ## Bad
 

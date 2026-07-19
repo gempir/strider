@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Enforce configured string constraints. Strider default: no constraints.
+Enforce configured string constraints.
 
 ## Bad
 

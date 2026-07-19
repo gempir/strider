@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Prefer any to interface{}. Strider default: enabled.
+Prefer any to interface{}.
 
 ## Bad
 

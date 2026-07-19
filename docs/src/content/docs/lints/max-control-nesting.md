@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Limit nested control structures. Strider default: maximum depth 5.
+Limit nested control structures.
 
 ## Bad
 

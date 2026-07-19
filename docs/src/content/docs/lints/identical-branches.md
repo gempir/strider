@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Detect identical if branches. Strider default: enabled.
+Detect identical if branches.
 
 ## Bad
 

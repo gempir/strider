@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Replace errors.New around fmt.Sprintf. Strider default: enabled.
+Replace errors.New around fmt.Sprintf.
 
 ## Bad
 

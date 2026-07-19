@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Prefer WaitGroup.Go. Strider default: Go 1.25 and newer.
+Prefer WaitGroup.Go.
 
 ## Bad
 

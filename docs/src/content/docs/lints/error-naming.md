@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Name package errors with an Err prefix. Strider default: enabled.
+Name package errors with an Err prefix.
 
 ## Bad
 

@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Require default clauses to be last. Strider default: default optional.
+Require default clauses to be last.
 
 ## Bad
 

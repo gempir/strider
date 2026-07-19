@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Put cheap logical operands first. Strider default: enabled.
+Put cheap logical operands first.
 
 ## Bad
 

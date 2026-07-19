@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Limit exported structs per file. Strider default: maximum 5.
+Limit exported structs per file.
 
 ## Bad
 

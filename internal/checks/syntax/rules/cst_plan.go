@@ -53,13 +53,13 @@ func compileCSTExecutionPlan(enabled map[string]bool) cstExecutionPlan {
 		return false
 	}
 	identifiers := any("banned-characters", "confusing-naming", "import-shadowing", "redefines-builtin-id", "unexported-naming", "var-naming")
-	functionComplexity := any("cyclomatic", "cyclomatic-complexity")
+	functionComplexity := enabled["cyclomatic-complexity"]
 	functionCognitive := enabled["cognitive-complexity"]
 	functionStatements := enabled["function-length"]
 	functionFinal := enabled["unnecessary-stmt"]
 	return cstExecutionPlan{
 		filename:         any("filename-format", "package-directory-mismatch", "package-naming"),
-		comments:         any("bidirectional-control-character", "comment-spacings", "line-length-limit", "package-comments", "redundant-build-tag", "spaced-compiler-directive"),
+		comments:         any("bidirectional-control-character", "line-length-limit", "package-comments", "redundant-build-tag", "spaced-compiler-directive"),
 		imports:          any("blank-imports", "dot-imports", "duplicated-imports", "import-alias-naming", "import-shadowing", "redundant-import-alias", "struct-tag"),
 		repeatedLiterals: enabled["add-constant"],
 		functions: any(
@@ -67,7 +67,6 @@ func compileCSTExecutionPlan(enabled map[string]bool) cstExecutionPlan {
 			"cognitive-complexity",
 			"confusing-results",
 			"context-as-argument",
-			"cyclomatic",
 			"cyclomatic-complexity",
 			"error-return",
 			"exported",

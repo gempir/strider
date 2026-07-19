@@ -670,7 +670,7 @@ func (l *concreteLayout) renderCommentsBefore(writer *concreteWriter, comments [
 			writer.requestNewlines(1)
 		}
 		writer.preserveEmptyLines(source, *sourceEnd, comment.Start, previousBuildConstraint)
-		writer.write(comment.Text, -1)
+		writer.write(normalizeLineComment(comment.Text), -1)
 		writer.requestNewlines(1)
 		*sourceEnd = comment.End
 		previousBuildConstraint = isBuildConstraint(comment.Text)
@@ -693,6 +693,19 @@ func countNewlines(source []byte, start, end int) int {
 
 func isBuildConstraint(comment string) bool {
 	return strings.HasPrefix(comment, "//go:build") || strings.HasPrefix(comment, "// +build")
+}
+
+func normalizeLineComment(comment string) string {
+	if !strings.HasPrefix(comment, "//") || len(comment) <= 2 || comment[2] == ' ' || comment[2] == '\t' {
+		return comment
+	}
+	body := comment[2:]
+	for _, prefix := range []string{"go:", "line ", "+build", "nolint", "strider:", "Code generated", "TODO", "FIXME", "#"} {
+		if strings.HasPrefix(body, prefix) {
+			return comment
+		}
+	}
+	return "// " + body
 }
 
 func (w *concreteWriter) beforeToken(previous, current token.Token, force bool) {

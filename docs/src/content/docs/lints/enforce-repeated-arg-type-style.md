@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Enforce repeated argument type style. Strider default: any style.
+Enforce repeated argument type style.
 
 ## Bad
 

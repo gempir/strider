@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Detect unused function parameters. Strider default: enabled.
+Detect unused function parameters.
 
 ## Bad
 

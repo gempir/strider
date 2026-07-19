@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Prefer errors.New for static errors. Strider default: enabled.
+Prefer errors.New for static errors.
 
 ## Bad
 

@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
-Reject panic and Done inside WaitGroup.Go. Strider default: enabled.
+Reject panic and Done inside WaitGroup.Go.
 
 ## Bad
 

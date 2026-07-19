@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
-Reject configured characters in identifiers. Strider default: ᐸ and ᐳ.
+Reject configured characters in identifiers.
 
 ## Bad
 

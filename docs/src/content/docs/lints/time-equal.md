@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Prefer time.Time.Equal over equality. Strider default: enabled.
+Prefer time.Time.Equal over equality.
 
 ## Bad
 

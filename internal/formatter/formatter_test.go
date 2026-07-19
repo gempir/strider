@@ -75,6 +75,33 @@ func VeryLongFunctionName(firstParameter string, secondParameter string, thirdPa
 	}
 }
 
+func TestFormatNormalizesLineCommentSpacing(t *testing.T) {
+	input := []byte(`//Package p demonstrates comment formatting.
+package p
+
+//go:noinline
+//strider:ignore format
+func F() { call() //explain the call
+}
+`)
+	result, err := Format("comments.go", input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := `// Package p demonstrates comment formatting.
+package p
+
+//go:noinline
+//strider:ignore format
+func F() {
+	call() // explain the call
+}
+`
+	if got := string(result.Source); got != want {
+		t.Fatalf("formatted source:\n%s\nwant:\n%s", got, want)
+	}
+}
+
 func TestFormatOptionsControlWidth(t *testing.T) {
 	source := []byte("package p\nfunc f(){call(alpha,beta,gamma,delta,epsilon)}\n")
 	wide, err := FormatWithOptions("fixture.go", source, Options{

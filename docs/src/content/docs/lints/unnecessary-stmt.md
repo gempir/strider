@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Detect redundant control flow. Strider default: enabled.
+Detect redundant control flow.
 
 ## Bad
 

@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Include epoch units in variable names. Strider default: enabled.
+Include epoch units in variable names.
 
 ## Bad
 

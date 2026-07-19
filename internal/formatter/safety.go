@@ -24,7 +24,7 @@ func equivalentTrees(originalTree, formattedTree *cst.Tree) error {
 		return errors.New("formatted output changed comment contents or ordering")
 	}
 	for index, comment := range originalComments {
-		if comment.Text != formattedComments[index].Text {
+		if normalizeLineComment(comment.Text) != formattedComments[index].Text {
 			return errors.New("formatted output changed comment contents or ordering")
 		}
 	}

@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Avoid capturing range values in closures. Strider default: enabled.
+Avoid capturing range values in closures.
 
 ## Bad
 

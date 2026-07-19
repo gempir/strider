@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Limit source line length. Strider default: maximum 80 runes.
+Limit source line length.
 
 ## Bad
 

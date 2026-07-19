@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Remove aliases equal to package names. Strider default: enabled.
+Remove aliases equal to package names.
 
 ## Bad
 

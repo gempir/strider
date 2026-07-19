@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Prefer fmt.Print over builtin print. Strider default: enabled.
+Prefer fmt.Print over builtin print.
 
 ## Bad
 

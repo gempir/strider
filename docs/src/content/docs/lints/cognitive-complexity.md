@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Limit nested control-flow complexity. Strider default: maximum 7.
+Limit nested control-flow complexity.
 
 ## Bad
 

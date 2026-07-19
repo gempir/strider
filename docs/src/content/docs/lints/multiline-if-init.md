@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Move multiline if initializers above conditions. Strider default: enabled.
+Move multiline if initializers above conditions.
 
 ## Bad
 

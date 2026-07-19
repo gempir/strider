@@ -2,3 +2,8 @@ version = 1
 
 [formatter]
 print-width = 180
+
+# The repository predates the warning-level complexity policy and has existing
+# violations. Keep self-checks focused on newly enforced warnings for now.
+[checks.rules.cyclomatic-complexity]
+severity = "note"

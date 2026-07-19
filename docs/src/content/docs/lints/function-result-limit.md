@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Limit function result count. Strider default: maximum 3.
+Limit function result count.
 
 ## Bad
 

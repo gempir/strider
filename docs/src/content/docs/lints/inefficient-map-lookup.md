@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Avoid repeated map lookups. Strider default: enabled.
+Avoid repeated map lookups.
 
 ## Bad
 

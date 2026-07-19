@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Match package and directory names. Strider default: testdata ignored.
+Match package and directory names.
 
 ## Bad
 

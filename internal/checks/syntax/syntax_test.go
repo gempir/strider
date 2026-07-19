@@ -597,8 +597,8 @@ import (
 }
 
 func TestCatalogIsCompleteDocumentedAndRunnable(t *testing.T) {
-	const expectedCount = 116
-	const expectedNamesSHA256 = "915035c9aeff444086db5beafb9f0dcae18ba97e187850c26fee428666e2ae75"
+	const expectedCount = 114
+	const expectedNamesSHA256 = "e0c8bdc47bb2f2a569874b9df7764d70b425fab611249f28e61d7716db4b6671"
 	all, err := NewRegistryAll()
 	if err != nil {
 		t.Fatal(err)

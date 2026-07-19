@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
-Make integer-to-string intent explicit. Strider default: enabled.
+Make integer-to-string intent explicit.
 
 ## Bad
 

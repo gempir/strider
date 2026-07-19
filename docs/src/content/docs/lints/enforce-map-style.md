@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Enforce consistent empty-map construction. Strider default: any style.
+Enforce consistent empty-map construction.
 
 ## Bad
 

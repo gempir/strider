@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Require a configured source header. Strider default: no required header.
+Require a configured source header.
 
 ## Bad
 

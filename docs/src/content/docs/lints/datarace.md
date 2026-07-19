@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Detect goroutines capturing changing variables. Strider default: enabled.
+Detect goroutines capturing changing variables.
 
 ## Bad
 

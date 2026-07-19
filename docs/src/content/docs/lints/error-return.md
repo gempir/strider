@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Place error last in result lists. Strider default: enabled.
+Place error last in result lists.
 
 ## Bad
 

@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Detect insecure URL schemes. Strider default: HTTP, WS, and FTP.
+Detect insecure URL schemes.
 
 ## Bad
 

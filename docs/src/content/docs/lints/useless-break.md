@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Remove redundant break statements. Strider default: enabled.
+Remove redundant break statements.
 
 ## Bad
 

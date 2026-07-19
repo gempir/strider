@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Detect suspicious time.Date arguments. Strider default: enabled.
+Detect suspicious time.Date arguments.
 
 ## Bad
 

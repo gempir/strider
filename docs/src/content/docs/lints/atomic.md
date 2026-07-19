@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
-Detect non-atomic operations on atomic values. Strider default: standard sync/atomic patterns.
+Detect non-atomic operations on atomic values.
 
 ## Bad
 

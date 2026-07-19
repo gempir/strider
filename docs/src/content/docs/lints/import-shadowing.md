@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Detect declarations shadowing imports. Strider default: enabled.
+Detect declarations shadowing imports.
 
 ## Bad
 

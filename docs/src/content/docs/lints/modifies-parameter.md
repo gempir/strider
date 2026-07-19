@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Detect parameter mutation. Strider default: enabled.
+Detect parameter mutation.
 
 ## Bad
 

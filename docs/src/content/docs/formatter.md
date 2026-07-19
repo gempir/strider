@@ -40,8 +40,15 @@ For a read-only formatting check in CI, use the unified diagnostic command:
 strider check --only format [PATH]...
 ```
 
+Apply the same validated formatting candidate through the unified command with:
+
+```sh
+strider check --only format --fix [PATH]...
+```
+
 The resulting `format` diagnostics use the same text, JSON, and HTML reporters
-as every other check.
+as every other check. Fix mode composes any granular rule edits first, then
+formats each affected source.
 
 ## Bad
 

@@ -372,7 +372,10 @@ func (c *Context) reportConcrete(tree *cst.Tree, finding builtinrules.Finding, s
 	display := c.displayFilename
 	start.Filename = display
 	end.Filename = display
-	c.diagnostics = append(c.diagnostics, diagnostic.Diagnostic{Code: finding.Code, Message: finding.Message, Severity: severity, File: display, Start: start, End: end})
+	c.diagnostics = append(
+		c.diagnostics,
+		diagnostic.Diagnostic{Code: finding.Code, Message: finding.Message, Severity: severity, File: display, Start: start, End: end, Fixes: finding.Fixes},
+	)
 }
 
 func (c *Context) suppressedRange(code string, start, end int) bool {

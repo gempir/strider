@@ -3,11 +3,11 @@ title: Checks
 description: Run Strider's unified formatting, maintainability, and correctness checks.
 ---
 
-`strider check` is the single read-only diagnostic command. It combines
-formatting drift, source-level policy, and package-aware correctness findings in
-one globally sorted report. Files and parsed source are shared across selected
-checks, while more expensive program information is prepared only when a
-selected check needs it.
+`strider check` is the single diagnostic command. It combines formatting drift,
+source-level policy, and package-aware correctness findings in one globally
+sorted report. It is read-only unless `--fix` or `--fix-unsafe` is requested.
+Files and parsed source are shared across selected checks, while more expensive
+program information is prepared only when a selected check needs it.
 
 Syntax trees, type information, and control-flow representations are internal
 scheduling capabilities. They do not create separate commands, configuration
@@ -68,6 +68,57 @@ results and only accepts cached package findings after confirming the complete
 analysis fingerprint. Baseline generation and pruning, JSON, and HTML are
 one-shot operations and cannot be combined with `--watch`.
 
+## Apply automatic fixes
+
+Apply only automatic fixes explicitly classified as safe:
+
+```sh
+strider check --fix [PATH]...
+```
+
+Include safe, potentially unsafe, and unsafe automatic fixes:
+
+```sh
+strider check --fix-unsafe [PATH]...
+```
+
+The short forms are `-x` and `-u`. The two modes are mutually exclusive and
+cannot be combined with watch mode, baseline generation, or baseline pruning.
+The initial automatic set is `format`, `double-negation`,
+`redundant-switch-break`, and `single-argument-append`.
+
+Fix selection happens only after `--only`, effective severity, path exclusions,
+source suppressions, and the active baseline have removed ineligible findings.
+Baselined or suppressed findings are therefore not changed. Strider chooses an
+explicitly automatic fix at the requested safety level, composes edits per
+file, and skips every nonidentical overlapping fix with a warning. It then
+formats affected source unless formatter exclusions or the file's format-ignore
+directive opt it out, and validates that the result parses. A batch containing
+safe changes also type-checks against an in-memory overlay before anything is
+written.
+
+The analyzed source is retained as a content snapshot. Every analyzed file is
+compared after staging and before the first replacement, so a change detected
+then aborts the whole batch as stale. Each write target is checked again
+immediately before its replacement. After a successful application, Strider
+runs the selected checks once more and reports what remains. Exit `0` means the
+rerun is clean, exit `1` means findings remain, and exit `2` means selection,
+validation, stale-source detection, or writing failed.
+
+All outputs are staged before the first replacement, and each file replacement
+is atomic. The batch is not a filesystem transaction: if a later rename fails
+or a concurrent edit is detected after commit starts, an earlier replacement
+can remain committed. Permission bits are preserved; ownership, ACLs, and
+extended attributes depend on the host filesystem. A directly named source
+symlink is kept and guarded against retargeting while its captured target is
+updated.
+
+Safe means the transformation is designed to preserve Go program semantics.
+Parsing and type-checking provide strong guards against invalid output, but
+they cannot prove identical observable behavior under every toolchain, build
+tag, platform, or environment. Review unsafe fixes according to the code and
+deployment contexts that matter to the project.
+
 ## Discover checks
 
 Inspect the checks admitted by the effective severity floor:
@@ -127,9 +178,10 @@ format: file is not formatted
   = help: run `strider fmt main.go`
 ```
 
-`check` never writes the formatted candidate. Use `strider fmt`, or
-`strider fmt --diff` to inspect the change. Formatting findings are not captured
-by baselines.
+Without a fix flag, `check` never writes the formatted candidate. Use
+`strider fmt`, or `strider fmt --diff` to inspect the change. `check --fix`
+applies the same validated candidate. Formatting findings are not captured by
+baselines.
 
 ## Reports
 

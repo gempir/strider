@@ -38,6 +38,7 @@ type Finding struct {
 	HasConcreteRange bool
 	Code             string
 	Message          string
+	Fixes            []diagnostic.Fix
 }
 
 // CSTInput contains everything needed for the concrete-syntax lint pass.

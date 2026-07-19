@@ -16,8 +16,9 @@ make corpus-check
 ```
 
 The runner clones projects into the gitignored `.benchmark-cache/`, downloads
-their Go modules outside the timed section, and then runs these commands with
-`GOMAXPROCS=2` and project configuration disabled:
+their Go modules outside the timed section, and then runs these commands for a
+pinned `linux/amd64` target with CGO disabled, `GOMAXPROCS=2`, and project
+configuration disabled:
 
 ```sh
 strider --no-config fmt --check .

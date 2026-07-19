@@ -2,10 +2,11 @@
 
 # Strider
 
-Strider is an experimental Go 1.26 formatter and code checker. One read-only
+Strider is an experimental Go 1.26 formatter and code checker. One
 `strider check` run reports formatting drift, style and maintainability issues,
 and package-aware correctness problems in one deterministic diagnostic stream.
-`strider fmt` remains the focused command for writing formatted source.
+It is read-only unless `--fix` or `--fix-unsafe` is requested. `strider fmt`
+remains the focused command for writing formatted source.
 
 # Slopclaimer
 
@@ -30,6 +31,8 @@ strider check --format json ./...
 strider check --format html ./... > check-report.html
 strider check --only format,no-init,invalid-regexp ./...
 strider check --minimum-severity warning ./...
+strider check --fix ./...
+strider check --fix-unsafe ./...
 strider check --summary-only ./...
 strider check --watch ./...
 strider check --list-checks
@@ -46,14 +49,36 @@ Checks configured with `severity = "none"` are suppressed unless the command
 uses `--minimum-severity none`. `--only` selects exactly the named codes and
 avoids building program information that those checks do not need.
 
+`-x, --fix` applies only automatic fixes explicitly classified as safe.
+`-u, --fix-unsafe` includes safe, potentially unsafe, and unsafe automatic
+fixes. The flags are mutually exclusive. The initial automatic set covers
+`format`, `double-negation`, `redundant-switch-break`, and
+`single-argument-append`. Fix mode cannot be combined with watch mode, baseline
+generation, or baseline pruning.
+
+Only findings left after selection, severity filtering, exclusions,
+suppression, and baseline matching are eligible. Strider composes edits in
+memory, skips nonidentical overlaps, formats affected source unless formatter
+exclusions apply, verifies that it parses, and type-checks safe changes through
+an overlay. Every analyzed source is compared with its snapshot after staging,
+before commit, and each target is checked again immediately before replacement.
+A detected concurrent edit stops the remaining writes. Checks then run once
+more, so the report and exit status describe the remaining findings.
+
+Safe fixes are designed to preserve Go program semantics, and type-checking
+catches many invalid rewrites. Neither classification nor validation proves
+identical behavior across every toolchain, build tag, platform, or environment.
+
 Formatting is the `format` check. It reports an unformatted file without
-modifying it and suggests `strider fmt` as the remedy. Strider internally
-schedules only the source representations required by the selected checks;
-those implementation capabilities are not separate user-facing tools.
+modifying it by default and suggests `strider fmt` as the remedy. Fix mode can
+apply the same validated formatter result. Strider internally schedules only
+the source representations required by the selected checks; those
+implementation capabilities are not separate user-facing tools.
 
 `--watch` keeps a text-mode check session alive. Unchanged concrete syntax and
 proven-equivalent package results are reused between generations; edits emit a
-fresh complete report without modifying source.
+fresh complete report without modifying source. Watch and fix modes cannot be
+combined.
 
 ## Format
 
@@ -136,10 +161,11 @@ new findings.
 
 ## Exit codes
 
-- `0`: success with no visible findings, or a baseline update completed.
-- `1`: one or more visible check findings, including formatting drift.
-- `2`: command, configuration, baseline, parsing, package-loading,
-  unsupported-syntax, or I/O error.
+- `0`: success with no visible findings after any requested fixes, or a
+  baseline update completed.
+- `1`: one or more visible check findings remain, including formatting drift.
+- `2`: command, configuration, baseline, fix validation, stale source,
+  parsing, package-loading, unsupported-syntax, or I/O error.
 
 ## Open-source corpus
 

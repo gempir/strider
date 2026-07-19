@@ -13,7 +13,7 @@ strider [--config PATH|--no-config] [--color auto|always|never] COMMAND [OPTIONS
 | --- | --- |
 | `strider help` | Print top-level usage. `-h` and `--help` are aliases. |
 | `strider version` | Print the current version string. `-v` and `--version` are aliases. |
-| `strider check` | Run formatting, maintainability, and correctness checks without writing source. |
+| `strider check` | Run formatting, maintainability, and correctness checks; optionally apply automatic fixes. |
 | `strider fmt` | Format Go source in place. `format` is an alias. |
 
 Calling Strider without a command is an error. Source commands recursively use
@@ -49,9 +49,10 @@ JSON and formatted source are never decorated with ANSI escapes.
 strider check [OPTIONS] [FILE|DIR]...
 ```
 
-`check` is read-only. All 207 checks are eligible; the default warning floor
-runs the 191 warning and error checks. `--minimum-severity note` also includes
-notes, and `--minimum-severity none` includes checks configured as `none`.
+`check` is read-only unless `--fix` or `--fix-unsafe` is requested. All 207
+checks are eligible; the default warning floor runs the 191 warning and error
+checks. `--minimum-severity note` also includes notes, and
+`--minimum-severity none` includes checks configured as `none`.
 
 ### Selection and reporting
 
@@ -64,18 +65,52 @@ notes, and `--minimum-severity none` includes checks configured as `none`.
 | `-l, --list-checks` | List the effective selected registry and severity, then exit. |
 | `-e, --explain CODE` | Explain one selected check and show its effective severity, then exit. |
 | `-w, --watch` | Keep a text-mode incremental session open and rerun changed generations. |
+| `-x, --fix` | Apply explicitly safe automatic fixes, then rerun the checks once. |
+| `-u, --fix-unsafe` | Apply all automatic fixes, including potentially unsafe and unsafe fixes, then rerun once. |
 
 An unknown code supplied by configuration, `--only`, or `--explain` is an
 exit-code `2` error. Explicit CLI selection preserves configured severity, the
 minimum threshold, and path exclusions. Severity overrides are resolved before
 the threshold, and `--only` does not bypass it.
 
-Use `--only format` to check formatting without writing. Use `strider fmt` to
-write the suggested result or `strider fmt --diff` to inspect it.
+Use `--only format` to check formatting without writing. Add `--fix` to apply
+the validated result, use `strider fmt` for the focused write workflow, or use
+`strider fmt --diff` to inspect it.
 
 Watch mode prints a numbered full report for the initial generation and each
 detected source or package-boundary change. It requires text output and cannot
-be combined with baseline generation or pruning.
+be combined with fix mode, baseline generation, or pruning.
+
+### Automatic fixes
+
+`--fix` and `--fix-unsafe` are mutually exclusive. The safe mode considers only
+fixes explicitly marked both automatic and safe. Unsafe mode also considers
+automatic fixes marked potentially unsafe or unsafe; it does not exclude safe
+fixes. The initial automatic set covers `format`, `double-negation`,
+`redundant-switch-break`, and `single-argument-append`.
+
+Only diagnostics that survive check selection, effective-severity filtering,
+path exclusions, source suppression, and baseline matching are considered.
+Edits are composed in memory per file, nonidentical overlaps are skipped, and
+affected source is formatted before validation unless formatter exclusions or
+a format-ignore directive apply. Every result must parse. A batch containing
+safe changes must also type-check through an overlay of the analyzed source.
+
+The write is guarded by the analyzed content. Every source is compared after
+staging and before commit, and each target is checked again immediately before
+replacement. A stale comparison exits `2` and stops the remaining writes. After
+a successful application, the selected checks run once more; the final report
+and exit code describe the remaining findings.
+
+Outputs are all staged before replacement and each replacement is atomic, but
+the batch is not a cross-file transaction: a later rename failure or concurrent
+edit detected after commit starts can leave an earlier file updated. Permission
+bits are preserved. Ownership, ACLs, and extended attributes are
+filesystem-dependent.
+
+Safe fixes are designed to preserve Go program semantics. A successful parse
+and type-check is not a proof of identical behavior across all toolchains,
+build tags, platforms, and environments.
 
 ### Baselines
 
@@ -87,7 +122,8 @@ be combined with baseline generation or pruning.
 
 Generation and pruning require either `--baseline PATH` or
 `[checks].baseline`. They are mutually exclusive. Code `format` is never stored
-in a baseline.
+in a baseline. Fix mode can use an ordinary baseline, but cannot be combined
+with generation or pruning.
 
 ## `strider fmt`
 
@@ -113,16 +149,20 @@ Paths may name Go files, directories, or recursive `./...` notation. With no
 path, Strider uses `.` recursively. Discovery includes test files and is
 deterministic.
 
-The `.git`, `.hg`, `.svn`, and `vendor` directories are skipped. Symlinked Go
-files and files carrying the standard `// Code generated ... DO NOT EDIT.`
-marker are skipped. Configuration can add tool-wide and per-check exclusions.
+The `.git`, `.hg`, `.svn`, and `vendor` directories are skipped. Directory
+walks skip symlink entries, while a directly named source symlink is followed.
+Fix mode preserves that link and updates its captured target while guarding
+against retargeting. Files carrying the standard
+`// Code generated ... DO NOT EDIT.` marker are skipped. Configuration can add
+tool-wide and per-check exclusions.
 
 ## Streams
 
 - Formatted source, diffs, check lists, explanations, and visible diagnostics go
   to standard output.
 - Usage errors, parsing or package-loading failures, unsupported syntax,
-  baseline failures, and stale-baseline warnings go to standard error.
+  baseline failures, stale-baseline warnings, and skipped-fix warnings go to
+  standard error.
 - Successful baseline generation writes the file without printing diagnostics.
 
 Text diagnostics use a rich, source-annotated layout with a severity-colored
@@ -137,9 +177,9 @@ errors, yellow for warnings, and blue for notes.
 
 | Code | Meaning |
 | --- | --- |
-| `0` | Clean, successfully formatted, or baseline generation completed. |
-| `1` | One or more visible check findings, including formatting drift. |
-| `2` | Invalid command/options, configuration or baseline error, parse or package-load failure, unsupported syntax, or I/O failure. |
+| `0` | Clean after any requested fixes, successfully formatted, or baseline generation completed. |
+| `1` | One or more visible check findings remain, including formatting drift. |
+| `2` | Invalid command/options, configuration or baseline error, fix validation or stale-source failure, parse or package-load failure, unsupported syntax, or I/O failure. |
 
 Any visible diagnostic currently causes exit `1`, regardless of whether its
 configured severity is `note`, `warning`, or `error`.

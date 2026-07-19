@@ -91,7 +91,7 @@ func (palette Palette) Note(text string) string {
 }
 
 func (palette Palette) Success(text string) string {
-	return palette.paint("1;32", text)
+	return palette.paint("38;5;10", text)
 }
 
 func (palette Palette) Path(text string) string {
@@ -99,15 +99,15 @@ func (palette Palette) Path(text string) string {
 }
 
 func (palette Palette) Code(text string) string {
-	return palette.paint("1;35", text)
+	return palette.paint("38;5;2", text)
 }
 
 func (palette Palette) Accent(text string) string {
-	return palette.paint("1;36", text)
+	return palette.paint("1;35", text)
 }
 
 func (palette Palette) Added(text string) string {
-	return palette.paint("32", text)
+	return palette.paint("38;5;10", text)
 }
 
 func (palette Palette) Removed(text string) string {

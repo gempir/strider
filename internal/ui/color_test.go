@@ -46,4 +46,13 @@ func TestPalettePaintsSemanticStyles(t *testing.T) {
 	if got := palette.Note("note"); got != "\x1b[1;34mnote\x1b[0m" {
 		t.Fatalf("unexpected note style %q", got)
 	}
+	if got := palette.Code("code"); got != "\x1b[38;5;2mcode\x1b[0m" {
+		t.Fatalf("unexpected code style %q", got)
+	}
+	if got := palette.Success("success"); got != "\x1b[38;5;10msuccess\x1b[0m" {
+		t.Fatalf("unexpected success style %q", got)
+	}
+	if got := palette.Accent("accent"); got != "\x1b[1;35maccent\x1b[0m" {
+		t.Fatalf("unexpected accent style %q", got)
+	}
 }

@@ -39,10 +39,10 @@ func TestTextRendersSourceAnnotationAndSummary(t *testing.T) {
 		"\x1b[",
 		"\x1b[1;33mno-init\x1b[0m",
 		"┌─",
-		"1 \x1b[1;35m│\x1b[0m package p",
-		"2 \x1b[1;35m│\x1b[0m \x1b[1;33mfunc init() {}\x1b[0m",
-		"3 \x1b[1;35m│\x1b[0m func run() {}",
-		"  \x1b[1;35m│",
+		"1 \x1b[38;5;2m│\x1b[0m package p",
+		"2 \x1b[38;5;2m│\x1b[0m \x1b[1;33mfunc init() {}\x1b[0m",
+		"3 \x1b[38;5;2m│\x1b[0m func run() {}",
+		"  \x1b[38;5;2m│",
 		"note",
 		"found 1 issue:",
 		"no-init",
@@ -114,7 +114,7 @@ func TestTextRendersCleanSummary(t *testing.T) {
 	if err := Text(&output, nil, ui.ColorAlways); err != nil {
 		t.Fatal(err)
 	}
-	if output.String() != "\x1b[1;32mfound 0 issues\x1b[0m\n" {
+	if output.String() != "\x1b[38;5;10mfound 0 issues\x1b[0m\n" {
 		t.Fatalf("clean summary = %q", output.String())
 	}
 }

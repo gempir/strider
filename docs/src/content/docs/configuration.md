@@ -103,8 +103,9 @@ The top-level `color` setting controls ANSI styling for human-readable output.
 | `color` | string | `"auto"` | `"auto"` uses color for terminals, `"always"` forces it, and `"never"` disables it. |
 
 Strider applies semantic colors throughout its human interface: errors are red,
-warnings yellow, notes blue, check codes magenta, paths and source gutters cyan,
-suggested remedies green, and diff removals red. JSON and formatter
+warnings yellow, notes blue, and check codes, paths, source gutters, commands,
+and options use xterm color 2. Successful output, suggested remedies, and diff
+additions use xterm color 10; diff removals remain red. JSON and formatter
 standard-input source are never styled.
 
 For one run, place the global override before the command:

@@ -419,10 +419,17 @@ func clean(ready bool, values []int, mode int) ([]int, bool) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, removed := range []string{"append", "!ready", "break"} {
-		if bytes.Contains(contents, []byte(removed)) {
-			t.Fatalf("fixed source still contains %q:\n%s", removed, contents)
-		}
+	want := `package sample
+
+func clean(ready bool, values []int, mode int) ([]int, bool) {
+	switch mode {
+	case 1:
+	}
+	return (values), ready
+}
+`
+	if string(contents) != want {
+		t.Fatalf("fixed source:\n%s\nwant:\n%s", contents, want)
 	}
 }
 

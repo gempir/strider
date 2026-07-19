@@ -29,6 +29,7 @@ export default defineConfig({
     starlight({
       title: 'Strider',
       description: 'Formatting and unified code checks for Go.',
+      favicon: '/favicon.png',
       social: [
         { icon: 'github', label: 'gempir/strider on GitHub', href: 'https://github.com/gempir/strider' },
       ],

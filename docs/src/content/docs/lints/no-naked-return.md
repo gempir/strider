@@ -3,13 +3,11 @@ title: no-naked-return
 description: Require explicit values when returning from named-result functions.
 sidebar:
   badge:
-    text: note
-    class: severity-indicator severity-note
+    text: warning
+    class: severity-indicator severity-warning
 ---
 
-**Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
-
-**Configuration:** `severity` and path `excludes`
+**Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
 Reports a bare `return` when the nearest function declaration or function
 literal has at least one named result. Naked returns make data flow implicit:
@@ -36,12 +34,10 @@ func value() (result int) {
 The rule does not require removing named results. It only requires the return
 statement to name the values being returned.
 
-## Suppress
+## Configuration
 
-```go
-//strider:ignore no-naked-return
-func tinyWrapper() (result int) {
-	result = 1
-	return
-}
+```toml
+[checks.rules.no-naked-return]
+severity = "warning"
+excludes = ["generated/**"]
 ```

@@ -29,6 +29,7 @@ type configuredRule struct {
 	severity   diagnostic.Severity
 	excludes   []string
 	characters []rune
+	config     config.RuleConfig
 }
 
 var defaultBannedCharacters = []rune{'ᐸ', 'ᐳ'}
@@ -96,7 +97,7 @@ func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
 			continue
 		}
 		registry.rules = append(registry.rules, rule)
-		configured := configuredRule{severity: severity, excludes: ruleConfig.Excludes}
+		configured := configuredRule{severity: severity, excludes: ruleConfig.Excludes, config: ruleConfig}
 		if meta.Code == "banned-characters" {
 			configured.characters = defaultBannedCharacters
 			if ruleConfig.Characters != nil {
@@ -159,6 +160,25 @@ func (r *Registry) Severity(code string) diagnostic.Severity {
 
 func (r *Registry) bannedCharacters() []rune {
 	return append([]rune(nil), r.settings["banned-characters"].characters...)
+}
+
+func (r *Registry) limits() map[string]int {
+	limits := make(map[string]int)
+	for code, setting := range r.settings {
+		switch code {
+		case "file-length-limit":
+			limits[code] = setting.config.MaxLines
+		case "function-length":
+			limits[code+"-lines"], limits[code+"-statements"] = setting.config.MaxLines, setting.config.MaxStatements
+		case "function-result-limit":
+			limits[code] = setting.config.MaxResults
+		case "max-parameters":
+			limits[code] = setting.config.MaxParameters
+		case "max-public-structs":
+			limits[code] = setting.config.MaxPublicStructs
+		}
+	}
+	return limits
 }
 
 func (r *Registry) activeRules(filename string) []builtinrules.Rule {
@@ -326,6 +346,8 @@ func analyzeTree(filename string, concreteTree *cst.Tree, activeRules []builtinr
 			Tree:             concreteTree,
 			Rules:            activeRules,
 			BannedCharacters: registry.bannedCharacters(),
+			Limits:           registry.limits(),
+			BlockedImports:   registry.settings["imports-blocklist"].config.BlockedImports,
 			Report: func(finding builtinrules.Finding) {
 				context.reportConcrete(concreteTree, finding, registry.Severity(finding.Code))
 			},

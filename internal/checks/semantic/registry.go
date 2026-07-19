@@ -21,6 +21,7 @@ type Registry struct {
 type configuredRule struct {
 	severity diagnostic.Severity
 	excludes []string
+	config   config.RuleConfig
 }
 
 // RegistryOptions selects and configures package-aware rules.
@@ -198,7 +199,7 @@ func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
 			continue
 		}
 		registry.rules = append(registry.rules, rule)
-		registry.settings[meta.Code] = configuredRule{severity: severity, excludes: setting.Excludes}
+		registry.settings[meta.Code] = configuredRule{severity: severity, excludes: setting.Excludes, config: setting}
 	}
 	return registry, nil
 }

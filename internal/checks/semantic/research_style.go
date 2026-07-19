@@ -19,7 +19,7 @@ func (excessiveBlankIdentifiersRule) Meta() Meta {
 		Explanation:     "Discarding several adjacent results hides the contract of the called function and makes it easy to overlook an important value. Name the results that matter or return a cohesive result type.",
 		GoodExample:     "value, metadata, err := load(); _ = metadata",
 		BadExample:      "value, _, _, _, err := load()",
-		DefaultSeverity: diagnostic.SeverityNote,
+		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
 
@@ -166,7 +166,7 @@ func (errorTypeNamingRule) Meta() Meta {
 		Explanation:     "A named type whose value or pointer method set implements error should use an Error suffix so its role is recognizable at API boundaries and in type assertions.",
 		GoodExample:     "type ParseError struct { Offset int }",
 		BadExample:      "type ParseFailure struct { Offset int } // implements Error() string",
-		DefaultSeverity: diagnostic.SeverityNote,
+		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
 
@@ -206,7 +206,7 @@ func (standardHTTPMethodConstantRule) Meta() Meta {
 		Explanation:     "Using net/http method constants avoids spelling drift and makes the protocol role of an argument explicit. This check is limited to method arguments of net/http request constructors.",
 		GoodExample:     "http.NewRequest(http.MethodGet, endpoint, nil)",
 		BadExample:      "http.NewRequest(\"GET\", endpoint, nil)",
-		DefaultSeverity: diagnostic.SeverityNote,
+		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
 

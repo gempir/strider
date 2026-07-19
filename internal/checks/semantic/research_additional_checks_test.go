@@ -119,7 +119,7 @@ func check() {
 		t.Fatalf("got %d diagnostics, want 4: %#v", len(diagnostics), diagnostics)
 	}
 	for _, item := range diagnostics {
-		if item.Code != "inline-error-declaration" || item.Severity != diagnostic.SeverityNote {
+		if item.Code != "inline-error-declaration" || item.Severity != diagnostic.SeverityWarning {
 			t.Fatalf("unexpected diagnostic: %#v", item)
 		}
 	}
@@ -209,7 +209,7 @@ type later struct{}
 	if len(diagnostics) != 1 {
 		t.Fatalf("got %d diagnostics, want 1: %#v", len(diagnostics), diagnostics)
 	}
-	if diagnostics[0].Code != "declaration-order" || diagnostics[0].Severity != diagnostic.SeverityNote {
+	if diagnostics[0].Code != "declaration-order" || diagnostics[0].Severity != diagnostic.SeverityWarning {
 		t.Fatalf("unexpected diagnostic: %#v", diagnostics[0])
 	}
 }
@@ -238,9 +238,9 @@ func TestAdditionalResearchRuleSeverities(t *testing.T) {
 		severity diagnostic.Severity
 	}{
 		{discardedErrorResultRule{}, diagnostic.SeverityError},
-		{inlineErrorDeclarationRule{}, diagnostic.SeverityNote},
+		{inlineErrorDeclarationRule{}, diagnostic.SeverityWarning},
 		{testParallelismRule{}, diagnostic.SeverityNote},
-		{declarationOrderRule{}, diagnostic.SeverityNote},
+		{declarationOrderRule{}, diagnostic.SeverityWarning},
 	}
 	for _, test := range tests {
 		if got := test.rule.Meta().DefaultSeverity; got != test.severity {

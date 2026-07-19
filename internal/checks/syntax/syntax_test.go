@@ -52,7 +52,7 @@ func closeThing() {}
 	for _, item := range diagnostics {
 		codes = append(codes, item.Code)
 	}
-	for _, wanted := range []string{"cyclomatic-complexity", "max-parameters", "no-defer-in-loop", "no-else-after-return", "no-init", "no-naked-return", "no-package-var"} {
+	for _, wanted := range []string{"cyclomatic-complexity", "no-defer-in-loop", "no-else-after-return", "no-init", "no-naked-return", "no-package-var"} {
 		if !slices.Contains(codes, wanted) {
 			t.Errorf("missing %s in %v", wanted, codes)
 		}
@@ -62,7 +62,7 @@ func closeThing() {}
 func TestSyntaxChecksUseConcreteSyntaxAndExactRanges(t *testing.T) {
 	source := `package p
 
-func overloaded[T any](one, two T, three, four, five, six int) {}
+func overloaded[T any](one, two T, three, four, five, six, seven, eight, nine int) {}
 
 func named[T any]() (result T) {
 	for {
@@ -334,7 +334,7 @@ func runes(text string) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{"range"})
+	registry, err := NewRegistry([]string{"simplify-range"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -597,8 +597,8 @@ import (
 }
 
 func TestCatalogIsCompleteDocumentedAndRunnable(t *testing.T) {
-	const expectedCount = 114
-	const expectedNamesSHA256 = "e0c8bdc47bb2f2a569874b9df7764d70b425fab611249f28e61d7716db4b6671"
+	const expectedCount = 106
+	const expectedNamesSHA256 = "1afafc8bfe959dd5e3aac26a4424851cfaaf7634836daf5d4daffd86b42f9668"
 	all, err := NewRegistry(nil)
 	if err != nil {
 		t.Fatal(err)
@@ -888,16 +888,7 @@ func (current item) mutate(value int, group sync.WaitGroup, closer interface{ Cl
 `,
 	)
 	registry, err := NewRegistry(
-		[]string{
-			"atomic",
-			"epoch-naming",
-			"forbidden-call-in-wg-go",
-			"inefficient-map-lookup",
-			"modifies-parameter",
-			"modifies-value-receiver",
-			"time-equal",
-			"unhandled-error",
-		},
+		[]string{"atomic", "forbidden-call-in-wg-go", "inefficient-map-lookup", "modifies-parameter", "modifies-value-receiver", "time-equal", "unhandled-error"},
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -912,7 +903,6 @@ func (current item) mutate(value int, group sync.WaitGroup, closer interface{ Cl
 	}
 	for _, code := range []string{
 		"atomic",
-		"epoch-naming",
 		"forbidden-call-in-wg-go",
 		"inefficient-map-lookup",
 		"modifies-parameter",

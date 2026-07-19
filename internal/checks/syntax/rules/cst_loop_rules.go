@@ -38,10 +38,10 @@ func (a *cstAnalyzer) checkConcreteFor(statement *cst.ForStmt) {
 func (a *cstAnalyzer) checkConcreteRange(clause *cst.RangeClause, body *cst.Block) {
 	variables := concreteRangeVariables(clause)
 	if concreteRangeIndexDiscarded(clause) && strings.HasPrefix(cst.Spelling(clause.Expression), "[]rune(") {
-		a.report("range", clause.Expression, "range directly over the string to avoid allocating a rune slice")
+		a.report("simplify-range", clause.Expression, "range directly over the string to avoid allocating a rune slice")
 	}
 	if len(variables) > 1 && variables[1].Src() == "_" {
-		a.report("range", variables[1], "omit the blank range value")
+		a.report("simplify-range", variables[1], "omit the blank range value")
 	}
 	for _, variable := range variables {
 		name := variable.Src()

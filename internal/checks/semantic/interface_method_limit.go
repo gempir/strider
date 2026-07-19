@@ -19,11 +19,15 @@ func (interfaceMethodLimitRule) Meta() Meta {
 		Explanation:     "Interfaces are easiest to implement, compose, and test when they remain small. This check uses a documented limit of 10 methods, including methods contributed by embedded interfaces, to identify abstractions that may need to be split by responsibility.",
 		GoodExample:     "type Reader interface { Read([]byte) (int, error) }",
 		BadExample:      "type Service interface { Start(); Stop(); Pause(); Resume(); Reload(); Status(); Health(); Metrics(); Configure(); Validate(); Reset() }",
-		DefaultSeverity: diagnostic.SeverityNote,
+		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
 
 func (interfaceMethodLimitRule) Run(pass *Pass) {
+	limit := pass.maxMethods
+	if limit == 0 {
+		limit = interfaceMethodLimit
+	}
 	for _, file := range pass.Files {
 		ast.Inspect(
 			file,
@@ -44,10 +48,10 @@ func (interfaceMethodLimitRule) Run(pass *Pass) {
 				}
 				interfaceType.Complete()
 				methodCount := interfaceType.NumMethods()
-				if methodCount <= interfaceMethodLimit {
+				if methodCount <= limit {
 					return true
 				}
-				pass.Report(declaration, fmt.Sprintf("interface has %d methods, exceeding the configured design limit of %d", methodCount, interfaceMethodLimit))
+				pass.Report(declaration, fmt.Sprintf("interface has %d methods, exceeding the configured design limit of %d", methodCount, limit))
 				return true
 			},
 		)

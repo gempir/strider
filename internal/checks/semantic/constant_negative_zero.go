@@ -18,7 +18,7 @@ func (constantNegativeZeroRule) Meta() Meta {
 		Explanation:     "Go's ideal constants do not preserve a zero sign. Literal forms such as -0.0 and float64(-0) therefore produce positive zero at runtime; use math.Copysign when a true IEEE negative zero is required.",
 		GoodExample:     "negativeZero := math.Copysign(0, -1)",
 		BadExample:      "negativeZero := -0.0",
-		DefaultSeverity: diagnostic.SeverityNote,
+		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
 

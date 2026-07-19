@@ -3,11 +3,11 @@ title: redundant-conversion
 description: Detect conversions to the value's existing type.
 sidebar:
   badge:
-    text: note
-    class: severity-indicator severity-note
+    text: warning
+    class: severity-indicator severity-warning
 ---
 
-**Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
+**Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
 An exact same-type conversion cannot change a value or its method set. Remove
 it to make the type flow clearer.

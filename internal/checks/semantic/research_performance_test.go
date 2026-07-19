@@ -13,10 +13,10 @@ func TestResearchPerformanceRuleMetadata(t *testing.T) {
 		severity diagnostic.Severity
 	}{
 		{appendToSizedSliceRule{}, diagnostic.SeverityWarning},
-		{redundantConversionRule{}, diagnostic.SeverityNote},
+		{redundantConversionRule{}, diagnostic.SeverityWarning},
 		{slicePreallocationRule{}, diagnostic.SeverityWarning},
 		{inefficientSprintfRule{}, diagnostic.SeverityWarning},
-		{interfaceMethodLimitRule{}, diagnostic.SeverityNote},
+		{interfaceMethodLimitRule{}, diagnostic.SeverityWarning},
 		{interfaceReturnRule{}, diagnostic.SeverityWarning},
 		{slogArgumentShapeRule{}, diagnostic.SeverityWarning},
 		{externalCallInLoopRule{}, diagnostic.SeverityWarning},

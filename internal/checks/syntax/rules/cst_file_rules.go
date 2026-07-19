@@ -46,6 +46,9 @@ func (a *cstAnalyzer) checkConcreteImport(spec *cst.ImportSpec) {
 		return
 	}
 	a.importPaths[path] = true
+	if a.enabled["imports-blocklist"] && a.blockedImports[path] {
+		a.report("imports-blocklist", spec, fmt.Sprintf("import %s is blocked by configuration", path))
+	}
 	if a.importSeen[path] {
 		if a.enabled["duplicated-imports"] {
 			a.report("duplicated-imports", spec, fmt.Sprintf("package %s is imported more than once", path))
@@ -101,6 +104,9 @@ func concreteImportHasComment(tree *cst.Tree, spec *cst.ImportSpec) bool {
 
 func (a *cstAnalyzer) checkLinesAndComments() {
 	lines := bytes.Split(a.content, []byte("\n"))
+	if limit := a.limits["file-length-limit"]; a.enabled["file-length-limit"] && limit > 0 && len(lines) > limit {
+		a.reportRange("file-length-limit", 0, len(a.content), fmt.Sprintf("file has %d lines; maximum is %d", len(lines), limit))
+	}
 	if a.enabled["bidirectional-control-character"] {
 		for offset := 0; offset < len(a.content); {
 			character, width := utf8.DecodeRune(a.content[offset:])

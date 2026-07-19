@@ -40,6 +40,7 @@ type Pass struct {
 	SSAPackage  *ssa.Package
 	Functions   []*ssa.Function
 	facts       *packageFacts
+	maxMethods  int
 
 	deprecatedObjects  map[types.Object]string
 	deprecatedPackages map[*types.Package]string

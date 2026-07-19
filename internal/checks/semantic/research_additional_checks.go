@@ -181,7 +181,7 @@ func (inlineErrorDeclarationRule) Meta() Meta {
 		Explanation:     "Declaring an error in a control-statement initializer limits its scope and can encourage dense error handling. Declare the error immediately before the control statement when a longer-lived, easier-to-debug value is preferable.",
 		GoodExample:     "value, err := load(); if err != nil { return err }",
 		BadExample:      "if value, err := load(); err != nil { return err }",
-		DefaultSeverity: diagnostic.SeverityNote,
+		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
 
@@ -451,7 +451,7 @@ func (declarationOrderRule) Meta() Meta {
 		Explanation:     "A consistent top-level declaration order makes files easier to scan. Group types first, then constants, variables, and functions; imports are ignored and init remains in the function group.",
 		GoodExample:     "type Client struct{}; const timeout = 1; var defaultClient Client; func New() Client { return Client{} }",
 		BadExample:      "var defaultClient Client; type Client struct{}",
-		DefaultSeverity: diagnostic.SeverityNote,
+		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
 

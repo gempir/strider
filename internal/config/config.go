@@ -41,9 +41,16 @@ type ToolConfig struct {
 }
 
 type RuleConfig struct {
-	Severity   string   `toml:"severity"`
-	Excludes   []string `toml:"excludes"`
-	Characters []string `toml:"characters"`
+	Severity         string   `toml:"severity"`
+	Excludes         []string `toml:"excludes"`
+	Characters       []string `toml:"characters"`
+	MaxLines         int      `toml:"max-lines"`
+	MaxStatements    int      `toml:"max-statements"`
+	MaxResults       int      `toml:"max-results"`
+	MaxParameters    int      `toml:"max-parameters"`
+	MaxPublicStructs int      `toml:"max-public-structs"`
+	MaxMethods       int      `toml:"max-methods"`
+	BlockedImports   []string `toml:"blocked-imports"`
 }
 
 func Defaults() Config {
@@ -142,6 +149,18 @@ func validateTool(name string, tool ToolConfig) error {
 		if rule.Severity != "" && !diagnostic.ValidSeverity(diagnostic.Severity(rule.Severity)) {
 			return fmt.Errorf("%s.rules.%s.severity must be none, note, warning, or error", name, code)
 		}
+		for option, value := range map[string]int{
+			"max-lines":          rule.MaxLines,
+			"max-statements":     rule.MaxStatements,
+			"max-results":        rule.MaxResults,
+			"max-parameters":     rule.MaxParameters,
+			"max-public-structs": rule.MaxPublicStructs,
+			"max-methods":        rule.MaxMethods,
+		} {
+			if value < 0 {
+				return fmt.Errorf("%s.rules.%s.%s must not be negative", name, code, option)
+			}
+		}
 	}
 	return nil
 }
@@ -165,5 +184,6 @@ func cloneRuleConfig(rule RuleConfig) RuleConfig {
 	cloned := rule
 	cloned.Excludes = append([]string(nil), rule.Excludes...)
 	cloned.Characters = append([]string(nil), rule.Characters...)
+	cloned.BlockedImports = append([]string(nil), rule.BlockedImports...)
 	return cloned
 }

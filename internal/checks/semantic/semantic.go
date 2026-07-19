@@ -251,6 +251,7 @@ func runAnalysisTask(task analysisTask, registry *Registry, fileInfoFor func(str
 	meta := task.rule.Meta()
 	severity := registry.Severity(meta.Code)
 	pass := *task.pass
+	pass.maxMethods = registry.settings[meta.Code].config.MaxMethods
 	findings := []analysisFinding{}
 	pass.report = func(node ast.Node, message string) {
 		position := pass.FileSet.Position(node.Pos())

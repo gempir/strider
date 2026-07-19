@@ -352,8 +352,8 @@ func TestCheckListsOneUnifiedCatalog(t *testing.T) {
 	if code != exitSuccess || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
-	if got := strings.Count(strings.TrimSpace(stdout.String()), "\n") + 1; got != 225 {
-		t.Fatalf("listed %d checks; want 225", got)
+	if got := strings.Count(strings.TrimSpace(stdout.String()), "\n") + 1; got != 217 {
+		t.Fatalf("listed %d checks; want 217", got)
 	}
 	for _, wanted := range []string{"format", "no-init", "invalid-regexp"} {
 		if _, ok := listedSeverity(stdout.String(), wanted); !ok {
@@ -851,8 +851,8 @@ func TestLintListsCompleteRegistry(t *testing.T) {
 	if code != exitSuccess {
 		t.Fatalf("exit %d, stderr %s", code, stderr.String())
 	}
-	if got := strings.Count(strings.TrimSpace(stdout.String()), "\n") + 1; got != 114 {
-		t.Fatalf("listed %d rules; want 114", got)
+	if got := strings.Count(strings.TrimSpace(stdout.String()), "\n") + 1; got != 106 {
+		t.Fatalf("listed %d rules; want 106", got)
 	}
 	_, marshalListed := listedSeverity(stdout.String(), "marshal-receiver")
 	_, multilineListed := listedSeverity(stdout.String(), "multiline-if-init")

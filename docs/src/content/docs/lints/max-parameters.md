@@ -1,18 +1,15 @@
 ---
 title: max-parameters
-description: Limit declared functions to five parameters.
+description: Limit declared functions to eight parameters.
 sidebar:
   badge:
-    text: note
-    class: severity-indicator severity-note
+    text: warning
+    class: severity-indicator severity-warning
 ---
 
-**Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
+**Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-**Maximum:** `5`  
-**Configuration:** `severity` and path `excludes`; maximum remains `5`
-
-Reports function declarations with more than five parameters. Long parameter
+Reports function declarations with more than eight parameters. Long parameter
 lists are difficult to call correctly and often reveal a missing domain type.
 Method receivers are not counted.
 
@@ -48,9 +45,11 @@ func Open(path string, options OpenOptions) error {
 Prefer a cohesive options or request type. Do not combine unrelated values
 into a struct purely to bypass the rule.
 
-## Suppress
+## Configuration
 
-```go
-//strider:ignore max-parameters
-func AdapterSignature(a, b, c, d, e, f string) {}
+The default maximum is eight.
+
+```toml
+[checks.rules.max-parameters]
+max-parameters = 10
 ```

@@ -35,13 +35,11 @@ var cstRuleCodes = map[string]bool{
 	"enforce-slice-style":             true,
 	"enforce-switch-style":            true,
 	"empty-block":                     true,
-	"empty-lines":                     true,
 	"early-return":                    true,
 	"error-strings":                   true,
 	"error-return":                    true,
 	"error-naming":                    true,
 	"errorf":                          true,
-	"epoch-naming":                    true,
 	"file-header":                     true,
 	"exported":                        true,
 	"file-length-limit":               true,
@@ -64,7 +62,6 @@ var cstRuleCodes = map[string]bool{
 	"ineffective-pointer-copy":        true,
 	"increment-decrement":             true,
 	"indent-error-flow":               true,
-	"line-length-limit":               true,
 	"max-parameters":                  true,
 	"max-control-nesting":             true,
 	"max-public-structs":              true,
@@ -86,17 +83,14 @@ var cstRuleCodes = map[string]bool{
 	"redundant-build-tag":             true,
 	"redundant-import-alias":          true,
 	"receiver-naming":                 true,
-	"range":                           true,
+	"simplify-range":                  true,
 	"range-val-address":               true,
 	"range-val-in-closure":            true,
 	"redefines-builtin-id":            true,
-	"redundant-test-main-exit":        true,
 	"spaced-compiler-directive":       true,
 	"spinning-select-default":         true,
 	"string-of-int":                   true,
-	"string-format":                   true,
 	"struct-tag":                      true,
-	"superfluous-else":                true,
 	"time-naming":                     true,
 	"time-equal":                      true,
 	"time-date":                       true,
@@ -116,8 +110,6 @@ var cstRuleCodes = map[string]bool{
 	"use-waitgroup-go":                true,
 	"unused-parameter":                true,
 	"unused-receiver":                 true,
-	"useless-fallthrough":             true,
-	"useless-break":                   true,
 	"var-declaration":                 true,
 	"var-naming":                      true,
 	"waitgroup-by-value":              true,
@@ -152,6 +144,8 @@ type cstAnalyzer struct {
 	functionBodyDepth int
 	foldedNames       map[string]map[string]string
 	bannedCharacters  map[rune]bool
+	limits            map[string]int
+	blockedImports    map[string]bool
 	publicStructs     int
 }
 
@@ -172,7 +166,22 @@ func AnalyzeCST(input CSTInput) {
 		}
 	}
 	plan := compileCSTExecutionPlan(enabled)
-	analyzer := &cstAnalyzer{filename: input.Filename, tree: input.Tree, content: input.Tree.Bytes(), enabled: enabled, extended: extended, plan: plan, reporter: input.Report}
+	analyzer := &cstAnalyzer{
+		filename: input.Filename,
+		tree:     input.Tree,
+		content:  input.Tree.Bytes(),
+		enabled:  enabled,
+		extended: extended,
+		plan:     plan,
+		reporter: input.Report,
+		limits:   input.Limits,
+	}
+	if enabled["imports-blocklist"] {
+		analyzer.blockedImports = make(map[string]bool, len(input.BlockedImports))
+		for _, path := range input.BlockedImports {
+			analyzer.blockedImports[path] = true
+		}
+	}
 	if enabled["banned-characters"] {
 		analyzer.bannedCharacters = make(map[rune]bool, len(input.BannedCharacters))
 		for _, character := range input.BannedCharacters {
@@ -527,8 +536,9 @@ func (a *cstAnalyzer) checkMethod(method *cst.MethodDecl, facts *cstFunctionFact
 func (a *cstAnalyzer) checkSignature(name cst.Token, parameters *cst.Parameters, complexity int) {
 	if a.enabled["max-parameters"] {
 		count := parameterCount(parameters)
-		if count > 5 {
-			a.report("max-parameters", name, fmt.Sprintf("function has %d parameters; maximum is 5", count))
+		limit := a.limit("max-parameters", 8)
+		if count > limit {
+			a.report("max-parameters", name, fmt.Sprintf("function has %d parameters; maximum is %d", count, limit))
 		}
 	}
 	if a.enabled["cyclomatic-complexity"] {
@@ -536,6 +546,13 @@ func (a *cstAnalyzer) checkSignature(name cst.Token, parameters *cst.Parameters,
 			a.report("cyclomatic-complexity", name, fmt.Sprintf("function complexity is %d; maximum is 10", complexity))
 		}
 	}
+}
+
+func (a *cstAnalyzer) limit(code string, fallback int) int {
+	if configured := a.limits[code]; configured > 0 {
+		return configured
+	}
+	return fallback
 }
 
 func parameterCount(parameters *cst.Parameters) int {

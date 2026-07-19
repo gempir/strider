@@ -3,11 +3,11 @@ title: excessive-blank-identifiers
 description: Detect assignments that discard too many results.
 sidebar:
   badge:
-    text: note
-    class: severity-indicator severity-note
+    text: warning
+    class: severity-indicator severity-warning
 ---
 
-**Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
+**Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
 Reports assignments containing three or more blank identifiers. Repeatedly
 discarding adjacent results hides a function's contract and can conceal an

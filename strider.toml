@@ -65,3 +65,106 @@ severity = "note"
 
 [checks.rules.unsecure-url-scheme]
 severity = "note"
+
+# Newly classified policies remain advisory for this repository's existing
+# code; their built-in defaults are still warning or error for other projects.
+[checks.rules.constant-negative-zero]
+severity = "note"
+[checks.rules.declaration-order]
+severity = "note"
+[checks.rules.deprecated-api-usage]
+severity = "note"
+[checks.rules.empty-block]
+severity = "note"
+[checks.rules.enforce-map-style]
+severity = "note"
+[checks.rules.enforce-repeated-arg-type-style]
+severity = "note"
+[checks.rules.enforce-slice-style]
+severity = "note"
+[checks.rules.enforce-switch-style]
+severity = "note"
+[checks.rules.error-naming]
+severity = "note"
+[checks.rules.error-return]
+severity = "note"
+[checks.rules.error-strings]
+severity = "note"
+[checks.rules.error-type-naming]
+severity = "note"
+[checks.rules.errorf]
+severity = "note"
+[checks.rules.excessive-blank-identifiers]
+severity = "note"
+[checks.rules.function-length]
+severity = "note"
+[checks.rules.if-return]
+severity = "note"
+[checks.rules.import-alias-naming]
+severity = "note"
+[checks.rules.indent-error-flow]
+severity = "note"
+[checks.rules.inline-error-declaration]
+severity = "note"
+[checks.rules.interface-method-limit]
+severity = "note"
+[checks.rules.max-parameters]
+severity = "note"
+[checks.rules.modifies-parameter]
+severity = "note"
+[checks.rules.multiline-if-init]
+severity = "note"
+[checks.rules.no-else-after-return]
+severity = "note"
+[checks.rules.no-naked-return]
+severity = "note"
+[checks.rules.no-package-var]
+severity = "note"
+[checks.rules.non-canonical-header]
+severity = "note"
+[checks.rules.package-directory-mismatch]
+severity = "note"
+[checks.rules.package-naming]
+severity = "note"
+[checks.rules.partially-typed-constant-group]
+severity = "note"
+[checks.rules.receiver-naming]
+severity = "note"
+[checks.rules.redundant-build-tag]
+severity = "note"
+[checks.rules.redundant-conversion]
+severity = "note"
+[checks.rules.redundant-import-alias]
+severity = "note"
+[checks.rules.simplify-range]
+severity = "note"
+[checks.rules.single-argument-append]
+severity = "note"
+[checks.rules.standard-http-method-constant]
+severity = "note"
+[checks.rules.time-date]
+severity = "note"
+[checks.rules.time-naming]
+severity = "note"
+[checks.rules.unexported-naming]
+severity = "note"
+[checks.rules.unnecessary-if]
+severity = "note"
+[checks.rules.unnecessary-stmt]
+severity = "note"
+[checks.rules.unused-parameter]
+severity = "note"
+[checks.rules.unused-receiver]
+severity = "note"
+[checks.rules.use-any]
+severity = "note"
+[checks.rules.use-errors-new]
+severity = "note"
+[checks.rules.use-fmt-print]
+severity = "note"
+[checks.rules.use-slices-sort]
+severity = "note"
+[checks.rules.use-waitgroup-go]
+severity = "note"
+[checks.rules.var-naming]
+severity = "note"

@@ -19,8 +19,9 @@ func (a *cstAnalyzer) checkConcreteFunctionRules(name cst.Token, signature *cst.
 		a.report("argument-limit", name, fmt.Sprintf("function has %d parameters; maximum is 8", parameterTotal))
 	}
 	resultTotal := concreteDeclCount(results)
-	if a.enabled["function-result-limit"] && resultTotal > 3 {
-		a.report("function-result-limit", name, fmt.Sprintf("function returns %d values; maximum is 3", resultTotal))
+	resultLimit := a.limit("function-result-limit", 3)
+	if a.enabled["function-result-limit"] && resultTotal > resultLimit {
+		a.report("function-result-limit", name, fmt.Sprintf("function returns %d values; maximum is %d", resultTotal, resultLimit))
 	}
 	if a.enabled["cognitive-complexity"] && facts.cognitiveComplexity > 7 {
 		a.report("cognitive-complexity", name, fmt.Sprintf("function has cognitive complexity %d; maximum is 7", facts.cognitiveComplexity))
@@ -49,8 +50,14 @@ func (a *cstAnalyzer) checkConcreteFunctionBody(name cst.Token, body cst.Node, r
 	if a.enabled["function-length"] {
 		start, end := cst.Range(body)
 		lines := a.tree.Position(end).Line - a.tree.Position(start).Line + 1
-		if facts.statements > 50 || lines > 75 {
-			a.report("function-length", name, fmt.Sprintf("function has %d statements and %d lines; maximum is 50 statements or 75 lines", facts.statements, lines))
+		statementLimit := a.limit("function-length-statements", 50)
+		lineLimit := a.limit("function-length-lines", 75)
+		if facts.statements > statementLimit || lines > lineLimit {
+			a.report(
+				"function-length",
+				name,
+				fmt.Sprintf("function has %d statements and %d lines; maximum is %d statements or %d lines", facts.statements, lines, statementLimit, lineLimit),
+			)
 		}
 	}
 	if resultTotal != 0 || !a.enabled["unnecessary-stmt"] {

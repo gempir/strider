@@ -3,11 +3,11 @@ title: ineffective-pointer-copy
 description: Detect pointer round trips that do not copy values.
 sidebar:
   badge:
-    text: warning
-    class: severity-indicator severity-warning
+    text: error
+    class: severity-indicator severity-error
 ---
 
-**Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
+**Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
 Go simplifies `&*pointer` to `pointer` and `*&value` to `value`. Neither form
 copies the underlying data, so code using one as a copy operation is

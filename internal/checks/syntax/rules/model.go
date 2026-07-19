@@ -46,5 +46,7 @@ type CSTInput struct {
 	Tree             *cst.Tree
 	Rules            []Rule
 	BannedCharacters []rune
+	Limits           map[string]int
+	BlockedImports   []string
 	Report           func(Finding)
 }

@@ -20,8 +20,9 @@ func (a *cstAnalyzer) checkConcreteTypeDefinition(definition *cst.TypeDef) {
 	a.checkConcreteExportedDeclaration(definition.IDENT, definition)
 	if _, ok := definition.TypeNode.(*cst.StructType); ok && token.IsExported(definition.IDENT.Src()) {
 		a.publicStructs++
-		if a.publicStructs > 5 {
-			a.report("max-public-structs", definition.IDENT, "file declares more than 5 exported structs")
+		limit := a.limit("max-public-structs", 5)
+		if a.publicStructs > limit {
+			a.report("max-public-structs", definition.IDENT, fmt.Sprintf("file declares more than %d exported structs", limit))
 		}
 	}
 }

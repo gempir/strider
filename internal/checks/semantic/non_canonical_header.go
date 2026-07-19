@@ -19,7 +19,7 @@ func (nonCanonicalHeaderRule) Meta() Meta {
 		Explanation:     "Direct reads from http.Header must use canonical constant keys. Header methods canonicalize their arguments, but direct map access does not.",
 		GoodExample:     `value := header["Content-Type"]`,
 		BadExample:      `value := header["content-type"]`,
-		DefaultSeverity: diagnostic.SeverityNote,
+		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
 

@@ -58,9 +58,18 @@ func compileCSTExecutionPlan(enabled map[string]bool) cstExecutionPlan {
 	functionStatements := enabled["function-length"]
 	functionFinal := enabled["unnecessary-stmt"]
 	return cstExecutionPlan{
-		filename:         any("filename-format", "package-directory-mismatch", "package-naming"),
-		comments:         any("bidirectional-control-character", "line-length-limit", "package-comments", "redundant-build-tag", "spaced-compiler-directive"),
-		imports:          any("blank-imports", "dot-imports", "duplicated-imports", "import-alias-naming", "import-shadowing", "redundant-import-alias", "struct-tag"),
+		filename: any("filename-format", "package-directory-mismatch", "package-naming"),
+		comments: any("bidirectional-control-character", "file-length-limit", "package-comments", "redundant-build-tag", "spaced-compiler-directive"),
+		imports: any(
+			"blank-imports",
+			"dot-imports",
+			"duplicated-imports",
+			"import-alias-naming",
+			"import-shadowing",
+			"imports-blocklist",
+			"redundant-import-alias",
+			"struct-tag",
+		),
 		repeatedLiterals: enabled["add-constant"],
 		functions: any(
 			"argument-limit",
@@ -79,7 +88,6 @@ func compileCSTExecutionPlan(enabled map[string]bool) cstExecutionPlan {
 			"modifies-parameter",
 			"modifies-value-receiver",
 			"receiver-naming",
-			"redundant-test-main-exit",
 			"time-naming",
 			"unexported-return",
 			"unnecessary-stmt",
@@ -102,7 +110,6 @@ func compileCSTExecutionPlan(enabled map[string]bool) cstExecutionPlan {
 			"indent-error-flow",
 			"inefficient-map-lookup",
 			"multiline-if-init",
-			"superfluous-else",
 			"unnecessary-if",
 		),
 		packageVars:          enabled["no-package-var"],
@@ -110,7 +117,7 @@ func compileCSTExecutionPlan(enabled map[string]bool) cstExecutionPlan {
 		unaryExpressions:     any("double-negation", "ineffective-pointer-copy"),
 		interfaces:           enabled["use-any"],
 		incrementAssignments: enabled["increment-decrement"],
-		assignmentPolicies:   any("atomic", "epoch-naming"),
+		assignmentPolicies:   any("atomic"),
 		identifiers:          identifiers,
 		calls: any(
 			"call-to-gc",
@@ -129,15 +136,15 @@ func compileCSTExecutionPlan(enabled map[string]bool) cstExecutionPlan {
 		structs:         enabled["nested-structs"],
 		fields:          enabled["struct-tag"],
 		stringLiterals:  enabled["unsecure-url-scheme"],
-		blocks:          any("empty-block", "empty-lines", "if-return", "unreachable-code", "use-waitgroup-go"),
-		loops:           any("datarace", "range", "range-val-address", "range-val-in-closure", "spinning-select-default"),
+		blocks:          any("empty-block", "if-return", "unreachable-code", "use-waitgroup-go"),
+		loops:           any("datarace", "simplify-range", "range-val-address", "range-val-in-closure", "spinning-select-default"),
 		controlNesting:  enabled["max-control-nesting"],
-		switches:        any("enforce-switch-style", "identical-switch-branches", "identical-switch-conditions", "unnecessary-stmt", "useless-fallthrough"),
+		switches:        any("enforce-switch-style", "identical-switch-branches", "identical-switch-conditions", "unnecessary-stmt"),
 		typeAssertions:  enabled["unchecked-type-assertion"],
 		varSpecs:        any("error-naming", "exported", "time-naming", "var-declaration"),
 		constSpecs:      enabled["exported"],
 		typeDefinitions: any("exported", "max-public-structs"),
-		breaks:          any("unnecessary-stmt", "useless-break"),
+		breaks:          any("unnecessary-stmt"),
 	}
 }
 

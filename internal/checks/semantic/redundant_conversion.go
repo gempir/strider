@@ -17,7 +17,7 @@ func (redundantConversionRule) Meta() Meta {
 		Explanation:     "A conversion whose source and target are exactly the same Go type cannot change the value or its method set. Removing it makes the intended type flow clearer without changing behavior.",
 		GoodExample:     "normalized := UserID(rawID)",
 		BadExample:      "normalized := UserID(existingUserID)",
-		DefaultSeverity: diagnostic.SeverityNote,
+		DefaultSeverity: diagnostic.SeverityWarning,
 	}
 }
 

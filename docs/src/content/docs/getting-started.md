@@ -3,6 +3,12 @@ title: Getting started
 description: Build Strider, check a project, and format Go source.
 ---
 
+Strider is intentionally strict out of the box: its defaults are designed to
+surface a broad range of correctness, maintainability, and style issues from
+the first run. If that policy is stricter than your project needs, see
+[Configuration](/configuration/) to tune the checks and adopt Strider at your
+own pace.
+
 ## Download
 
 Download and unpack the latest nightly binary for your Linux or macOS machine:

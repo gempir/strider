@@ -4,6 +4,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -27,8 +28,34 @@ func main() {
 	docsDirectory := docsDirectory()
 	generateSyntaxPages(docsDirectory)
 	registry := synchronizeCheckPages(docsDirectory)
+	generateCatalogStats(docsDirectory, registry)
 	validateCheckPages(docsDirectory, registry)
 	validateBehaviorConfiguration(docsDirectory, registry)
+}
+
+func generateCatalogStats(docsDirectory string, registry *checks.Registry) {
+	stats := struct {
+		Checks int `json:"checks"`
+	}{Checks: len(registry.Rules())}
+	contents, err := json.MarshalIndent(stats, "", "  ")
+	if err != nil {
+		fatal(err)
+	}
+	contents = append(contents, '\n')
+	path := filepath.Join(docsDirectory, "..", "..", "generated", "catalog.json")
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		fatal(err)
+	}
+	current, err := os.ReadFile(path)
+	if err == nil && string(current) == string(contents) {
+		return
+	}
+	if err != nil && !os.IsNotExist(err) {
+		fatal(err)
+	}
+	if err := os.WriteFile(path, contents, 0o644); err != nil {
+		fatal(err)
+	}
 }
 
 func generateSyntaxPages(docsDirectory string) {

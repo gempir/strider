@@ -87,14 +87,15 @@ type operationResult struct {
 }
 
 type options struct {
-	mode            string
-	strider         string
-	manifestPath    string
-	baselinePath    string
-	cachePath       string
-	jsonPath        string
-	htmlPath        string
-	projectHTMLPath string
+	mode              string
+	strider           string
+	manifestPath      string
+	baselinePath      string
+	cachePath         string
+	jsonPath          string
+	htmlPath          string
+	projectHTMLPath   string
+	homepageStatsPath string
 }
 
 func main() {
@@ -115,6 +116,7 @@ func parseFlags() options {
 	flag.StringVar(&result.jsonPath, "json", "target/corpus/report.json", "JSON report output")
 	flag.StringVar(&result.htmlPath, "html", "target/corpus/index.html", "HTML report output")
 	flag.StringVar(&result.projectHTMLPath, "project-html", "", "project HTML report directory (defaults beside --html)")
+	flag.StringVar(&result.homepageStatsPath, "homepage-stats", "", "homepage benchmark stats JSON output")
 	flag.Parse()
 	return result
 }
@@ -199,7 +201,41 @@ func run(options options) error {
 	if !results.Passed {
 		return errors.New("behavior or performance regression detected; inspect the report above")
 	}
+	if options.homepageStatsPath != "" {
+		if err := writeHomepageStats(options.homepageStatsPath, results, "kubernetes"); err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+type homepageStats struct {
+	Project  string `json:"project"`
+	Revision string `json:"revision"`
+	FormatMS int64  `json:"format_ms"`
+	CheckMS  int64  `json:"check_ms"`
+}
+
+func writeHomepageStats(path string, results report, projectName string) error {
+	for _, project := range results.Projects {
+		if project.Name != projectName {
+			continue
+		}
+		stats := homepageStats{Project: project.Name, Revision: project.Revision}
+		for _, operation := range project.Operations {
+			switch operation.Name {
+			case "format":
+				stats.FormatMS = operation.DurationMS
+			case "check":
+				stats.CheckMS = operation.DurationMS
+			}
+		}
+		if stats.FormatMS <= 0 || stats.CheckMS <= 0 {
+			return fmt.Errorf("%s is missing positive format or check timings", projectName)
+		}
+		return writeJSON(path, stats)
+	}
+	return fmt.Errorf("project %s is missing from corpus results", projectName)
 }
 
 func readManifest(path string) (manifest, error) {

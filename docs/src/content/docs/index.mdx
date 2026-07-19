@@ -7,7 +7,7 @@ head:
     content: 'body { overflow-x: hidden; }'
 hero:
   title: Strider
-  tagline: The ranger for your Go code. One fast, self-contained binary that formats source and hunts down 227 kinds of trouble — before they reach review.
+  tagline: The ranger for your Go code. One fast, self-contained binary that formats source and hunts down trouble — before it reaches review.
   image:
     file: ../../assets/strider.png
     alt: Strider, the gopher ranger
@@ -16,12 +16,19 @@ hero:
       link: /getting-started/
       icon: right-arrow
       variant: primary
-    - text: Browse all 227 checks
+    - text: Browse every check
       link: /checks/
       variant: minimal
 ---
 
 import Terminal from '../../components/Terminal.astro';
+import catalog from '../../generated/catalog.json';
+import kubernetesBenchmark from '../../generated/kubernetes-benchmark.json';
+
+export const kubernetesFormat = kubernetesBenchmark.format_ms.toLocaleString('en-US');
+export const kubernetesCheck = kubernetesBenchmark.check_ms.toLocaleString('en-US');
+export const benchmarkProject = kubernetesBenchmark.project.charAt(0).toUpperCase()
+  + kubernetesBenchmark.project.slice(1);
 
 export const checkDemo = `<span class="t-dim">$</span> <span class="t-cmd">strider check ./...</span>
 <span class="t-warn">no-defer-in-loop</span>: <strong>avoid defer inside loops</strong>
@@ -45,10 +52,10 @@ export const checkDemo = `<span class="t-dim">$</span> <span class="t-cmd">strid
 <div class="land">
 
 <div class="land-stats">
-  <div class="land-stat"><strong>227</strong><span>checks in one catalog</span></div>
   <div class="land-stat"><strong>1</strong><span>static binary, zero deps</span></div>
-  <div class="land-stat"><strong><em>458</em> ms</strong><span>to format Kubernetes</span></div>
-  <div class="land-stat"><strong><em>5.7</em> s</strong><span>to check Kubernetes</span></div>
+  <div class="land-stat"><strong>{catalog.checks}</strong><span>checks</span></div>
+  <div class="land-stat"><strong><em>{kubernetesFormat}</em> ms</strong><span>to format {benchmarkProject}</span></div>
+  <div class="land-stat"><strong><em>{kubernetesCheck}</em> ms</strong><span>to check {benchmarkProject}</span></div>
 </div>
 
 <h2 class="land-heading"><span class="land-kicker">One command</span>Diagnostics with the code that caused them</h2>

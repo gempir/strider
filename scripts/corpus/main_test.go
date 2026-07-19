@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"os"
 	"strings"
 	"testing"
@@ -77,5 +78,28 @@ func TestManifestRequiresElevenPinnedProjectsAndBudgets(t *testing.T) {
 	}
 	if _, err := readManifest(path); err != nil {
 		t.Fatalf("valid manifest rejected: %v", err)
+	}
+}
+
+func TestWriteHomepageStatsExportsMeasuredDurations(t *testing.T) {
+	path := t.TempDir() + "/homepage.json"
+	results := report{
+		Projects: []projectResult{
+			{Name: "kubernetes", Revision: strings.Repeat("a", 40), Operations: []operationResult{{Name: "format", DurationMS: 458}, {Name: "check", DurationMS: 5700}}},
+		},
+	}
+	if err := writeHomepageStats(path, results, "kubernetes"); err != nil {
+		t.Fatal(err)
+	}
+	contents, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var stats homepageStats
+	if err := json.Unmarshal(contents, &stats); err != nil {
+		t.Fatal(err)
+	}
+	if stats.Project != "kubernetes" || stats.FormatMS != 458 || stats.CheckMS != 5700 {
+		t.Fatalf("unexpected homepage stats: %+v", stats)
 	}
 }

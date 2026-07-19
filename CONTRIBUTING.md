@@ -34,13 +34,14 @@ accept the new behavior and refresh the docs reports with:
 
 ```sh
 make corpus-update
-git diff -- benchmarks/baseline.json docs/public/benchmark-report/
+git diff -- benchmarks/baseline.json docs/public/benchmark-report/ docs/src/generated/kubernetes-benchmark.json
 ```
 
 This also regenerates one detailed report per project under
 `docs/public/benchmark-report/projects/`. Each report combines operation timings
 with lint and analysis diagnostics and source context resolved from the pinned
-checkout. Keep the matching Starlight project page under
+checkout. The same run exports Kubernetes format and check timings for the
+homepage. Keep the matching Starlight project page under
 `docs/src/content/docs/benchmarks/` when changing the corpus manifest.
 
 Do not accept a baseline just to make CI green. Unexpected changes often reveal

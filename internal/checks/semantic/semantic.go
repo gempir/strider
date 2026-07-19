@@ -253,7 +253,7 @@ func runAnalysisTask(task analysisTask, registry *Registry, fileInfoFor func(str
 	pass := *task.pass
 	pass.maxMethods = registry.settings[meta.Code].config.MaxMethods
 	findings := []analysisFinding{}
-	pass.report = func(node ast.Node, message string) {
+	pass.report = func(node ast.Node, message string, fixes []diagnostic.Fix) {
 		position := pass.FileSet.Position(node.Pos())
 		info := fileInfoFor(position.Filename)
 		if !info.eligible || registry.Excluded(meta.Code, info.filename) {
@@ -266,7 +266,7 @@ func runAnalysisTask(task analysisTask, registry *Registry, fileInfoFor func(str
 			findings,
 			analysisFinding{
 				key:        fmt.Sprintf("%s:%d:%d:%s:%s", info.filename, position.Offset, end.Offset, meta.Code, message),
-				diagnostic: diagnostic.Diagnostic{Code: meta.Code, Message: message, Severity: severity, File: info.display, Start: position, End: end},
+				diagnostic: diagnostic.Diagnostic{Code: meta.Code, Message: message, Severity: severity, File: info.display, Start: position, End: end, Fixes: fixes},
 			},
 		)
 	}

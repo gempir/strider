@@ -61,8 +61,10 @@ export const checkDemo = `<span class="t-dim">$</span> <span class="t-cmd">strid
 <h2 class="land-heading"><span class="land-kicker">One command</span>Diagnostics with the code that caused them</h2>
 
 `strider check` folds formatting drift, style policy, and package-aware
-correctness analysis into a single read-only diagnostic pass. No plugin zoo, no
-tool matrix — files are parsed once and shared across every selected check.
+correctness analysis into a single diagnostic pass. It is read-only by default,
+with explicit safe and unsafe fix modes when source should be updated. No plugin
+zoo, no tool matrix — files are parsed once and shared across every selected
+check.
 
 <Terminal html={checkDemo} />
 

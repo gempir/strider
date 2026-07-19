@@ -200,7 +200,7 @@ func formatDiagnostic(filename string, severity diagnostic.Severity) diagnostic.
 		File:     display,
 		Start:    position,
 		End:      position,
-		Fixes:    []diagnostic.Fix{{Message: fmt.Sprintf("run `strider fmt %s`", display), Safety: diagnostic.Safe}},
+		Fixes:    []diagnostic.Fix{{Message: fmt.Sprintf("run `strider fmt %s`", display), Safety: diagnostic.Safe, Automatic: true}},
 	}
 }
 

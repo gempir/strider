@@ -56,6 +56,17 @@ const (
 	Unsafe            Safety = "unsafe"
 )
 
+// ValidSafety reports whether safety is one of Strider's supported automatic
+// fix levels.
+func ValidSafety(safety Safety) bool {
+	switch safety {
+	case Safe, PotentiallyUnsafe, Unsafe:
+		return true
+	default:
+		return false
+	}
+}
+
 type Note struct {
 	Message string         `json:"message"`
 	Start   token.Position `json:"start"`
@@ -65,13 +76,15 @@ type Note struct {
 type TextEdit struct {
 	Start   int    `json:"start"`
 	End     int    `json:"end"`
+	OldText string `json:"old_text,omitempty"`
 	NewText string `json:"new_text"`
 }
 
 type Fix struct {
-	Message string     `json:"message"`
-	Safety  Safety     `json:"safety"`
-	Edits   []TextEdit `json:"edits,omitempty"`
+	Message   string     `json:"message"`
+	Safety    Safety     `json:"safety"`
+	Automatic bool       `json:"automatic,omitempty"`
+	Edits     []TextEdit `json:"edits,omitempty"`
 }
 
 type Diagnostic struct {

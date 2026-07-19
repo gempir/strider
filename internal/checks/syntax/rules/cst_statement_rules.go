@@ -1,6 +1,9 @@
 package rules
 
-import "github.com/gempir/strider/internal/cst"
+import (
+	"github.com/gempir/strider/internal/cst"
+	"github.com/gempir/strider/internal/diagnostic"
+)
 
 func (a *cstAnalyzer) checkConcreteIfReturn(current, next cst.Node) {
 	statement, ok := current.(*cst.IfStmt)
@@ -50,7 +53,18 @@ func (a *cstAnalyzer) checkConcreteBreak(statement *cst.BreakStmt) {
 		}
 		statements := concreteStatementsFromList(list)
 		if len(statements) != 0 && statements[len(statements)-1] == statement {
-			a.report("redundant-switch-break", statement, "omit unnecessary break at the end of a case clause")
+			start, end := cst.Range(statement)
+			a.reportFix(
+				"redundant-switch-break",
+				statement,
+				"omit unnecessary break at the end of a case clause",
+				diagnostic.Fix{
+					Message:   "remove the redundant break",
+					Safety:    diagnostic.Safe,
+					Automatic: true,
+					Edits:     []diagnostic.TextEdit{{Start: start, End: end, OldText: "break"}},
+				},
+			)
 		}
 		return
 	}

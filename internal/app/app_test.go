@@ -346,6 +346,188 @@ func TestCheckCombinesFormattingSyntaxAndPackageChecks(t *testing.T) {
 	}
 }
 
+func TestCheckFixFormatsAndReruns(t *testing.T) {
+	for _, flag := range []string{"--fix", "--fix-unsafe"} {
+		t.Run(
+			flag,
+			func(t *testing.T) {
+				_,
+					filename := checkFixModule(t, "package sample\nfunc Ready( )bool{return true}\n")
+				var stdout,
+					stderr bytes.Buffer
+				code := Run(
+					[]string{"--no-config", "check", "--minimum-severity", "note", "--only", "format", flag, filename},
+					strings.NewReader(""),
+					&stdout,
+					&stderr,
+				)
+				if code != exitSuccess || stdout.String() != "found 0 issues\n" || stderr.Len() != 0 {
+					t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+				}
+				contents,
+					err := os.ReadFile(filename)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if string(contents) != "package sample\n\nfunc Ready() bool {\n\treturn true\n}\n" {
+					t.Fatalf("fixed source:\n%s", contents)
+				}
+			},
+		)
+	}
+}
+
+func TestCheckFixKeepsStructuredReportOnStandardOutput(t *testing.T) {
+	_, filename := checkFixModule(t, "package sample\nfunc Ready( )bool{return true}\n")
+	var stdout, stderr bytes.Buffer
+	code := Run(
+		[]string{"--no-config", "check", "--format", "json", "--minimum-severity", "note", "--only", "format", "--fix", filename},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitSuccess || stdout.String() != "[]\n" || stderr.Len() != 0 {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+}
+
+func TestCheckFixAppliesConservativeSyntaxAndSemanticFixes(t *testing.T) {
+	_, filename := checkFixModule(
+		t,
+		`package sample
+
+func clean(ready bool, values []int, mode int) ([]int, bool) {
+	switch mode {
+	case 1:
+		break
+	}
+	return append(values), !!ready
+}
+`,
+	)
+	var stdout, stderr bytes.Buffer
+	code := Run(
+		[]string{"--no-config", "check", "--only", "double-negation,redundant-switch-break,single-argument-append", "--fix", filename},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitSuccess || stdout.String() != "found 0 issues\n" || stderr.Len() != 0 {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	contents, err := os.ReadFile(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, removed := range []string{"append", "!ready", "break"} {
+		if bytes.Contains(contents, []byte(removed)) {
+			t.Fatalf("fixed source still contains %q:\n%s", removed, contents)
+		}
+	}
+}
+
+func TestCheckFixReportsUnfixableFindingsAfterRerun(t *testing.T) {
+	_, filename := checkFixModule(t, "package sample\nfunc init( ){return}\n")
+	var stdout, stderr bytes.Buffer
+	code := Run([]string{"--no-config", "check", "--minimum-severity", "note", "--only", "format,no-init", "--fix", filename}, strings.NewReader(""), &stdout, &stderr)
+	if code != exitFindings || !strings.Contains(stdout.String(), "no-init:") || strings.Contains(stdout.String(), "format:") || stderr.Len() != 0 {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	contents, err := os.ReadFile(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(contents) != "package sample\n\nfunc init() {\n\treturn\n}\n" {
+		t.Fatalf("source was not formatted:\n%s", contents)
+	}
+}
+
+func TestCheckFixHonorsFormatterExclusionsForGranularEdits(t *testing.T) {
+	root, filename := checkFixModule(t, "package sample\nfunc ready(value bool)bool{return !!value}\n")
+	configurationPath := filepath.Join(root, "strider.toml")
+	if err := os.WriteFile(configurationPath, []byte("version = 1\n[formatter]\nexcludes = [\"sample.go\"]\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	code := Run([]string{"--config", configurationPath, "check", "--only", "double-negation", "--fix", filename}, strings.NewReader(""), &stdout, &stderr)
+	if code != exitSuccess || stdout.String() != "found 0 issues\n" || stderr.Len() != 0 {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	contents, err := os.ReadFile(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(contents) != "package sample\nfunc ready(value bool)bool{return value}\n" {
+		t.Fatalf("formatter-excluded source was reformatted:\n%s", contents)
+	}
+}
+
+func TestCheckFixDoesNotApplyBaselinedFinding(t *testing.T) {
+	root, filename := checkFixModule(t, "package sample\n\nfunc ready(value bool) bool { return !!value }\n")
+	baselinePath := filepath.Join(root, "baseline.toml")
+	baseArgs := []string{"--no-config", "check", "--only", "double-negation", "--baseline", baselinePath}
+	var stdout, stderr bytes.Buffer
+	generate := append(append([]string(nil), baseArgs...), "--generate-baseline", filename)
+	if code := Run(generate, strings.NewReader(""), &stdout, &stderr); code != exitSuccess || stdout.Len() != 0 || stderr.Len() != 0 {
+		t.Fatalf("generate: exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	before, err := os.ReadFile(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stdout.Reset()
+	stderr.Reset()
+	apply := append(append([]string(nil), baseArgs...), "--fix", filename)
+	if code := Run(apply, strings.NewReader(""), &stdout, &stderr); code != exitSuccess || stdout.String() != "found 0 issues\n" || stderr.Len() != 0 {
+		t.Fatalf("fix: exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	after, err := os.ReadFile(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(before, after) {
+		t.Fatalf("baselined finding was fixed:\nbefore:\n%s\nafter:\n%s", before, after)
+	}
+}
+
+func TestCheckFixRejectsIncompatibleModes(t *testing.T) {
+	for name, test := range map[string]struct {
+		args []string
+		want string
+	}{
+		"both fix levels": {args: []string{"--fix", "--fix-unsafe"}, want: "mutually exclusive"},
+		"watch":           {args: []string{"--fix", "--watch"}, want: "cannot be combined with --watch"},
+		"generate":        {args: []string{"--fix", "--generate-baseline"}, want: "cannot update a baseline"},
+		"prune":           {args: []string{"--fix-unsafe", "--remove-outdated-baseline-entries"}, want: "cannot update a baseline"},
+	} {
+		t.Run(
+			name,
+			func(t *testing.T) {
+				args := append([]string{"--no-config", "check"}, test.args...)
+				var stdout,
+					stderr bytes.Buffer
+				code := Run(args, strings.NewReader(""), &stdout, &stderr)
+				if code != exitError || stdout.Len() != 0 || !strings.Contains(stderr.String(), test.want) {
+					t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+				}
+			},
+		)
+	}
+}
+
+func checkFixModule(t *testing.T, source string) (string, string) {
+	t.Helper()
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/checkfix\n\ngo 1.26\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	filename := filepath.Join(root, "sample.go")
+	if err := os.WriteFile(filename, []byte(source), 0o640); err != nil {
+		t.Fatal(err)
+	}
+	return root, filename
+}
+
 func TestCheckListsOneUnifiedCatalog(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run([]string{"--no-config", "check", "--minimum-severity", "note", "--list-checks"}, strings.NewReader(""), &stdout, &stderr)

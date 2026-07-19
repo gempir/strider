@@ -1,11 +1,13 @@
 package rules
 
 import (
+	"bytes"
 	"go/constant"
 	"go/token"
 	"strings"
 
 	"github.com/gempir/strider/internal/cst"
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
 func (a *cstAnalyzer) checkBinaryExpression(binary *cst.BinaryExpression) {
@@ -113,12 +115,64 @@ func (a *cstAnalyzer) checkUnaryExpression(expression *cst.UnaryExpr) {
 	}
 	switch {
 	case expression.Op.Ch() == token.NOT && inner.Op.Ch() == token.NOT:
-		a.report("double-negation", expression, "double boolean negation has no effect and should be removed")
+		message := "double boolean negation has no effect and should be removed"
+		outerStart := expression.Op.Position().Offset
+		outerEnd := outerStart + len(expression.Op.Src())
+		innerStart := inner.Op.Position().Offset
+		innerEnd := innerStart + len(inner.Op.Src())
+		operandStart, _ := cst.Range(inner.UnaryExpr)
+		unsafeTrivia := automaticFixWouldJoinToken(a.content, outerStart) || unsafeAutomaticFixTrivia(a.content, outerEnd, innerStart) || unsafeAutomaticFixTrivia(
+			a.content,
+			innerEnd,
+			operandStart,
+		)
+		if a.hasNegatingParent(expression) || unsafeTrivia {
+			a.report("double-negation", expression, message)
+			return
+		}
+		a.reportFix(
+			"double-negation",
+			expression,
+			message,
+			diagnostic.Fix{
+				Message:   "remove the double negation",
+				Safety:    diagnostic.Safe,
+				Automatic: true,
+				Edits: []diagnostic.TextEdit{
+					{Start: expression.Op.Position().Offset, End: expression.Op.Position().Offset + len(expression.Op.Src()), OldText: expression.Op.Src()},
+					{Start: inner.Op.Position().Offset, End:      inner.Op.Position().Offset + len(inner.Op.Src()), OldText:           inner.Op.Src()},
+				},
+			},
+		)
 	case expression.Op.Ch() == token.AND && inner.Op.Ch() == token.MUL && !cgoPointerIdentifier.MatchString(cst.Spelling(inner.UnaryExpr)):
 		a.report("ineffective-pointer-copy", expression, "&*value simplifies to value and does not copy the pointed-to data")
 	case expression.Op.Ch() == token.MUL && inner.Op.Ch() == token.AND:
 		a.report("ineffective-pointer-copy", expression, "*&value simplifies to value and does not make a copy")
 	}
+}
+
+func automaticFixWouldJoinToken(content []byte, offset int) bool {
+	if offset <= 0 || offset > len(content) {
+		return false
+	}
+	previous := content[offset-1]
+	return previous == '_' || previous >= 0x80 || previous >= 'a' && previous <= 'z' || previous >= 'A' && previous <= 'Z' || previous >= '0' && previous <= '9'
+}
+
+func unsafeAutomaticFixTrivia(content []byte, start, end int) bool {
+	if start < 0 || end < start || end > len(content) {
+		return true
+	}
+	trivia := content[start:end]
+	return bytes.ContainsAny(trivia, "\r\n") || bytes.Contains(trivia, []byte("//")) || bytes.Contains(trivia, []byte("/*"))
+}
+
+func (a *cstAnalyzer) hasNegatingParent(expression *cst.UnaryExpr) bool {
+	if len(a.ancestors) == 0 {
+		return false
+	}
+	parent, ok := a.ancestors[len(a.ancestors)-1].(*cst.UnaryExpr)
+	return ok && parent.Op.Ch() == token.NOT && parent.UnaryExpr == expression
 }
 
 func (a *cstAnalyzer) checkInterfaceType(iface *cst.InterfaceType) {

@@ -13,6 +13,7 @@ import (
 	checkengine "github.com/gempir/strider/internal/checks"
 	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/diagnostic"
+	fixengine "github.com/gempir/strider/internal/fix"
 	"github.com/gempir/strider/internal/formatter"
 	"github.com/gempir/strider/internal/ui"
 	"github.com/gempir/strider/internal/workspace"
@@ -33,6 +34,8 @@ func runCheck(args []string, configuration config.Config, colorMode ui.ColorMode
 		"generate-baseline":                "g",
 		"remove-outdated-baseline-entries": "r",
 		"only":                             "o",
+		"fix":                              "x",
+		"fix-unsafe":                       "u",
 		"help":                             "h",
 	}
 	reportFormat := stringOption(flags, "format", "f", "text", "report format: text, json, or html")
@@ -45,6 +48,8 @@ func runCheck(args []string, configuration config.Config, colorMode ui.ColorMode
 	baselinePath := stringOption(flags, "baseline", "b", "", "path to the check baseline")
 	generateBaseline := boolOption(flags, "generate-baseline", "g", false, "replace the baseline with all current findings")
 	removeOutdated := boolOption(flags, "remove-outdated-baseline-entries", "r", false, "remove baseline entries that no longer match")
+	fixSafe := boolOption(flags, "fix", "x", false, "apply safe automatic fixes")
+	fixUnsafe := boolOption(flags, "fix-unsafe", "u", false, "apply all automatic fixes, including unsafe fixes")
 	var only stringList
 	varOption(flags, &only, "only", "o", "run only these check codes (repeatable or comma-separated)")
 	flags.Usage = func() {
@@ -65,6 +70,19 @@ func runCheck(args []string, configuration config.Config, colorMode ui.ColorMode
 	}
 	if *summaryOnly && *reportFormat != "text" {
 		printCommandError(stderr, colorMode, "strider check", "--summary-only requires text report format")
+		return exitError
+	}
+	if *fixSafe && *fixUnsafe {
+		printCommandError(stderr, colorMode, "strider check", "--fix and --fix-unsafe are mutually exclusive")
+		return exitError
+	}
+	fixMode := *fixSafe || *fixUnsafe
+	if fixMode && *watch {
+		printCommandError(stderr, colorMode, "strider check", "fix mode cannot be combined with --watch")
+		return exitError
+	}
+	if fixMode && (*generateBaseline || *removeOutdated) {
+		printCommandError(stderr, colorMode, "strider check", "fix mode cannot update a baseline")
 		return exitError
 	}
 	if *watch && (*generateBaseline || *removeOutdated) {
@@ -112,7 +130,12 @@ func runCheck(args []string, configuration config.Config, colorMode ui.ColorMode
 	}
 	baselineConfig.knownCodes = registry.KnownCodes()
 	workspaceOptions := workspace.Options{SkipGenerated: true, Root: configuration.Root, Excludes: checkConfig.Excludes}
-	runOptions := checkengine.RunOptions{Formatter: formatter.Options{PrintWidth: configuration.Formatter.PrintWidth}, Root: configuration.Root, Excludes: checkConfig.Excludes}
+	runOptions := checkengine.RunOptions{
+		Formatter:         formatter.Options{PrintWidth: configuration.Formatter.PrintWidth},
+		Root:              configuration.Root,
+		Excludes:          checkConfig.Excludes,
+		CollectCandidates: fixMode,
+	}
 	if *watch {
 		if err := runCheckWatch(flags.Args(), workspaceOptions, registry, runOptions, baselineConfig, *summaryOnly, colorMode, stdout, stderr); err != nil {
 			printCommandError(stderr, colorMode, "strider check", "%v", err)
@@ -125,18 +148,83 @@ func runCheck(args []string, configuration config.Config, colorMode ui.ColorMode
 		printCommandError(stderr, colorMode, "strider check", "%v", err)
 		return exitError
 	}
+	var snapshot fixengine.Snapshot
+	if fixMode {
+		snapshot, err = fixengine.Capture(shared)
+		if err != nil {
+			printCommandError(stderr, colorMode, "strider check", "%v", err)
+			return exitError
+		}
+	}
 	result, err := checkengine.Run(shared, registry, runOptions)
 	if err != nil {
 		printCommandError(stderr, colorMode, "strider check", "%v", err)
 		return exitError
 	}
-	diagnostics, handled, err := prepareCheckDiagnostics(result.Diagnostics, baselineConfig, colorMode, stderr)
+	baselineWriter := stderr
+	if fixMode {
+		baselineWriter = io.Discard
+	}
+	diagnostics, handled, err := prepareCheckDiagnostics(result.Diagnostics, baselineConfig, colorMode, baselineWriter)
 	if err != nil {
 		printCommandError(stderr, colorMode, "strider check", "%v", err)
 		return exitError
 	}
 	if handled {
 		return exitSuccess
+	}
+	if fixMode {
+		mode := fixengine.SafeOnly
+		if *fixUnsafe {
+			mode = fixengine.IncludeUnsafe
+		}
+		formatRule := configuration.EffectiveCheckRule("format")
+		formatExcludes := append(append([]string(nil), configuration.Formatter.Excludes...), formatRule.Excludes...)
+		fixed, fixErr := fixengine.Plan(
+			snapshot,
+			diagnostics,
+			result.Candidates,
+			fixengine.Options{Mode: mode, Formatter: runOptions.Formatter, Root: configuration.Root, FormatExcludes: formatExcludes},
+		)
+		if fixErr != nil {
+			printCommandError(stderr, colorMode, "strider check", "%v", fixErr)
+			return exitError
+		}
+		palette := ui.NewPalette(stderr, colorMode)
+		for _, skipped := range fixed.Skipped {
+			fmt.Fprintf(
+				stderr,
+				"%s skipped %s in %s: %s\n",
+				palette.Warning("strider check:"),
+				palette.Code(skipped.Code),
+				palette.Path(skipped.File),
+				skipped.Reason,
+			)
+		}
+		if fixErr = fixengine.Apply(fixed); fixErr != nil {
+			printCommandError(stderr, colorMode, "strider check", "%v", fixErr)
+			return exitError
+		}
+
+		shared, err = workspace.Open(flags.Args(), workspaceOptions)
+		if err != nil {
+			printCommandError(stderr, colorMode, "strider check", "%v", err)
+			return exitError
+		}
+		runOptions.CollectCandidates = false
+		result, err = checkengine.Run(shared, registry, runOptions)
+		if err != nil {
+			printCommandError(stderr, colorMode, "strider check", "%v", err)
+			return exitError
+		}
+		diagnostics, handled, err = prepareCheckDiagnostics(result.Diagnostics, baselineConfig, colorMode, stderr)
+		if err != nil {
+			printCommandError(stderr, colorMode, "strider check", "%v", err)
+			return exitError
+		}
+		if handled {
+			return exitSuccess
+		}
 	}
 	err = reportCheckDiagnostics(stdout, diagnostics, *reportFormat, *summaryOnly, colorMode)
 	if err != nil {

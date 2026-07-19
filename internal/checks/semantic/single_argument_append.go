@@ -2,6 +2,7 @@ package semantic
 
 import (
 	"go/ast"
+	"go/token"
 	"go/types"
 
 	"github.com/gempir/strider/internal/diagnostic"
@@ -40,9 +41,34 @@ func (singleArgumentAppendRule) Run(pass *Pass) {
 				if !ok || builtin.Name() != "append" {
 					return true
 				}
-				pass.Report(call, "append with no elements returns the original slice unchanged")
+				message := "append with no elements returns the original slice unchanged"
+				if hasCommentBetween(file.Comments, identifier.End(), call.Lparen) {
+					pass.Report(call, message)
+					return true
+				}
+				start := pass.FileSet.Position(identifier.Pos()).Offset
+				end := pass.FileSet.Position(identifier.End()).Offset
+				pass.ReportFix(
+					call,
+					message,
+					diagnostic.Fix{
+						Message:   "replace append with its slice argument",
+						Safety:    diagnostic.Safe,
+						Automatic: true,
+						Edits:     []diagnostic.TextEdit{{Start: start, End: end, OldText: identifier.Name}},
+					},
+				)
 				return true
 			},
 		)
 	}
+}
+
+func hasCommentBetween(groups []*ast.CommentGroup, start, end token.Pos) bool {
+	for _, group := range groups {
+		if group.Pos() >= start && group.End() <= end {
+			return true
+		}
+	}
+	return false
 }

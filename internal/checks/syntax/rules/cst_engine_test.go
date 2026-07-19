@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"bytes"
 	"fmt"
 	"go/token"
 	"reflect"
@@ -9,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/gempir/strider/internal/cst"
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
 func benchmarkCSTTree(tb testing.TB) *cst.Tree {
@@ -228,6 +230,118 @@ func (value *item) UnmarshalJSON([]byte) error { return nil }
 				}
 			},
 		)
+	}
+}
+
+func TestDoubleNegationOnlyOffersOutermostAutomaticFix(t *testing.T) {
+	source := []byte("package sample\n\nfunc ready(value bool) bool { return !!!!value }\n")
+	tree, err := cst.Parse("sample.go", source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rules, err := Select([]string{"double-negation"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	findings := analyzeCSTFindings("sample.go", tree, rules)
+	if len(findings) != 3 {
+		t.Fatalf("got %d findings, want 3: %#v", len(findings), findings)
+	}
+	automatic := 0
+	var edits []diagnostic.TextEdit
+	for _, finding := range findings {
+		for _, fix := range finding.Fixes {
+			if fix.Automatic {
+				automatic++
+				edits = fix.Edits
+			}
+		}
+	}
+	if automatic != 1 || len(edits) != 2 {
+		t.Fatalf("automatic fixes = %d, edits = %#v", automatic, edits)
+	}
+	for index := len(edits) - 1; index >= 0; index-- {
+		edit := edits[index]
+		source = append(source[:edit.Start], source[edit.End:]...)
+	}
+	if !bytes.Contains(source, []byte("return !!value")) {
+		t.Fatalf("outermost fix produced:\n%s", source)
+	}
+}
+
+func TestDoubleNegationDoesNotOfferMultilineAutomaticFix(t *testing.T) {
+	source := []byte("package sample\n\nfunc ready(value bool) bool { return ! // keep\n !value }\n")
+	tree, err := cst.Parse("sample.go", source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rules, err := Select([]string{"double-negation"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	findings := analyzeCSTFindings("sample.go", tree, rules)
+	if len(findings) != 1 {
+		t.Fatalf("got %d findings, want 1: %#v", len(findings), findings)
+	}
+	if len(findings[0].Fixes) != 0 {
+		t.Fatalf("multiline finding offered fixes: %#v", findings[0].Fixes)
+	}
+}
+
+func TestDoubleNegationDoesNotOfferFixAcrossOperandNewline(t *testing.T) {
+	source := []byte("package sample\n\nfunc ready(value bool) bool { return !!\n value }\n")
+	tree, err := cst.Parse("sample.go", source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rules, err := Select([]string{"double-negation"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	findings := analyzeCSTFindings("sample.go", tree, rules)
+	if len(findings) != 1 || len(findings[0].Fixes) != 0 {
+		t.Fatalf("multiline operand findings = %#v", findings)
+	}
+}
+
+func TestDoubleNegationDoesNotOfferFixThatJoinsReturnAndOperand(t *testing.T) {
+	source := []byte(`package sample
+
+func truth() bool { return false }
+func returntruth() {}
+
+func ready() bool {
+	return!!truth()
+	return true
+}
+`)
+	tree, err := cst.Parse("sample.go", source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rules, err := Select([]string{"double-negation"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	findings := analyzeCSTFindings("sample.go", tree, rules)
+	if len(findings) != 1 || len(findings[0].Fixes) != 0 {
+		t.Fatalf("joining-token findings = %#v", findings)
+	}
+}
+
+func TestDoubleNegationDoesNotOfferCommentedAutomaticFix(t *testing.T) {
+	source := []byte("package sample\n\nfunc ready(value bool) bool { return ! /* keep */ !value }\n")
+	tree, err := cst.Parse("sample.go", source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rules, err := Select([]string{"double-negation"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	findings := analyzeCSTFindings("sample.go", tree, rules)
+	if len(findings) != 1 || len(findings[0].Fixes) != 0 {
+		t.Fatalf("commented findings = %#v", findings)
 	}
 }
 

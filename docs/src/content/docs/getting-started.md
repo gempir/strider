@@ -89,7 +89,20 @@ Include all note, warning, and error checks with:
 strider check --minimum-severity note ./...
 ```
 
-`check` is read-only. If the `format` check reports a file, format it with:
+`check` is read-only by default. Apply the initial safe automatic fixes for
+formatting, double negation, redundant switch breaks, and single-argument
+`append` calls with:
+
+```sh
+strider check --fix ./...
+```
+
+Use `--fix-unsafe` only when you also want fixes classified as potentially
+unsafe or unsafe. Both modes rerun the checks and report what remains. See
+[Checks](/checks/#apply-automatic-fixes) for selection, validation, and safety
+details.
+
+If the `format` check reports a file, the focused formatting command is:
 
 ```sh
 strider fmt path/to/file.go
@@ -126,9 +139,9 @@ pruning it.
 
 | Code | Meaning |
 | --- | --- |
-| `0` | The command succeeded with no visible findings, or a baseline update completed. |
-| `1` | One or more visible check findings were reported. |
-| `2` | A command, parsing, package-loading, unsupported-syntax, configuration, baseline, or I/O error occurred. |
+| `0` | The command succeeded with no visible findings after any requested fixes, or a baseline update completed. |
+| `1` | One or more visible check findings remain. |
+| `2` | A command, fix validation, stale-source, parsing, package-loading, unsupported-syntax, configuration, baseline, or I/O error occurred. |
 
 Reports and formatted source are written to standard output. Operational errors
 are written to standard error.

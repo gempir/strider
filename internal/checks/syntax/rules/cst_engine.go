@@ -5,6 +5,7 @@ import (
 	"go/token"
 
 	"github.com/gempir/strider/internal/cst"
+	"github.com/gempir/strider/internal/diagnostic"
 )
 
 var cstRuleCodes = map[string]bool{
@@ -444,6 +445,13 @@ func (a *cstAnalyzer) report(code string, node cst.Node, message string) {
 		return
 	}
 	a.reporter(Finding{ConcreteNode: node, Code: code, Message: message})
+}
+
+func (a *cstAnalyzer) reportFix(code string, node cst.Node, message string, fix diagnostic.Fix) {
+	if !a.enabled[code] || node == nil || a.reporter == nil {
+		return
+	}
+	a.reporter(Finding{ConcreteNode: node, Code: code, Message: message, Fixes: []diagnostic.Fix{fix}})
 }
 
 func (a *cstAnalyzer) reportRange(code string, start, end int, message string) {

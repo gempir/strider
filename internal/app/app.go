@@ -27,6 +27,14 @@ import (
 	"github.com/gempir/strider/internal/workspace"
 )
 
+const (
+	exitSuccess  = 0
+	exitFindings = 1
+	exitError    = 2
+)
+
+var version = "dev"
+
 type formattedFile struct {
 	filename string
 	original []byte
@@ -61,13 +69,18 @@ type baselineOptions struct {
 	knownCodes    map[string]bool
 }
 
-const (
-	exitSuccess  = 0
-	exitFindings = 1
-	exitError    = 2
-)
+type stagedFile struct {
+	temporary string
+	target    string
+}
 
-var version = "dev"
+type stringList []string
+
+type ruleListEntry struct {
+	code     string
+	severity diagnostic.Severity
+	summary  string
+}
 
 func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	args, globals, ok := parseGlobalOptions(args, stderr)
@@ -252,7 +265,9 @@ func runFormat(args []string, configuration config.Config, colorMode ui.ColorMod
 		return exitError
 	}
 	options.formatter = formatter.Options{
-		PrintWidth: configuration.Formatter.PrintWidth,
+		PrintWidth:         configuration.Formatter.PrintWidth,
+		MaxBlankLines:      configuration.Formatter.MaxBlankLines,
+		ExistingLineBreaks: configuration.Formatter.ExistingLineBreaks,
 	}
 	options.root = configuration.Root
 	options.excludes = configuration.Formatter.Excludes
@@ -583,11 +598,6 @@ func boolInt(value bool) int {
 	return 0
 }
 
-type stagedFile struct {
-	temporary string
-	target    string
-}
-
 func atomicWriteBatch(files []formattedFile) error {
 	staged := make([]stagedFile, 0, len(files))
 	cleanup := func() error {
@@ -665,8 +675,6 @@ func splitLines(content []byte) []string {
 	}
 	return strings.Split(strings.ReplaceAll(string(content), "\r\n", "\n"), "\n")
 }
-
-type stringList []string
 
 func (values *stringList) String() string {
 	return strings.Join(*values, ",")
@@ -999,12 +1007,6 @@ func colorSeverityText(severity diagnostic.Severity, text string, palette ui.Pal
 	default:
 		return palette.Warning(text)
 	}
-}
-
-type ruleListEntry struct {
-	code     string
-	severity diagnostic.Severity
-	summary  string
 }
 
 func writeRuleList(writer io.Writer, palette ui.Palette, entries []ruleListEntry) {

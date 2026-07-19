@@ -24,6 +24,15 @@ const (
 	defaultSeverityPrefix = "**Default severity:**"
 )
 
+type pageData struct {
+	code        string
+	summary     string
+	explanation string
+	bad         string
+	good        string
+	severity    diagnostic.Severity
+}
+
 func main() {
 	docsDirectory := docsDirectory()
 	generateSyntaxPages(docsDirectory)
@@ -112,15 +121,6 @@ func docsDirectory() string {
 
 func generatedPage(contents string) bool {
 	return strings.Contains(contents, generatedMarker) || strings.Contains(contents, oldGeneratedMarker) || strings.Contains(contents, legacyBoilerplate)
-}
-
-type pageData struct {
-	code        string
-	summary     string
-	explanation string
-	bad         string
-	good        string
-	severity    diagnostic.Severity
 }
 
 func render(page pageData) string {

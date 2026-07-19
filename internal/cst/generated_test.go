@@ -7,6 +7,10 @@ import (
 	"testing"
 )
 
+type fallbackNode struct {
+	Child Node
+}
+
 func TestGeneratedAccessorsAreCurrent(t *testing.T) {
 	command := exec.Command("go", "run", "./cmd/gencst", "-check", "-output", "zz_nodes_generated.go")
 	if output, err := command.CombinedOutput(); err != nil {
@@ -112,10 +116,6 @@ func TestProductionWalkSkipsTokenValuesAndPointers(t *testing.T) {
 	}) {
 		t.Fatalf("fallback production visits = %#v", visits)
 	}
-}
-
-type fallbackNode struct {
-	Child Node
 }
 
 func (n *fallbackNode) Position() token.Position {

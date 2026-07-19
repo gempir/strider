@@ -10,7 +10,29 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
+var standardHTTPMethods = map[string]string{
+	"CONNECT": "MethodConnect",
+	"DELETE":  "MethodDelete",
+	"GET":     "MethodGet",
+	"HEAD":    "MethodHead",
+	"OPTIONS": "MethodOptions",
+	"PATCH":   "MethodPatch",
+	"POST":    "MethodPost",
+	"PUT":     "MethodPut",
+	"TRACE":   "MethodTrace",
+}
+
 type excessiveBlankIdentifiersRule struct{}
+
+type taskCommentRule struct{}
+
+type docCommentPeriodRule struct{}
+
+type errorTypeNamingRule struct{}
+
+type standardHTTPMethodConstantRule struct{}
+
+type weakCryptographyRule struct{}
 
 func (excessiveBlankIdentifiersRule) Meta() Meta {
 	return Meta{
@@ -50,8 +72,6 @@ func (excessiveBlankIdentifiersRule) Run(pass *Pass) {
 	}
 }
 
-type taskCommentRule struct{}
-
 func (taskCommentRule) Meta() Meta {
 	return Meta{
 		Code:            "task-comment",
@@ -87,8 +107,6 @@ func taskMarker(text string) string {
 	}
 	return ""
 }
-
-type docCommentPeriodRule struct{}
 
 func (docCommentPeriodRule) Meta() Meta {
 	return Meta{
@@ -157,8 +175,6 @@ func reportDocCommentPeriod(pass *Pass, group *ast.CommentGroup, reported map[*a
 	pass.Report(group, "documentation comment should end with punctuation")
 }
 
-type errorTypeNamingRule struct{}
-
 func (errorTypeNamingRule) Meta() Meta {
 	return Meta{
 		Code:            "error-type-naming",
@@ -197,8 +213,6 @@ func (errorTypeNamingRule) Run(pass *Pass) {
 	}
 }
 
-type standardHTTPMethodConstantRule struct{}
-
 func (standardHTTPMethodConstantRule) Meta() Meta {
 	return Meta{
 		Code:            "standard-http-method-constant",
@@ -208,18 +222,6 @@ func (standardHTTPMethodConstantRule) Meta() Meta {
 		BadExample:      "http.NewRequest(\"GET\", endpoint, nil)",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
-}
-
-var standardHTTPMethods = map[string]string{
-	"CONNECT": "MethodConnect",
-	"DELETE":  "MethodDelete",
-	"GET":     "MethodGet",
-	"HEAD":    "MethodHead",
-	"OPTIONS": "MethodOptions",
-	"PATCH":   "MethodPatch",
-	"POST":    "MethodPost",
-	"PUT":     "MethodPut",
-	"TRACE":   "MethodTrace",
 }
 
 func (standardHTTPMethodConstantRule) Run(pass *Pass) {
@@ -275,8 +277,6 @@ func standardHTTPMethodObject(pass *Pass, expression ast.Expr) bool {
 	constantObject, _ := object.(*types.Const)
 	return constantObject != nil && constantObject.Pkg() != nil && constantObject.Pkg().Path() == "net/http" && strings.HasPrefix(constantObject.Name(), "Method")
 }
-
-type weakCryptographyRule struct{}
 
 func (weakCryptographyRule) Meta() Meta {
 	return Meta{

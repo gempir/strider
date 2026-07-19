@@ -19,6 +19,22 @@ import (
 	"github.com/gempir/strider/internal/workspace"
 )
 
+const checkWatchInterval = time.Second
+
+type checkWatcher struct {
+	paths            []string
+	workspaceOptions workspace.Options
+	cache            *workspace.Cache
+	session          *checkengine.Session
+	baseline         baselineOptions
+	summaryOnly      bool
+	colorMode        ui.ColorMode
+	stdout           io.Writer
+	stderr           io.Writer
+
+	iteration uint64
+}
+
 func runCheck(args []string, configuration config.Config, colorMode ui.ColorMode, stdout, stderr io.Writer) int {
 	flags := flag.NewFlagSet("check", flag.ContinueOnError)
 	flags.SetOutput(stderr)
@@ -138,7 +154,9 @@ func runCheck(args []string, configuration config.Config, colorMode ui.ColorMode
 	}
 	runOptions := checkengine.RunOptions{
 		Formatter: formatter.Options{
-			PrintWidth: configuration.Formatter.PrintWidth,
+			PrintWidth:         configuration.Formatter.PrintWidth,
+			MaxBlankLines:      configuration.Formatter.MaxBlankLines,
+			ExistingLineBreaks: configuration.Formatter.ExistingLineBreaks,
 		},
 		Root:              configuration.Root,
 		Excludes:          checkConfig.Excludes,
@@ -248,22 +266,6 @@ func runCheck(args []string, configuration config.Config, colorMode ui.ColorMode
 		return exitFindings
 	}
 	return exitSuccess
-}
-
-const checkWatchInterval = time.Second
-
-type checkWatcher struct {
-	paths            []string
-	workspaceOptions workspace.Options
-	cache            *workspace.Cache
-	session          *checkengine.Session
-	baseline         baselineOptions
-	summaryOnly      bool
-	colorMode        ui.ColorMode
-	stdout           io.Writer
-	stderr           io.Writer
-
-	iteration uint64
 }
 
 func runCheckWatch(

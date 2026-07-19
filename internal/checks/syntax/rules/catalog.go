@@ -8,12 +8,6 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type spec struct {
-	Code     string
-	Summary  string
-	Defaults string
-}
-
 var coreCatalog = []definition{
 	{
 		meta: Meta{
@@ -617,6 +611,12 @@ var extendedErrorSeverities = map[string]bool{
 	"unchecked-type-assertion":           true,
 	"waitgroup-by-value":                 true,
 	"zero-integer-division":              true,
+}
+
+type spec struct {
+	Code     string
+	Summary  string
+	Defaults string
 }
 
 func extendedDefaultSeverity(code string) diagnostic.Severity {

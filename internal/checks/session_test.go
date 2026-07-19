@@ -9,6 +9,11 @@ import (
 	"github.com/gempir/strider/internal/workspace"
 )
 
+type testingTB interface {
+	Helper()
+	Fatal(...any)
+}
+
 func TestSessionReusesAndInvalidatesConcreteGeneration(t *testing.T) {
 	directory := t.TempDir()
 	filename := filepath.Join(directory, "sample.go")
@@ -189,9 +194,4 @@ func BenchmarkSessionUnchangedConcreteGeneration(b *testing.B) {
 			b.Fatalf("diagnostics = %#v", result.Diagnostics)
 		}
 	}
-}
-
-type testingTB interface {
-	Helper()
-	Fatal(...any)
 }

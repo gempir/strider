@@ -10,6 +10,8 @@ import (
 
 type nilErrorReturnRule struct{}
 
+type nilValueWithNilErrorRule struct{}
+
 func (nilErrorReturnRule) Meta() Meta {
 	return Meta{
 		Code:            "nil-error-return",
@@ -48,8 +50,6 @@ func (nilErrorReturnRule) Run(pass *Pass) {
 		},
 	)
 }
-
-type nilValueWithNilErrorRule struct{}
 
 func (nilValueWithNilErrorRule) Meta() Meta {
 	return Meta{

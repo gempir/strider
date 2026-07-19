@@ -47,6 +47,11 @@ type Session struct {
 	misses      uint64
 }
 
+type moduleFileState struct {
+	exists   bool
+	contents []byte
+}
+
 // NewSession constructs a bounded incremental check session. The registry and
 // run options are immutable for the lifetime of the session.
 func NewSession(registry *Registry, options RunOptions, sessionOptions SessionOptions) (*Session, error) {
@@ -149,11 +154,6 @@ func concreteFingerprint(shared *workspace.Workspace, includeFormatterContext bo
 	var result [sha256.Size]byte
 	copy(result[:], digest.Sum(nil))
 	return result, nil
-}
-
-type moduleFileState struct {
-	exists   bool
-	contents []byte
 }
 
 // addFormatterModuleFingerprint mirrors modulePathCache.find: formatting can

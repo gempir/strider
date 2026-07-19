@@ -62,10 +62,11 @@ Use the formatter-specific directive to leave an entire file unchanged:
 
 ```go
 //strider:format-ignore
+package legacy
 ```
 
-This directive can appear anywhere in the file. It applies to `strider fmt`
-and to the `format` check.
+This directive must appear in a header comment before the `package` clause. It
+applies to `strider fmt` and to the `format` check.
 
 ## Checks that cannot be suppressed inline
 

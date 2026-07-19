@@ -3,10 +3,6 @@ package checks
 
 import "github.com/gempir/strider/internal/diagnostic"
 
-// Capability describes the most expensive program representation required by
-// a check. Capabilities are internal scheduling details, not CLI categories.
-type Capability uint8
-
 const (
 	CapabilitySource Capability = 1 << iota
 	CapabilityCST
@@ -15,6 +11,20 @@ const (
 	CapabilityFacts
 	CapabilitySSA
 )
+
+var formatMeta = Meta{
+	Code:            "format",
+	Summary:         "require canonical Strider formatting",
+	Explanation:     "Canonical formatting keeps Go source deterministic and removes style-only review noise.",
+	GoodExample:     "package main\n\nfunc main() {}",
+	BadExample:      "package main\nfunc main( ){ }",
+	DefaultSeverity: diagnostic.SeverityWarning,
+	Capabilities:    CapabilityCST,
+}
+
+// Capability describes the most expensive program representation required by
+// a check. Capabilities are internal scheduling details, not CLI categories.
+type Capability uint8
 
 // Meta describes one user-facing check.
 type Meta struct {
@@ -34,14 +44,4 @@ type Rule struct {
 
 func (rule Rule) Meta() Meta {
 	return rule.meta
-}
-
-var formatMeta = Meta{
-	Code:            "format",
-	Summary:         "require canonical Strider formatting",
-	Explanation:     "Canonical formatting keeps Go source deterministic and removes style-only review noise.",
-	GoodExample:     "package main\n\nfunc main() {}",
-	BadExample:      "package main\nfunc main( ){ }",
-	DefaultSeverity: diagnostic.SeverityWarning,
-	Capabilities:    CapabilityCST,
 }

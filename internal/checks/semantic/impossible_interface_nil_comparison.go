@@ -10,7 +10,26 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
+const (
+	interfaceNilUnknown interfaceNilProof = iota
+	interfaceNilConcrete
+	interfaceNilFromCall
+)
+
 type impossibleInterfaceNilComparisonRule struct{}
+
+type interfaceNilProof uint8
+
+type interfaceResultKey struct {
+	function *ssa.Function
+	index    int
+}
+
+type interfaceNilChecker struct {
+	pass     *Pass
+	checking map[interfaceResultKey]bool
+	results  map[interfaceResultKey]interfaceNilProof
+}
 
 func (impossibleInterfaceNilComparisonRule) Meta() Meta {
 	return Meta{
@@ -64,25 +83,6 @@ func interfaceNilComparisonOperands(interfaceValue, nilValue ssa.Value) (ssa.Val
 	}
 	_, ok := types.Unalias(interfaceValue.Type()).Underlying().(*types.Interface)
 	return interfaceValue, ok
-}
-
-type interfaceNilProof uint8
-
-const (
-	interfaceNilUnknown interfaceNilProof = iota
-	interfaceNilConcrete
-	interfaceNilFromCall
-)
-
-type interfaceResultKey struct {
-	function *ssa.Function
-	index    int
-}
-
-type interfaceNilChecker struct {
-	pass     *Pass
-	checking map[interfaceResultKey]bool
-	results  map[interfaceResultKey]interfaceNilProof
 }
 
 func newInterfaceNilChecker(pass *Pass) *interfaceNilChecker {

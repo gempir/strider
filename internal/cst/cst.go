@@ -16,6 +16,10 @@ import (
 	gc "modernc.org/gc/v3"
 )
 
+var kindCache sync.Map
+
+var childFieldsCache sync.Map
+
 // Node is a production or token in the concrete syntax tree.
 type Node = gc.Node
 
@@ -112,6 +116,25 @@ type Comment struct {
 	End    int
 	Line   int
 	Column int
+}
+
+type childField struct {
+	index int
+	slice bool
+}
+
+type bounds struct {
+	first       Token
+	last        Token
+	firstOffset int
+	lastOffset  int
+	found       bool
+}
+
+type tokenWalkItem struct {
+	node    Node
+	token   Token
+	isToken bool
 }
 
 // Parse parses one complete Go source file into a CST.
@@ -220,8 +243,6 @@ func Spelling(node Node) string {
 	}
 	return result.String()
 }
-
-var kindCache sync.Map
 
 // Kind returns a stable production name without the implementation's Node
 // suffix. Tokens use the spelling from go/token, such as "func" or IDENT.
@@ -474,13 +495,6 @@ func collectChildren(value reflect.Value, result *[]Node) {
 	}
 }
 
-type childField struct {
-	index int
-	slice bool
-}
-
-var childFieldsCache sync.Map
-
 func childFields(valueType reflect.Type) []childField {
 	if cached, ok := childFieldsCache.Load(valueType); ok {
 		return cached.([]childField)
@@ -604,20 +618,6 @@ func appendProductionChildItemsReverse[T ~struct {
 		}
 	}
 	return stack
-}
-
-type bounds struct {
-	first       Token
-	last        Token
-	firstOffset int
-	lastOffset  int
-	found       bool
-}
-
-type tokenWalkItem struct {
-	node    Node
-	token   Token
-	isToken bool
 }
 
 func nodeTokenBounds(node Node, concreteOnly bool) (Token, Token, bool) {

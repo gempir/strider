@@ -105,9 +105,14 @@ var cstRuleCodes = map[string]bool{
 	"zero-integer-division":              true,
 }
 
-// UsesCST reports whether a rule has moved to the concrete-syntax pass.
-func UsesCST(code string) bool {
-	return cstRuleCodes[code]
+var defaultCSTCodes = map[string]bool{
+	"cyclomatic-complexity": true,
+	"max-parameters":        true,
+	"no-naked-return":       true,
+	"no-init":               true,
+	"no-package-var":        true,
+	"no-defer-in-loop":      true,
+	"no-else-after-return":  true,
 }
 
 type cstAnalyzer struct {
@@ -136,6 +141,11 @@ type cstAnalyzer struct {
 	limits            map[string]int
 	blockedImports    map[string]bool
 	publicStructs     int
+}
+
+// UsesCST reports whether a rule has moved to the concrete-syntax pass.
+func UsesCST(code string) bool {
+	return cstRuleCodes[code]
 }
 
 // AnalyzeCST runs selected native CST rules over one lossless source tree.
@@ -215,16 +225,6 @@ func AnalyzeCST(input CSTInput) {
 		},
 	)
 	analyzer.finishTraversal()
-}
-
-var defaultCSTCodes = map[string]bool{
-	"cyclomatic-complexity": true,
-	"max-parameters":        true,
-	"no-naked-return":       true,
-	"no-init":               true,
-	"no-package-var":        true,
-	"no-defer-in-loop":      true,
-	"no-else-after-return":  true,
 }
 
 func (a *cstAnalyzer) checkDefaults(node cst.Node) {

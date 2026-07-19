@@ -111,6 +111,10 @@ type sessionFingerprintFunc func([]string, *Registry) (analysisCacheKey, error)
 
 type sessionRunFunc func([]string, *Registry) ([]diagnostic.Diagnostic, error)
 
+type fingerprintWriter struct {
+	hash hash.Hash
+}
+
 // NewSession constructs a bounded, memory-only analysis session.
 func NewSession(options SessionOptions) *Session {
 	fingerprinter := &analysisSessionFingerprinter{}
@@ -525,10 +529,6 @@ func addGoConfigurationFiles(writer *fingerprintWriter, resolved []byte) error {
 		}
 	}
 	return nil
-}
-
-type fingerprintWriter struct {
-	hash hash.Hash
 }
 
 func newFingerprintWriter() *fingerprintWriter {

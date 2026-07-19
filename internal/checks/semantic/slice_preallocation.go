@@ -12,6 +12,11 @@ import (
 
 type slicePreallocationRule struct{}
 
+type emptySliceCandidate struct {
+	identifier *ast.Ident
+	variable   *types.Var
+}
+
 func (slicePreallocationRule) Meta() Meta {
 	return Meta{
 		Code:            "slice-preallocation",
@@ -21,11 +26,6 @@ func (slicePreallocationRule) Meta() Meta {
 		BadExample:      "var result []Item\nfor _, item := range source { result = append(result, convert(item)) }",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
-}
-
-type emptySliceCandidate struct {
-	identifier *ast.Ident
-	variable   *types.Var
 }
 
 func (slicePreallocationRule) Run(pass *Pass) {

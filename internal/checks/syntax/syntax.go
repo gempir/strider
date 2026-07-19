@@ -18,6 +18,11 @@ import (
 	"github.com/gempir/strider/internal/source"
 )
 
+var defaultBannedCharacters = []rune{
+	'ᐸ',
+	'ᐳ',
+}
+
 type Registry struct {
 	rules      []builtinrules.Rule
 	settings   map[string]configuredRule
@@ -32,17 +37,32 @@ type configuredRule struct {
 	config     config.RuleConfig
 }
 
-var defaultBannedCharacters = []rune{
-	'ᐸ',
-	'ᐳ',
-}
-
 // RegistryOptions selects and configures concrete-syntax rules.
 type RegistryOptions struct {
 	Only            []string
 	Settings        map[string]config.RuleConfig
 	Root            string
 	MinimumSeverity diagnostic.Severity
+}
+
+type Context struct {
+	filename        string
+	displayFilename string
+	diagnostics     []diagnostic.Diagnostic
+	concreteIgnores map[string]bool
+	concreteNodes   []concreteSuppression
+}
+
+type concreteSuppression struct {
+	start int
+	end   int
+	codes map[string]bool
+}
+
+type fileResult struct {
+	filename    string
+	diagnostics []diagnostic.Diagnostic
+	err         error
 }
 
 func NewRegistry(only []string) (*Registry, error) {
@@ -223,26 +243,6 @@ func (r *Registry) Applies(filename string) bool {
 		}
 	}
 	return false
-}
-
-type Context struct {
-	filename        string
-	displayFilename string
-	diagnostics     []diagnostic.Diagnostic
-	concreteIgnores map[string]bool
-	concreteNodes   []concreteSuppression
-}
-
-type concreteSuppression struct {
-	start int
-	end   int
-	codes map[string]bool
-}
-
-type fileResult struct {
-	filename    string
-	diagnostics []diagnostic.Diagnostic
-	err         error
 }
 
 func Run(files []string, registry *Registry) ([]diagnostic.Diagnostic, error) {

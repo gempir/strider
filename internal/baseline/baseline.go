@@ -16,9 +16,9 @@ import (
 
 const Version = 1
 
-type Variant string
-
 const Strict Variant = "strict"
+
+type Variant string
 
 type File struct {
 	Version int     `toml:"version"`

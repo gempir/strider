@@ -19,15 +19,15 @@ import (
 	"github.com/gempir/strider/internal/workspace"
 )
 
-// Mode controls which automatic fixes are eligible.
-type Mode uint8
-
 const (
 	// SafeOnly applies only fixes explicitly classified as safe.
 	SafeOnly Mode = iota
 	// IncludeUnsafe applies safe, potentially unsafe, and unsafe fixes.
 	IncludeUnsafe
 )
+
+// Mode controls which automatic fixes are eligible.
+type Mode uint8
 
 // FileSnapshot is the immutable source input used by the check pass.
 type FileSnapshot struct {
@@ -75,6 +75,14 @@ type Result struct {
 	Applied int
 	Skipped []Skipped
 	guards  []filewrite.Guard
+}
+
+type proposal struct {
+	code   string
+	file   FileSnapshot
+	safety diagnostic.Safety
+	edits  []diagnostic.TextEdit
+	format bool
 }
 
 // Capture retains the exact source generation that checks will analyze.
@@ -183,14 +191,6 @@ func (snapshot Snapshot) resolve(path string) (FileSnapshot, bool) {
 	}
 	file, ok := snapshot.Files[resolved]
 	return file, ok
-}
-
-type proposal struct {
-	code   string
-	file   FileSnapshot
-	safety diagnostic.Safety
-	edits  []diagnostic.TextEdit
-	format bool
 }
 
 // Plan selects automatic fixes from visible diagnostics, composes every file

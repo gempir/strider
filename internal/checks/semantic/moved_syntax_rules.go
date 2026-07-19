@@ -14,6 +14,10 @@ import (
 
 type timeValueEqualityRule struct{}
 
+type waitGroupGoForbiddenCallRule struct{}
+
+type rangeValueCaptureRule struct{}
+
 func (timeValueEqualityRule) Meta() Meta {
 	return Meta{
 		Code:            "time-value-equality",
@@ -49,8 +53,6 @@ func isTimeValue(valueType types.Type) bool {
 	named, ok := types.Unalias(valueType).(*types.Named)
 	return ok && named.Obj() != nil && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "time" && named.Obj().Name() == "Time"
 }
-
-type waitGroupGoForbiddenCallRule struct{}
 
 func (waitGroupGoForbiddenCallRule) Meta() Meta {
 	return Meta{
@@ -136,8 +138,6 @@ func isBuiltinCall(info *types.Info, call *ast.CallExpr, name string) bool {
 	builtin, ok := info.Uses[identifier].(*types.Builtin)
 	return ok && builtin.Name() == name
 }
-
-type rangeValueCaptureRule struct{}
 
 func (rangeValueCaptureRule) Meta() Meta {
 	return Meta{

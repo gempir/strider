@@ -10,7 +10,94 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
+const (
+	purityChecking purityState = iota + 1
+	purityYes
+	purityNo
+)
+
+var pureStandardFunctions = map[string]bool{
+	"errors.New":                      true,
+	"fmt.Errorf":                      true,
+	"fmt.Sprintf":                     true,
+	"fmt.Sprint":                      true,
+	"sort.Reverse":                    true,
+	"strings.Map":                     true,
+	"strings.Repeat":                  true,
+	"strings.Replace":                 true,
+	"strings.Title":                   true,
+	"strings.ToLower":                 true,
+	"strings.ToLowerSpecial":          true,
+	"strings.ToTitle":                 true,
+	"strings.ToTitleSpecial":          true,
+	"strings.ToUpper":                 true,
+	"strings.ToUpperSpecial":          true,
+	"strings.Trim":                    true,
+	"strings.TrimFunc":                true,
+	"strings.TrimLeft":                true,
+	"strings.TrimLeftFunc":            true,
+	"strings.TrimPrefix":              true,
+	"strings.TrimRight":               true,
+	"strings.TrimRightFunc":           true,
+	"strings.TrimSpace":               true,
+	"strings.TrimSuffix":              true,
+	"(*net/http.Request).WithContext": true,
+	"time.Now":                        true,
+	"time.Parse":                      true,
+	"time.ParseInLocation":            true,
+	"time.Unix":                       true,
+	"time.UnixMicro":                  true,
+	"time.UnixMilli":                  true,
+	"(time.Time).Add":                 true,
+	"(time.Time).AddDate":             true,
+	"(time.Time).After":               true,
+	"(time.Time).Before":              true,
+	"(time.Time).Clock":               true,
+	"(time.Time).Compare":             true,
+	"(time.Time).Date":                true,
+	"(time.Time).Day":                 true,
+	"(time.Time).Equal":               true,
+	"(time.Time).Format":              true,
+	"(time.Time).GoString":            true,
+	"(time.Time).GobEncode":           true,
+	"(time.Time).Hour":                true,
+	"(time.Time).ISOWeek":             true,
+	"(time.Time).In":                  true,
+	"(time.Time).IsDST":               true,
+	"(time.Time).IsZero":              true,
+	"(time.Time).Local":               true,
+	"(time.Time).Location":            true,
+	"(time.Time).MarshalBinary":       true,
+	"(time.Time).MarshalJSON":         true,
+	"(time.Time).MarshalText":         true,
+	"(time.Time).Minute":              true,
+	"(time.Time).Month":               true,
+	"(time.Time).Nanosecond":          true,
+	"(time.Time).Round":               true,
+	"(time.Time).Second":              true,
+	"(time.Time).String":              true,
+	"(time.Time).Sub":                 true,
+	"(time.Time).Truncate":            true,
+	"(time.Time).UTC":                 true,
+	"(time.Time).Unix":                true,
+	"(time.Time).UnixMicro":           true,
+	"(time.Time).UnixMilli":           true,
+	"(time.Time).UnixNano":            true,
+	"(time.Time).Weekday":             true,
+	"(time.Time).Year":                true,
+	"(time.Time).YearDay":             true,
+	"(time.Time).Zone":                true,
+	"(time.Time).ZoneBounds":          true,
+}
+
 type discardedPureResultRule struct{}
+
+type purityState uint8
+
+type purityChecker struct {
+	pass  *Pass
+	state map[*ssa.Function]purityState
+}
 
 func (discardedPureResultRule) Meta() Meta {
 	return Meta{
@@ -72,19 +159,6 @@ func benchmarkHelper(function *ssa.Function) bool {
 		}
 	}
 	return false
-}
-
-type purityState uint8
-
-const (
-	purityChecking purityState = iota + 1
-	purityYes
-	purityNo
-)
-
-type purityChecker struct {
-	pass  *Pass
-	state map[*ssa.Function]purityState
 }
 
 func newPurityChecker(pass *Pass) *purityChecker {
@@ -218,78 +292,4 @@ func stackAddress(value ssa.Value) bool {
 
 func knownPureFunction(function *types.Func) bool {
 	return pureStandardFunctions[function.FullName()]
-}
-
-var pureStandardFunctions = map[string]bool{
-	"errors.New":                      true,
-	"fmt.Errorf":                      true,
-	"fmt.Sprintf":                     true,
-	"fmt.Sprint":                      true,
-	"sort.Reverse":                    true,
-	"strings.Map":                     true,
-	"strings.Repeat":                  true,
-	"strings.Replace":                 true,
-	"strings.Title":                   true,
-	"strings.ToLower":                 true,
-	"strings.ToLowerSpecial":          true,
-	"strings.ToTitle":                 true,
-	"strings.ToTitleSpecial":          true,
-	"strings.ToUpper":                 true,
-	"strings.ToUpperSpecial":          true,
-	"strings.Trim":                    true,
-	"strings.TrimFunc":                true,
-	"strings.TrimLeft":                true,
-	"strings.TrimLeftFunc":            true,
-	"strings.TrimPrefix":              true,
-	"strings.TrimRight":               true,
-	"strings.TrimRightFunc":           true,
-	"strings.TrimSpace":               true,
-	"strings.TrimSuffix":              true,
-	"(*net/http.Request).WithContext": true,
-	"time.Now":                        true,
-	"time.Parse":                      true,
-	"time.ParseInLocation":            true,
-	"time.Unix":                       true,
-	"time.UnixMicro":                  true,
-	"time.UnixMilli":                  true,
-	"(time.Time).Add":                 true,
-	"(time.Time).AddDate":             true,
-	"(time.Time).After":               true,
-	"(time.Time).Before":              true,
-	"(time.Time).Clock":               true,
-	"(time.Time).Compare":             true,
-	"(time.Time).Date":                true,
-	"(time.Time).Day":                 true,
-	"(time.Time).Equal":               true,
-	"(time.Time).Format":              true,
-	"(time.Time).GoString":            true,
-	"(time.Time).GobEncode":           true,
-	"(time.Time).Hour":                true,
-	"(time.Time).ISOWeek":             true,
-	"(time.Time).In":                  true,
-	"(time.Time).IsDST":               true,
-	"(time.Time).IsZero":              true,
-	"(time.Time).Local":               true,
-	"(time.Time).Location":            true,
-	"(time.Time).MarshalBinary":       true,
-	"(time.Time).MarshalJSON":         true,
-	"(time.Time).MarshalText":         true,
-	"(time.Time).Minute":              true,
-	"(time.Time).Month":               true,
-	"(time.Time).Nanosecond":          true,
-	"(time.Time).Round":               true,
-	"(time.Time).Second":              true,
-	"(time.Time).String":              true,
-	"(time.Time).Sub":                 true,
-	"(time.Time).Truncate":            true,
-	"(time.Time).UTC":                 true,
-	"(time.Time).Unix":                true,
-	"(time.Time).UnixMicro":           true,
-	"(time.Time).UnixMilli":           true,
-	"(time.Time).UnixNano":            true,
-	"(time.Time).Weekday":             true,
-	"(time.Time).Year":                true,
-	"(time.Time).YearDay":             true,
-	"(time.Time).Zone":                true,
-	"(time.Time).ZoneBounds":          true,
 }

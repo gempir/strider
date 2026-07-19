@@ -12,6 +12,23 @@ import (
 
 type contextCancelInLoopRule struct{}
 
+type contextCancelAcquisition struct {
+	call   *ast.CallExpr
+	cancel types.Object
+	name   string
+}
+
+type contextCancelUse struct {
+	position token.Pos
+	deferred bool
+}
+
+type contextCancelPathState struct {
+	block  *cfg.Block
+	next   int
+	active bool
+}
+
 func (contextCancelInLoopRule) Meta() Meta {
 	return Meta{
 		Code:            "context-cancel-in-loop",
@@ -38,17 +55,6 @@ func (contextCancelInLoopRule) Run(pass *Pass) {
 			},
 		)
 	}
-}
-
-type contextCancelAcquisition struct {
-	call   *ast.CallExpr
-	cancel types.Object
-	name   string
-}
-
-type contextCancelUse struct {
-	position token.Pos
-	deferred bool
 }
 
 func reportLoopContextCancellations(pass *Pass, body *ast.BlockStmt) {
@@ -136,12 +142,6 @@ func reportLoopContextCancellations(pass *Pass, body *ast.BlockStmt) {
 		}
 		pass.Report(acquisition.call, acquisition.name+" is created in a loop but its cancellation function is not called during the iteration")
 	}
-}
-
-type contextCancelPathState struct {
-	block  *cfg.Block
-	next   int
-	active bool
 }
 
 func contextCancelledOnEveryLoopPath(body *ast.BlockStmt, acquisition contextCancelAcquisition, end token.Pos, uses []contextCancelUse) bool {

@@ -12,6 +12,10 @@ import (
 
 type invalidRegexpRule struct{}
 
+type positionNode struct {
+	position token.Pos
+}
+
 func (invalidRegexpRule) Meta() Meta {
 	return Meta{
 		Code:            "invalid-regexp",
@@ -77,10 +81,6 @@ func ssaConstant(value ssa.Value) *ssa.Const {
 	default:
 		return nil
 	}
-}
-
-type positionNode struct {
-	position token.Pos
 }
 
 func (node positionNode) Pos() token.Pos {

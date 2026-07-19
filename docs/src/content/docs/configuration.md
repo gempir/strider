@@ -13,6 +13,9 @@ color = "auto"
 
 [formatter]
 print-width = 180
+max-blank-lines = 1
+existing-line-breaks = "structural-only"
+alignment.declarations = true
 excludes = ["internal/generated/**"]
 
 [checks]
@@ -153,12 +156,17 @@ Formatter settings live under `[formatter]`.
 | Setting | Type | Default | Accepted values and effect |
 | --- | --- | --- | --- |
 | `print-width` | integer | `180` | Wrap target from `40` through `500` columns. |
+| `max-blank-lines` | integer | `1` | Preserve at most one consecutive empty line. Version 1 requires `1` for gofmt stability. |
+| `existing-line-breaks` | string | `"structural-only"` | Preserve structural blank separators and comment placement while reflowing ordinary source breaks. Version 1 accepts only `"structural-only"`. |
+| `alignment.declarations` | boolean | `true` | Align declaration columns through the required gofmt-compatible final pass. Version 1 requires `true`. |
 | `excludes` | string list | `[]` | Plain paths or globs skipped by filesystem formatting and the `format` check. |
 
 The formatter remains intentionally opinionated. Imports are sorted into
 standard-library, third-party, and current-module groups; indentation uses
-tabs; broken lists use trailing commas; binary operators remain on the
-preceding line; and output has exactly one final newline.
+tabs; broken lists use trailing commas; top-level declarations use const, var,
+type, then func order; binary operators remain on the preceding line; and output
+has exactly one final newline. A whole-file `strider:format-ignore` directive is
+recognized only in comments before the package clause.
 
 ## Checks
 

@@ -7,23 +7,23 @@ import (
 	"strings"
 )
 
-// ColorMode controls when ANSI styling is emitted.
-type ColorMode string
-
 const (
 	ColorAuto   ColorMode = "auto"
 	ColorAlways ColorMode = "always"
 	ColorNever  ColorMode = "never"
 )
 
-// ValidColorMode reports whether value is an accepted color mode.
-func ValidColorMode(value string) bool {
-	return value == string(ColorAuto) || value == string(ColorAlways) || value == string(ColorNever)
-}
+// ColorMode controls when ANSI styling is emitted.
+type ColorMode string
 
 // Palette applies semantic terminal styles to strings.
 type Palette struct {
 	enabled bool
+}
+
+// ValidColorMode reports whether value is an accepted color mode.
+func ValidColorMode(value string) bool {
+	return value == string(ColorAuto) || value == string(ColorAlways) || value == string(ColorNever)
 }
 
 // NewPalette resolves mode for writer. FORCE_COLOR and NO_COLOR follow the

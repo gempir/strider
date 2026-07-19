@@ -14,14 +14,29 @@ import (
 	"github.com/gempir/strider/internal/ui"
 )
 
-// Text writes rich, source-annotated diagnostics and a severity summary.
-func Text(writer io.Writer, diagnostics []diagnostic.Diagnostic, colorMode ui.ColorMode) error {
-	return TextWithOptions(writer, diagnostics, colorMode, TextOptions{})
-}
+const (
+	notFixable fixability = iota
+	safelyFixable
+	unsafelyFixable
+)
 
 // TextOptions controls which parts of a text report are emitted.
 type TextOptions struct {
 	SummaryOnly bool
+}
+
+type checkCount struct {
+	code       string
+	count      int
+	severity   diagnostic.Severity
+	fixability fixability
+}
+
+type fixability uint8
+
+// Text writes rich, source-annotated diagnostics and a severity summary.
+func Text(writer io.Writer, diagnostics []diagnostic.Diagnostic, colorMode ui.ColorMode) error {
+	return TextWithOptions(writer, diagnostics, colorMode, TextOptions{})
 }
 
 // TextWithOptions writes diagnostics according to options.
@@ -65,21 +80,6 @@ func TextWithOptions(writer io.Writer, diagnostics []diagnostic.Diagnostic, colo
 	_, err := fmt.Fprintln(writer, summary(diagnostics, counts, fixCounts, palette))
 	return err
 }
-
-type checkCount struct {
-	code       string
-	count      int
-	severity   diagnostic.Severity
-	fixability fixability
-}
-
-type fixability uint8
-
-const (
-	notFixable fixability = iota
-	safelyFixable
-	unsafelyFixable
-)
 
 func writeCheckCounts(writer io.Writer, diagnostics []diagnostic.Diagnostic, palette ui.Palette, leadingBlank bool) error {
 	byCode := make(map[string]checkCount)

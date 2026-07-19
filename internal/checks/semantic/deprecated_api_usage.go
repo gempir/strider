@@ -19,6 +19,29 @@ import (
 
 type deprecatedAPIUsageRule struct{}
 
+type deprecationSourceKey struct {
+	line  int
+	name  string
+	owner string
+}
+
+type parsedDeprecationFile struct {
+	declarations   map[deprecationSourceKey]string
+	packageMessage string
+}
+
+type deprecationIndex struct {
+	objects                map[types.Object]string
+	packages               map[*types.Package]string
+	seenObjects            map[types.Object]bool
+	declarationFiles       map[string]parsedDeprecationFile
+	packageClauseFiles     map[string]string
+	packageClauseFilesSeen map[string]bool
+	packageDirectories     map[string]string
+	packageDirectoriesSeen map[string]bool
+	physicalFiles          map[*types.Package][]string
+}
+
 func (deprecatedAPIUsageRule) Meta() Meta {
 	return Meta{
 		Code:            "deprecated-api-usage",
@@ -138,29 +161,6 @@ func languageGoVersion(value string) string {
 		return "go" + value
 	}
 	return "go" + parts[0] + "." + parts[1]
-}
-
-type deprecationSourceKey struct {
-	line  int
-	name  string
-	owner string
-}
-
-type parsedDeprecationFile struct {
-	declarations   map[deprecationSourceKey]string
-	packageMessage string
-}
-
-type deprecationIndex struct {
-	objects                map[types.Object]string
-	packages               map[*types.Package]string
-	seenObjects            map[types.Object]bool
-	declarationFiles       map[string]parsedDeprecationFile
-	packageClauseFiles     map[string]string
-	packageClauseFilesSeen map[string]bool
-	packageDirectories     map[string]string
-	packageDirectoriesSeen map[string]bool
-	physicalFiles          map[*types.Package][]string
 }
 
 func collectDeprecations(roots []*packages.Package) (map[types.Object]string, map[*types.Package]string) {

@@ -25,10 +25,6 @@ type definition struct {
 	meta Meta
 }
 
-func (rule definition) Meta() Meta {
-	return rule.meta
-}
-
 // Finding is a rule result before the syntax package converts source positions
 // and applies suppression directives.
 type Finding struct {
@@ -50,4 +46,8 @@ type CSTInput struct {
 	Limits           map[string]int
 	BlockedImports   []string
 	Report           func(Finding)
+}
+
+func (rule definition) Meta() Meta {
+	return rule.meta
 }

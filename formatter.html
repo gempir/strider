@@ -1,0 +1,1730 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src 'unsafe-inline' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Formatter Policy</title>
+<style>:root{color-scheme:light dark;background:light-dark(rgb(255 255 255), rgb(24 24 24))}html,body{margin:0}body{box-sizing:border-box;padding:1rem;background:inherit}iframe{display:block;width:100%;max-width:736px;height:calc(100vh - 2rem);margin:0 auto;border:0}</style>
+</head>
+<body>
+<iframe sandbox="allow-scripts" referrerpolicy="no-referrer" title="Formatter Policy" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;referrer&quot; content=&quot;no-referrer&quot;&gt;
+&lt;meta http-equiv=&quot;Content-Security-Policy&quot; content=&quot;default-src &#x27;none&#x27;; script-src &#x27;unsafe-inline&#x27; &#x27;unsafe-eval&#x27; &#x27;wasm-unsafe-eval&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src &#x27;unsafe-inline&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src &#x27;none&#x27;; object-src &#x27;none&#x27;; base-uri &#x27;none&#x27;; form-action &#x27;none&#x27;&quot;&gt;
+&lt;title&gt;Formatter Policy&lt;/title&gt;
+&lt;style&gt;:root {
+  color-scheme: light dark;
+  background-color: var(--background) !important;
+
+  /* Agent-facing contract; keep in sync with SKILL.md. */
+  --background: light-dark(rgb(255 255 255), rgb(24 24 24));
+  --foreground: light-dark(rgb(26 28 31), rgb(255 255 255));
+  --card: color-mix(in oklab, var(--foreground) 5%, transparent);
+  --card-foreground: var(--foreground);
+  --popover: light-dark(rgb(255 255 255), rgb(45 45 45));
+  --popover-foreground: var(--foreground);
+  --primary: light-dark(rgb(51 156 255), rgb(131 195 255));
+  --primary-foreground: light-dark(rgb(255 255 255), rgb(13 13 13));
+  --secondary: light-dark(rgb(255 255 255 / 96%), rgb(54 54 54 / 96%));
+  --secondary-foreground: var(--foreground);
+  --muted: color-mix(in srgb, var(--foreground) 10%, transparent);
+  --muted-foreground: light-dark(
+    rgb(26 28 31 / 49.4%),
+    rgb(255 255 255 / 49.8%)
+  );
+  --accent: light-dark(rgb(229 242 255), rgb(13 39 63));
+  --accent-foreground: var(--primary);
+  --destructive: light-dark(rgb(226 85 7), rgb(255 133 73));
+  --border: light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%));
+  --input: light-dark(
+    rgb(26 28 31 / 11.8%),
+    color-mix(in oklab, rgb(0 0 0) 10%, transparent)
+  );
+  --ring: light-dark(rgb(51 156 255), rgb(131 195 255 / 76%));
+  --font-size-base: 14px;
+  --viz-series-1: var(--primary);
+  --viz-series-2: light-dark(rgb(243 136 59), rgb(245 154 86));
+  --viz-series-3: light-dark(rgb(93 201 119), rgb(116 213 139));
+  --viz-series-4: light-dark(rgb(235 119 177), rgb(240 143 192));
+  --viz-series-5: light-dark(rgb(155 121 236), rgb(170 145 239));
+  --viz-series-6: light-dark(rgb(58 185 177), rgb(90 203 194));
+
+  /* Internal implementation variables; not part of the agent contract. */
+  --font-sans: -apple-system, system-ui, &quot;Segoe UI&quot;, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;,
+    monospace;
+  --font-size-normal: max(11px, var(--font-size-base));
+  --font-size-tooltip: calc(var(--font-size-base) - 1px);
+  --font-size-small: max(11px, calc(var(--font-size-base) - 2px));
+  --font-size-h1: calc(var(--font-size-normal) * 1.7142857143);
+  --font-size-h2: calc(var(--font-size-normal) * 1.4285714286);
+  --font-size-h3: calc(var(--font-size-normal) * 1.2857142857);
+  --font-weight-normal: 430;
+  --font-weight-medium: 500;
+  --line-height-normal: calc(var(--font-size-normal) * 1.5);
+  --line-height-tooltip: calc(var(--font-size-tooltip) * 1.4285714286);
+  --line-height-small: calc(var(--font-size-small) + 4px);
+  --radius: 12.5px;
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-2xl: calc(var(--radius) * 1.6);
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px -1px rgb(0 0 0 / 8%);
+  --checkmark-image: url(&quot;data:image/svg+xml,%3Csvg xmlns=&#x27;http://www.w3.org/2000/svg&#x27; viewBox=&#x27;0 0 17 17&#x27;%3E%3Cpath d=&#x27;M12.8961 3.64101C13.1297 3.41418 13.4984 3.37523 13.7779 3.56581C14.0571 3.75635 14.1554 4.11331 14.0299 4.41347L13.9615 4.53847L7.71151 13.7045C7.59411 13.8767 7.4063 13.9877 7.19881 14.0072C6.99136 14.0267 6.78564 13.9533 6.63826 13.806L2.88826 10.056L2.79842 9.9457C2.6192 9.67407 2.64927 9.30496 2.88826 9.06581C3.12738 8.82669 3.49647 8.79676 3.76815 8.97597L3.8785 9.06581L7.03084 12.2182L12.8053 3.74941L12.8961 3.64101Z&#x27;/%3E%3C/svg%3E&quot;);
+
+  /* Legacy aliases; not part of the current agent contract. */
+  --viz-bg: transparent;
+  --viz-panel: var(--card);
+  --viz-border: var(--border);
+  --viz-text: var(--foreground);
+  --viz-muted: var(--muted-foreground);
+  --viz-accent: var(--primary);
+  --viz-accent-text: var(--primary-foreground);
+  --viz-accent-bg: var(--accent);
+  --viz-font-size: var(--font-size-base);
+  --viz-warning: var(--destructive);
+  --color-background-primary: var(--background);
+  --color-text-primary: var(--foreground);
+  --color-border-secondary: var(--border);
+}
+
+:root[data-theme=&quot;light&quot;] {
+  color-scheme: light;
+}
+
+:root[data-theme=&quot;dark&quot;] {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html &gt; body {
+  margin: 0;
+  padding: 5px;
+  color: var(--foreground);
+  background: transparent !important;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-normal);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+}
+
+a {
+  color: color-mix(in srgb, var(--viz-accent) 80%, var(--viz-text) 20%);
+  cursor: pointer;
+  font-weight: var(--viz-font-weight-medium);
+  text-decoration: none;
+  text-underline-offset: 2px;
+}
+
+a:is(:hover, :focus-visible) {
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 0.5px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin-block: 0;
+}
+
+h1 {
+  font-size: var(--font-size-h1);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h2 {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h3,
+h4,
+h5,
+h6 {
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.3;
+}
+
+b,
+strong,
+th {
+  font-weight: var(--font-weight-medium);
+}
+
+code:not(pre code) {
+  display: inline;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  corner-shape: superellipse(1.5);
+  background: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  word-break: break-word;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--foreground);
+  font: inherit;
+  text-align: start;
+}
+
+.table :is(th, td) {
+  padding-block: 10px;
+  padding-inline: 0 24px;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--border);
+  text-align: start;
+  vertical-align: top;
+}
+
+.table-responsive &gt; .table :is(th, td) {
+  overflow-wrap: break-word;
+}
+
+.table :is(th, td):last-child {
+  padding-inline-end: 0;
+}
+
+.table :is(caption, thead th) {
+  font-weight: 600;
+}
+
+.table thead th {
+  padding-block: 8px;
+  border-bottom-color: color-mix(in srgb, var(--foreground) 16%, transparent);
+}
+
+.table tbody tr:last-child :is(th, td) {
+  border-bottom: 0;
+}
+
+.table.table-sm :is(th, td) {
+  padding-block: 6px;
+}
+
+.table.table-sm :is(th, td):not(:last-child) {
+  padding-inline-end: 16px;
+}
+
+.table :is(.text-end, [align=&quot;right&quot;]) {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.table :is(.text-center, [align=&quot;center&quot;]) {
+  text-align: center;
+}
+
+.table .text-nowrap {
+  white-space: nowrap;
+}
+
+#widget {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  background: transparent !important;
+}
+
+.card {
+  min-width: 0;
+  padding: 12px;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  border-radius: var(--radius-2xl);
+  corner-shape: superellipse(1.5);
+  color: var(--card-foreground);
+  background: var(--card);
+}
+
+#widget &gt; :not(.card) {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 50;
+  top: 0;
+  left: 0;
+  width: max-content;
+  max-width: min(
+    20rem,
+    var(--tooltip-available-width, calc(100vw - 10px)),
+    calc(100vw - 10px)
+  );
+  max-height: min(
+    var(--tooltip-available-height, calc(100vh - 10px)),
+    calc(100vh - 10px)
+  );
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--popover-foreground);
+  background: var(--popover);
+  box-shadow: none;
+  font-size: var(--font-size-tooltip);
+  line-height: var(--line-height-tooltip);
+  overflow-wrap: break-word;
+  white-space: normal;
+  pointer-events: none;
+  user-select: none;
+}
+
+.viz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(max(180px, 24%), 1fr));
+  gap: 10px;
+}
+
+.viz-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.viz-stat-value {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+.viz-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.viz-badge {
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  color: var(--accent-foreground);
+  background: var(--accent);
+  font-weight: var(--font-weight-medium);
+}
+
+small,
+.text-small,
+.viz-badge {
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-small);
+}
+
+.text-muted {
+  color: var(--muted-foreground);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.viz-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.viz-controls &gt; .form-label {
+  display: grid;
+  min-width: min(100%, 260px);
+  flex: 1 1 280px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 2px 12px;
+  margin-bottom: 0;
+}
+
+.viz-controls &gt; .form-label &gt; :is(.form-control, .form-range, .form-select) {
+  grid-column: 1 / -1;
+}
+
+.btn,
+.form-check-input,
+.form-control,
+.form-range,
+.form-select {
+  font: inherit;
+}
+
+.btn {
+  appearance: button;
+  display: inline-flex;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0 8px;
+  -webkit-app-region: no-drag;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: var(--cursor-interaction, pointer);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.btn:is(.btn-block, .viz-tile) {
+  inline-size: 100%;
+}
+
+.btn.viz-tile {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+a.btn {
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.btn-primary {
+  border-color: transparent;
+  color: var(--primary-foreground);
+  background: var(--foreground);
+  background-clip: padding-box;
+}
+
+.btn-primary .text-muted {
+  color: color-mix(in srgb, var(--primary-foreground) 50%, transparent);
+}
+
+.btn-primary:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 80%, transparent);
+  background-clip: padding-box;
+}
+
+.btn-ghost {
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.btn-ghost:not(:disabled):hover {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+[data-lucide] {
+  stroke-width: 1.6;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--foreground);
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  padding: 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--foreground);
+  background: var(--secondary);
+}
+
+.form-control::placeholder {
+  color: var(--muted-foreground);
+}
+
+.form-control[type=&quot;file&quot;] {
+  padding: 0;
+  overflow: hidden;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control[type=&quot;file&quot;]::file-selector-button {
+  min-height: 26px;
+  margin-right: 8px;
+  padding: 0 8px;
+  border: 0;
+  border-right: 1px solid var(--input);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: inherit;
+  font: inherit;
+}
+
+.form-control[type=&quot;file&quot;]:not(:disabled):hover::file-selector-button {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-control-color[type=&quot;color&quot;] {
+  width: 40px;
+  height: 28px;
+  padding: 3px;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch {
+  border: 0;
+  border-radius: calc(var(--radius-lg) - 4px);
+  corner-shape: superellipse(1.5);
+}
+
+textarea.form-control {
+  height: auto;
+  min-height: 72px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.form-control:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-control:disabled,
+.form-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.form-select {
+  appearance: none;
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  margin: 0;
+  padding: 0 32px 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--foreground);
+  background-color: var(--secondary);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted-foreground) 50%),
+    linear-gradient(135deg, var(--muted-foreground) 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 50%,
+    calc(100% - 10px) 50%;
+  background-repeat: no-repeat;
+  background-size: 4px 4px;
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-select:not(:disabled):hover {
+  background-color: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-select:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-check {
+  display: flex;
+  min-height: 20px;
+  align-items: center;
+  gap: 6px;
+}
+
+.form-check-input {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin: 0;
+  border: 1px solid var(--input);
+  color: var(--primary-foreground);
+  background-color: transparent;
+  cursor: var(--cursor-interaction, default);
+  transition:
+    background-color 150ms,
+    border-color 150ms,
+    box-shadow 150ms;
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;] {
+  border-color: var(--input);
+  border-radius: var(--radius-sm);
+  corner-shape: superellipse(1.5);
+  background-color: var(--secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input:not(:disabled):not(:checked):hover {
+  background-color: var(--card);
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;]:checked {
+  border-color: var(--primary);
+  background-color: var(--primary);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input[type=&quot;checkbox&quot;]:checked::before {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-foreground);
+  content: &quot;&quot;;
+  mask: var(--checkmark-image) center / 12px 12px no-repeat;
+}
+
+.form-check-input[type=&quot;radio&quot;] {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-full);
+}
+
+.form-check-input[type=&quot;radio&quot;]:checked {
+  border: 2px solid var(--primary);
+  background:
+    radial-gradient(circle, var(--primary-foreground) 0 2.5px, transparent 3px),
+    var(--primary);
+}
+
+.form-check:not(.form-switch) .form-check-input:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+}
+
+.form-switch .form-check-input:disabled,
+.form-switch .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-check-label {
+  color: var(--foreground);
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-switch .form-check-input {
+  position: relative;
+  width: 32px;
+  height: 20px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+  box-shadow: none;
+  transition: background-color 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 1px solid light-dark(var(--primary-foreground), var(--foreground));
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+  box-shadow: var(--shadow-sm);
+  content: &quot;&quot;;
+  transform: translate(2px, -50%);
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input:checked {
+  background: var(--primary);
+}
+
+.form-switch .form-check-input:checked::before {
+  transform: translate(14px, -50%);
+}
+
+.form-switch .form-check-input:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.form-range {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 28px;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  outline: none;
+  border: 0;
+  accent-color: var(--primary);
+  background: linear-gradient(
+      color-mix(in srgb, var(--foreground) 7%, transparent),
+      color-mix(in srgb, var(--foreground) 7%, transparent)
+    )
+    center / 100% 2px no-repeat;
+}
+
+.form-range::-webkit-slider-runnable-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-webkit-slider-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range::-moz-range-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-moz-range-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.btn:not(.btn-primary, .viz-tile):is(
+    [aria-pressed=&quot;true&quot;],
+    [aria-selected=&quot;true&quot;],
+    .is-selected
+  ) {
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.btn.viz-tile:is([aria-pressed=&quot;true&quot;], [aria-selected=&quot;true&quot;], .is-selected) {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+#widget &gt; svg {
+  width: 100%;
+}
+
+.text-warning,
+.text-destructive {
+  color: var(--destructive);
+}
+
+html&gt;body{padding:0}&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div id=&quot;strider-formatter-policy&quot;&gt;
+  &lt;style&gt;
+    #strider-formatter-policy { color: var(--foreground); }
+    #strider-formatter-policy * { box-sizing: border-box; }
+    #strider-formatter-policy .hero { display: grid; gap: 1rem; margin-bottom: 1.5rem; }
+    #strider-formatter-policy .lede { max-width: 78ch; margin: 0; color: var(--muted-foreground); }
+    #strider-formatter-policy .summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    #strider-formatter-policy .progress-line { display: grid; grid-template-columns: 1fr auto; gap: .75rem; align-items: center; }
+    #strider-formatter-policy progress { width: 100%; accent-color: var(--primary); }
+    #strider-formatter-policy .category-nav { display: flex; flex-wrap: wrap; gap: .5rem; padding: 0; margin: 0; list-style: none; }
+    #strider-formatter-policy .category-nav a { color: var(--foreground); text-decoration: none; }
+    #strider-formatter-policy .category { margin-top: 2rem; }
+    #strider-formatter-policy .category-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; border-bottom: 2px solid var(--border); padding-bottom: .5rem; }
+    #strider-formatter-policy .category-heading h2 { margin: 0; }
+    #strider-formatter-policy .decision { padding: 1.25rem 0 1.5rem; border-bottom: 1px solid var(--border); scroll-margin-top: 1rem; }
+    #strider-formatter-policy .decision-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; align-items: start; }
+    #strider-formatter-policy .decision h3 { margin: 0 0 .25rem; }
+    #strider-formatter-policy .decision-question { margin: 0; color: var(--muted-foreground); max-width: 80ch; }
+    #strider-formatter-policy .badges { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .35rem; }
+    #strider-formatter-policy .options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; }
+    #strider-formatter-policy .option { min-width: 0; }
+    #strider-formatter-policy .option-main { display: flex; gap: .55rem; align-items: flex-start; }
+    #strider-formatter-policy .option-copy { min-width: 0; }
+    #strider-formatter-policy .option-label { font-weight: 500; }
+    #strider-formatter-policy .option-summary { margin: .15rem 0 .55rem; color: var(--muted-foreground); }
+    #strider-formatter-policy pre { margin: 0; padding: .75rem; overflow-x: auto; background: var(--muted); color: var(--foreground); border-left: 3px solid var(--border); tab-size: 4; white-space: pre; }
+    #strider-formatter-policy code { font-variant-ligatures: none; }
+    #strider-formatter-policy .option:has(input:checked) pre { border-left-color: var(--primary); }
+    #strider-formatter-policy .decision-actions { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-top: 1rem; }
+    #strider-formatter-policy .config-key { color: var(--muted-foreground); }
+    #strider-formatter-policy .export { margin-top: 2rem; display: grid; gap: 1rem; }
+    #strider-formatter-policy .export-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    #strider-formatter-policy .export textarea { min-height: 16rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    #strider-formatter-policy .empty-note { color: var(--muted-foreground); font-style: italic; }
+    @media (max-width: 700px) {
+      #strider-formatter-policy .summary,
+      #strider-formatter-policy .options,
+      #strider-formatter-policy .export-grid { grid-template-columns: 1fr; }
+      #strider-formatter-policy .decision-head { grid-template-columns: 1fr; }
+      #strider-formatter-policy .badges { justify-content: flex-start; }
+    }
+  &lt;/style&gt;
+
+  &lt;section class=&quot;hero&quot; aria-labelledby=&quot;policy-intro&quot;&gt;
+    &lt;p id=&quot;policy-intro&quot; class=&quot;lede&quot;&gt;Choose a canonical result for each Go formatting decision. Every choice begins on Strider’s current behavior; selecting any option marks that decision complete. “Expose in configuration” adds the proposed key to the TOML draft. Copy the decision record before closing the page.&lt;/p&gt;
+    &lt;div class=&quot;viz-grid summary&quot; aria-label=&quot;Decision progress&quot;&gt;
+      &lt;div class=&quot;card viz-stat&quot;&gt;&lt;span class=&quot;text-muted&quot;&gt;Decisions&lt;/span&gt;&lt;span class=&quot;viz-stat-value&quot; id=&quot;decision-total&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;text-small&quot;&gt;Across the full file, syntax, comments, and safety&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;card viz-stat&quot;&gt;&lt;span class=&quot;text-muted&quot;&gt;Completed&lt;/span&gt;&lt;span class=&quot;viz-stat-value&quot; id=&quot;decision-complete&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;text-small&quot; id=&quot;decision-remaining&quot;&gt;Nothing selected yet&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;card viz-stat&quot;&gt;&lt;span class=&quot;text-muted&quot;&gt;Configurable&lt;/span&gt;&lt;span class=&quot;viz-stat-value&quot; id=&quot;decision-configurable&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;text-small&quot;&gt;Included in the proposed &lt;code&gt;[formatter]&lt;/code&gt; schema&lt;/span&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;progress-line&quot;&gt;&lt;progress id=&quot;decision-progress&quot; value=&quot;0&quot; max=&quot;1&quot; aria-label=&quot;Decision completion&quot;&gt;&lt;/progress&gt;&lt;span id=&quot;decision-percent&quot;&gt;0%&lt;/span&gt;&lt;/div&gt;
+    &lt;nav aria-label=&quot;Formatter decision categories&quot;&gt;&lt;ul class=&quot;category-nav&quot; id=&quot;category-nav&quot;&gt;&lt;/ul&gt;&lt;/nav&gt;
+  &lt;/section&gt;
+
+  &lt;main id=&quot;decision-catalog&quot;&gt;&lt;/main&gt;
+
+  &lt;section class=&quot;export&quot; aria-labelledby=&quot;export-heading&quot;&gt;
+    &lt;div class=&quot;category-heading&quot;&gt;&lt;h2 id=&quot;export-heading&quot;&gt;Decision handoff&lt;/h2&gt;&lt;span class=&quot;text-muted&quot;&gt;Generated from the selections above&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;viz-controls&quot;&gt;
+      &lt;button class=&quot;btn btn-primary&quot; type=&quot;button&quot; id=&quot;copy-json&quot;&gt;Copy decision JSON&lt;/button&gt;
+      &lt;button class=&quot;btn&quot; type=&quot;button&quot; id=&quot;copy-toml&quot;&gt;Copy proposed TOML&lt;/button&gt;
+      &lt;span class=&quot;text-small text-muted&quot; id=&quot;copy-status&quot; role=&quot;status&quot; aria-live=&quot;polite&quot;&gt;&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;export-grid&quot;&gt;
+      &lt;label class=&quot;form-label&quot; for=&quot;json-output&quot;&gt;Complete decision record
+        &lt;textarea class=&quot;form-control&quot; id=&quot;json-output&quot; readonly spellcheck=&quot;false&quot;&gt;&lt;/textarea&gt;
+      &lt;/label&gt;
+      &lt;label class=&quot;form-label&quot; for=&quot;toml-output&quot;&gt;Proposed &lt;code&gt;strider.toml&lt;/code&gt; formatter section
+        &lt;textarea class=&quot;form-control&quot; id=&quot;toml-output&quot; readonly spellcheck=&quot;false&quot;&gt;&lt;/textarea&gt;
+      &lt;/label&gt;
+    &lt;/div&gt;
+  &lt;/section&gt;
+
+  &lt;script&gt;
+  (() =&gt; {
+    const root = document.getElementById(&#x27;strider-formatter-policy&#x27;);
+    const compatibilityLabels = new Set([
+      &#x27;gofmt-compatible&#x27;,
+      &#x27;current-config&#x27;,
+      &#x27;requires-new-printer&#x27;,
+      &#x27;breaks-gofmt&#x27;,
+      &#x27;semantic-change-risk&#x27;,
+      &#x27;invalid-go-syntax&#x27;,
+      &#x27;invalid-go-build-constraint&#x27;,
+      &#x27;requires-error-tolerant-parser&#x27;,
+      &#x27;unsafe&#x27;
+    ]);
+    function o(id, label, value, summary, code, compatibility = &#x27;gofmt-compatible&#x27;) {
+      if (arguments.length === 4) {
+        return { id, label, value: id, summary: value, code: summary, compatibility };
+      }
+      if (arguments.length === 5 &amp;&amp; compatibilityLabels.has(code)) {
+        return { id, label, value: id, summary: value, code: summary, compatibility: code };
+      }
+      return { id, label, value, summary, code, compatibility };
+    }
+    const d = (group, id, title, question, key, current, options, configurableNow = false, note = &#x27;&#x27;) =&gt; ({ group, id, title, question, key, current, options, configurableNow, note });
+    const decisions = [
+      d(&#x27;File &amp; foundations&#x27;, &#x27;print-width&#x27;, &#x27;Print width&#x27;, &#x27;At what target column should eligible groups wrap?&#x27;, &#x27;print-width&#x27;, &#x27;180&#x27;, [
+        o(&#x27;100&#x27;, &#x27;100 columns&#x27;, 100, &#x27;Compact default suited to split panes.&#x27;, &#x27;result := BuildReport(\n\tcontext,\n\trequest,\n\toptions,\n)&#x27;, &#x27;current-config&#x27;),
+        o(&#x27;120&#x27;, &#x27;120 columns&#x27;, 120, &#x27;Moderate width; the example configuration uses this.&#x27;, &#x27;result := BuildReport(context, request, options)&#x27;, &#x27;current-config&#x27;),
+        o(&#x27;180&#x27;, &#x27;180 columns&#x27;, 180, &#x27;Current Strider default; long lines fit before lists wrap.&#x27;, &#x27;result := BuildReport(context, request, options)&#x27;, &#x27;current-config&#x27;)
+      ], true, &#x27;The current accepted range is 40–500.&#x27;),
+      d(&#x27;File &amp; foundations&#x27;, &#x27;width-role&#x27;, &#x27;Width semantics&#x27;, &#x27;Is print width a soft wrapping target or a hard maximum?&#x27;, &#x27;width-mode&#x27;, &#x27;soft&#x27;, [
+        o(&#x27;soft&#x27;, &#x27;Soft target&#x27;, &#x27;soft&#x27;, &#x27;Wrap supported groups, but allow indivisible strings, comments, chains, and expressions past the target.&#x27;, &#x27;const endpoint = &quot;https://example.com/a/very/long/path&quot;&#x27;),
+        o(&#x27;hard&#x27;, &#x27;Hard maximum&#x27;, &#x27;Break every breakable construct and diagnose unbreakable lines that still exceed the limit.&#x27;, &#x27;value := service.\n\tWithRequest(request).\n\tExecute()\n// error if an atom still exceeds width&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;advisory&#x27;, &#x27;Advisory only&#x27;, &#x27;Format canonically without introducing wraps; report width separately.&#x27;, &#x27;result := BuildReport(context, request, options)&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;File &amp; foundations&#x27;, &#x27;width-measure&#x27;, &#x27;Column measurement&#x27;, &#x27;How should the formatter measure width?&#x27;, &#x27;width-measure&#x27;, &#x27;runes-tabs8&#x27;, [
+        o(&#x27;runes-tabs8&#x27;, &#x27;Unicode runes; tabs = 8&#x27;, &#x27;runes-tabs8&#x27;, &#x27;Current implementation: each rune counts once and indentation tabs advance to columns 8, 16, …&#x27;, &#x27;\tmessage := &quot;日本語&quot; // starts after one tab&#x27;),
+        o(&#x27;display&#x27;, &#x27;Terminal display cells&#x27;, &#x27;display-cells&#x27;, &#x27;Count East Asian wide glyphs as two cells and combining marks as zero.&#x27;, &#x27;\tmessage := &quot;日本語&quot; // each glyph uses 2 cells&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;bytes&#x27;, &#x27;UTF-8 bytes&#x27;, &#x27;bytes&#x27;, &#x27;Simple but visually surprising for non-ASCII source.&#x27;, &#x27;\tmessage := &quot;日本語&quot; // 9 UTF-8 bytes&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;File &amp; foundations&#x27;, &#x27;indent-style&#x27;, &#x27;Indentation style&#x27;, &#x27;What characters indent block structure?&#x27;, &#x27;indent-style&#x27;, &#x27;tabs&#x27;, [
+        o(&#x27;tabs&#x27;, &#x27;Tabs&#x27;, &#x27;tabs&#x27;, &#x27;One tab per structural nesting level; current behavior and Go convention.&#x27;, &#x27;func run() {\n\tif ready {\n\t\tstart()\n\t}\n}&#x27;),
+        o(&#x27;spaces&#x27;, &#x27;Spaces&#x27;, &#x27;spaces&#x27;, &#x27;Use a configurable number of spaces for each nesting level.&#x27;, &#x27;func run() {\n    if ready {\n        start()\n    }\n}&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+      d(&#x27;File &amp; foundations&#x27;, &#x27;continuation-indent&#x27;, &#x27;Continuation indentation&#x27;, &#x27;How far should wrapped list items indent?&#x27;, &#x27;continuation-indent&#x27;, &#x27;one-level&#x27;, [
+        o(&#x27;one-level&#x27;, &#x27;One structural level&#x27;, &#x27;one-level&#x27;, &#x27;Indent contents one tab beyond the opening construct.&#x27;, &#x27;call(\n\tfirst,\n\tsecond,\n)&#x27;),
+        o(&#x27;align-open&#x27;, &#x27;Align under first item&#x27;, &#x27;align-open&#x27;, &#x27;Vertically align continuation text with the first item after the delimiter.&#x27;, &#x27;call(first,\n     second)&#x27;, &#x27;breaks-gofmt&#x27;),
+        o(&#x27;double&#x27;, &#x27;Double continuation indent&#x27;, &#x27;double&#x27;, &#x27;Visually distinguish wrapped content from block indentation.&#x27;, &#x27;call(\n\t\tfirst,\n\t\tsecond,\n)&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+      d(&#x27;File &amp; foundations&#x27;, &#x27;line-endings&#x27;, &#x27;Line endings&#x27;, &#x27;Which newline sequence should output use?&#x27;, &#x27;line-ending&#x27;, &#x27;lf&#x27;, [
+        o(&#x27;lf&#x27;, &#x27;Always LF&#x27;, &#x27;lf&#x27;, &#x27;Normalize every file to Unix line endings.&#x27;, &#x27;package sample\n\nfunc run() {}&#x27;),
+        o(&#x27;preserve&#x27;, &#x27;Preserve input&#x27;, &#x27;preserve&#x27;, &#x27;Retain LF or CRLF on a per-file basis.&#x27;, &#x27;package sample\\r\\n\\r\\nfunc run() {}&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;crlf&#x27;, &#x27;Always CRLF&#x27;, &#x27;crlf&#x27;, &#x27;Normalize output for Windows-oriented repositories.&#x27;, &#x27;package sample\\r\\n\\r\\nfunc run() {}&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+      d(&#x27;File &amp; foundations&#x27;, &#x27;final-newline&#x27;, &#x27;End of file&#x27;, &#x27;How many newlines should end a formatted file?&#x27;, &#x27;final-newline&#x27;, &#x27;one&#x27;, [
+        o(&#x27;one&#x27;, &#x27;Exactly one&#x27;, &#x27;one&#x27;, &#x27;Trim trailing spaces and blank lines, then emit one final newline.&#x27;, &#x27;func run() {}⏎&#x27;),
+        o(&#x27;preserve&#x27;, &#x27;Preserve input&#x27;, &#x27;preserve&#x27;, &#x27;Keep missing or repeated final newlines.&#x27;, &#x27;func run() {}[original ending]&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;none&#x27;, &#x27;No final newline&#x27;, &#x27;none&#x27;, &#x27;End directly after the final token.&#x27;, &#x27;func run() {}&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+      d(&#x27;File &amp; foundations&#x27;, &#x27;trailing-whitespace&#x27;, &#x27;Trailing whitespace&#x27;, &#x27;What happens to spaces and tabs at line endings?&#x27;, &#x27;trailing-whitespace&#x27;, &#x27;remove&#x27;, [
+        o(&#x27;remove&#x27;, &#x27;Remove all&#x27;, &#x27;remove&#x27;, &#x27;Canonical output never contains trailing spaces or tabs.&#x27;, &#x27;value := compute()⏎&#x27;),
+        o(&#x27;preserve-comments&#x27;, &#x27;Preserve in comments&#x27;, &#x27;preserve-comments&#x27;, &#x27;Retain whitespace that is part of comment text.&#x27;, &#x27;// note··⏎&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;File &amp; foundations&#x27;, &#x27;blank-lines&#x27;, &#x27;Consecutive blank lines&#x27;, &#x27;How much vertical whitespace may survive?&#x27;, &#x27;max-blank-lines&#x27;, &#x27;one&#x27;, [
+        o(&#x27;one&#x27;, &#x27;At most one blank line&#x27;, 1, &#x27;Collapse runs of empty lines to a single blank separator.&#x27;, &#x27;first()\n\nsecond()&#x27;),
+        o(&#x27;none&#x27;, &#x27;Remove blank lines&#x27;, 0, &#x27;Keep only required line breaks.&#x27;, &#x27;first()\nsecond()&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;preserve&#x27;, &#x27;Preserve runs&#x27;, &#x27;preserve&#x27;, &#x27;Keep deliberate vertical spacing from the source.&#x27;, &#x27;first()\n\n\nsecond()&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;File &amp; foundations&#x27;, &#x27;source-breaks&#x27;, &#x27;Existing line breaks&#x27;, &#x27;Should ordinary source line breaks influence canonical output?&#x27;, &#x27;existing-line-breaks&#x27;, &#x27;structural-only&#x27;, [
+        o(&#x27;structural-only&#x27;, &#x27;Only comments and blank separators&#x27;, &#x27;structural-only&#x27;, &#x27;Reflow ordinary single newlines; preserve comment placement and at most one blank line.&#x27;, &#x27;value := first + second&#x27;),
+        o(&#x27;preserve&#x27;, &#x27;Preserve manual wrapping&#x27;, &#x27;preserve&#x27;, &#x27;Treat any existing newline as a preferred break.&#x27;, &#x27;value := first +\n\tsecond&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;ignore-all&#x27;, &#x27;Ignore all optional breaks&#x27;, &#x27;ignore-all&#x27;, &#x27;Rebuild vertical layout without preserving free-floating blank separation.&#x27;, &#x27;first()\nsecond()&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;File &amp; foundations&#x27;, &#x27;generated-files&#x27;, &#x27;Generated files&#x27;, &#x27;Should generated Go files be formatted?&#x27;, &#x27;generated-files&#x27;, &#x27;format&#x27;, [
+        o(&#x27;format&#x27;, &#x27;Format normally&#x27;, &#x27;format&#x27;, &#x27;The generated-code marker has no special effect today.&#x27;, &#x27;// Code generated by tool. DO NOT EDIT.\npackage generated&#x27;),
+        o(&#x27;skip-marker&#x27;, &#x27;Skip generated marker&#x27;, &#x27;skip-marker&#x27;, &#x27;Leave files with the standard generated-code comment byte-for-byte unchanged.&#x27;, &#x27;// Code generated by tool. DO NOT EDIT.\npackage generated&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;exclude-only&#x27;, &#x27;Only explicit excludes&#x27;, &#x27;exclude-only&#x27;, &#x27;Require generated paths to match formatter.excludes.&#x27;, &#x27;[formatter]\nexcludes = [&quot;**/*.generated.go&quot;]&#x27;, &#x27;current-config&#x27;)
+      ]),
+      d(&#x27;File &amp; foundations&#x27;, &#x27;format-ignore&#x27;, &#x27;Whole-file opt-out&#x27;, &#x27;How may a file opt out of canonical formatting?&#x27;, &#x27;ignore-directive&#x27;, &#x27;any-comment&#x27;, [
+        o(&#x27;any-comment&#x27;, &#x27;Exact directive anywhere&#x27;, &#x27;any-comment&#x27;, &#x27;Any line or block comment containing exactly strider:format-ignore disables formatting.&#x27;, &#x27;// strider:format-ignore\nfunc run( ){ }&#x27;),
+        o(&#x27;header-only&#x27;, &#x27;Header directive only&#x27;, &#x27;header-only&#x27;, &#x27;Recognize the directive only before the package clause.&#x27;, &#x27;// strider:format-ignore\npackage sample&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;no-directive&#x27;, &#x27;No source opt-out&#x27;, &#x27;none&#x27;, &#x27;Only configuration exclusions can disable formatting.&#x27;, &#x27;[formatter]\nexcludes = [&quot;legacy/**&quot;]&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+
+      d(&#x27;Imports&#x27;, &#x27;import-consolidation&#x27;, &#x27;Import declaration consolidation&#x27;, &#x27;Should separate import declarations become one declaration?&#x27;, &#x27;imports.consolidate&#x27;, &#x27;one-block&#x27;, [
+        o(&#x27;one-block&#x27;, &#x27;One declaration&#x27;, true, &#x27;Collect every import and render one canonical declaration.&#x27;, &#x27;import (\n\t&quot;fmt&quot;\n\t&quot;os&quot;\n)&#x27;),
+        o(&#x27;preserve&#x27;, &#x27;Preserve declarations&#x27;, false, &#x27;Sort within each existing declaration without merging them.&#x27;, &#x27;import &quot;fmt&quot;\nimport &quot;os&quot;&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Imports&#x27;, &#x27;single-import&#x27;, &#x27;Single import form&#x27;, &#x27;How should a file with exactly one import be rendered?&#x27;, &#x27;imports.single-style&#x27;, &#x27;single-line&#x27;, [
+        o(&#x27;single-line&#x27;, &#x27;Single line&#x27;, &#x27;single-line&#x27;, &#x27;Use the compact Go form.&#x27;, &#x27;import &quot;fmt&quot;&#x27;),
+        o(&#x27;block&#x27;, &#x27;Parenthesized block&#x27;, &#x27;block&#x27;, &#x27;Use the same shape regardless of import count.&#x27;, &#x27;import (\n\t&quot;fmt&quot;\n)&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+      d(&#x27;Imports&#x27;, &#x27;import-groups&#x27;, &#x27;Import grouping&#x27;, &#x27;Which semantic groups should be separated?&#x27;, &#x27;imports.groups&#x27;, &#x27;three&#x27;, [
+        o(&#x27;three&#x27;, &#x27;Standard / third-party / current module&#x27;, &#x27;three&#x27;, &#x27;Current module imports form a third group when go.mod can be found.&#x27;, &#x27;import (\n\t&quot;fmt&quot;\n\n\t&quot;github.com/acme/lib&quot;\n\n\t&quot;example.com/project/internal/x&quot;\n)&#x27;),
+        o(&#x27;two&#x27;, &#x27;Standard / everything else&#x27;, &#x27;two&#x27;, &#x27;Match goimports’ broad split without a local module group.&#x27;, &#x27;import (\n\t&quot;fmt&quot;\n\n\t&quot;example.com/project/internal/x&quot;\n\t&quot;github.com/acme/lib&quot;\n)&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;none&#x27;, &#x27;One sorted group&#x27;, &#x27;none&#x27;, &#x27;Remove semantic blank lines.&#x27;, &#x27;import (\n\t&quot;example.com/project/internal/x&quot;\n\t&quot;fmt&quot;\n\t&quot;github.com/acme/lib&quot;\n)&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Imports&#x27;, &#x27;local-prefixes&#x27;, &#x27;Local import detection&#x27;, &#x27;How should the formatter recognize project-local imports?&#x27;, &#x27;imports.local-prefixes&#x27;, &#x27;go-module&#x27;, [
+        o(&#x27;go-module&#x27;, &#x27;Nearest go.mod module&#x27;, &#x27;go-module&#x27;, &#x27;Read the closest ancestor go.mod and cache its module path.&#x27;, &#x27;module example.com/project\n\n// local: example.com/project/...&#x27;),
+        o(&#x27;configured&#x27;, &#x27;Configured prefixes&#x27;, [&#x27;example.com/project&#x27;], &#x27;Allow repositories to name one or more local prefixes explicitly.&#x27;, &#x27;local-prefixes = [&quot;example.com/project&quot;]&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;both&#x27;, &#x27;go.mod plus configured prefixes&#x27;, [&#x27;go-module&#x27;, &#x27;configured&#x27;], &#x27;Use module discovery with explicit overrides for multi-module layouts.&#x27;, &#x27;local-prefixes = [&quot;example.com/shared&quot;]&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Imports&#x27;, &#x27;import-order&#x27;, &#x27;Ordering within a group&#x27;, &#x27;How should imports be ordered?&#x27;, &#x27;imports.order&#x27;, &#x27;path&#x27;, [
+        o(&#x27;path&#x27;, &#x27;Lexicographic path&#x27;, &#x27;path&#x27;, &#x27;Sort by the quoted import path; aliases do not affect order.&#x27;, &#x27;alias &quot;a.example/pkg&quot;\n&quot;z.example/pkg&quot;&#x27;),
+        o(&#x27;alias-then-path&#x27;, &#x27;Alias, then path&#x27;, &#x27;alias-then-path&#x27;, &#x27;Cluster named, dot, and blank imports before sorting paths.&#x27;, &#x27;_ &quot;a.example/sideeffect&quot;\nalias &quot;z.example/pkg&quot;&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;preserve&#x27;, &#x27;Preserve source order&#x27;, &#x27;preserve&#x27;, &#x27;Keep author ordering inside each semantic group.&#x27;, &#x27;&quot;z.example/pkg&quot;\n&quot;a.example/pkg&quot;&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Imports&#x27;, &#x27;special-imports&#x27;, &#x27;Alias, blank, and dot imports&#x27;, &#x27;Should special import forms receive separate placement rules?&#x27;, &#x27;imports.special-placement&#x27;, &#x27;sort-by-path&#x27;, [
+        o(&#x27;sort-by-path&#x27;, &#x27;Treat like normal imports&#x27;, &#x27;sort-by-path&#x27;, &#x27;Keep the spelling, but sort entirely by path.&#x27;, &#x27;import (\n\t_ &quot;a.example/init&quot;\n\t. &quot;z.example/dsl&quot;\n)&#x27;),
+        o(&#x27;separate&#x27;, &#x27;Separate special imports&#x27;, &#x27;separate&#x27;, &#x27;Place blank and dot imports in distinct subgroups.&#x27;, &#x27;import (\n\t&quot;example.com/lib&quot;\n\n\t_ &quot;example.com/driver&quot;\n)&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Imports&#x27;, &#x27;import-comments&#x27;, &#x27;Comments inside imports&#x27;, &#x27;What should happen when an import declaration contains comments?&#x27;, &#x27;imports.comments&#x27;, &#x27;preserve-block&#x27;, [
+        o(&#x27;preserve-block&#x27;, &#x27;Preserve the original import structure&#x27;, &#x27;preserve-block&#x27;, &#x27;Current safety fallback: skip Strider regrouping when a comment lies inside the import span; go/format still normalizes spacing.&#x27;, &#x27;import (\n\t&quot;fmt&quot; // formatting\n\t&quot;os&quot;\n)&#x27;),
+        o(&#x27;attach-and-sort&#x27;, &#x27;Move comments with their import&#x27;, &#x27;attach-and-sort&#x27;, &#x27;Attach leading and trailing comments to a spec, then sort and regroup safely.&#x27;, &#x27;import (\n\t&quot;fmt&quot; // formatting\n\n\t// driver registers itself\n\t_ &quot;example.com/driver&quot;\n)&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;never-sort-commented&#x27;, &#x27;Never sort a commented group&#x27;, &#x27;never-sort-commented&#x27;, &#x27;Sort un-commented groups but preserve any group containing comments.&#x27;, &#x27;import (\n\t&quot;os&quot; // keep order\n\t&quot;fmt&quot;\n)&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Imports&#x27;, &#x27;cgo-import&#x27;, &#x27;cgo preamble and import C&#x27;, &#x27;How should the cgo preamble be handled?&#x27;, &#x27;imports.cgo&#x27;, &#x27;preserve&#x27;, [
+        o(&#x27;preserve&#x27;, &#x27;Keep preamble attached&#x27;, &#x27;preserve&#x27;, &#x27;Preserve the comment immediately before import &quot;C&quot; and do not merge it into a normal block.&#x27;, &#x27;/*\n#include &lt;stdlib.h&gt;\n*/\nimport &quot;C&quot;&#x27;),
+        o(&#x27;separate-group&#x27;, &#x27;Dedicated cgo group&#x27;, &#x27;separate-group&#x27;, &#x27;Keep import C first, then a separate normal import block.&#x27;, &#x27;/* #include &lt;stdlib.h&gt; */\nimport &quot;C&quot;\n\nimport &quot;fmt&quot;&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Imports&#x27;, &#x27;import-spacing&#x27;, &#x27;Spacing around imports&#x27;, &#x27;How many blank lines separate the package, imports, and declarations?&#x27;, &#x27;imports.blank-lines&#x27;, &#x27;one&#x27;, [
+        o(&#x27;one&#x27;, &#x27;One blank line&#x27;, 1, &#x27;Use one empty line on both sides of the import section.&#x27;, &#x27;package sample\n\nimport &quot;fmt&quot;\n\nfunc run() {}&#x27;),
+        o(&#x27;none&#x27;, &#x27;No blank separator&#x27;, 0, &#x27;Keep package and declarations adjacent to imports.&#x27;, &#x27;package sample\nimport &quot;fmt&quot;\nfunc run() {}&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+
+      d(&#x27;Declarations &amp; types&#x27;, &#x27;top-level-spacing&#x27;, &#x27;Top-level declaration spacing&#x27;, &#x27;How should package-level declarations be separated?&#x27;, &#x27;declarations.blank-lines&#x27;, &#x27;one&#x27;, [
+        o(&#x27;one&#x27;, &#x27;One blank line&#x27;, 1, &#x27;Separate functions, types, and declaration groups with one empty line.&#x27;, &#x27;const limit = 3\n\ntype Client struct{}\n\nfunc New() Client { return Client{} }&#x27;),
+        o(&#x27;compact-same-kind&#x27;, &#x27;Compact same-kind declarations&#x27;, &#x27;compact-same-kind&#x27;, &#x27;Keep consecutive declarations of the same kind adjacent.&#x27;, &#x27;const first = 1\nconst second = 2\n\nfunc run() {}&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;preserve&#x27;, &#x27;Preserve source spacing&#x27;, &#x27;preserve&#x27;, &#x27;Retain zero or one blank line based on input.&#x27;, &#x27;const first = 1\nconst second = 2&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Declarations &amp; types&#x27;, &#x27;declaration-order&#x27;, &#x27;Top-level declaration order&#x27;, &#x27;May formatting reorder declarations other than imports?&#x27;, &#x27;declarations.order&#x27;, &#x27;preserve&#x27;, [
+        o(&#x27;preserve&#x27;, &#x27;Never reorder&#x27;, &#x27;preserve&#x27;, &#x27;Keep constants, variables, types, and functions in source order.&#x27;, &#x27;func use() {}\n\nconst value = 1&#x27;),
+        o(&#x27;kind-order&#x27;, &#x27;Group by declaration kind&#x27;, [&#x27;const&#x27;, &#x27;var&#x27;, &#x27;type&#x27;, &#x27;func&#x27;], &#x27;Reorder declarations into a configured canonical sequence.&#x27;, &#x27;const value = 1\n\nfunc use() {}&#x27;, &#x27;semantic-change-risk&#x27;)
+      ]),
+      d(&#x27;Declarations &amp; types&#x27;, &#x27;grouped-declarations&#x27;, &#x27;Grouped const, var, and type declarations&#x27;, &#x27;How should parenthesized declaration groups lay out?&#x27;, &#x27;declarations.groups&#x27;, &#x27;multiline&#x27;, [
+        o(&#x27;multiline&#x27;, &#x27;Always multiline&#x27;, &#x27;multiline&#x27;, &#x27;A non-empty parenthesized group has one specification per line.&#x27;, &#x27;const (\n\talpha = 1\n\tbeta  = 2\n)&#x27;),
+        o(&#x27;collapse-single&#x27;, &#x27;Collapse one-item groups&#x27;, &#x27;collapse-single&#x27;, &#x27;Remove parentheses when a group contains one specification.&#x27;, &#x27;const alpha = 1&#x27;, &#x27;semantic-change-risk&#x27;),
+        o(&#x27;compact-fit&#x27;, &#x27;Keep compact when it fits&#x27;, &#x27;compact-fit&#x27;, &#x27;Permit a small group on one line.&#x27;, &#x27;const (alpha = 1; beta = 2)&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+      d(&#x27;Declarations &amp; types&#x27;, &#x27;declaration-alignment&#x27;, &#x27;Declaration column alignment&#x27;, &#x27;Should adjacent specs align names, types, values, and trailing comments?&#x27;, &#x27;alignment.declarations&#x27;, &#x27;align&#x27;, [
+        o(&#x27;align&#x27;, &#x27;Align columns&#x27;, true, &#x27;The final go/format pass inserts tabs to form visual columns.&#x27;, &#x27;const (\n\tshort    = 1\n\tlongName = 2\n)&#x27;),
+        o(&#x27;minimal&#x27;, &#x27;Minimal spaces&#x27;, false, &#x27;Use exactly one separating space without vertical alignment.&#x27;, &#x27;const (\n\tshort = 1\n\tlongName = 2\n)&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+      d(&#x27;Declarations &amp; types&#x27;, &#x27;multi-name-declaration&#x27;, &#x27;Multiple names in one declaration&#x27;, &#x27;May formatting split or combine identifier lists?&#x27;, &#x27;declarations.identifier-lists&#x27;, &#x27;preserve&#x27;, [
+        o(&#x27;preserve&#x27;, &#x27;Preserve grouping&#x27;, &#x27;preserve&#x27;, &#x27;Normalize comma spacing but do not change which names share a declaration.&#x27;, &#x27;var first, second int&#x27;),
+        o(&#x27;split&#x27;, &#x27;One name per declaration&#x27;, &#x27;split&#x27;, &#x27;Expand identifier lists into independent declarations.&#x27;, &#x27;var first int\nvar second int&#x27;, &#x27;semantic-change-risk&#x27;)
+      ]),
+      d(&#x27;Declarations &amp; types&#x27;, &#x27;struct-layout&#x27;, &#x27;Struct body layout&#x27;, &#x27;How should struct type bodies be rendered?&#x27;, &#x27;types.struct-layout&#x27;, &#x27;multiline&#x27;, [
+        o(&#x27;multiline&#x27;, &#x27;One field per line&#x27;, &#x27;multiline&#x27;, &#x27;Every non-empty struct body is a hard multiline block.&#x27;, &#x27;type User struct {\n\tName string\n\tAge  int\n}&#x27;),
+        o(&#x27;fit&#x27;, &#x27;Compact when it fits&#x27;, &#x27;fit&#x27;, &#x27;Keep short structs on one line.&#x27;, &#x27;type Point struct { X, Y int }&#x27;, &#x27;breaks-gofmt&#x27;),
+        o(&#x27;preserve&#x27;, &#x27;Preserve compactness&#x27;, &#x27;preserve&#x27;, &#x27;Keep the source one-line or multiline choice.&#x27;, &#x27;type Point struct{ X, Y int }&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Declarations &amp; types&#x27;, &#x27;struct-alignment&#x27;, &#x27;Struct field alignment&#x27;, &#x27;Should field names, types, tags, and comments form columns?&#x27;, &#x27;alignment.struct-fields&#x27;, &#x27;align&#x27;, [
+        o(&#x27;align&#x27;, &#x27;Align fields&#x27;, true, &#x27;Use go/format tabwriter alignment.&#x27;, &#x27;type User struct {\n\tID        int    `json:&quot;id&quot;`\n\tFirstName string `json:&quot;first_name&quot;`\n}&#x27;),
+        o(&#x27;minimal&#x27;, &#x27;Minimal spacing&#x27;, false, &#x27;Use one separator between each field component.&#x27;, &#x27;type User struct {\n\tID int `json:&quot;id&quot;`\n\tFirstName string `json:&quot;first_name&quot;`\n}&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+      d(&#x27;Declarations &amp; types&#x27;, &#x27;struct-tags&#x27;, &#x27;Struct tags&#x27;, &#x27;How should a tag be spaced and wrapped?&#x27;, &#x27;types.struct-tags&#x27;, &#x27;same-line&#x27;, [
+        o(&#x27;same-line&#x27;, &#x27;Same line after the type&#x27;, &#x27;same-line&#x27;, &#x27;Keep a single space before the raw-string tag and align the tag column.&#x27;, &#x27;Field string `json:&quot;field&quot; validate:&quot;required&quot;`&#x27;),
+        o(&#x27;wrap-long&#x27;, &#x27;Wrap long tags&#x27;, &#x27;wrap-long&#x27;, &#x27;Place an over-width tag on a continuation line.&#x27;, &#x27;Field string\n\t`json:&quot;field&quot; validate:&quot;required&quot;`&#x27;, &#x27;invalid-go-syntax&#x27;),
+        o(&#x27;preserve&#x27;, &#x27;Preserve tag spacing&#x27;, &#x27;preserve&#x27;, &#x27;Keep the tag with its field but retain source spacing.&#x27;, &#x27;Field string `json:&quot;field&quot;`&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Declarations &amp; types&#x27;, &#x27;interface-layout&#x27;, &#x27;Interface body layout&#x27;, &#x27;How should interface methods and type elements lay out?&#x27;, &#x27;types.interface-layout&#x27;, &#x27;multiline&#x27;, [
+        o(&#x27;multiline&#x27;, &#x27;One element per line&#x27;, &#x27;multiline&#x27;, &#x27;Every non-empty interface body is multiline.&#x27;, &#x27;type Store interface {\n\tGet(string) (Item, error)\n\tPut(Item) error\n}&#x27;),
+        o(&#x27;fit&#x27;, &#x27;Compact when it fits&#x27;, &#x27;fit&#x27;, &#x27;Allow a small interface on one line.&#x27;, &#x27;type Closer interface { Close() error }&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+      d(&#x27;Declarations &amp; types&#x27;, &#x27;embedded-types&#x27;, &#x27;Embedded fields and interface elements&#x27;, &#x27;Should embedded elements receive distinct spacing or grouping?&#x27;, &#x27;types.embedded-elements&#x27;, &#x27;ordinary&#x27;, [
+        o(&#x27;ordinary&#x27;, &#x27;Treat as ordinary elements&#x27;, &#x27;ordinary&#x27;, &#x27;Keep one element per line with no automatic subgroup separator.&#x27;, &#x27;type Service interface {\n\tio.Closer\n\tRun() error\n}&#x27;),
+        o(&#x27;separate&#x27;, &#x27;Separate embedded elements&#x27;, &#x27;separate&#x27;, &#x27;Insert a blank line between embedded and named elements.&#x27;, &#x27;type Service interface {\n\tio.Closer\n\n\tRun() error\n}&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Declarations &amp; types&#x27;, &#x27;method-receiver&#x27;, &#x27;Method receiver&#x27;, &#x27;Where should a method receiver be placed and spaced?&#x27;, &#x27;declarations.receiver&#x27;, &#x27;same-line&#x27;, [
+        o(&#x27;same-line&#x27;, &#x27;Same line, one space before it&#x27;, &#x27;same-line&#x27;, &#x27;Keep the receiver attached to func and the method name attached to the closing parenthesis.&#x27;, &#x27;func (s *Store) Get(key string) Item {}&#x27;),
+        o(&#x27;breakable&#x27;, &#x27;Allow receiver wrapping&#x27;, &#x27;breakable&#x27;, &#x27;Treat a long receiver declaration as its own breakable list.&#x27;, &#x27;func (\n\ts *GenericStore[Key, Value],\n) Get(key Key) Value {}&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Declarations &amp; types&#x27;, &#x27;empty-types&#x27;, &#x27;Empty struct and interface types&#x27;, &#x27;Should empty type bodies remain compact?&#x27;, &#x27;types.empty-body&#x27;, &#x27;compact&#x27;, [
+        o(&#x27;compact&#x27;, &#x27;Compact&#x27;, &#x27;compact&#x27;, &#x27;Keep braces adjacent when there are no elements.&#x27;, &#x27;type Marker struct{}\ntype Any interface{}&#x27;),
+        o(&#x27;spaced&#x27;, &#x27;Space inside empty body&#x27;, &#x27;spaced&#x27;, &#x27;Use a visible interior space.&#x27;, &#x27;type Marker struct { }&#x27;, &#x27;breaks-gofmt&#x27;),
+        o(&#x27;multiline&#x27;, &#x27;Multiline empty body&#x27;, &#x27;multiline&#x27;, &#x27;Render opening and closing braces on separate lines.&#x27;, &#x27;type Marker struct {\n}&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+
+      d(&#x27;Lists &amp; wrapping&#x27;, &#x27;group-fit&#x27;, &#x27;Group fitting algorithm&#x27;, &#x27;How should an eligible delimited list decide whether to wrap?&#x27;, &#x27;wrapping.algorithm&#x27;, &#x27;whole-group&#x27;, [
+        o(&#x27;whole-group&#x27;, &#x27;Whole group fits or breaks&#x27;, &#x27;whole-group&#x27;, &#x27;Measure the group from its current column; either keep all items on one line or use multiline form.&#x27;, &#x27;call(first, second, third)\n// or\ncall(\n\tfirst,\n\tsecond,\n\tthird,\n)&#x27;),
+        o(&#x27;greedy&#x27;, &#x27;Greedy fill&#x27;, &#x27;greedy&#x27;, &#x27;Pack as many items as fit on each continuation line.&#x27;, &#x27;call(first, second,\n\tthird, fourth)&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;preserve&#x27;, &#x27;Preserve author breaks&#x27;, &#x27;preserve&#x27;, &#x27;Use source breaks rather than recomputing group fit.&#x27;, &#x27;call(first,\n\tsecond, third)&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Lists &amp; wrapping&#x27;, &#x27;opening-delimiter&#x27;, &#x27;Opening delimiter on a broken list&#x27;, &#x27;Where does the first item begin after a list wraps?&#x27;, &#x27;wrapping.after-open&#x27;, &#x27;newline&#x27;, [
+        o(&#x27;newline&#x27;, &#x27;New line after opener&#x27;, true, &#x27;Place no item beside an opening parenthesis, bracket, or brace in a broken list.&#x27;, &#x27;call(\n\tfirst,\n\tsecond,\n)&#x27;),
+        o(&#x27;same-line&#x27;, &#x27;First item beside opener&#x27;, false, &#x27;Keep the first item on the opening line and wrap later items.&#x27;, &#x27;call(first,\n\tsecond)&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Lists &amp; wrapping&#x27;, &#x27;closing-delimiter&#x27;, &#x27;Closing delimiter on a broken list&#x27;, &#x27;Where does the closing delimiter go?&#x27;, &#x27;wrapping.closing-delimiter&#x27;, &#x27;own-line&#x27;, [
+        o(&#x27;own-line&#x27;, &#x27;Own line&#x27;, &#x27;own-line&#x27;, &#x27;Dedent the closing delimiter to the construct’s base indentation.&#x27;, &#x27;call(\n\tfirst,\n\tsecond,\n)&#x27;),
+        o(&#x27;last-line&#x27;, &#x27;After the final item&#x27;, &#x27;last-line&#x27;, &#x27;Close immediately after the last item.&#x27;, &#x27;call(\n\tfirst,\n\tsecond)&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Lists &amp; wrapping&#x27;, &#x27;broken-items&#x27;, &#x27;Items per line&#x27;, &#x27;How many list items may appear on a continuation line?&#x27;, &#x27;wrapping.items-per-line&#x27;, &#x27;one&#x27;, [
+        o(&#x27;one&#x27;, &#x27;Exactly one&#x27;, 1, &#x27;Every comma advances to the next line after a group breaks.&#x27;, &#x27;call(\n\tfirst,\n\tsecond,\n\tthird,\n)&#x27;),
+        o(&#x27;fill&#x27;, &#x27;As many as fit&#x27;, &#x27;fill&#x27;, &#x27;Pack items up to the print width.&#x27;, &#x27;call(\n\tfirst, second,\n\tthird,\n)&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Lists &amp; wrapping&#x27;, &#x27;trailing-comma&#x27;, &#x27;Trailing commas&#x27;, &#x27;What trailing-comma policy applies to broken lists?&#x27;, &#x27;wrapping.trailing-comma&#x27;, &#x27;always-broken&#x27;, [
+        o(&#x27;always-broken&#x27;, &#x27;Required when broken&#x27;, &#x27;always-broken&#x27;, &#x27;Insert a comma before the closing delimiter; omit it from a flat list.&#x27;, &#x27;call(\n\tfirst,\n\tsecond,\n)&#x27;),
+        o(&#x27;preserve&#x27;, &#x27;Preserve source&#x27;, &#x27;preserve&#x27;, &#x27;Do not add or remove an optional trailing comma.&#x27;, &#x27;call(first, second)&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;always&#x27;, &#x27;Always where legal&#x27;, &#x27;always&#x27;, &#x27;Add a trailing comma to flat and broken lists where syntax permits.&#x27;, &#x27;values := []int{1, 2,}&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+      d(&#x27;Lists &amp; wrapping&#x27;, &#x27;list-comments&#x27;, &#x27;Comments inside lists&#x27;, &#x27;Does an attached comment force multiline layout?&#x27;, &#x27;wrapping.comments&#x27;, &#x27;force-break&#x27;, [
+        o(&#x27;force-break&#x27;, &#x27;Always break&#x27;, true, &#x27;Any comment within an eligible list forces the whole group to multiline form.&#x27;, &#x27;call(\n\tfirst, // primary\n\tsecond,\n)&#x27;),
+        o(&#x27;inline-if-fit&#x27;, &#x27;Keep inline comments when they fit&#x27;, false, &#x27;A trailing comment may remain in an otherwise flat list.&#x27;, &#x27;call(first /* primary */, second)&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Lists &amp; wrapping&#x27;, &#x27;list-blank-lines&#x27;, &#x27;Blank lines inside lists&#x27;, &#x27;Should a source blank separator force and survive multiline layout?&#x27;, &#x27;wrapping.blank-lines&#x27;, &#x27;force-preserve&#x27;, [
+        o(&#x27;force-preserve&#x27;, &#x27;Force break and preserve one&#x27;, &#x27;force-preserve&#x27;, &#x27;A blank line inside a soft group makes it multiline and remains as one blank separator.&#x27;, &#x27;call(\n\tprimary,\n\n\tfallback,\n)&#x27;),
+        o(&#x27;discard&#x27;, &#x27;Discard source blank lines&#x27;, &#x27;discard&#x27;, &#x27;Fit the list solely from tokens and width.&#x27;, &#x27;call(primary, fallback)&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Lists &amp; wrapping&#x27;, &#x27;call-arguments&#x27;, &#x27;Function call arguments&#x27;, &#x27;When should call arguments wrap?&#x27;, &#x27;wrapping.call-arguments&#x27;, &#x27;width&#x27;, [
+        o(&#x27;width&#x27;, &#x27;Wrap only when needed&#x27;, &#x27;width&#x27;, &#x27;Fit the complete argument list against print width.&#x27;, &#x27;publish(context, report, options)&#x27;),
+        o(&#x27;always-multiple&#x27;, &#x27;Always break multiple arguments&#x27;, &#x27;always-multiple&#x27;, &#x27;Use multiline form whenever a call has two or more arguments.&#x27;, &#x27;publish(\n\tcontext,\n\treport,\n\toptions,\n)&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;never&#x27;, &#x27;Never wrap automatically&#x27;, &#x27;never&#x27;, &#x27;Allow calls to exceed print width unless comments require lines.&#x27;, &#x27;publish(context, report, options)&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Lists &amp; wrapping&#x27;, &#x27;function-parameters&#x27;, &#x27;Function parameters&#x27;, &#x27;When should declaration parameter lists wrap?&#x27;, &#x27;wrapping.parameters&#x27;, &#x27;width&#x27;, [
+        o(&#x27;width&#x27;, &#x27;Wrap only when needed&#x27;, &#x27;width&#x27;, &#x27;Use the same whole-group fit policy as calls.&#x27;, &#x27;func publish(context Context, report Report) error&#x27;),
+        o(&#x27;always-multiple&#x27;, &#x27;Always break multiple parameters&#x27;, &#x27;always-multiple&#x27;, &#x27;Give every parameter its own line.&#x27;, &#x27;func publish(\n\tcontext Context,\n\treport Report,\n) error&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;preserve&#x27;, &#x27;Preserve source form&#x27;, &#x27;preserve&#x27;, &#x27;Keep a manually multiline signature multiline.&#x27;, &#x27;func publish(context Context, report Report) error&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Lists &amp; wrapping&#x27;, &#x27;result-parameters&#x27;, &#x27;Function result parameters&#x27;, &#x27;How should parenthesized result lists wrap?&#x27;, &#x27;wrapping.results&#x27;, &#x27;width&#x27;, [
+        o(&#x27;width&#x27;, &#x27;Wrap only when needed&#x27;, &#x27;width&#x27;, &#x27;A long named or unnamed result list becomes one item per line.&#x27;, &#x27;func load() (Item, Metadata, error)&#x27;),
+        o(&#x27;always-multiple&#x27;, &#x27;Always break multiple results&#x27;, &#x27;always-multiple&#x27;, &#x27;Use multiline form for every tuple result.&#x27;, &#x27;func load() (\n\tItem,\n\tMetadata,\n\terror,\n)&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;never&#x27;, &#x27;Keep result tuple flat&#x27;, &#x27;never&#x27;, &#x27;Allow the result tuple to exceed width.&#x27;, &#x27;func load() (Item, Metadata, error)&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Lists &amp; wrapping&#x27;, &#x27;type-parameters&#x27;, &#x27;Type parameter lists&#x27;, &#x27;How should generic type parameter declarations wrap?&#x27;, &#x27;wrapping.type-parameters&#x27;, &#x27;width&#x27;, [
+        o(&#x27;width&#x27;, &#x27;Wrap on width&#x27;, &#x27;width&#x27;, &#x27;Fit square-bracketed declarations like other soft groups.&#x27;, &#x27;func Map[Input any, Output comparable](value Input) Output&#x27;),
+        o(&#x27;always-multiple&#x27;, &#x27;Always break multiple type parameters&#x27;, &#x27;always-multiple&#x27;, &#x27;Place each declaration on its own line.&#x27;, &#x27;func Map[\n\tInput any,\n\tOutput comparable,\n](value Input) Output&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Lists &amp; wrapping&#x27;, &#x27;type-arguments&#x27;, &#x27;Type argument lists&#x27;, &#x27;How should generic instantiations wrap?&#x27;, &#x27;wrapping.type-arguments&#x27;, &#x27;width&#x27;, [
+        o(&#x27;width&#x27;, &#x27;Wrap on width&#x27;, &#x27;width&#x27;, &#x27;Fit type arguments against print width.&#x27;, &#x27;Convert[Source, Destination](value)&#x27;),
+        o(&#x27;follow-call&#x27;, &#x27;Break with call arguments&#x27;, &#x27;follow-call&#x27;, &#x27;If the adjacent call breaks, break the type argument list too.&#x27;, &#x27;Convert[\n\tSource,\n\tDestination,\n](\n\tvalue,\n)&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;never&#x27;, &#x27;Never break type arguments&#x27;, &#x27;never&#x27;, &#x27;Keep generic brackets flat even when the call wraps.&#x27;, &#x27;Convert[Source, Destination](\n\tvalue,\n)&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Lists &amp; wrapping&#x27;, &#x27;composite-literals&#x27;, &#x27;Composite literals&#x27;, &#x27;When should non-empty struct, map, slice, and array literals break?&#x27;, &#x27;wrapping.composite-literals&#x27;, &#x27;always&#x27;, [
+        o(&#x27;always&#x27;, &#x27;Always multiline&#x27;, &#x27;always&#x27;, &#x27;Current Strider policy, even at print width 500.&#x27;, &#x27;user := User{\n\tName: &quot;Ada&quot;,\n\tAge:  37,\n}&#x27;),
+        o(&#x27;width&#x27;, &#x27;Only when needed&#x27;, &#x27;width&#x27;, &#x27;Keep short literals flat and break long ones.&#x27;, &#x27;user := User{Name: &quot;Ada&quot;, Age: 37}&#x27;, &#x27;gofmt-compatible&#x27;),
+        o(&#x27;preserve&#x27;, &#x27;Preserve flat vs multiline&#x27;, &#x27;preserve&#x27;, &#x27;Respect author choice, normalizing items within that shape.&#x27;, &#x27;user := User{Name: &quot;Ada&quot;, Age: 37}&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Lists &amp; wrapping&#x27;, &#x27;empty-literals&#x27;, &#x27;Empty composite literals&#x27;, &#x27;How should an empty literal body be rendered?&#x27;, &#x27;wrapping.empty-literals&#x27;, &#x27;compact&#x27;, [
+        o(&#x27;compact&#x27;, &#x27;Compact braces&#x27;, &#x27;compact&#x27;, &#x27;Never introduce an interior newline for zero elements.&#x27;, &#x27;values := []int{}\nlookup := map[string]int{}&#x27;),
+        o(&#x27;multiline&#x27;, &#x27;Multiline braces&#x27;, &#x27;multiline&#x27;, &#x27;Give empty values the same vertical shape as populated values.&#x27;, &#x27;values := []int{\n}&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+      d(&#x27;Lists &amp; wrapping&#x27;, &#x27;parenthesized-expression&#x27;, &#x27;Parenthesized expressions&#x27;, &#x27;May a grouping parenthesis introduce line wrapping?&#x27;, &#x27;wrapping.parenthesized-expression&#x27;, &#x27;never&#x27;, [
+        o(&#x27;never&#x27;, &#x27;Never by itself&#x27;, &#x27;never&#x27;, &#x27;Ordinary expression parentheses are not eligible soft groups today.&#x27;, &#x27;result := (first + second + third)&#x27;),
+        o(&#x27;width&#x27;, &#x27;Wrap expression inside&#x27;, &#x27;width&#x27;, &#x27;Allow a long parenthesized expression to use continuation lines.&#x27;, &#x27;result := (\n\tfirst + second + third\n)&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Lists &amp; wrapping&#x27;, &#x27;index-slice&#x27;, &#x27;Index and slice expressions&#x27;, &#x27;May indexes and slice bounds wrap?&#x27;, &#x27;wrapping.index-slice&#x27;, &#x27;never&#x27;, [
+        o(&#x27;never&#x27;, &#x27;Keep flat&#x27;, &#x27;never&#x27;, &#x27;Ordinary brackets stay on one line; only generic brackets are soft groups.&#x27;, &#x27;window := values[veryLongStart:veryLongEnd:maxCapacity]&#x27;),
+        o(&#x27;width&#x27;, &#x27;Wrap bounds&#x27;, &#x27;width&#x27;, &#x27;Permit multiline index or slice expressions.&#x27;, &#x27;window := values[\n\tveryLongStart:veryLongEnd:maxCapacity\n]&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Lists &amp; wrapping&#x27;, &#x27;nested-groups&#x27;, &#x27;Nested wrapping&#x27;, &#x27;How should an outer and inner eligible group influence each other?&#x27;, &#x27;wrapping.nested-groups&#x27;, &#x27;independent&#x27;, [
+        o(&#x27;independent&#x27;, &#x27;Fit each group independently&#x27;, &#x27;independent&#x27;, &#x27;An outer group may break while a short nested call stays flat.&#x27;, &#x27;outer(\n\tinner(first, second),\n\tthird,\n)&#x27;),
+        o(&#x27;cascade&#x27;, &#x27;Cascade breaks downward&#x27;, &#x27;cascade&#x27;, &#x27;Once the outer group breaks, break every non-empty nested group too.&#x27;, &#x27;outer(\n\tinner(\n\t\tfirst,\n\t\tsecond,\n\t),\n\tthird,\n)&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;propagate-up&#x27;, &#x27;Propagate any inner break upward&#x27;, &#x27;propagate-up&#x27;, &#x27;If an inner group breaks, force all containing groups to break.&#x27;, &#x27;outer(\n\tinner(\n\t\tfirst,\n\t\tsecond,\n\t),\n)&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+
+      d(&#x27;Expressions &amp; spacing&#x27;, &#x27;binary-spacing&#x27;, &#x27;Binary operator spacing&#x27;, &#x27;How much space surrounds binary operators?&#x27;, &#x27;spacing.binary-operators&#x27;, &#x27;one&#x27;, [
+        o(&#x27;one&#x27;, &#x27;Go precedence-aware spacing&#x27;, &#x27;gofmt&#x27;, &#x27;Use spaces around most operators while compacting higher-precedence subexpressions when Go’s standard formatter does.&#x27;, &#x27;result := a + b*c\nready := left &amp;&amp; right&#x27;),
+        o(&#x27;all-spaced&#x27;, &#x27;One space around every operator&#x27;, &#x27;all-spaced&#x27;, &#x27;Space multiplication, division, shifts, and bitwise operations exactly like lower-precedence operators.&#x27;, &#x27;result := a + b * c&#x27;, &#x27;breaks-gofmt&#x27;),
+        o(&#x27;compact-high-precedence&#x27;, &#x27;Compact selected operators&#x27;, &#x27;compact-high-precedence&#x27;, &#x27;Configure which higher-precedence operators omit spaces.&#x27;, &#x27;result := a + b*c&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Expressions &amp; spacing&#x27;, &#x27;binary-wrap&#x27;, &#x27;Binary expression wrapping&#x27;, &#x27;Should long binary expressions wrap automatically?&#x27;, &#x27;wrapping.binary-expressions&#x27;, &#x27;never&#x27;, [
+        o(&#x27;never&#x27;, &#x27;Do not wrap automatically&#x27;, &#x27;never&#x27;, &#x27;Current implementation can exceed print width because binary expressions are not soft groups.&#x27;, &#x27;result := firstCondition &amp;&amp; secondCondition &amp;&amp; thirdCondition &amp;&amp; fourthCondition&#x27;),
+        o(&#x27;precedence&#x27;, &#x27;Wrap at precedence boundaries&#x27;, &#x27;precedence&#x27;, &#x27;Break low-precedence operators first while preserving evaluation grouping.&#x27;, &#x27;result := firstCondition &amp;&amp;\n\tsecondCondition &amp;&amp;\n\tthirdCondition&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;one-operand&#x27;, &#x27;One operand per line&#x27;, &#x27;one-operand&#x27;, &#x27;Once broken, place every operand on its own line.&#x27;, &#x27;result :=\n\tfirstCondition &amp;&amp;\n\tsecondCondition &amp;&amp;\n\tthirdCondition&#x27;, &#x27;requires-new-printer&#x27;)
+      ], false, &#x27;The formatter documentation currently describes expressions as width-bounded, but the printer only wraps eligible delimited groups.&#x27;),
+      d(&#x27;Expressions &amp; spacing&#x27;, &#x27;operator-position&#x27;, &#x27;Operator position on wrapped expressions&#x27;, &#x27;If an expression wraps, which line owns the operator?&#x27;, &#x27;wrapping.operator-position&#x27;, &#x27;previous-line&#x27;, [
+        o(&#x27;previous-line&#x27;, &#x27;End of previous line&#x27;, &#x27;previous-line&#x27;, &#x27;Keep the operator before the newline so Go semicolon insertion cannot terminate the expression.&#x27;, &#x27;result := first &amp;&amp;\n\tsecond &amp;&amp;\n\tthird&#x27;),
+        o(&#x27;next-line&#x27;, &#x27;Start of next line&#x27;, &#x27;next-line&#x27;, &#x27;Visually lead each continuation with its operator; requires parentheses or another syntax-safe context.&#x27;, &#x27;result := (first\n\t&amp;&amp; second\n\t&amp;&amp; third)&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Expressions &amp; spacing&#x27;, &#x27;assignment-spacing&#x27;, &#x27;Assignment operators&#x27;, &#x27;How should =, :=, and compound assignment operators be spaced?&#x27;, &#x27;spacing.assignment&#x27;, &#x27;one&#x27;, [
+        o(&#x27;one&#x27;, &#x27;One space on both sides&#x27;, 1, &#x27;Normalize every assignment operator consistently.&#x27;, &#x27;value := initial\ncount += delta&#x27;),
+        o(&#x27;align&#x27;, &#x27;Align adjacent assignments&#x27;, &#x27;align&#x27;, &#x27;Vertically align operators across consecutive statements.&#x27;, &#x27;short    := 1\nlongName := 2&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Expressions &amp; spacing&#x27;, &#x27;unary-spacing&#x27;, &#x27;Unary operators&#x27;, &#x27;Should unary operators touch their operand?&#x27;, &#x27;spacing.unary&#x27;, &#x27;tight&#x27;, [
+        o(&#x27;tight&#x27;, &#x27;No interior space&#x27;, &#x27;tight&#x27;, &#x27;Keep !, +, -, ^, *, &amp;, and receive operators attached.&#x27;, &#x27;ready := !stopped\nvalue := &lt;-input\npointer := &amp;item&#x27;),
+        o(&#x27;spaced&#x27;, &#x27;Space after operator&#x27;, &#x27;spaced&#x27;, &#x27;Insert a space before the operand.&#x27;, &#x27;ready := ! stopped&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+      d(&#x27;Expressions &amp; spacing&#x27;, &#x27;selector-spacing&#x27;, &#x27;Selectors&#x27;, &#x27;How should periods in qualified names and selectors be spaced?&#x27;, &#x27;spacing.selector&#x27;, &#x27;tight&#x27;, [
+        o(&#x27;tight&#x27;, &#x27;No spaces&#x27;, &#x27;tight&#x27;, &#x27;Attach both sides of the period.&#x27;, &#x27;http.Client{}.Do(request)&#x27;),
+        o(&#x27;spaced&#x27;, &#x27;Spaces around period&#x27;, &#x27;spaced&#x27;, &#x27;Visually separate selector components.&#x27;, &#x27;http . Client{} . Do(request)&#x27;, &#x27;invalid-go-syntax&#x27;)
+      ]),
+      d(&#x27;Expressions &amp; spacing&#x27;, &#x27;selector-chains&#x27;, &#x27;Selector and call chains&#x27;, &#x27;May a long fluent chain wrap?&#x27;, &#x27;wrapping.selector-chains&#x27;, &#x27;never&#x27;, [
+        o(&#x27;never&#x27;, &#x27;Keep the chain flat&#x27;, &#x27;never&#x27;, &#x27;Current implementation does not introduce breaks at periods.&#x27;, &#x27;result := client.WithContext(context).WithRetry(policy).Execute(request)&#x27;),
+        o(&#x27;period-leading&#x27;, &#x27;Break before period&#x27;, &#x27;period-leading&#x27;, &#x27;Put each chained selector on a continuation line.&#x27;, &#x27;result := client\n\t.WithContext(context)\n\t.WithRetry(policy)\n\t.Execute(request)&#x27;, &#x27;invalid-go-syntax&#x27;),
+        o(&#x27;call-boundary&#x27;, &#x27;Break after completed calls&#x27;, &#x27;call-boundary&#x27;, &#x27;Wrap only at syntax-safe expression boundaries using a parenthesized base.&#x27;, &#x27;result := (client.WithContext(context)).\n\tWithRetry(policy).Execute(request)&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Expressions &amp; spacing&#x27;, &#x27;call-index-spacing&#x27;, &#x27;Calls, indexes, and generic brackets&#x27;, &#x27;Is whitespace allowed before an opening parenthesis or bracket?&#x27;, &#x27;spacing.postfix-delimiters&#x27;, &#x27;tight&#x27;, [
+        o(&#x27;tight&#x27;, &#x27;No space&#x27;, &#x27;tight&#x27;, &#x27;Attach calls, indexes, slices, and type arguments to the operand.&#x27;, &#x27;run(value)\nitems[index]\nSet[string]{}&#x27;),
+        o(&#x27;spaced&#x27;, &#x27;Space before delimiter&#x27;, &#x27;spaced&#x27;, &#x27;Insert a visual gap before postfix delimiters.&#x27;, &#x27;run (value)\nitems [index]&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+      d(&#x27;Expressions &amp; spacing&#x27;, &#x27;comma-spacing&#x27;, &#x27;Commas&#x27;, &#x27;How should commas be spaced in a flat list?&#x27;, &#x27;spacing.comma&#x27;, &#x27;after&#x27;, [
+        o(&#x27;after&#x27;, &#x27;No space before; one after&#x27;, &#x27;after&#x27;, &#x27;Canonical comma spacing in every flat list.&#x27;, &#x27;call(first, second, third)&#x27;),
+        o(&#x27;none&#x27;, &#x27;No spaces&#x27;, &#x27;none&#x27;, &#x27;Use compact comma-separated lists.&#x27;, &#x27;call(first,second,third)&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+      d(&#x27;Expressions &amp; spacing&#x27;, &#x27;keyed-colon&#x27;, &#x27;Keyed literal colons&#x27;, &#x27;How should key:value separators be spaced?&#x27;, &#x27;spacing.keyed-colon&#x27;, &#x27;after&#x27;, [
+        o(&#x27;after&#x27;, &#x27;No space before; one after&#x27;, &#x27;after&#x27;, &#x27;Attach the colon to the key and separate the value.&#x27;, &#x27;User{\n\tName: &quot;Ada&quot;,\n}&#x27;),
+        o(&#x27;both&#x27;, &#x27;Spaces around colon&#x27;, &#x27;both&#x27;, &#x27;Separate the key, colon, and value.&#x27;, &#x27;User{\n\tName : &quot;Ada&quot;,\n}&#x27;, &#x27;breaks-gofmt&#x27;),
+        o(&#x27;none&#x27;, &#x27;No spaces&#x27;, &#x27;none&#x27;, &#x27;Use compact keyed entries.&#x27;, &#x27;User{\n\tName:&quot;Ada&quot;,\n}&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+      d(&#x27;Expressions &amp; spacing&#x27;, &#x27;channel-arrows&#x27;, &#x27;Channel arrows&#x27;, &#x27;How should channel directions, sends, and receives be spaced?&#x27;, &#x27;spacing.channel-arrow&#x27;, &#x27;contextual&#x27;, [
+        o(&#x27;contextual&#x27;, &#x27;Contextual Go spacing&#x27;, &#x27;contextual&#x27;, &#x27;Attach direction to chan where required; space sends and standalone receives.&#x27;, &#x27;func pipe(in &lt;-chan Item, out chan&lt;- Item) {\n\tout &lt;- &lt;-in\n}&#x27;),
+        o(&#x27;always-spaced&#x27;, &#x27;Always spaces around arrow&#x27;, &#x27;always-spaced&#x27;, &#x27;Treat every arrow like a binary operator.&#x27;, &#x27;in &lt; - chan Item&#x27;, &#x27;invalid-go-syntax&#x27;)
+      ]),
+      d(&#x27;Expressions &amp; spacing&#x27;, &#x27;type-unions&#x27;, &#x27;Type-set unions&#x27;, &#x27;How should | in interface type sets be spaced and wrapped?&#x27;, &#x27;spacing.type-union&#x27;, &#x27;spaced-flat&#x27;, [
+        o(&#x27;spaced-flat&#x27;, &#x27;Spaces; keep flat&#x27;, &#x27;spaced-flat&#x27;, &#x27;Use spaces around | and do not automatically wrap the union.&#x27;, &#x27;interface {\n\t~int | ~int32 | ~int64\n}&#x27;),
+        o(&#x27;wrap&#x27;, &#x27;One term per line&#x27;, &#x27;wrap&#x27;, &#x27;Break a long union with the operator at the end of the preceding line.&#x27;, &#x27;interface {\n\t~int |\n\t\t~int32 |\n\t\t~int64\n}&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Expressions &amp; spacing&#x27;, &#x27;ellipsis&#x27;, &#x27;Ellipsis&#x27;, &#x27;How should ... attach in variadic declarations, calls, and array types?&#x27;, &#x27;spacing.ellipsis&#x27;, &#x27;tight&#x27;, [
+        o(&#x27;tight&#x27;, &#x27;Attach to its operand&#x27;, &#x27;tight&#x27;, &#x27;No space after ... in a type and no space before ... in an expansion.&#x27;, &#x27;func log(values ...any) {}\nlog(values...)\nvar data [...]byte&#x27;),
+        o(&#x27;spaced&#x27;, &#x27;Separate ellipsis&#x27;, &#x27;spaced&#x27;, &#x27;Insert a gap around the token.&#x27;, &#x27;func log(values ... any) {}\nlog(values ...)&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+      d(&#x27;Expressions &amp; spacing&#x27;, &#x27;composite-brace-space&#x27;, &#x27;Space before composite/type braces&#x27;, &#x27;When should an opening brace receive a preceding space?&#x27;, &#x27;spacing.before-brace&#x27;, &#x27;literal-tight&#x27;, [
+        o(&#x27;always&#x27;, &#x27;One space before {&#x27;, &#x27;always&#x27;, &#x27;Applies after struct, interface, control headers, and composite literal types.&#x27;, &#x27;type User struct {\n}\nvalue := User{\n\tName: &quot;Ada&quot;,\n}&#x27;),
+        o(&#x27;literal-tight&#x27;, &#x27;Tight composite literals&#x27;, &#x27;literal-tight&#x27;, &#x27;Keep type declarations spaced but attach a literal brace to its type.&#x27;, &#x27;value := User{\n\tName: &quot;Ada&quot;,\n}&#x27;, &#x27;gofmt-compatible&#x27;),
+        o(&#x27;tight-all&#x27;, &#x27;No space before braces&#x27;, &#x27;tight-all&#x27;, &#x27;Attach braces in every context.&#x27;, &#x27;if ready{\n}&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+
+      d(&#x27;Statements &amp; blocks&#x27;, &#x27;block-layout&#x27;, &#x27;Non-empty block layout&#x27;, &#x27;May statements share a line with block braces?&#x27;, &#x27;blocks.non-empty&#x27;, &#x27;multiline&#x27;, [
+        o(&#x27;multiline&#x27;, &#x27;Always multiline&#x27;, &#x27;multiline&#x27;, &#x27;Every non-empty function or control-flow block places statements on their own lines.&#x27;, &#x27;if ready {\n\tstart()\n}&#x27;),
+        o(&#x27;compact-simple&#x27;, &#x27;Compact simple blocks&#x27;, &#x27;compact-simple&#x27;, &#x27;Keep a single short statement beside the braces.&#x27;, &#x27;if ready { start() }&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+      d(&#x27;Statements &amp; blocks&#x27;, &#x27;empty-blocks&#x27;, &#x27;Empty blocks&#x27;, &#x27;How should a block containing no statements be rendered?&#x27;, &#x27;blocks.empty&#x27;, &#x27;compact&#x27;, [
+        o(&#x27;compact&#x27;, &#x27;Compact braces&#x27;, &#x27;compact&#x27;, &#x27;Keep {} on the same line as the header.&#x27;, &#x27;func noop() {}\nselect {}&#x27;),
+        o(&#x27;multiline&#x27;, &#x27;Closing brace on next line&#x27;, &#x27;multiline&#x27;, &#x27;Render even empty blocks vertically.&#x27;, &#x27;func noop() {\n}&#x27;, &#x27;breaks-gofmt&#x27;),
+        o(&#x27;spaced&#x27;, &#x27;Interior space&#x27;, &#x27;spaced&#x27;, &#x27;Keep one line but add a space inside.&#x27;, &#x27;func noop() { }&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+      d(&#x27;Statements &amp; blocks&#x27;, &#x27;brace-style&#x27;, &#x27;Opening brace style&#x27;, &#x27;Where should a block opening brace appear?&#x27;, &#x27;blocks.brace-style&#x27;, &#x27;same-line&#x27;, [
+        o(&#x27;same-line&#x27;, &#x27;Same line as header&#x27;, &#x27;same-line&#x27;, &#x27;Use Go’s required/canonical K&amp;R-style brace position.&#x27;, &#x27;if ready {\n\tstart()\n}&#x27;),
+        o(&#x27;next-line&#x27;, &#x27;Next line&#x27;, &#x27;next-line&#x27;, &#x27;Allman style.&#x27;, &#x27;if ready\n{\n\tstart()\n}&#x27;, &#x27;invalid-go-syntax&#x27;)
+      ]),
+      d(&#x27;Statements &amp; blocks&#x27;, &#x27;else-placement&#x27;, &#x27;Else placement&#x27;, &#x27;Where should else begin after a closing brace?&#x27;, &#x27;blocks.else-style&#x27;, &#x27;same-line&#x27;, [
+        o(&#x27;same-line&#x27;, &#x27;} else {&#x27;, &#x27;same-line&#x27;, &#x27;Keep else on the same line so semicolon insertion remains valid.&#x27;, &#x27;if ready {\n\tstart()\n} else {\n\twait()\n}&#x27;),
+        o(&#x27;next-line&#x27;, &#x27;Else on next line&#x27;, &#x27;next-line&#x27;, &#x27;Place else below the previous closing brace.&#x27;, &#x27;if ready {\n\tstart()\n}\nelse {\n\twait()\n}&#x27;, &#x27;invalid-go-syntax&#x27;)
+      ]),
+      d(&#x27;Statements &amp; blocks&#x27;, &#x27;simple-statements&#x27;, &#x27;If and switch initializer clauses&#x27;, &#x27;How should the initializer and condition/tag share a line?&#x27;, &#x27;statements.initializer&#x27;, &#x27;same-line&#x27;, [
+        o(&#x27;same-line&#x27;, &#x27;One line with ; and spaces&#x27;, &#x27;same-line&#x27;, &#x27;Reflow any source break so the initializer remains beside its condition.&#x27;, &#x27;if value, err := load(); err != nil {\n\treturn err\n}&#x27;),
+        o(&#x27;break-after-semi&#x27;, &#x27;Break after semicolon&#x27;, &#x27;break-after-semi&#x27;, &#x27;Put the condition on a continuation line.&#x27;, &#x27;if value, err := load();\n\terr != nil {\n\treturn err\n}&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Statements &amp; blocks&#x27;, &#x27;for-clause&#x27;, &#x27;Classic for clauses&#x27;, &#x27;How should init, condition, and post clauses lay out?&#x27;, &#x27;statements.for-clause&#x27;, &#x27;same-line&#x27;, [
+        o(&#x27;same-line&#x27;, &#x27;One line&#x27;, &#x27;same-line&#x27;, &#x27;Keep both semicolons in the header with one space after each.&#x27;, &#x27;for index := 0; index &lt; limit; index++ {\n\tuse(index)\n}&#x27;),
+        o(&#x27;multiline&#x27;, &#x27;One clause per line&#x27;, &#x27;multiline&#x27;, &#x27;Break after each semicolon.&#x27;, &#x27;for index := 0;\n\tindex &lt; limit;\n\tindex++ {\n\tuse(index)\n}&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Statements &amp; blocks&#x27;, &#x27;range-clause&#x27;, &#x27;Range clauses&#x27;, &#x27;How should assignment and range operators be spaced?&#x27;, &#x27;statements.range&#x27;, &#x27;spaced&#x27;, [
+        o(&#x27;spaced&#x27;, &#x27;Spaces around := and =&#x27;, &#x27;spaced&#x27;, &#x27;Use one space around assignment and after the range keyword.&#x27;, &#x27;for index, value := range values {\n\tuse(index, value)\n}&#x27;),
+        o(&#x27;compact&#x27;, &#x27;Compact assignment&#x27;, &#x27;compact&#x27;, &#x27;Remove spaces around := or =.&#x27;, &#x27;for index,value:=range values {\n}&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+      d(&#x27;Statements &amp; blocks&#x27;, &#x27;switch-cases&#x27;, &#x27;Switch case indentation&#x27;, &#x27;How should case labels and their bodies indent?&#x27;, &#x27;statements.case-indent&#x27;, &#x27;outdent-case&#x27;, [
+        o(&#x27;outdent-case&#x27;, &#x27;Case aligns with switch body edge&#x27;, &#x27;outdent-case&#x27;, &#x27;Case/default are one level less than their statements.&#x27;, &#x27;switch value {\ncase 1:\n\tfirst()\ndefault:\n\tfallback()\n}&#x27;),
+        o(&#x27;indent-case&#x27;, &#x27;Indent case labels&#x27;, &#x27;indent-case&#x27;, &#x27;Indent labels inside the switch and bodies one further level.&#x27;, &#x27;switch value {\n\tcase 1:\n\t\tfirst()\n}&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+      d(&#x27;Statements &amp; blocks&#x27;, &#x27;case-values&#x27;, &#x27;Case expression lists&#x27;, &#x27;May a long list of case values wrap?&#x27;, &#x27;wrapping.case-values&#x27;, &#x27;never&#x27;, [
+        o(&#x27;never&#x27;, &#x27;Keep case header flat&#x27;, &#x27;never&#x27;, &#x27;Current case commas add spaces but do not form a width-aware group.&#x27;, &#x27;case firstValue, secondValue, thirdValue:&#x27;),
+        o(&#x27;one-per-line&#x27;, &#x27;One value per line&#x27;, &#x27;one-per-line&#x27;, &#x27;Break the case list and keep the colon with the final value.&#x27;, &#x27;case firstValue,\n\tsecondValue,\n\tthirdValue:&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;repeat-case&#x27;, &#x27;Repeat case keyword&#x27;, &#x27;repeat-case&#x27;, &#x27;Split into distinct case clauses when bodies are identical.&#x27;, &#x27;case firstValue:\ncase secondValue:&#x27;, &#x27;semantic-change-risk&#x27;)
+      ]),
+      d(&#x27;Statements &amp; blocks&#x27;, &#x27;select-clauses&#x27;, &#x27;Select communication clauses&#x27;, &#x27;How should select cases lay out?&#x27;, &#x27;statements.select-clauses&#x27;, &#x27;switch-style&#x27;, [
+        o(&#x27;switch-style&#x27;, &#x27;Like switch cases&#x27;, &#x27;switch-style&#x27;, &#x27;Outdent case/default and indent each clause body one level.&#x27;, &#x27;select {\ncase value := &lt;-input:\n\tuse(value)\ncase output &lt;- fallback:\n}&#x27;),
+        o(&#x27;indent-case&#x27;, &#x27;Indent clauses&#x27;, &#x27;indent-case&#x27;, &#x27;Indent communication cases inside select.&#x27;, &#x27;select {\n\tcase value := &lt;-input:\n\t\tuse(value)\n}&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+      d(&#x27;Statements &amp; blocks&#x27;, &#x27;labels&#x27;, &#x27;Statement labels&#x27;, &#x27;How should labels indent within a block?&#x27;, &#x27;statements.labels&#x27;, &#x27;outdent&#x27;, [
+        o(&#x27;outdent&#x27;, &#x27;One level less than statements&#x27;, &#x27;outdent&#x27;, &#x27;Align a label with the block edge; indent its following statement normally.&#x27;, &#x27;func run() {\nretry:\n\tif !ready {\n\t\tgoto retry\n\t}\n}&#x27;),
+        o(&#x27;statement-indent&#x27;, &#x27;Align with statements&#x27;, &#x27;statement-indent&#x27;, &#x27;Keep the label at ordinary statement indentation.&#x27;, &#x27;func run() {\n\tretry:\n\tif !ready {\n\t}\n}&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+      d(&#x27;Statements &amp; blocks&#x27;, &#x27;statement-semicolons&#x27;, &#x27;Explicit semicolons&#x27;, &#x27;What should happen to explicit statement separators?&#x27;, &#x27;statements.semicolons&#x27;, &#x27;lines&#x27;, [
+        o(&#x27;lines&#x27;, &#x27;Convert to line breaks&#x27;, &#x27;lines&#x27;, &#x27;Outside control headers, each semicolon becomes a canonical statement boundary line.&#x27;, &#x27;first()\nsecond()&#x27;),
+        o(&#x27;preserve&#x27;, &#x27;Preserve semicolons&#x27;, &#x27;preserve&#x27;, &#x27;Allow multiple statements on one line.&#x27;, &#x27;first(); second()&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Statements &amp; blocks&#x27;, &#x27;return-values&#x27;, &#x27;Return value lists&#x27;, &#x27;Should long unparenthesized return lists wrap?&#x27;, &#x27;wrapping.return-values&#x27;, &#x27;never&#x27;, [
+        o(&#x27;never&#x27;, &#x27;Keep on one line&#x27;, &#x27;never&#x27;, &#x27;Return expressions are not an eligible group today and may exceed width.&#x27;, &#x27;return firstValue, secondValue, thirdValue, nil&#x27;),
+        o(&#x27;one-per-line&#x27;, &#x27;One result per line&#x27;, &#x27;one-per-line&#x27;, &#x27;Break after return and after each comma.&#x27;, &#x27;return firstValue,\n\tsecondValue,\n\tthirdValue,\n\tnil&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;parenthesize&#x27;, &#x27;Parenthesize and wrap&#x27;, &#x27;parenthesize&#x27;, &#x27;Add parentheses to create an explicit multiline expression list.&#x27;, &#x27;return (\n\tfirstValue,\n\tsecondValue,\n)&#x27;, &#x27;invalid-go-syntax&#x27;)
+      ]),
+
+      d(&#x27;Comments&#x27;, &#x27;line-comment-space&#x27;, &#x27;Line comment prefix spacing&#x27;, &#x27;Should ordinary // comments contain a space before text?&#x27;, &#x27;comments.line-prefix&#x27;, &#x27;normalize&#x27;, [
+        o(&#x27;normalize&#x27;, &#x27;Insert one space&#x27;, &#x27;normalize&#x27;, &#x27;Rewrite //explain to // explain for ordinary comments.&#x27;, &#x27;// explain the value&#x27;),
+        o(&#x27;preserve&#x27;, &#x27;Preserve spelling&#x27;, &#x27;preserve&#x27;, &#x27;Leave //text and // text as authored.&#x27;, &#x27;//explain the value&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Comments&#x27;, &#x27;directive-comments&#x27;, &#x27;Directive-like comments&#x27;, &#x27;Which line comments are exempt from prefix normalization?&#x27;, &#x27;comments.directive-prefixes&#x27;, &#x27;builtin-list&#x27;, [
+        o(&#x27;builtin-list&#x27;, &#x27;Preserve recognized prefixes&#x27;, [&#x27;go:&#x27;, &#x27;line &#x27;, &#x27;+build&#x27;, &#x27;nolint&#x27;, &#x27;strider:&#x27;, &#x27;Code generated&#x27;, &#x27;TODO&#x27;, &#x27;FIXME&#x27;, &#x27;#&#x27;], &#x27;Keep tool directives, build tags, markers, tasks, and shebang-like comments byte-for-byte.&#x27;, &#x27;//go:noinline\n//nolint:errcheck\n//TODO(owner): follow up&#x27;),
+        o(&#x27;go-only&#x27;, &#x27;Only Go directives&#x27;, [&#x27;go:&#x27;, &#x27;line &#x27;, &#x27;+build&#x27;], &#x27;Normalize tool- and project-specific comments like ordinary prose.&#x27;, &#x27;// nolint:errcheck\n// TODO(owner): follow up&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;configured&#x27;, &#x27;Configured prefix list&#x27;, [&#x27;go:&#x27;, &#x27;strider:&#x27;], &#x27;Make the exemption vocabulary project-configurable.&#x27;, &#x27;directive-prefixes = [&quot;go:&quot;, &quot;strider:&quot;]&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Comments&#x27;, &#x27;inline-comments&#x27;, &#x27;Trailing line comments&#x27;, &#x27;How should an end-of-line comment attach to code?&#x27;, &#x27;comments.trailing&#x27;, &#x27;one-space&#x27;, [
+        o(&#x27;one-space&#x27;, &#x27;At least one space before //&#x27;, &#x27;one-space&#x27;, &#x27;Keep the comment on the code line and normalize its prefix; go/format may tab-align a run.&#x27;, &#x27;call() // explain the call&#x27;),
+        o(&#x27;own-line&#x27;, &#x27;Move above code&#x27;, &#x27;own-line&#x27;, &#x27;Convert trailing comments into leading standalone comments.&#x27;, &#x27;// explain the call\ncall()&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;preserve&#x27;, &#x27;Preserve horizontal position&#x27;, &#x27;preserve&#x27;, &#x27;Keep the original number of spaces.&#x27;, &#x27;call()    // explain the call&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Comments&#x27;, &#x27;standalone-comments&#x27;, &#x27;Standalone comment separation&#x27;, &#x27;How much blank space around free-floating comments should survive?&#x27;, &#x27;comments.blank-lines&#x27;, &#x27;preserve-one&#x27;, [
+        o(&#x27;preserve-one&#x27;, &#x27;Preserve up to one blank line&#x27;, &#x27;preserve-one&#x27;, &#x27;Keep a comment visually detached from the next declaration when the source contains a blank line.&#x27;, &#x27;// context for the section\n\nfunc run() {}&#x27;),
+        o(&#x27;attach-next&#x27;, &#x27;Attach to following code&#x27;, &#x27;attach-next&#x27;, &#x27;Remove blank separation after standalone comments.&#x27;, &#x27;// context for the section\nfunc run() {}&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;blank-both&#x27;, &#x27;Require blank lines around&#x27;, &#x27;blank-both&#x27;, &#x27;Always isolate a free-floating comment group.&#x27;, &#x27;first()\n\n// context\n\nsecond()&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Comments&#x27;, &#x27;doc-comments&#x27;, &#x27;Documentation comments&#x27;, &#x27;Should the formatter wrap or rewrite doc comment prose?&#x27;, &#x27;comments.doc-wrap&#x27;, &#x27;preserve-lines&#x27;, [
+        o(&#x27;preserve-lines&#x27;, &#x27;Preserve text and line breaks&#x27;, &#x27;preserve-lines&#x27;, &#x27;Only normalize an ordinary missing space after //; do not reflow paragraphs.&#x27;, &#x27;// Build creates a report from all supplied inputs and writes it\n// to the destination.&#x27;),
+        o(&#x27;print-width&#x27;, &#x27;Wrap prose to print width&#x27;, &#x27;print-width&#x27;, &#x27;Reflow doc paragraphs while preserving directives and code blocks.&#x27;, &#x27;// Build creates a report from all supplied inputs\n// and writes it to the destination.&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Comments&#x27;, &#x27;block-comments&#x27;, &#x27;Block comments&#x27;, &#x27;Should /* ... */ contents be reformatted?&#x27;, &#x27;comments.block&#x27;, &#x27;verbatim&#x27;, [
+        o(&#x27;verbatim&#x27;, &#x27;Preserve text&#x27;, &#x27;verbatim&#x27;, &#x27;Keep block-comment bytes and internal indentation; only its placement is canonicalized.&#x27;, &#x27;/* custom\n   layout */&#x27;),
+        o(&#x27;reindent&#x27;, &#x27;Reindent margin&#x27;, &#x27;reindent&#x27;, &#x27;Shift interior lines with surrounding code.&#x27;, &#x27;\t/* custom\n+\t   layout */&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;convert&#x27;, &#x27;Convert prose to //&#x27;, &#x27;convert&#x27;, &#x27;Rewrite non-directive block comments as line comments.&#x27;, &#x27;// custom\n// layout&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Comments&#x27;, &#x27;build-constraints&#x27;, &#x27;Build constraints&#x27;, &#x27;How should build constraints be separated from package documentation?&#x27;, &#x27;comments.build-constraints&#x27;, &#x27;required-blank&#x27;, [
+        o(&#x27;required-blank&#x27;, &#x27;Require one blank line after constraints&#x27;, &#x27;required-blank&#x27;, &#x27;Preserve the syntactically meaningful blank separator.&#x27;, &#x27;//go:build linux\n\n// Package sample runs on Linux.\npackage sample&#x27;),
+        o(&#x27;preserve&#x27;, &#x27;Preserve source spacing&#x27;, &#x27;preserve&#x27;, &#x27;Do not enforce a blank separator.&#x27;, &#x27;//go:build linux\n// Package sample runs on Linux.\npackage sample&#x27;, &#x27;invalid-go-build-constraint&#x27;)
+      ]),
+      d(&#x27;Comments&#x27;, &#x27;commented-lists&#x27;, &#x27;Comments and list ownership&#x27;, &#x27;When sorting or wrapping, what does a comment belong to?&#x27;, &#x27;comments.attachment&#x27;, &#x27;position&#x27;, [
+        o(&#x27;position&#x27;, &#x27;Preserve source position&#x27;, &#x27;position&#x27;, &#x27;Keep comments in source order before the next token; comments inside soft groups force a break.&#x27;, &#x27;call(\n\t// primary input\n\tfirst,\n\tsecond, // fallback\n)&#x27;),
+        o(&#x27;node&#x27;, &#x27;Attach to syntax node&#x27;, &#x27;node&#x27;, &#x27;Move leading/trailing comments with their associated item during sorting and rewrites.&#x27;, &#x27;call(\n\t// primary input\n\tfirst,\n\tsecond, // fallback\n)&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+
+      d(&#x27;Alignment &amp; guardrails&#x27;, &#x27;composite-alignment&#x27;, &#x27;Keyed literal alignment&#x27;, &#x27;Should keys and values align in multiline composite literals?&#x27;, &#x27;alignment.composite-literals&#x27;, &#x27;align&#x27;, [
+        o(&#x27;align&#x27;, &#x27;Align value columns&#x27;, true, &#x27;The go/format pass aligns adjacent keyed entries.&#x27;, &#x27;User{\n\tID:        7,\n\tFirstName: &quot;Ada&quot;,\n}&#x27;),
+        o(&#x27;minimal&#x27;, &#x27;Minimal spacing&#x27;, false, &#x27;Use one space after every colon with no vertical alignment.&#x27;, &#x27;User{\n\tID: 7,\n\tFirstName: &quot;Ada&quot;,\n}&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+      d(&#x27;Alignment &amp; guardrails&#x27;, &#x27;trailing-comment-alignment&#x27;, &#x27;Trailing comment alignment&#x27;, &#x27;Should runs of trailing comments form a vertical column?&#x27;, &#x27;alignment.trailing-comments&#x27;, &#x27;align&#x27;, [
+        o(&#x27;align&#x27;, &#x27;Align nearby comments&#x27;, true, &#x27;Use go/format tabwriter behavior for fields and declaration specs.&#x27;, &#x27;const (\n\tshort    = 1 // first\n\tlongName = 2 // second\n)&#x27;),
+        o(&#x27;minimal&#x27;, &#x27;One space only&#x27;, false, &#x27;Keep exactly one space between code and each trailing comment.&#x27;, &#x27;const (\n\tshort = 1 // first\n\tlongName = 2 // second\n)&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+      d(&#x27;Alignment &amp; guardrails&#x27;, &#x27;package-clause&#x27;, &#x27;Package clause spacing&#x27;, &#x27;What vertical spacing follows the package clause?&#x27;, &#x27;layout.after-package&#x27;, &#x27;one-blank&#x27;, [
+        o(&#x27;one-blank&#x27;, &#x27;One blank line&#x27;, 1, &#x27;Separate package from imports or the first declaration.&#x27;, &#x27;package sample\n\nfunc run() {}&#x27;),
+        o(&#x27;none&#x27;, &#x27;No blank line&#x27;, 0, &#x27;Place the first declaration immediately below.&#x27;, &#x27;package sample\nfunc run() {}&#x27;, &#x27;breaks-gofmt&#x27;)
+      ]),
+      d(&#x27;Alignment &amp; guardrails&#x27;, &#x27;ast-equivalence&#x27;, &#x27;Syntax-tree equivalence&#x27;, &#x27;Must formatting preserve the parsed program exactly?&#x27;, &#x27;safety.ast-equivalence&#x27;, &#x27;required&#x27;, [
+        o(&#x27;required&#x27;, &#x27;Required&#x27;, true, &#x27;Parse output and compare token/tree meaning before exposing or writing it.&#x27;, &#x27;before AST == after AST&#x27;),
+        o(&#x27;allow-safe-rewrites&#x27;, &#x27;Allow selected rewrites&#x27;, [&#x27;imports&#x27;, &#x27;redundant-parentheses&#x27;], &#x27;Permit explicitly reviewed semantic-preserving transforms.&#x27;, &#x27;value := (input) // may become input&#x27;, &#x27;semantic-change-risk&#x27;)
+      ]),
+      d(&#x27;Alignment &amp; guardrails&#x27;, &#x27;gofmt-stability&#x27;, &#x27;go/format compatibility&#x27;, &#x27;Must the result be unchanged by Go’s standard formatter?&#x27;, &#x27;safety.gofmt-stable&#x27;, &#x27;required&#x27;, [
+        o(&#x27;required&#x27;, &#x27;Required&#x27;, true, &#x27;Run go/format and require the candidate to remain byte-for-byte stable.&#x27;, &#x27;strider(source) == gofmt(strider(source))&#x27;),
+        o(&#x27;syntax-only&#x27;, &#x27;Only require valid Go&#x27;, false, &#x27;Allow a distinct style such as spaces, Allman braces, or nonstandard alignment.&#x27;, &#x27;parse(strider(source)) succeeds&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Alignment &amp; guardrails&#x27;, &#x27;idempotence&#x27;, &#x27;Idempotence and convergence&#x27;, &#x27;What happens if repeated formatting does not settle?&#x27;, &#x27;safety.idempotence&#x27;, &#x27;error&#x27;, [
+        o(&#x27;error&#x27;, &#x27;Fail without writing&#x27;, &#x27;error&#x27;, &#x27;Iterate up to 100 times, then reject non-converging or non-idempotent output.&#x27;, &#x27;format(format(source)) == format(source)&#x27;),
+        o(&#x27;last-result&#x27;, &#x27;Write final iteration&#x27;, &#x27;last-result&#x27;, &#x27;Use the final candidate even if another pass changes it.&#x27;, &#x27;write(iteration[100])&#x27;, &#x27;unsafe&#x27;),
+        o(&#x27;single-pass&#x27;, &#x27;Never iterate&#x27;, &#x27;single-pass&#x27;, &#x27;Render once and trust the printer.&#x27;, &#x27;write(format(source))&#x27;, &#x27;unsafe&#x27;)
+      ]),
+      d(&#x27;Alignment &amp; guardrails&#x27;, &#x27;syntax-errors&#x27;, &#x27;Invalid or unsupported syntax&#x27;, &#x27;What should formatting do when input cannot be parsed or validated?&#x27;, &#x27;safety.invalid-syntax&#x27;, &#x27;error-no-write&#x27;, [
+        o(&#x27;error-no-write&#x27;, &#x27;Report and leave unchanged&#x27;, &#x27;error-no-write&#x27;, &#x27;Return the parse/unsupported error and never expose a partial rewrite.&#x27;, &#x27;fixture.go:3:8: expected expression&#x27;),
+        o(&#x27;best-effort&#x27;, &#x27;Format valid regions&#x27;, &#x27;best-effort&#x27;, &#x27;Rewrite parseable ranges and preserve invalid spans.&#x27;, &#x27;func good() {}\nfunc broken( {&#x27;, &#x27;requires-error-tolerant-parser&#x27;),
+        o(&#x27;skip&#x27;, &#x27;Silently skip&#x27;, &#x27;skip&#x27;, &#x27;Return the original source without a finding.&#x27;, &#x27;unchanged invalid source&#x27;, &#x27;unsafe&#x27;)
+      ]),
+      d(&#x27;Alignment &amp; guardrails&#x27;, &#x27;full-file-scope&#x27;, &#x27;Formatting scope&#x27;, &#x27;Should the formatter support only full files or also selected ranges?&#x27;, &#x27;scope&#x27;, &#x27;full-file&#x27;, [
+        o(&#x27;full-file&#x27;, &#x27;Full file only&#x27;, &#x27;full-file&#x27;, &#x27;Canonicalize the entire source and imports as one unit.&#x27;, &#x27;strider fmt path/to/file.go&#x27;),
+        o(&#x27;range-expand&#x27;, &#x27;Range, expanded to syntax nodes&#x27;, &#x27;range-expand&#x27;, &#x27;Format selected nodes plus the minimum context needed for stable indentation.&#x27;, &#x27;format lines 20–35&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;range-exact&#x27;, &#x27;Exact byte range&#x27;, &#x27;range-exact&#x27;, &#x27;Restrict edits to the selection even if surrounding layout stays noncanonical.&#x27;, &#x27;format bytes 420–860&#x27;, &#x27;requires-new-printer&#x27;)
+      ]),
+      d(&#x27;Alignment &amp; guardrails&#x27;, &#x27;exclusions&#x27;, &#x27;Filesystem exclusions&#x27;, &#x27;How should project paths opt out during discovery?&#x27;, &#x27;excludes&#x27;, &#x27;glob-list&#x27;, [
+        o(&#x27;glob-list&#x27;, &#x27;Configured path/glob list&#x27;, [&#x27;internal/generated/**&#x27;], &#x27;Current configuration supports plain paths, *, ?, character classes, and recursive **.&#x27;, &#x27;[formatter]\nexcludes = [&quot;internal/generated/**&quot;]&#x27;, &#x27;current-config&#x27;),
+        o(&#x27;gitignore&#x27;, &#x27;Reuse .gitignore&#x27;, &#x27;gitignore&#x27;, &#x27;Automatically skip ignored files in addition to explicit formatter paths.&#x27;, &#x27;[formatter]\nrespect-gitignore = true&#x27;, &#x27;requires-new-printer&#x27;),
+        o(&#x27;none&#x27;, &#x27;No filesystem exclusions&#x27;, [], &#x27;Format every discovered Go file unless it has a source directive.&#x27;, &#x27;[formatter]\nexcludes = []&#x27;, &#x27;current-config&#x27;)
+      ], true)
+    ];
+
+    const storageKey = &#x27;strider-formatter-policy-v1&#x27;;
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem(storageKey) || &#x27;{}&#x27;); } catch (_) { saved = {}; }
+    const state = {};
+    for (const item of decisions) {
+      const prior = saved[item.id] || {};
+      state[item.id] = {
+        selected: item.options.some(option =&gt; option.id === prior.selected) ? prior.selected : item.current,
+        decided: prior.decided === true,
+        configurable: typeof prior.configurable === &#x27;boolean&#x27; ? prior.configurable : item.configurableNow
+      };
+    }
+
+    const groups = [...new Set(decisions.map(item =&gt; item.group))];
+    const slug = value =&gt; value.toLowerCase().replace(/[^a-z0-9]+/g, &#x27;-&#x27;).replace(/^-|-$/g, &#x27;&#x27;);
+    const escapeHTML = value =&gt; String(value).replace(/[&amp;&lt;&gt;&quot;&#x27;]/g, char =&gt; ({ &#x27;&amp;&#x27;: &#x27;&amp;amp;&#x27;, &#x27;&lt;&#x27;: &#x27;&amp;lt;&#x27;, &#x27;&gt;&#x27;: &#x27;&amp;gt;&#x27;, &#x27;&quot;&#x27;: &#x27;&amp;quot;&#x27;, &quot;&#x27;&quot;: &#x27;&amp;#39;&#x27; }[char]));
+    const nav = root.querySelector(&#x27;#category-nav&#x27;);
+    const catalog = root.querySelector(&#x27;#decision-catalog&#x27;);
+
+    nav.innerHTML = groups.map(group =&gt; {
+      const count = decisions.filter(item =&gt; item.group === group).length;
+      return `&lt;li&gt;&lt;a class=&quot;btn btn-ghost&quot; href=&quot;#category-${slug(group)}&quot;&gt;${escapeHTML(group)} &lt;span class=&quot;text-muted&quot;&gt;${count}&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;`;
+    }).join(&#x27;&#x27;);
+
+    function optionMarkup(item, option) {
+      const inputId = `${item.id}-${option.id}`;
+      const current = option.id === item.current ? &#x27;&lt;span class=&quot;viz-badge&quot;&gt;Current&lt;/span&gt;&#x27; : &#x27;&#x27;;
+      return `&lt;label class=&quot;option&quot; for=&quot;${escapeHTML(inputId)}&quot;&gt;
+        &lt;span class=&quot;option-main&quot;&gt;
+          &lt;input class=&quot;form-check-input&quot; type=&quot;radio&quot; id=&quot;${escapeHTML(inputId)}&quot; name=&quot;${escapeHTML(item.id)}&quot; value=&quot;${escapeHTML(option.id)}&quot; ${state[item.id].selected === option.id ? &#x27;checked&#x27; : &#x27;&#x27;}&gt;
+          &lt;span class=&quot;option-copy&quot;&gt;&lt;span class=&quot;option-label&quot;&gt;${escapeHTML(option.label)}&lt;/span&gt; ${current}&lt;span class=&quot;viz-badge&quot;&gt;${escapeHTML(option.compatibility)}&lt;/span&gt;&lt;span class=&quot;option-summary&quot;&gt;${escapeHTML(option.summary)}&lt;/span&gt;&lt;/span&gt;
+        &lt;/span&gt;
+        &lt;pre&gt;&lt;code&gt;${escapeHTML(option.code)}&lt;/code&gt;&lt;/pre&gt;
+      &lt;/label&gt;`;
+    }
+
+    function decisionMarkup(item, index) {
+      const status = item.configurableNow ? &#x27;Configurable today&#x27; : &#x27;Fixed today&#x27;;
+      return `&lt;article class=&quot;decision&quot; id=&quot;decision-${escapeHTML(item.id)}&quot; data-id=&quot;${escapeHTML(item.id)}&quot;&gt;
+        &lt;div class=&quot;decision-head&quot;&gt;
+          &lt;div&gt;&lt;h3&gt;${index + 1}. ${escapeHTML(item.title)}&lt;/h3&gt;&lt;p class=&quot;decision-question&quot;&gt;${escapeHTML(item.question)}&lt;/p&gt;&lt;/div&gt;
+          &lt;div class=&quot;badges&quot;&gt;&lt;span class=&quot;viz-badge&quot;&gt;${escapeHTML(status)}&lt;/span&gt;&lt;span class=&quot;viz-badge&quot;&gt;${escapeHTML(item.key)}&lt;/span&gt;&lt;/div&gt;
+        &lt;/div&gt;
+        ${item.note ? `&lt;p class=&quot;text-small text-muted&quot;&gt;${escapeHTML(item.note)}&lt;/p&gt;` : &#x27;&#x27;}
+        &lt;div class=&quot;options&quot;&gt;${item.options.map(option =&gt; optionMarkup(item, option)).join(&#x27;&#x27;)}&lt;/div&gt;
+        &lt;div class=&quot;decision-actions&quot;&gt;
+          &lt;label class=&quot;form-check&quot;&gt;&lt;input class=&quot;form-check-input decision-done&quot; type=&quot;checkbox&quot; ${state[item.id].decided ? &#x27;checked&#x27; : &#x27;&#x27;}&gt;&lt;span class=&quot;form-check-label&quot;&gt;Decision made&lt;/span&gt;&lt;/label&gt;
+          &lt;label class=&quot;form-check form-switch&quot;&gt;&lt;input class=&quot;form-check-input decision-config&quot; type=&quot;checkbox&quot; ${state[item.id].configurable ? &#x27;checked&#x27; : &#x27;&#x27;}&gt;&lt;span class=&quot;form-check-label&quot;&gt;Expose in configuration&lt;/span&gt;&lt;/label&gt;
+          &lt;span class=&quot;config-key&quot;&gt;Proposed key: &lt;code&gt;formatter.${escapeHTML(item.key)}&lt;/code&gt;&lt;/span&gt;
+        &lt;/div&gt;
+      &lt;/article&gt;`;
+    }
+
+    catalog.innerHTML = groups.map(group =&gt; {
+      const items = decisions.filter(item =&gt; item.group === group);
+      return `&lt;section class=&quot;category&quot; id=&quot;category-${slug(group)}&quot;&gt;&lt;div class=&quot;category-heading&quot;&gt;&lt;h2&gt;${escapeHTML(group)}&lt;/h2&gt;&lt;span class=&quot;text-muted&quot;&gt;${items.length} decisions&lt;/span&gt;&lt;/div&gt;${items.map(item =&gt; decisionMarkup(item, decisions.indexOf(item))).join(&#x27;&#x27;)}&lt;/section&gt;`;
+    }).join(&#x27;&#x27;);
+
+    function selectedOption(item) {
+      return item.options.find(option =&gt; option.id === state[item.id].selected) || item.options[0];
+    }
+
+    function tomlValue(value) {
+      if (typeof value === &#x27;boolean&#x27; || typeof value === &#x27;number&#x27;) return String(value);
+      if (Array.isArray(value)) return `[${value.map(tomlValue).join(&#x27;, &#x27;)}]`;
+      return JSON.stringify(String(value));
+    }
+
+    function persistAndRender() {
+      try { localStorage.setItem(storageKey, JSON.stringify(state)); } catch (_) { /* Standalone sandbox: use the export fields instead. */ }
+      const complete = decisions.filter(item =&gt; state[item.id].decided).length;
+      const configurable = decisions.filter(item =&gt; state[item.id].configurable).length;
+      const percent = Math.round((complete / decisions.length) * 100);
+      root.querySelector(&#x27;#decision-total&#x27;).textContent = decisions.length;
+      root.querySelector(&#x27;#decision-complete&#x27;).textContent = complete;
+      root.querySelector(&#x27;#decision-configurable&#x27;).textContent = configurable;
+      root.querySelector(&#x27;#decision-remaining&#x27;).textContent = complete === decisions.length ? &#x27;All decisions recorded&#x27; : `${decisions.length - complete} remaining`;
+      root.querySelector(&#x27;#decision-progress&#x27;).max = decisions.length;
+      root.querySelector(&#x27;#decision-progress&#x27;).value = complete;
+      root.querySelector(&#x27;#decision-percent&#x27;).textContent = `${percent}%`;
+
+      const record = {
+        format: &#x27;strider-formatter-decisions&#x27;,
+        version: 1,
+        completed: complete,
+        total: decisions.length,
+        decisions: decisions.map(item =&gt; {
+          const option = selectedOption(item);
+          return {
+            id: item.id,
+            category: item.group,
+            decision: item.title,
+            selected: option.id,
+            value: option.value,
+            current_strider: item.current,
+            decided: state[item.id].decided,
+            configurable: state[item.id].configurable,
+            proposed_key: `formatter.${item.key}`,
+            compatibility: option.compatibility
+          };
+        })
+      };
+      root.querySelector(&#x27;#json-output&#x27;).value = JSON.stringify(record, null, 2);
+
+      const configured = decisions.filter(item =&gt; state[item.id].configurable);
+      const lines = [&#x27;version = 1&#x27;, &#x27;&#x27;, &#x27;[formatter]&#x27;];
+      for (const item of configured) {
+        const option = selectedOption(item);
+        lines.push(`${item.key} = ${tomlValue(option.value)}`);
+      }
+      if (configured.length === 0) lines.push(&#x27;# No formatter options selected for configuration.&#x27;);
+      root.querySelector(&#x27;#toml-output&#x27;).value = lines.join(&#x27;\n&#x27;) + &#x27;\n&#x27;;
+    }
+
+    catalog.addEventListener(&#x27;change&#x27;, event =&gt; {
+      const article = event.target.closest(&#x27;.decision&#x27;);
+      if (!article) return;
+      const id = article.dataset.id;
+      if (event.target.matches(&#x27;input[type=&quot;radio&quot;]&#x27;)) {
+        state[id].selected = event.target.value;
+        state[id].decided = true;
+        article.querySelector(&#x27;.decision-done&#x27;).checked = true;
+      } else if (event.target.matches(&#x27;.decision-done&#x27;)) {
+        state[id].decided = event.target.checked;
+      } else if (event.target.matches(&#x27;.decision-config&#x27;)) {
+        state[id].configurable = event.target.checked;
+      }
+      persistAndRender();
+    });
+
+    async function copyFrom(selector, label) {
+      const output = root.querySelector(selector);
+      try {
+        await navigator.clipboard.writeText(output.value);
+        root.querySelector(&#x27;#copy-status&#x27;).textContent = `${label} copied.`;
+      } catch (_) {
+        output.focus();
+        output.select();
+        root.querySelector(&#x27;#copy-status&#x27;).textContent = `Clipboard unavailable; ${label} selected for manual copy.`;
+      }
+    }
+    root.querySelector(&#x27;#copy-json&#x27;).addEventListener(&#x27;click&#x27;, () =&gt; copyFrom(&#x27;#json-output&#x27;, &#x27;Decision JSON&#x27;));
+    root.querySelector(&#x27;#copy-toml&#x27;).addEventListener(&#x27;click&#x27;, () =&gt; copyFrom(&#x27;#toml-output&#x27;, &#x27;TOML draft&#x27;));
+    persistAndRender();
+  })();
+  &lt;/script&gt;
+&lt;/div&gt;
+
+&lt;script&gt;
+(() =&gt; {
+  if (window.FloatingUIDOM == null) {
+    return;
+  }
+  const { autoUpdate, computePosition, flip, offset, shift, size } =
+    window.FloatingUIDOM;
+  const tooltipPlacements = new Set([&quot;top&quot;, &quot;right&quot;, &quot;bottom&quot;, &quot;left&quot;]);
+  const tooltipId = `codex-visualization-tooltip-${
+    window.crypto?.randomUUID?.() ?? Date.now().toString(36)
+  }`;
+  const tooltipGap = 5;
+  const hoverDelay = 700;
+  const skipDelay = 300;
+  let activeTrigger = null;
+  let pendingTrigger = null;
+  let tooltip = null;
+  let openTimeout = null;
+  let autoUpdateCleanup = null;
+  let positionRequest = 0;
+  let skipDelayUntil = 0;
+
+  const getTrigger = (target) =&gt;
+    target?.nodeType === Node.ELEMENT_NODE
+      ? target.closest(&quot;[data-tooltip]&quot;)
+      : null;
+  const containsTarget = (trigger, target) =&gt;
+    target?.nodeType != null &amp;&amp; trigger.contains(target);
+  const getContent = (trigger) =&gt;
+    trigger.getAttribute(&quot;data-tooltip&quot;)?.trim() ?? &quot;&quot;;
+  const getPlacement = (trigger) =&gt; {
+    const placement = trigger.getAttribute(&quot;data-tooltip-placement&quot;);
+    return tooltipPlacements.has(placement) ? placement : &quot;top&quot;;
+  };
+  const getTooltip = () =&gt; {
+    if (tooltip == null) {
+      tooltip = document.createElement(&quot;div&quot;);
+      tooltip.id = tooltipId;
+      tooltip.className = &quot;tooltip&quot;;
+      tooltip.setAttribute(&quot;role&quot;, &quot;tooltip&quot;);
+    }
+    return tooltip;
+  };
+  const setDescribedBy = (trigger, described) =&gt; {
+    const ids = new Set(
+      (trigger.getAttribute(&quot;aria-describedby&quot;) ?? &quot;&quot;)
+        .split(/\s+/)
+        .filter(Boolean),
+    );
+    if (described) {
+      ids.add(tooltipId);
+    } else {
+      ids.delete(tooltipId);
+    }
+    if (ids.size === 0) {
+      trigger.removeAttribute(&quot;aria-describedby&quot;);
+    } else {
+      trigger.setAttribute(&quot;aria-describedby&quot;, [...ids].join(&quot; &quot;));
+    }
+  };
+  const clearOpenTimeout = () =&gt; {
+    if (openTimeout != null) {
+      window.clearTimeout(openTimeout);
+      openTimeout = null;
+    }
+    pendingTrigger = null;
+  };
+  const closeTooltip = (activateSkipDelay = true) =&gt; {
+    clearOpenTimeout();
+    positionRequest += 1;
+    autoUpdateCleanup?.();
+    autoUpdateCleanup = null;
+    if (activeTrigger == null) {
+      return;
+    }
+    setDescribedBy(activeTrigger, false);
+    activeTrigger = null;
+    tooltip?.remove();
+    if (activateSkipDelay) {
+      skipDelayUntil = Date.now() + skipDelay;
+    }
+  };
+  const updatePosition = (trigger, floating) =&gt; {
+    const request = ++positionRequest;
+    void computePosition(trigger, floating, {
+      middleware: [
+        offset(tooltipGap),
+        flip({ padding: tooltipGap }),
+        shift({ padding: tooltipGap }),
+        size({
+          padding: tooltipGap,
+          apply({ availableHeight, availableWidth, elements }) {
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-width&quot;,
+              `${Math.max(0, availableWidth)}px`,
+            );
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-height&quot;,
+              `${Math.max(0, availableHeight)}px`,
+            );
+          },
+        }),
+      ],
+      placement: getPlacement(trigger),
+      strategy: &quot;fixed&quot;,
+    })
+      .then(({ x, y }) =&gt; {
+        if (activeTrigger !== trigger || request !== positionRequest) {
+          return;
+        }
+        const scale = window.devicePixelRatio || 1;
+        floating.style.transform = `translate(${Math.round(x * scale) / scale}px, ${Math.round(y * scale) / scale}px)`;
+        floating.style.visibility = &quot;visible&quot;;
+      })
+      .catch(() =&gt; {
+        if (activeTrigger === trigger &amp;&amp; request === positionRequest) {
+          closeTooltip(false);
+        }
+      });
+  };
+  const openTooltip = (trigger) =&gt; {
+    const content = getContent(trigger);
+    if (!trigger.isConnected || content.length === 0) {
+      return;
+    }
+    clearOpenTimeout();
+    if (activeTrigger === trigger) {
+      return;
+    }
+    closeTooltip();
+    const floating = getTooltip();
+    floating.textContent = content;
+    floating.style.visibility = &quot;hidden&quot;;
+    floating.style.transform = &quot;translate(0, 0)&quot;;
+    document.body.appendChild(floating);
+    activeTrigger = trigger;
+    setDescribedBy(trigger, true);
+    autoUpdateCleanup = autoUpdate(trigger, floating, () =&gt; {
+      updatePosition(trigger, floating);
+    });
+  };
+  const requestOpen = (trigger, immediate = false) =&gt; {
+    if (
+      getContent(trigger).length === 0 ||
+      activeTrigger === trigger ||
+      pendingTrigger === trigger
+    ) {
+      return;
+    }
+    clearOpenTimeout();
+    pendingTrigger = trigger;
+    const delay =
+      immediate || activeTrigger != null || Date.now() &lt; skipDelayUntil
+        ? 0
+        : hoverDelay;
+    if (delay === 0) {
+      openTooltip(trigger);
+      return;
+    }
+    openTimeout = window.setTimeout(() =&gt; {
+      openTimeout = null;
+      pendingTrigger = null;
+      openTooltip(trigger);
+    }, delay);
+  };
+  const handlePointerOpen = (event) =&gt; {
+    if (event.pointerType === &quot;touch&quot;) {
+      return;
+    }
+    const trigger = getTrigger(event.target);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    requestOpen(trigger);
+  };
+  const handleLeave = (event) =&gt; {
+    const trigger = getTrigger(event.target);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const handleFocusIn = (event) =&gt; {
+    const trigger = getTrigger(event.target);
+    if (trigger?.matches(&quot;:focus-visible&quot;)) {
+      requestOpen(trigger, true);
+    }
+  };
+  const handleKeyDown = (event) =&gt; {
+    if (event.key === &quot;Escape&quot;) {
+      closeTooltip();
+    }
+  };
+  const handleContextMenu = (event) =&gt; {
+    const trigger = getTrigger(event.target);
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const destroy = () =&gt; {
+    closeTooltip(false);
+    document.removeEventListener(&quot;pointerover&quot;, handlePointerOpen);
+    document.removeEventListener(&quot;pointerout&quot;, handleLeave);
+    document.removeEventListener(&quot;focusin&quot;, handleFocusIn);
+    document.removeEventListener(&quot;focusout&quot;, handleLeave);
+    document.removeEventListener(&quot;keydown&quot;, handleKeyDown);
+    document.removeEventListener(&quot;contextmenu&quot;, handleContextMenu);
+    tooltip = null;
+  };
+
+  document.addEventListener(&quot;pointerover&quot;, handlePointerOpen);
+  document.addEventListener(&quot;pointerout&quot;, handleLeave);
+  document.addEventListener(&quot;focusin&quot;, handleFocusIn);
+  document.addEventListener(&quot;focusout&quot;, handleLeave);
+  document.addEventListener(&quot;keydown&quot;, handleKeyDown);
+  document.addEventListener(&quot;contextmenu&quot;, handleContextMenu);
+  window.addEventListener(&quot;pagehide&quot;, destroy, { once: true });
+})();
+&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  const initialize = () =&gt; {
+    globalThis.lucide?.createIcons({ attrs: { width: 16, height: 16 } });
+  };
+  if (globalThis.lucide != null) {
+    initialize();
+    return;
+  }
+  document
+    .getElementById(&quot;codex-visualization-lucide&quot;)
+    ?.addEventListener(&quot;load&quot;, initialize, { once: true });
+})();
+&lt;/script&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe>
+</body>
+</html>

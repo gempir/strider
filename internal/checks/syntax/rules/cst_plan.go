@@ -43,6 +43,18 @@ type cstExecutionPlan struct {
 	breaks               bool
 }
 
+type cstFunctionFacts struct {
+	node                cst.Node
+	name                cst.Token
+	signature           *cst.Signature
+	body                cst.Node
+	receiver            *cst.Parameters
+	complexity          int
+	cognitiveComplexity int
+	statements          int
+	finalStatement      cst.Node
+}
+
 func compileCSTExecutionPlan(enabled map[string]bool) cstExecutionPlan {
 	any := func(codes ...string) bool {
 		for _, code := range codes {
@@ -141,18 +153,6 @@ func compileCSTExecutionPlan(enabled map[string]bool) cstExecutionPlan {
 		typeDefinitions: any("exported-declaration-comment", "max-public-structs"),
 		breaks:          enabled["redundant-switch-break"],
 	}
-}
-
-type cstFunctionFacts struct {
-	node                cst.Node
-	name                cst.Token
-	signature           *cst.Signature
-	body                cst.Node
-	receiver            *cst.Parameters
-	complexity          int
-	cognitiveComplexity int
-	statements          int
-	finalStatement      cst.Node
 }
 
 func (a *cstAnalyzer) observe(node cst.Node, ancestors []cst.Node) {

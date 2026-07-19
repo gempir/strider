@@ -91,7 +91,8 @@ strider fmt --stdin --stdin-filename file.go < file.go
 With file or directory arguments, `fmt` writes in place. With no path, it
 recursively formats the current directory. `--diff` is read-only, while
 `--stdin` reads one file and writes formatted source to standard output. A file
-containing `//strider:format-ignore` is passed through unchanged.
+with `//strider:format-ignore` in its header before the package clause is passed
+through unchanged.
 
 The formatter supports ordinary application code, including generics, type
 switches, `select`, channel sends, `goto`, `fallthrough`, and labeled
@@ -102,8 +103,8 @@ current syntax boundary.
 
 Strider discovers the nearest `strider.toml` from the current directory upward.
 Version 1 uses one `[checks]` namespace. Every check supports `severity` and
-path `excludes`; the formatter exposes print width and
-filesystem exclusions.
+path `excludes`; the formatter exposes the selected width, blank-line,
+source-break, declaration-alignment, and filesystem policies.
 
 ```toml
 version = 1
@@ -111,6 +112,10 @@ color = "auto"
 
 [formatter]
 print-width = 180
+max-blank-lines = 1
+existing-line-breaks = "structural-only"
+alignment.declarations = true
+excludes = ["internal/generated/**"]
 
 [checks]
 baseline = "strider-baseline.toml"

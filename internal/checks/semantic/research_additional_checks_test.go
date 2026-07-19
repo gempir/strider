@@ -141,17 +141,17 @@ func TestTopLevelDeclarationOrderReportsOneRegressionPerFile(t *testing.T) {
 		t,
 		`package sample
 
-type item struct{}
-
 const first = 1
 
 var current item
 
+type item struct{}
+
 func init() { current = item{} }
 func use() item { return current }
 
-const late = 2
 type later struct{}
+const late = 2
 `,
 	)
 	diagnostics := runStandaloneAnalysisRule(t, root, topLevelDeclarationOrderRule{})
@@ -163,14 +163,14 @@ type later struct{}
 	}
 }
 
-func TestTopLevelDeclarationOrderAcceptsTypeConstVarAndFunctions(t *testing.T) {
+func TestTopLevelDeclarationOrderAcceptsConstVarTypeAndFunctions(t *testing.T) {
 	root := analysisModule(t, `package sample
-
-type item struct{}
 
 const first = 1
 
 var current item
+
+type item struct{}
 
 func init() { current = item{} }
 func use() item { return current }

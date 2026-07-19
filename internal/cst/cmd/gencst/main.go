@@ -17,6 +17,15 @@ import (
 
 const parserPackage = "modernc.org/gc/v3"
 
+const (
+	fieldOpaque fieldKind = iota
+	fieldToken
+	fieldPointer
+	fieldInterface
+	fieldSlice
+	fieldTokenPointer
+)
+
 type nodeType struct {
 	name    string
 	value   bool
@@ -31,15 +40,6 @@ type nodeField struct {
 }
 
 type fieldKind uint8
-
-const (
-	fieldOpaque fieldKind = iota
-	fieldToken
-	fieldPointer
-	fieldInterface
-	fieldSlice
-	fieldTokenPointer
-)
 
 func main() {
 	output := flag.String("output", "zz_nodes_generated.go", "generated file path")

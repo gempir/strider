@@ -15,6 +15,9 @@ func TestDefaultsUseVersionOneAndWideFormatting(t *testing.T) {
 	if defaults.Formatter.PrintWidth != 180 {
 		t.Fatalf("unexpected formatter defaults: %#v", defaults.Formatter)
 	}
+	if defaults.Formatter.MaxBlankLines != 1 || defaults.Formatter.ExistingLineBreaks != "structural-only" || !defaults.Formatter.Alignment.Declarations {
+		t.Fatalf("unexpected formatter policy defaults: %#v", defaults.Formatter)
+	}
 	if defaults.Checks.MinimumSeverity != "warning" {
 		t.Fatalf("default minimum severity = %q, want warning", defaults.Checks.MinimumSeverity)
 	}
@@ -29,6 +32,10 @@ func TestLoadDiscoversVersionOneChecks(t *testing.T) {
 	contents := `version = 1
 [formatter]
 print-width = 120
+max-blank-lines = 1
+existing-line-breaks = "structural-only"
+alignment.declarations = true
+excludes = ["internal/generated/**"]
 [checks]
 excludes = ["generated/**"]
 baseline = "strider-baseline.toml"
@@ -49,6 +56,12 @@ characters = ["ᐸ", "ᐳ"]
 	}
 	if configuration.Formatter.PrintWidth != 120 {
 		t.Fatalf("unexpected formatter config: %#v", configuration.Formatter)
+	}
+	if configuration.Formatter.MaxBlankLines != 1 || configuration.Formatter.ExistingLineBreaks != "structural-only" || !configuration.Formatter.Alignment.Declarations || strings.Join(
+		configuration.Formatter.Excludes,
+		",",
+	) != "internal/generated/**" {
+		t.Fatalf("unexpected formatter policy config: %#v", configuration.Formatter)
 	}
 	if configuration.Checks.Baseline != "strider-baseline.toml" || configuration.Checks.MinimumSeverity != "warning" {
 		t.Fatalf("unexpected checks config: %#v", configuration.Checks)
@@ -100,6 +113,22 @@ func TestLoadRejectsUnknownAndInvalidSettings(t *testing.T) {
 		"max-empty-lines": {
 			"version = 1\n[formatter]\nmax-empty-lines = 1\n",
 			"unknown configuration key",
+		},
+		"max-blank-lines": {
+			"version = 1\n[formatter]\nmax-blank-lines = 0\n",
+			"max-blank-lines",
+		},
+		"multiple-blank-lines": {
+			"version = 1\n[formatter]\nmax-blank-lines = 2\n",
+			"max-blank-lines",
+		},
+		"existing-line-breaks": {
+			"version = 1\n[formatter]\nexisting-line-breaks = \"preserve\"\n",
+			"existing-line-breaks",
+		},
+		"declaration-alignment": {
+			"version = 1\n[formatter]\nalignment.declarations = false\n",
+			"alignment.declarations",
 		},
 		"severity": {
 			"version = 1\n[checks.rules.no-init]\nseverity = \"fatal\"\n",

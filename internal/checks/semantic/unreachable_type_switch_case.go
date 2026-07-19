@@ -10,6 +10,11 @@ import (
 
 type unreachableTypeSwitchCaseRule struct{}
 
+type typedCaseClause struct {
+	clause *ast.CaseClause
+	types  []types.Type
+}
+
 func (unreachableTypeSwitchCaseRule) Meta() Meta {
 	return Meta{
 		Code:            "unreachable-type-switch-case",
@@ -63,11 +68,6 @@ func conciseAnalysisType(pass *Pass, valueType types.Type) string {
 		}
 		return pkg.Name()
 	})
-}
-
-type typedCaseClause struct {
-	clause *ast.CaseClause
-	types  []types.Type
 }
 
 func typeSwitchCases(pass *Pass, statement *ast.TypeSwitchStmt) []typedCaseClause {

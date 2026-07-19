@@ -41,6 +41,8 @@ type fileResult struct {
 	err         error
 }
 
+type analysisRunner func([]string, *semantic.Registry) ([]diagnostic.Diagnostic, error)
+
 // Run executes the selected checks. Concrete-syntax checks and formatting
 // share each workspace file's CST; package-aware checks retain the original
 // input patterns so go/packages semantics remain unchanged.
@@ -68,8 +70,6 @@ func Run(shared *workspace.Workspace, registry *Registry, options RunOptions) (R
 	}
 	return result, nil
 }
-
-type analysisRunner func([]string, *semantic.Registry) ([]diagnostic.Diagnostic, error)
 
 func appendAnalysis(result *Result, shared *workspace.Workspace, registry *Registry, options RunOptions, run analysisRunner) error {
 	if registry.semantic == nil || len(registry.semantic.Rules()) == 0 {

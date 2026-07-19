@@ -16,6 +16,11 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
+type researchCorrectnessReport struct {
+	position token.Position
+	message  string
+}
+
 func TestResearchCorrectnessRuleMetadata(t *testing.T) {
 	tests := []struct {
 		rule     Rule
@@ -583,11 +588,6 @@ func good(source *State) { pointer(source) }
 	)
 	assertResearchReportCount(t, reports, 12)
 	assertResearchMessagesContain(t, reports, "sync.Mutex")
-}
-
-type researchCorrectnessReport struct {
-	position token.Position
-	message  string
 }
 
 func runResearchCorrectnessRule(t *testing.T, rule Rule, source string) []researchCorrectnessReport {

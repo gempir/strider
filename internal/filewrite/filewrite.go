@@ -15,6 +15,10 @@ import (
 // ErrStale reports that a file no longer has the contents that were analyzed.
 var ErrStale = errors.New("file changed since analysis")
 
+var createTemporary = os.CreateTemp
+
+var renameFile = os.Rename
+
 // Change describes one complete file replacement. Before is the exact source
 // that was analyzed and After is the source that should replace it.
 type Change struct {
@@ -48,10 +52,6 @@ type stagedFile struct {
 	target    string
 	planned   plannedFile
 }
-
-var createTemporary = os.CreateTemp
-
-var renameFile = os.Rename
 
 // WriteBatch verifies, stages, and replaces a batch of files. Guards are
 // verified with the changes but are never written. Every changed file is staged

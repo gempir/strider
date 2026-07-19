@@ -14,6 +14,16 @@ import (
 
 type appendToSizedSliceRule struct{}
 
+type sizedSliceCandidate struct {
+	name string
+}
+
+type sizedSliceTrace struct {
+	origin ssa.Value
+	cycle  bool
+	valid  bool
+}
+
 func (appendToSizedSliceRule) Meta() Meta {
 	return Meta{
 		Code:            "append-to-sized-slice",
@@ -53,10 +63,6 @@ func (appendToSizedSliceRule) Run(pass *Pass) {
 			}
 		}
 	}
-}
-
-type sizedSliceCandidate struct {
-	name string
 }
 
 func localPositiveLengthMakes(pass *Pass) map[token.Pos]sizedSliceCandidate {
@@ -162,12 +168,6 @@ func isAppendBuiltin(call *ssa.CallCommon) bool {
 
 func sizedSliceOrigin(value ssa.Value, visiting map[ssa.Value]bool) ssa.Value {
 	return traceSizedSliceOrigin(value, visiting).origin
-}
-
-type sizedSliceTrace struct {
-	origin ssa.Value
-	cycle  bool
-	valid  bool
 }
 
 func traceSizedSliceOrigin(value ssa.Value, visiting map[ssa.Value]bool) sizedSliceTrace {

@@ -137,6 +137,9 @@ func TestFormatUsesCanonicalEmptyLines(t *testing.T) {
 	if got := DefaultOptions().PrintWidth; got != 180 {
 		t.Fatalf("default print width = %d, want 180", got)
 	}
+	if defaults := DefaultOptions(); defaults.MaxBlankLines != 1 || defaults.ExistingLineBreaks != "structural-only" {
+		t.Fatalf("unexpected formatter defaults: %#v", defaults)
+	}
 	input := []byte("package p\n\n\n\nfunc F() {\n\tfirst()\n\n\n\n\tsecond()\n}\n")
 	result, err := Format("empty_lines.go", input)
 	if err != nil {
@@ -188,6 +191,8 @@ var _=Map[string,int]
 `)
 	want := `package p
 
+var _ = Map[string, int]
+
 type Pair[Left, Right any] struct {
 	First  Left
 	Second Right
@@ -204,8 +209,6 @@ func Map[Input any, Output comparable](values []Input, convert func(Input) Outpu
 	}
 	return result
 }
-
-var _ = Map[string, int]
 `
 	result, err := Format("generics.go", input)
 	if err != nil {
@@ -264,7 +267,7 @@ func New(cfg *config.Config, configService app_config.ConfigProvider) (Client, e
 }
 
 func TestFormatIgnoreReturnsExactInput(t *testing.T) {
-	input := []byte("package p\n//strider:format-ignore\nfunc F( ){ }\n")
+	input := []byte("//strider:format-ignore\npackage p\nfunc F( ){ }\n")
 	result, err := Format("ignored.go", input)
 	if err != nil {
 		t.Fatal(err)
@@ -282,6 +285,20 @@ func TestFormatIgnoreRequiresACommentDirective(t *testing.T) {
 	}
 	if result.Ignored || !result.Changed {
 		t.Fatalf("string contents acted as a directive: %#v", result)
+	}
+	if !strings.Contains(string(result.Source), "func F() {}") {
+		t.Fatalf("source was not formatted:\n%s", result.Source)
+	}
+}
+
+func TestFormatIgnoreMustAppearBeforePackageClause(t *testing.T) {
+	input := []byte("package p\n//strider:format-ignore\nfunc F( ){ }\n")
+	result, err := Format("late-ignore.go", input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Ignored || !result.Changed {
+		t.Fatalf("late directive unexpectedly ignored formatting: %#v", result)
 	}
 	if !strings.Contains(string(result.Source), "func F() {}") {
 		t.Fatalf("source was not formatted:\n%s", result.Source)
@@ -455,11 +472,6 @@ var array = [2]int{1, 2}
 `)
 	want := `package p
 
-type options struct {
-	Name    string
-	Enabled bool
-}
-
 var compact = options{
 	Name:    "compact",
 	Enabled: true,
@@ -485,6 +497,11 @@ var values = []int{
 var array = [2]int{
 	1,
 	2,
+}
+
+type options struct {
+	Name    string
+	Enabled bool
 }
 `
 	result, err := FormatWithOptions("composite_literals.go", input, Options{
@@ -546,6 +563,106 @@ func B() {}
 	}
 	if got := string(result.Source); got != string(input) {
 		t.Fatalf("formatted source:\n%s\nwant:\n%s", got, input)
+	}
+}
+
+func TestFormatMovesDetachedCommentsWithFollowingDeclaration(t *testing.T) {
+	input := []byte(`package p
+
+func Run() {}
+
+// This is section context, not type documentation.
+
+type item struct{}
+`)
+	want := `package p
+
+// This is section context, not type documentation.
+
+type item struct{}
+
+func Run() {}
+`
+	result, err := Format("detached_comment_order.go", input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := string(result.Source); got != want {
+		t.Fatalf("formatted source:\n%s\nwant:\n%s", got, want)
+	}
+}
+
+func TestFormatOrdersTopLevelDeclarationsByKind(t *testing.T) {
+	input := []byte(`package p
+
+// Run uses the current item.
+func Run() item { return current }
+
+// item is the stored value.
+type item struct{}
+
+var current item
+var fallback item
+
+const first = 1
+const second = 2
+`)
+	want := `package p
+
+const first = 1
+
+const second = 2
+
+var current item
+
+var fallback item
+
+// item is the stored value.
+type item struct{}
+
+// Run uses the current item.
+func Run() item {
+	return current
+}
+`
+	result, err := Format("declaration_order.go", input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := string(result.Source); got != want {
+		t.Fatalf("formatted source:\n%s\nwant:\n%s", got, want)
+	}
+}
+
+func TestFormatPreservesRelativeOrderWithinDeclarationKinds(t *testing.T) {
+	input := []byte(`package p
+
+func second() {}
+func first() {}
+var secondValue = 2
+var firstValue = 1
+`)
+	result, err := Format("stable_declaration_order.go", input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	formatted := string(result.Source)
+	if strings.Index(formatted, "var secondValue") > strings.Index(formatted, "var firstValue") {
+		t.Fatalf("variable declaration order changed:\n%s", formatted)
+	}
+	if strings.Index(formatted, "func second") > strings.Index(formatted, "func first") {
+		t.Fatalf("function declaration order changed:\n%s", formatted)
+	}
+}
+
+func TestFormatRejectsNonCanonicalMaximumBlankLines(t *testing.T) {
+	_, err := FormatWithOptions("blank_lines.go", []byte("package p\n"), Options{
+		PrintWidth:         180,
+		MaxBlankLines:      2,
+		ExistingLineBreaks: "structural-only",
+	})
+	if err == nil || !strings.Contains(err.Error(), "max blank lines must be 1") {
+		t.Fatalf("got %v, want max blank lines error", err)
 	}
 }
 

@@ -11,48 +11,18 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type unclosedHTTPResponseBodyRule struct{}
-
-func (unclosedHTTPResponseBodyRule) Meta() Meta {
-	return Meta{
-		Code:            "unclosed-http-response-body",
-		Summary:         "detect locally acquired HTTP response bodies that are not closed",
-		Explanation:     "An HTTP response body owns a connection until Body.Close is called. Failing to close a locally acquired response can leak file descriptors and prevent connection reuse.",
-		GoodExample:     "response, err := http.Get(url); if err != nil { return err }; defer response.Body.Close()",
-		BadExample:      "response, err := http.Get(url); if err != nil { return err }; return decode(response.Body)",
-		DefaultSeverity: diagnostic.SeverityError,
-	}
-}
-
-func (unclosedHTTPResponseBodyRule) Run(pass *Pass) {
-	runUnclosedResourceRule(pass, httpResponseResource)
-}
-
-type unclosedSQLResourceRule struct{}
-
-func (unclosedSQLResourceRule) Meta() Meta {
-	return Meta{
-		Code:            "unclosed-sql-resource",
-		Summary:         "detect locally acquired sql.Rows and sql.Stmt values that are not closed",
-		Explanation:     "Rows and prepared statements retain database resources until Close is called. Close every locally acquired value, normally with a defer immediately after checking the acquisition error.",
-		GoodExample:     "rows, err := db.Query(query); if err != nil { return err }; defer rows.Close()",
-		BadExample:      "rows, err := db.Query(query); if err != nil { return err }; return scan(rows)",
-		DefaultSeverity: diagnostic.SeverityError,
-	}
-}
-
-func (unclosedSQLResourceRule) Run(pass *Pass) {
-	runUnclosedResourceRule(pass, sqlResource)
-}
-
-type acquiredResourceKind uint8
-
 const (
 	httpResponseResource acquiredResourceKind = iota + 1
 	sqlRowsResource
 	sqlStmtResource
 	sqlResource // selector used by the rule to include both SQL kinds
 )
+
+type unclosedHTTPResponseBodyRule struct{}
+
+type unclosedSQLResourceRule struct{}
+
+type acquiredResourceKind uint8
 
 type acquiredResource struct {
 	kind             acquiredResourceKind
@@ -75,6 +45,56 @@ type resourceAssignment struct {
 	kind        acquiredResourceKind
 	pos         token.Pos
 	acquisition token.Pos
+}
+
+type resourcePathState struct {
+	block  *cfg.Block
+	next   int
+	active bool
+	owners map[types.Object]bool
+}
+
+type resourcePathKey struct {
+	block  *cfg.Block
+	next   int
+	active bool
+	owners string
+}
+
+type literalPathState struct {
+	block   *cfg.Block
+	next    int
+	reached bool
+}
+
+func (unclosedHTTPResponseBodyRule) Meta() Meta {
+	return Meta{
+		Code:            "unclosed-http-response-body",
+		Summary:         "detect locally acquired HTTP response bodies that are not closed",
+		Explanation:     "An HTTP response body owns a connection until Body.Close is called. Failing to close a locally acquired response can leak file descriptors and prevent connection reuse.",
+		GoodExample:     "response, err := http.Get(url); if err != nil { return err }; defer response.Body.Close()",
+		BadExample:      "response, err := http.Get(url); if err != nil { return err }; return decode(response.Body)",
+		DefaultSeverity: diagnostic.SeverityError,
+	}
+}
+
+func (unclosedHTTPResponseBodyRule) Run(pass *Pass) {
+	runUnclosedResourceRule(pass, httpResponseResource)
+}
+
+func (unclosedSQLResourceRule) Meta() Meta {
+	return Meta{
+		Code:            "unclosed-sql-resource",
+		Summary:         "detect locally acquired sql.Rows and sql.Stmt values that are not closed",
+		Explanation:     "Rows and prepared statements retain database resources until Close is called. Close every locally acquired value, normally with a defer immediately after checking the acquisition error.",
+		GoodExample:     "rows, err := db.Query(query); if err != nil { return err }; defer rows.Close()",
+		BadExample:      "rows, err := db.Query(query); if err != nil { return err }; return scan(rows)",
+		DefaultSeverity: diagnostic.SeverityError,
+	}
+}
+
+func (unclosedSQLResourceRule) Run(pass *Pass) {
+	runUnclosedResourceRule(pass, sqlResource)
 }
 
 func runUnclosedResourceRule(pass *Pass, wanted acquiredResourceKind) {
@@ -105,20 +125,6 @@ func runUnclosedResourceRule(pass *Pass, wanted acquiredResourceKind) {
 			}
 		},
 	)
-}
-
-type resourcePathState struct {
-	block  *cfg.Block
-	next   int
-	active bool
-	owners map[types.Object]bool
-}
-
-type resourcePathKey struct {
-	block  *cfg.Block
-	next   int
-	active bool
-	owners string
 }
 
 func resourceClosedOnEveryExit(pass *Pass, resource acquiredResource, body *ast.BlockStmt, closes, transfers []resourceUse, assignments []resourceAssignment) bool {
@@ -811,12 +817,6 @@ func collectLiteralResourceCloses(pass *Pass, body *ast.BlockStmt, assignments [
 			return true
 		},
 	)
-}
-
-type literalPathState struct {
-	block   *cfg.Block
-	next    int
-	reached bool
 }
 
 func literalPositionReachedOnEveryExit(body *ast.BlockStmt, position token.Pos) bool {

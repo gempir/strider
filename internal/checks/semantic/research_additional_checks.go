@@ -14,6 +14,10 @@ import (
 
 type discardedErrorResultRule struct{}
 
+type testParallelismRule struct{}
+
+type topLevelDeclarationOrderRule struct{}
+
 func (discardedErrorResultRule) Meta() Meta {
 	return Meta{
 		Code:            "discarded-error-result",
@@ -171,8 +175,6 @@ func reportDiscardedErrorResult(pass *Pass, call *ast.CallExpr) {
 	}
 	pass.Report(call, fmt.Sprintf("error result returned by %s is discarded", name))
 }
-
-type testParallelismRule struct{}
 
 func (testParallelismRule) Meta() Meta {
 	return Meta{
@@ -382,14 +384,12 @@ func rootExpressionObject(pass *Pass, expression ast.Expr) types.Object {
 	}
 }
 
-type topLevelDeclarationOrderRule struct{}
-
 func (topLevelDeclarationOrderRule) Meta() Meta {
 	return Meta{
 		Code:            "top-level-declaration-order",
-		Summary:         "keep top-level declarations in type, const, var, and func order",
-		Explanation:     "A consistent top-level declaration order makes files easier to scan. Group types first, then constants, variables, and functions; imports are ignored and init remains in the function group.",
-		GoodExample:     "type Client struct{}; const timeout = 1; var defaultClient Client; func New() Client { return Client{} }",
+		Summary:         "keep top-level declarations in const, var, type, and func order",
+		Explanation:     "A consistent top-level declaration order makes files easier to scan. Group constants first, then variables, types, and functions; imports are ignored and init remains in the function group.",
+		GoodExample:     "const timeout = 1; var defaultClient Client; type Client struct{}; func New() Client { return Client{} }",
 		BadExample:      "var defaultClient Client; type Client struct{}",
 		DefaultSeverity: diagnostic.SeverityWarning,
 	}
@@ -404,7 +404,7 @@ func (topLevelDeclarationOrderRule) Run(pass *Pass) {
 				continue
 			}
 			if rank < highest {
-				pass.Report(declaration, "top-level declarations should be ordered as type, const, var, then func")
+				pass.Report(declaration, "top-level declarations should be ordered as const, var, type, then func")
 				break
 			}
 			if rank > highest {
@@ -420,11 +420,11 @@ func declarationKindRank(declaration ast.Decl) int {
 		switch declaration.Tok {
 		case token.IMPORT:
 			return -1
-		case token.TYPE:
-			return 0
 		case token.CONST:
-			return 1
+			return 0
 		case token.VAR:
+			return 1
+		case token.TYPE:
 			return 2
 		default:
 			return -1

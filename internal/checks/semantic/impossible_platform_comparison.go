@@ -12,6 +12,55 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
+var knownOperatingSystems = map[string]bool{
+	"aix":       true,
+	"android":   true,
+	"darwin":    true,
+	"dragonfly": true,
+	"freebsd":   true,
+	"illumos":   true,
+	"ios":       true,
+	"js":        true,
+	"linux":     true,
+	"netbsd":    true,
+	"openbsd":   true,
+	"plan9":     true,
+	"solaris":   true,
+	"wasip1":    true,
+	"windows":   true,
+}
+
+var unixOperatingSystems = map[string]bool{
+	"aix":       true,
+	"android":   true,
+	"darwin":    true,
+	"dragonfly": true,
+	"freebsd":   true,
+	"illumos":   true,
+	"ios":       true,
+	"linux":     true,
+	"netbsd":    true,
+	"openbsd":   true,
+	"solaris":   true,
+}
+
+var knownArchitectures = map[string]bool{
+	"386":      true,
+	"amd64":    true,
+	"arm":      true,
+	"arm64":    true,
+	"loong64":  true,
+	"mips":     true,
+	"mipsle":   true,
+	"mips64":   true,
+	"mips64le": true,
+	"ppc64":    true,
+	"ppc64le":  true,
+	"riscv64":  true,
+	"s390x":    true,
+	"wasm":     true,
+}
+
 type impossiblePlatformComparisonRule struct{}
 
 func (impossiblePlatformComparisonRule) Meta() Meta {
@@ -180,53 +229,4 @@ func knownPlatformTarget(kind, target string) bool {
 		return knownOperatingSystems[target]
 	}
 	return knownArchitectures[target]
-}
-
-var knownOperatingSystems = map[string]bool{
-	"aix":       true,
-	"android":   true,
-	"darwin":    true,
-	"dragonfly": true,
-	"freebsd":   true,
-	"illumos":   true,
-	"ios":       true,
-	"js":        true,
-	"linux":     true,
-	"netbsd":    true,
-	"openbsd":   true,
-	"plan9":     true,
-	"solaris":   true,
-	"wasip1":    true,
-	"windows":   true,
-}
-
-var unixOperatingSystems = map[string]bool{
-	"aix":       true,
-	"android":   true,
-	"darwin":    true,
-	"dragonfly": true,
-	"freebsd":   true,
-	"illumos":   true,
-	"ios":       true,
-	"linux":     true,
-	"netbsd":    true,
-	"openbsd":   true,
-	"solaris":   true,
-}
-
-var knownArchitectures = map[string]bool{
-	"386":      true,
-	"amd64":    true,
-	"arm":      true,
-	"arm64":    true,
-	"loong64":  true,
-	"mips":     true,
-	"mipsle":   true,
-	"mips64":   true,
-	"mips64le": true,
-	"ppc64":    true,
-	"ppc64le":  true,
-	"riscv64":  true,
-	"s390x":    true,
-	"wasm":     true,
 }

@@ -14,37 +14,25 @@ import (
 
 const PrintWidth = 180
 
-type Options struct {
-	PrintWidth int
-}
+const MaxBlankLines = 1
 
-func DefaultOptions() Options {
-	return Options{
-		PrintWidth: PrintWidth,
-	}
+const ExistingLineBreaks = "structural-only"
+
+const ErrUnsupported unsupportedErrorValue = "unsupported Go syntax"
+
+type Options struct {
+	PrintWidth         int
+	MaxBlankLines      int
+	ExistingLineBreaks string
 }
 
 type unsupportedErrorValue string
-
-func (value unsupportedErrorValue) Error() string {
-	return string(value)
-}
-
-const ErrUnsupported unsupportedErrorValue = "unsupported Go syntax"
 
 type UnsupportedError struct {
 	Filename string
 	Line     int
 	Column   int
 	Feature  string
-}
-
-func (e *UnsupportedError) Error() string {
-	return fmt.Sprintf("%s:%d:%d: %v: %s", e.Filename, e.Line, e.Column, ErrUnsupported, e.Feature)
-}
-
-func (e *UnsupportedError) Unwrap() error {
-	return ErrUnsupported
 }
 
 type Result struct {
@@ -57,6 +45,26 @@ type Result struct {
 // for concurrent use by independent formatting calls.
 type Session struct {
 	modules modulePathCache
+}
+
+func DefaultOptions() Options {
+	return Options{
+		PrintWidth:         PrintWidth,
+		MaxBlankLines:      MaxBlankLines,
+		ExistingLineBreaks: ExistingLineBreaks,
+	}
+}
+
+func (value unsupportedErrorValue) Error() string {
+	return string(value)
+}
+
+func (e *UnsupportedError) Error() string {
+	return fmt.Sprintf("%s:%d:%d: %v: %s", e.Filename, e.Line, e.Column, ErrUnsupported, e.Feature)
+}
+
+func (e *UnsupportedError) Unwrap() error {
+	return ErrUnsupported
 }
 
 func NewSession() *Session {
@@ -86,18 +94,16 @@ func (s *Session) FormatWithOptions(filename string, source []byte, options Opti
 	return s.FormatTree(filename, originalTree, options)
 }
 
-// IsIgnored reports whether source opts out of canonical formatting.
+// IsIgnored reports whether a header comment before the package clause opts
+// out of canonical formatting.
 func IsIgnored(source []byte) bool {
 	file := token.NewFileSet().AddFile("", -1, len(source))
 	var lexer scanner.Scanner
 	lexer.Init(file, source, nil, scanner.ScanComments)
 	for {
 		_, kind, literal := lexer.Scan()
-		if kind == token.EOF {
+		if kind == token.EOF || kind != token.COMMENT {
 			return false
-		}
-		if kind != token.COMMENT {
-			continue
 		}
 		for _, line := range strings.Split(literal, "\n") {
 			line = strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(line, "//"), "/*"))
@@ -112,6 +118,7 @@ func IsIgnored(source []byte) bool {
 // FormatTree formats a previously parsed source tree. The tree and its source
 // remain immutable and may be shared with other checks.
 func (s *Session) FormatTree(filename string, originalTree *cst.Tree, options Options) (Result, error) {
+	options = normalizeOptions(options)
 	preview, module, err := s.previewTree(filename, originalTree, options)
 	if err != nil || preview.Ignored {
 		return preview, err
@@ -126,9 +133,9 @@ func (s *Session) FormatTree(filename string, originalTree *cst.Tree, options Op
 	if _, err := validateConcreteSyntax(filename, formattedTree); err != nil {
 		return Result{}, fmt.Errorf("formatter idempotence check: %w", err)
 	}
-	second, err := goformat.Source([]byte(renderConcreteWithModule(formattedTree, options, module)))
+	second, err := renderCandidate(filename, formattedTree, options, module)
 	if err != nil {
-		return Result{}, fmt.Errorf("formatter idempotence check: gofmt compatibility: %w", err)
+		return Result{}, fmt.Errorf("formatter idempotence check: %w", err)
 	}
 	if !bytes.Equal(preview.Source, second) {
 		return Result{}, fmt.Errorf("formatter idempotence check failed for %s", filename)
@@ -148,8 +155,15 @@ func (s *Session) previewTree(filename string, originalTree *cst.Tree, options O
 	if originalTree == nil {
 		return Result{}, "", fmt.Errorf("format %s: nil concrete syntax tree", filename)
 	}
+	options = normalizeOptions(options)
 	if options.PrintWidth < 40 || options.PrintWidth > 500 {
 		return Result{}, "", fmt.Errorf("format %s: print width must be between 40 and 500", filename)
+	}
+	if options.MaxBlankLines != MaxBlankLines {
+		return Result{}, "", fmt.Errorf("format %s: max blank lines must be %d", filename, MaxBlankLines)
+	}
+	if options.ExistingLineBreaks != ExistingLineBreaks {
+		return Result{}, "", fmt.Errorf("format %s: existing line breaks must be %q", filename, ExistingLineBreaks)
 	}
 	source := originalTree.Bytes()
 	if IsIgnored(source) {
@@ -167,9 +181,9 @@ func (s *Session) previewTree(filename string, originalTree *cst.Tree, options O
 	if hasImports {
 		module = s.modules.find(filename)
 	}
-	formatted, err := goformat.Source([]byte(renderConcreteWithModule(originalTree, options, module)))
+	formatted, err := renderCandidate(filename, originalTree, options, module)
 	if err != nil {
-		return Result{}, "", fmt.Errorf("formatter gofmt compatibility: %w", err)
+		return Result{}, "", err
 	}
 	for range 100 {
 		formattedTree, parseErr := cst.Parse(filename, formatted)
@@ -179,9 +193,9 @@ func (s *Session) previewTree(filename string, originalTree *cst.Tree, options O
 		if _, syntaxErr := validateConcreteSyntax(filename, formattedTree); syntaxErr != nil {
 			return Result{}, "", fmt.Errorf("formatter convergence check: %w", syntaxErr)
 		}
-		next, formatErr := goformat.Source([]byte(renderConcreteWithModule(formattedTree, options, module)))
+		next, formatErr := renderCandidate(filename, formattedTree, options, module)
 		if formatErr != nil {
-			return Result{}, "", fmt.Errorf("formatter gofmt compatibility: %w", formatErr)
+			return Result{}, "", formatErr
 		}
 		if bytes.Equal(formatted, next) {
 			return Result{
@@ -192,6 +206,29 @@ func (s *Session) previewTree(filename string, originalTree *cst.Tree, options O
 		formatted = next
 	}
 	return Result{}, "", fmt.Errorf("formatter did not converge for %s", filename)
+}
+
+func renderCandidate(filename string, tree *cst.Tree, options Options, module string) ([]byte, error) {
+	formatted, err := goformat.Source([]byte(renderConcreteWithModule(tree, options, module)))
+	if err != nil {
+		return nil, fmt.Errorf("formatter gofmt compatibility: %w", err)
+	}
+	ordered, err := orderTopLevelDeclarations(filename, formatted)
+	if err != nil {
+		return nil, fmt.Errorf("formatter declaration ordering: %w", err)
+	}
+	return ordered, nil
+}
+
+func normalizeOptions(options Options) Options {
+	defaults := DefaultOptions()
+	if options.MaxBlankLines == 0 {
+		options.MaxBlankLines = defaults.MaxBlankLines
+	}
+	if options.ExistingLineBreaks == "" {
+		options.ExistingLineBreaks = defaults.ExistingLineBreaks
+	}
+	return options
 }
 
 func validateConcreteSyntax(_ string, tree *cst.Tree) (bool, error) {

@@ -59,11 +59,19 @@ type concreteWriter struct {
 	maxEmptyLines   int
 }
 
+type modulePathCache struct {
+	entries sync.Map
+}
+
+type cachedModulePath struct {
+	path string
+}
+
 func renderConcreteWithModule(tree *cst.Tree, options Options, module string) string {
 	layout := newConcreteLayout(tree, module)
 	writer := concreteWriter{
 		lineStart:     true,
-		maxEmptyLines: 1,
+		maxEmptyLines: options.MaxBlankLines,
 	}
 	source := tree.Bytes()
 	writer.output.Grow(len(source))
@@ -567,14 +575,6 @@ func importText(item concreteImport) string {
 		return item.path
 	}
 	return item.name + " " + item.path
-}
-
-type modulePathCache struct {
-	entries sync.Map
-}
-
-type cachedModulePath struct {
-	path string
 }
 
 func (c *modulePathCache) find(filename string) string {

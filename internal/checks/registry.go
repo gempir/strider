@@ -12,6 +12,34 @@ import (
 	"github.com/gempir/strider/internal/pathfilter"
 )
 
+var supportedBehavioralOptions = map[string]map[string]bool{
+	"banned-characters": {
+		"characters": true,
+	},
+	"file-length-limit": {
+		"max-lines": true,
+	},
+	"function-length": {
+		"max-lines":      true,
+		"max-statements": true,
+	},
+	"function-result-limit": {
+		"max-results": true,
+	},
+	"imports-blocklist": {
+		"blocked-imports": true,
+	},
+	"interface-method-limit": {
+		"max-methods": true,
+	},
+	"max-parameters": {
+		"max-parameters": true,
+	},
+	"max-public-structs": {
+		"max-public-structs": true,
+	},
+}
+
 // RegistryOptions selects and configures checks.
 type RegistryOptions struct {
 	Only            []string
@@ -131,34 +159,6 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 	}
 	registry.addSelectedRules(available, formatSetting)
 	return registry, nil
-}
-
-var supportedBehavioralOptions = map[string]map[string]bool{
-	"banned-characters": {
-		"characters": true,
-	},
-	"file-length-limit": {
-		"max-lines": true,
-	},
-	"function-length": {
-		"max-lines":      true,
-		"max-statements": true,
-	},
-	"function-result-limit": {
-		"max-results": true,
-	},
-	"imports-blocklist": {
-		"blocked-imports": true,
-	},
-	"interface-method-limit": {
-		"max-methods": true,
-	},
-	"max-parameters": {
-		"max-parameters": true,
-	},
-	"max-public-structs": {
-		"max-public-structs": true,
-	},
 }
 
 func validateBehavioralOptions(code string, setting config.RuleConfig) error {

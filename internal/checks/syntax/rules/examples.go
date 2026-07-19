@@ -1,10 +1,5 @@
 package rules
 
-type ruleExample struct {
-	Good string
-	Bad  string
-}
-
 // extendedExamples is the source of truth for examples shown by both
 // `strider lint --explain` and the generated lint reference pages.
 var extendedExamples = map[string]ruleExample{
@@ -356,4 +351,9 @@ var extendedExamples = map[string]ruleExample{
 		Good: "ratio := 2.0 / 3.0",
 		Bad:  "ratio := 2 / 3",
 	},
+}
+
+type ruleExample struct {
+	Good string
+	Bad  string
 }

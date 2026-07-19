@@ -7,8 +7,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "cbf5cc029568cd50277a5dd0e310a381e78e93c7e365f7d9bc81a58c5ac2fc37",
-          "findings": 1113,
+          "digest": "b55bd6d6c1249084c4a1201f616b6c3f9229c768f6ad2e2660f46f8f831270f2",
+          "findings": 1115,
           "by_code": {
             "add-constant": 175,
             "boolean-literal-comparison": 10,
@@ -27,7 +27,7 @@
             "external-call-in-loop": 3,
             "file-length-limit": 5,
             "flag-parameter": 1,
-            "format": 46,
+            "format": 48,
             "function-length": 19,
             "function-result-limit": 1,
             "get-function-return-value": 1,
@@ -63,8 +63,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "9f245158665b35294b517176db19c3d1c571d53b466e3b2745e81aa8722fb981",
-          "findings": 46
+          "digest": "0ed8927473bd8d6145f4877435d8110d8ad5f6fbc83b981e573591a168fa5ef0",
+          "findings": 48
         }
       }
     },
@@ -74,8 +74,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "3362de247c5eb5d0d497125ab9edd4cd4788b04142808b7cb070631926e4ddda",
-          "findings": 2860,
+          "digest": "d3c041afb28f4c397853e61ff967a373528abd1d9cbbb5d17f30dd017ec74eb7",
+          "findings": 2879,
           "by_code": {
             "add-constant": 503,
             "boolean-literal-comparison": 1,
@@ -92,7 +92,7 @@
             "external-call-in-loop": 4,
             "file-length-limit": 12,
             "flag-parameter": 6,
-            "format": 59,
+            "format": 70,
             "function-length": 20,
             "import-alias-naming": 1,
             "import-shadowing": 7,
@@ -117,7 +117,7 @@
             "single-case-switch": 34,
             "task-comment": 2,
             "test-parallelism": 629,
-            "top-level-declaration-order": 37,
+            "top-level-declaration-order": 45,
             "unchecked-type-assertion": 29,
             "unclosed-http-response-body": 20,
             "unexported-return": 1,
@@ -129,8 +129,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "d8c5ab4add9e3225dae2c350d5d8e04404595c7d675ed757ca3865086202bb31",
-          "findings": 59
+          "digest": "7a4635e57da60077b71ba6fcce2683f6e8f15f7ec510b8bbc16062ed361f9d78",
+          "findings": 70
         }
       }
     },
@@ -140,8 +140,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "b0ab76ffa4ee74fe600f9c0a9740aae1f1350749f9d7e9a63f75d0d0c30835fc",
-          "findings": 819,
+          "digest": "a1316f8fe4c4aeb84d3d3010f99b5493cb964b05cd7ee8af3e871c97db4c5312",
+          "findings": 818,
           "by_code": {
             "add-constant": 42,
             "byte-string-write": 1,
@@ -178,7 +178,7 @@
             "single-case-switch": 13,
             "task-comment": 1,
             "test-parallelism": 75,
-            "top-level-declaration-order": 17,
+            "top-level-declaration-order": 16,
             "unchecked-type-assertion": 3,
             "unclosed-http-response-body": 1,
             "unused-parameter": 9,
@@ -201,7 +201,7 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "044b13a244803385c4edf96edefe19b898e841d5bb31b0c210a62d6cd012f3df",
+          "digest": "37f3897d3636b886f66c305ddd511cac1a50d2ff8a1dd14f594ae5bed68f82bc",
           "findings": 249,
           "by_code": {
             "add-constant": 22,
@@ -253,8 +253,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "b118f20a6e9ceedcaab82ffd0cd6258293483ea9b5ff12bf3db80a2cac6c89a7",
-          "findings": 277,
+          "digest": "7ba07e0c72cfcbead61760b7f5700941d60dd5de4107a39fe4e7a321d5fbac5d",
+          "findings": 278,
           "by_code": {
             "add-constant": 8,
             "cognitive-complexity": 11,
@@ -264,7 +264,7 @@
             "doc-comment-period": 15,
             "error-strings": 6,
             "exported-declaration-comment": 34,
-            "format": 8,
+            "format": 9,
             "import-alias-naming": 1,
             "ineffective-bitwise-zero": 1,
             "marshal-receiver": 2,
@@ -293,8 +293,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "ca0a7b1c1b4df0ef44d598890531d610f32f794a1ea96c24511e04423ec236dd",
-          "findings": 8
+          "digest": "faf4112782cee3b3312a563c27067b0bdaf1c9c0ff93d73c8b5fa6c1ec892b8d",
+          "findings": 9
         }
       }
     },
@@ -304,8 +304,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "323a45e459d1e9e2f75afeaffb4d51b5661ed503772e4e457db1fe8103170ed7",
-          "findings": 320,
+          "digest": "09f6f1e00844e83376addd23e28464ccce3bba8416e11cc2cf0b0c0796996578",
+          "findings": 321,
           "by_code": {
             "add-constant": 13,
             "cognitive-complexity": 8,
@@ -337,7 +337,7 @@
             "standard-http-method-constant": 1,
             "task-comment": 10,
             "test-parallelism": 21,
-            "top-level-declaration-order": 7,
+            "top-level-declaration-order": 8,
             "unchecked-type-assertion": 14,
             "unused-parameter": 2,
             "use-any": 28,
@@ -357,8 +357,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "f353c2c9b9960bfec2ea797f08fc446cba066f677ced2752abcd775c7fa85867",
-          "findings": 533,
+          "digest": "a26615b4cda326b1651e72c3c8149936d3ad16a3c0533b445ea496d8aa29f2d6",
+          "findings": 536,
           "by_code": {
             "add-constant": 38,
             "append-to-sized-slice": 1,
@@ -373,7 +373,7 @@
             "exported-declaration-comment": 18,
             "file-length-limit": 2,
             "flag-parameter": 1,
-            "format": 18,
+            "format": 20,
             "get-function-return-value": 2,
             "increment-decrement": 2,
             "insecure-url-scheme": 1,
@@ -392,7 +392,7 @@
             "single-case-switch": 4,
             "standard-http-method-constant": 2,
             "test-parallelism": 14,
-            "top-level-declaration-order": 6,
+            "top-level-declaration-order": 7,
             "unused-parameter": 7,
             "unused-receiver": 3,
             "use-any": 9
@@ -400,8 +400,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "ff1cec9802b14f7774ac1af8af0b56a15a355bcb72369fc8364b10ea26cec74b",
-          "findings": 18
+          "digest": "b5a180db9fb006e24669c7beaa11aa9f3ce07a1ae4f8bea24eb683ed2f508e68",
+          "findings": 20
         }
       }
     },
@@ -411,8 +411,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "24c98fe49ef964c2f1e3560a18e6aadee08689009a218f7934c57f35cfadb969",
-          "findings": 208,
+          "digest": "66204fc8a8832a67b4f7e0237630fdf3daf6fa5657fec046b2c88347b6a21393",
+          "findings": 210,
           "by_code": {
             "add-constant": 1,
             "cognitive-complexity": 5,
@@ -424,7 +424,7 @@
             "error-type-naming": 1,
             "exported-declaration-comment": 64,
             "flag-parameter": 2,
-            "format": 19,
+            "format": 21,
             "function-length": 9,
             "import-shadowing": 1,
             "modifies-value-receiver": 2,
@@ -443,8 +443,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "626480bd973d4c1131edf99596a8003d8bf2b8cd2979c948c94b573a2eee1e1f",
-          "findings": 19
+          "digest": "bc2338a4b20b2239f95d2d6a81a14739093345b916633f638647d04d995b175c",
+          "findings": 21
         }
       }
     },
@@ -454,8 +454,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "d6e6a0c86e65d3745f77455a0bfddab64d635bf11d7a2a4a87b2aecf5a43d069",
-          "findings": 464,
+          "digest": "b82435214cce655183dbe2d2b7ad05c96e38dab613dafde35bd25e1c071655c8",
+          "findings": 466,
           "by_code": {
             "add-constant": 35,
             "cognitive-complexity": 6,
@@ -468,7 +468,7 @@
             "exported-declaration-comment": 77,
             "file-length-limit": 3,
             "flag-parameter": 2,
-            "format": 9,
+            "format": 10,
             "interface-method-limit": 1,
             "marshal-receiver": 1,
             "modifies-parameter": 1,
@@ -483,7 +483,7 @@
             "redundant-conversion": 10,
             "slice-preallocation": 4,
             "test-parallelism": 109,
-            "top-level-declaration-order": 2,
+            "top-level-declaration-order": 3,
             "unchecked-type-assertion": 22,
             "unused-parameter": 18,
             "use-any": 1,
@@ -492,8 +492,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "7e8100cabf9b454af4319fff2671ad2495ff7e0bc7f41cea26e7596a9c5eff77",
-          "findings": 9
+          "digest": "730856c6d23bf4d32f3a244f8039f7f186677889854c6ce8154c26f25169d2f9",
+          "findings": 10
         }
       }
     },
@@ -503,8 +503,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "6602e33923bf178ea6bdc802f3350768ab1e23a69e3ba43daa7dccf3b9afbebe",
-          "findings": 655,
+          "digest": "3fb08a3733fda4b8294b2f633895448ce39ca0b7768d444372b73b88ae4a2660",
+          "findings": 656,
           "by_code": {
             "add-constant": 47,
             "boolean-literal-comparison": 1,
@@ -538,7 +538,7 @@
             "task-comment": 1,
             "test-parallelism": 96,
             "time-value-equality": 3,
-            "top-level-declaration-order": 4,
+            "top-level-declaration-order": 5,
             "unchecked-type-assertion": 19,
             "unexported-naming": 1,
             "unused-parameter": 1,
@@ -560,8 +560,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "24798f0794d8b68b9d46aba07fbed6bbc09b6b35b4a35033bf503359c25efc14",
-          "findings": 24949,
+          "digest": "4349c8aa4b3c6aaf65d577376f80daa6acff31cdb11a80338c0e2c087546541a",
+          "findings": 24991,
           "by_code": {
             "add-constant": 3608,
             "blank-imports": 1,
@@ -587,7 +587,7 @@
             "exported-declaration-comment": 2436,
             "file-length-limit": 135,
             "flag-parameter": 84,
-            "format": 631,
+            "format": 644,
             "function-length": 758,
             "function-result-limit": 24,
             "identical-switch-branches": 2,
@@ -628,7 +628,7 @@
             "task-comment": 156,
             "test-parallelism": 2436,
             "time-value-equality": 4,
-            "top-level-declaration-order": 326,
+            "top-level-declaration-order": 355,
             "unchecked-type-assertion": 1205,
             "unexported-return": 32,
             "unnecessary-format": 1,
@@ -643,8 +643,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "df26a672944187d871900ebaf1cea205bdc996c00c7f40490b1a19ba776af2a3",
-          "findings": 631
+          "digest": "49ba6257896e72eae6e5227c557271a5ef7e28b4357b9d167b4fb35939d3c328",
+          "findings": 644
         }
       }
     }

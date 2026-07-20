@@ -58,7 +58,7 @@ Add the path to `strider.toml` after generating it:
 ```toml
 version = 1
 
-[checks]
+[check]
 baseline = "strider-baseline.toml"
 ```
 
@@ -127,7 +127,7 @@ regression.
 2. Run `strider check` without a baseline to inspect the backlog.
 3. Generate a baseline for the exact profile CI will run.
 4. Review and commit the file.
-5. Configure its path under `[checks]` and require `strider check` in CI.
+5. Configure its path under `[check]` and require `strider check` in CI.
 6. Fix old findings in focused changes and prune stale entries in the same
    commit.
 

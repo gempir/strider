@@ -33,7 +33,7 @@ type Config struct {
 	Version   int             `toml:"version"`
 	Color     string          `toml:"color"`
 	Formatter FormatterConfig `toml:"formatter"`
-	Checks    ToolConfig      `toml:"checks"`
+	Checks    ToolConfig      `toml:"-"`
 
 	Path string `toml:"-"`
 	Root string `toml:"-"`
@@ -62,6 +62,7 @@ type fileConfig struct {
 	Version   int                       `toml:"version"`
 	Color     string                    `toml:"color"`
 	Formatter FormatterConfig           `toml:"formatter"`
+	Check     map[string]toml.Primitive `toml:"check"`
 	Checks    map[string]toml.Primitive `toml:"checks"`
 }
 
@@ -139,6 +140,9 @@ func Load(explicitPath string, disabled bool) (Config, error) {
 	configuration.Version = decoded.Version
 	configuration.Color = decoded.Color
 	configuration.Formatter = decoded.Formatter
+	if err := decodeCheck(&configuration.Checks, decoded.Check, metadata); err != nil {
+		return Config{}, fmt.Errorf("read %s: %w", absolute, err)
+	}
 	if err := decodeChecks(&configuration.Checks, decoded.Checks, metadata); err != nil {
 		return Config{}, fmt.Errorf("read %s: %w", absolute, err)
 	}
@@ -174,7 +178,7 @@ func recordDefinedRuleOptions(configuration *Config, metadata toml.MetaData) {
 	}
 }
 
-func decodeChecks(destination *ToolConfig, values map[string]toml.Primitive, metadata toml.MetaData) error {
+func decodeCheck(destination *ToolConfig, values map[string]toml.Primitive, metadata toml.MetaData) error {
 	for name, value := range values {
 		switch name {
 		case "excludes":
@@ -189,18 +193,23 @@ func decodeChecks(destination *ToolConfig, values map[string]toml.Primitive, met
 			if err := metadata.PrimitiveDecode(value, &destination.MinimumSeverity); err != nil {
 				return err
 			}
-		case "rules":
-			return fmt.Errorf("unknown configuration key(s): checks.rules")
 		default:
-			if metadata.Type("checks", name) != "Hash" {
-				return fmt.Errorf("unknown configuration key(s): checks.%s", name)
-			}
-			rule := RuleConfig{}
-			if err := metadata.PrimitiveDecode(value, &rule); err != nil {
-				return err
-			}
-			destination.Rules[name] = rule
+			return fmt.Errorf("unknown configuration key(s): check.%s", name)
 		}
+	}
+	return nil
+}
+
+func decodeChecks(destination *ToolConfig, values map[string]toml.Primitive, metadata toml.MetaData) error {
+	for code, value := range values {
+		if metadata.Type("checks", code) != "Hash" {
+			return fmt.Errorf("unknown configuration key(s): checks.%s", code)
+		}
+		rule := RuleConfig{}
+		if err := metadata.PrimitiveDecode(value, &rule); err != nil {
+			return err
+		}
+		destination.Rules[code] = rule
 	}
 	return nil
 }
@@ -252,7 +261,7 @@ func (configuration Config) validate() error {
 	if !configuration.Formatter.Alignment.Declarations {
 		return fmt.Errorf("formatter.alignment.declarations must be true while gofmt stability is required")
 	}
-	return validateTool("checks", configuration.Checks)
+	return validateTool("check", configuration.Checks)
 }
 
 func validateTool(name string, tool ToolConfig) error {

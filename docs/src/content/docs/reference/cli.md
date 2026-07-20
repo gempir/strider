@@ -116,12 +116,12 @@ build tags, platforms, and environments.
 
 | Flag | Description |
 | --- | --- |
-| `-b, --baseline PATH` | Apply or update this baseline; overrides `[checks].baseline`. |
+| `-b, --baseline PATH` | Apply or update this baseline; overrides `[check].baseline`. |
 | `-g, --generate-baseline` | Replace the selected baseline with all current non-format findings and exit `0`. |
 | `-r, --remove-outdated-baseline-entries` | Remove baseline entries that no longer match; never add new findings. |
 
 Generation and pruning require either `--baseline PATH` or
-`[checks].baseline`. They are mutually exclusive. Code `format` is never stored
+`[check].baseline`. They are mutually exclusive. Code `format` is never stored
 in a baseline. Fix mode can use an ordinary baseline, but cannot be combined
 with generation or pruning.
 

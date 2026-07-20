@@ -1035,7 +1035,7 @@ func TestVersionOneCheckMinimumSeverityUsesEffectiveOverrides(t *testing.T) {
 	root := t.TempDir()
 	configurationPath := filepath.Join(root, "strider.toml")
 	configuration := `version = 1
-[checks]
+[check]
 minimum-severity = "error"
 [checks.no-init]
 severity = "error"
@@ -1451,7 +1451,7 @@ func TestConfiguredColorAndCLIOverride(t *testing.T) {
 	t.Setenv("FORCE_COLOR", "")
 	t.Setenv("NO_COLOR", "")
 	root := t.TempDir()
-	configuration := "version = 1\ncolor = \"always\"\n[checks]\nminimum-severity = \"note\"\n"
+	configuration := "version = 1\ncolor = \"always\"\n[check]\nminimum-severity = \"note\"\n"
 	if err := os.WriteFile(filepath.Join(root, "strider.toml"), []byte(configuration), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -1851,7 +1851,7 @@ func TestConfiguredAnalyzerBaseline(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/baseline\n\ngo 1.26\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(root, "strider.toml"), []byte("version = 1\n[checks]\nbaseline = \"analysis-baseline.toml\"\n"), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "strider.toml"), []byte("version = 1\n[check]\nbaseline = \"analysis-baseline.toml\"\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	filename := filepath.Join(root, "main.go")

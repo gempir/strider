@@ -102,8 +102,8 @@ current syntax boundary.
 ## Configuration
 
 Strider discovers the nearest `strider.toml` from the current directory upward.
-Version 1 uses one `[checks]` namespace. Every check supports `severity` and
-path `excludes`; the formatter exposes the selected width, blank-line,
+Version 1 uses `[check]` for command-wide policy and `[checks.<code>]` for
+individual checks. Every check supports `severity` and path `excludes`; the formatter exposes the selected width, blank-line,
 source-break, declaration-alignment, and filesystem policies.
 
 ```toml
@@ -117,7 +117,7 @@ existing-line-breaks = "structural-only"
 alignment.declarations = true
 excludes = ["internal/generated/**"]
 
-[checks]
+[check]
 baseline = "strider-baseline.toml"
 minimum-severity = "warning"
 
@@ -155,7 +155,7 @@ strider check --generate-baseline --baseline strider-baseline.toml ./...
 Configure the path for ordinary runs:
 
 ```toml
-[checks]
+[check]
 baseline = "strider-baseline.toml"
 ```
 

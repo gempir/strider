@@ -4,8 +4,9 @@ description: Configure Strider's formatter, unified checks, exclusions, severiti
 ---
 
 Strider reads project settings from one strict TOML file named `strider.toml`.
-Version 1 has one `[checks]` namespace for formatting, maintainability, and
-correctness diagnostics, while `[formatter]` controls rendered source.
+Version 1 uses `[check]` for command-wide policy and `[checks.<code>]` for
+formatting, maintainability, and correctness diagnostics, while `[formatter]`
+controls rendered source.
 
 ```toml
 version = 1
@@ -18,7 +19,7 @@ existing-line-breaks = "structural-only"
 alignment.declarations = true
 excludes = ["internal/generated/**"]
 
-[checks]
+[check]
 excludes = ["testdata/**"]
 baseline = "strider-baseline.toml"
 minimum-severity = "warning"
@@ -92,7 +93,7 @@ and per-rule exclusions. To investigate checks configured with
 `severity = "none"`, use `--minimum-severity none`, optionally together with
 `--only`.
 
-An explicit `--baseline PATH` overrides `[checks].baseline`. The global
+An explicit `--baseline PATH` overrides `[check].baseline`. The global
 `--color` option similarly overrides the top-level `color` setting.
 
 ## Terminal output
@@ -137,14 +138,14 @@ individual check. Paths are evaluated relative to the directory containing
 [formatter]
 excludes = ["vendor-tools", "**/*.generated.go"]
 
-[checks]
+[check]
 excludes = ["testdata/**"]
 
 [checks.package-comments]
 excludes = ["cmd/**", "examples/**"]
 ```
 
-`[checks].excludes` removes matching files from the entire diagnostic run.
+`[check].excludes` removes matching files from the entire diagnostic run.
 Per-check exclusions disable only that code. `[formatter].excludes` applies to
 the `fmt` command and to code `format`; it does not apply to formatter stdin,
 which has no discovery pass.
@@ -170,15 +171,13 @@ recognized only in comments before the package clause.
 
 ## Checks
 
-Tool-wide settings live under `[checks]`.
+Tool-wide settings live under `[check]`.
 
 | Setting | Type | Default | Effect |
 | --- | --- | --- | --- |
 | `excludes` | string list | `[]` | Skip matching files for all checks. |
 | `baseline` | string | unset | Apply this baseline unless the CLI overrides or ignores it. Relative paths resolve from `strider.toml`. |
 | `minimum-severity` | string | `"warning"` | Run only checks whose effective severity is at least `"none"`, `"note"`, `"warning"`, or `"error"`. |
-| `rules` | table | `{}` | Common configuration keyed by any registered check code. |
-
 All 207 checks are eligible. The default warning floor runs the 191 checks whose
 effective severity is warning or error. `strider check --minimum-severity note`
 also runs note checks, while `strider check --minimum-severity none` additionally
@@ -240,7 +239,7 @@ by the selected codes.
 Configure one baseline for the unified diagnostic set:
 
 ```toml
-[checks]
+[check]
 baseline = "strider-baseline.toml"
 ```
 

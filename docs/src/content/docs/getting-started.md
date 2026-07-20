@@ -56,7 +56,7 @@ version = 1
 [formatter]
 print-width = 180
 
-[checks]
+[check]
 minimum-severity = "warning"
 
 [checks.file-length-limit]
@@ -138,7 +138,7 @@ strider check --generate-baseline --baseline strider-baseline.toml ./...
 ```
 
 Formatting findings are not captured. Commit the baseline and configure its
-path under `[checks]`. See [Baselines](/baselines/) before regenerating or
+path under `[check]`. See [Baselines](/baselines/) before regenerating or
 pruning it.
 
 ## Exit status

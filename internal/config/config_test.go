@@ -36,7 +36,7 @@ max-blank-lines = 1
 existing-line-breaks = "structural-only"
 alignment.declarations = true
 excludes = ["internal/generated/**"]
-[checks]
+[check]
 excludes = ["generated/**"]
 baseline = "strider-baseline.toml"
 minimum-severity = "warning"
@@ -135,19 +135,23 @@ func TestLoadRejectsUnknownAndInvalidSettings(t *testing.T) {
 			"severity",
 		},
 		"minimum-severity": {
-			"version = 1\n[checks]\nminimum-severity = \"fatal\"\n",
+			"version = 1\n[check]\nminimum-severity = \"fatal\"\n",
 			"minimum-severity",
 		},
-		"checks-unknown": {
-			"version = 1\n[checks]\nunknown = true\n",
+		"check-unknown": {
+			"version = 1\n[check]\nunknown = true\n",
 			"unknown configuration key",
+		},
+		"legacy-checks-settings": {
+			"version = 1\n[checks]\nminimum-severity = \"warning\"\n",
+			"checks.minimum-severity",
 		},
 		"legacy-rules-namespace": {
 			"version = 1\n[checks.rules.no-init]\nseverity = \"none\"\n",
 			"checks.rules",
 		},
 		"baseline-variant": {
-			"version = 1\n[checks]\nbaseline-variant = \"strict\"\n",
+			"version = 1\n[check]\nbaseline-variant = \"strict\"\n",
 			"unknown configuration key",
 		},
 		"enabled": {

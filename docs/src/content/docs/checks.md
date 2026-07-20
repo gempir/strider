@@ -140,12 +140,12 @@ grouped by purpose in the documentation sidebar.
 ## Configure checks
 
 Every check code accepts `severity` and path `excludes` directly under the
-version-1 `[checks]` namespace:
+version-1 `[checks.<code>]` namespace:
 
 ```toml
 version = 1
 
-[checks]
+[check]
 minimum-severity = "warning"
 
 [checks.format]
@@ -164,7 +164,7 @@ severity = "none"
 ```
 
 The tool-wide minimum severity, exclusions, and default baseline live under
-`[checks]`. Formatter layout and formatter-only exclusions remain under
+`[check]`. Formatter layout and formatter-only exclusions remain under
 `[formatter]`. See
 [Configuration](/configuration/#checks) for the complete contract.
 

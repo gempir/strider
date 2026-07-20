@@ -9,9 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type externalCallInLoopRule struct{}
+type externalCallInLoopCheck struct{}
 
-func (externalCallInLoopRule) Meta() Meta {
+func (externalCallInLoopCheck) Meta() Meta {
 	return Meta{
 		Code:            "external-call-in-loop",
 		Summary:         "detect synchronous SQL and HTTP calls inside loops",
@@ -22,7 +22,7 @@ func (externalCallInLoopRule) Meta() Meta {
 	}
 }
 
-func (externalCallInLoopRule) Run(pass *Pass) {
+func (externalCallInLoopCheck) Run(pass *Pass) {
 	for _, function := range pass.Functions {
 		for _, block := range function.Blocks {
 			if !ssaBlockInCycle(block) {
@@ -72,7 +72,7 @@ func knownExternalLoopCall(call *ssa.CallCommon) string {
 	return ""
 }
 
-func (externalCallInLoopRule) Requirements() Requirements {
+func (externalCallInLoopCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageSSA,
 	}

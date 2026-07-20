@@ -9,9 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type failedAssertionShadowReadRule struct{}
+type failedAssertionShadowReadCheck struct{}
 
-func (failedAssertionShadowReadRule) Meta() Meta {
+func (failedAssertionShadowReadCheck) Meta() Meta {
 	return Meta{
 		Code:            "failed-assertion-shadow-read",
 		Summary:         "detect reads of a shadowing failed type assertion result",
@@ -22,7 +22,7 @@ func (failedAssertionShadowReadRule) Meta() Meta {
 	}
 }
 
-func (failedAssertionShadowReadRule) Run(pass *Pass) {
+func (failedAssertionShadowReadCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.IfStmt)(nil),
@@ -243,7 +243,7 @@ func expressionIsObject(expression ast.Expr, object types.Object, pass *Pass) bo
 	return ok && pass.TypesInfo.ObjectOf(identifier) == object
 }
 
-func (failedAssertionShadowReadRule) Requirements() Requirements {
+func (failedAssertionShadowReadCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

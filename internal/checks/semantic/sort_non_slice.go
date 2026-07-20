@@ -9,9 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type sortNonSliceRule struct{}
+type sortNonSliceCheck struct{}
 
-func (sortNonSliceRule) Meta() Meta {
+func (sortNonSliceCheck) Meta() Meta {
 	return Meta{
 		Code:            "sort-non-slice",
 		Summary:         "detect sort.Slice calls with non-slice values",
@@ -22,7 +22,7 @@ func (sortNonSliceRule) Meta() Meta {
 	}
 }
 
-func (sortNonSliceRule) Run(pass *Pass) {
+func (sortNonSliceCheck) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
 	for _, call := range pass.staticCallsInPackage("sort") {
 		if !isSortSliceCall(call) || len(call.Common().Args) == 0 {
@@ -65,7 +65,7 @@ func isNilSSAConstant(value ssa.Value) bool {
 	return ok && constant.IsNil()
 }
 
-func (sortNonSliceRule) Requirements() Requirements {
+func (sortNonSliceCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageSSA,
 		Facts: FactCallArguments | FactStaticCalls,

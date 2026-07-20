@@ -8,9 +8,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type singleIterationLoopRule struct{}
+type singleIterationLoopCheck struct{}
 
-func (singleIterationLoopRule) Meta() Meta {
+func (singleIterationLoopCheck) Meta() Meta {
 	return Meta{
 		Code:            "single-iteration-loop",
 		Summary:         "detect loops that always exit during their first iteration",
@@ -21,7 +21,7 @@ func (singleIterationLoopRule) Meta() Meta {
 	}
 }
 
-func (singleIterationLoopRule) Run(pass *Pass) {
+func (singleIterationLoopCheck) Run(pass *Pass) {
 	for _, file := range pass.Files {
 		for _, declaration := range file.Decls {
 			function, ok := declaration.(*ast.FuncDecl)
@@ -180,7 +180,7 @@ func loopHasEscape(pass *Pass, loop ast.Stmt, body *ast.BlockStmt, labels map[ty
 	return hasEscape
 }
 
-func (singleIterationLoopRule) Requirements() Requirements {
+func (singleIterationLoopCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

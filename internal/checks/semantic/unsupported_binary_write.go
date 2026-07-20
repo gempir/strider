@@ -10,9 +10,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type unsupportedBinaryWriteRule struct{}
+type unsupportedBinaryWriteCheck struct{}
 
-func (unsupportedBinaryWriteRule) Meta() Meta {
+func (unsupportedBinaryWriteCheck) Meta() Meta {
 	return Meta{
 		Code:            "unsupported-binary-write",
 		Summary:         "detect unsupported encoding/binary.Write values",
@@ -23,7 +23,7 @@ func (unsupportedBinaryWriteRule) Meta() Meta {
 	}
 }
 
-func (unsupportedBinaryWriteRule) Run(pass *Pass) {
+func (unsupportedBinaryWriteCheck) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
 	for _, call := range pass.staticCallsInPackage("encoding/binary") {
 		if !isStaticFunction(call, "encoding/binary", "Write") || len(call.Common().Args) < 3 {
@@ -99,7 +99,7 @@ func binaryWriteDataNode(arguments []ast.Node) ast.Node {
 	return nil
 }
 
-func (unsupportedBinaryWriteRule) Requirements() Requirements {
+func (unsupportedBinaryWriteCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageSSA,
 		Facts: FactCallArguments | FactStaticCalls,

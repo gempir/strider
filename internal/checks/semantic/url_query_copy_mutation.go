@@ -6,9 +6,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type urlQueryCopyMutationRule struct{}
+type urlQueryCopyMutationCheck struct{}
 
-func (urlQueryCopyMutationRule) Meta() Meta {
+func (urlQueryCopyMutationCheck) Meta() Meta {
 	return Meta{
 		Code:            "url-query-copy-mutation",
 		Summary:         "detect mutations of the temporary copy returned by URL.Query",
@@ -19,7 +19,7 @@ func (urlQueryCopyMutationRule) Meta() Meta {
 	}
 }
 
-func (urlQueryCopyMutationRule) Run(pass *Pass) {
+func (urlQueryCopyMutationCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.CallExpr)(nil),
@@ -65,7 +65,7 @@ func isNetURLMethod(pass *Pass, selector *ast.SelectorExpr, name string) bool {
 	return function != nil && function.Pkg() != nil && function.Pkg().Path() == "net/url" && function.Name() == name
 }
 
-func (urlQueryCopyMutationRule) Requirements() Requirements {
+func (urlQueryCopyMutationCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

@@ -8,9 +8,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type invalidURLRule struct{}
+type invalidURLCheck struct{}
 
-func (invalidURLRule) Meta() Meta {
+func (invalidURLCheck) Meta() Meta {
 	return Meta{
 		Code:            "invalid-url",
 		Summary:         "detect invalid URLs passed to net/url.Parse",
@@ -21,7 +21,7 @@ func (invalidURLRule) Meta() Meta {
 	}
 }
 
-func (invalidURLRule) Run(pass *Pass) {
+func (invalidURLCheck) Run(pass *Pass) {
 	calls := pass.firstArgumentsByCallPosition()
 	for _, call := range pass.staticCallsInPackage("net/url") {
 		if !isStaticFunction(call, "net/url", "Parse") || len(call.Common().Args) == 0 {
@@ -43,7 +43,7 @@ func (invalidURLRule) Run(pass *Pass) {
 	}
 }
 
-func (invalidURLRule) Requirements() Requirements {
+func (invalidURLCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageSSA,
 		Facts: FactCallArguments | FactStaticCalls,

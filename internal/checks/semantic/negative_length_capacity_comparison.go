@@ -10,9 +10,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type negativeLengthCapacityComparisonRule struct{}
+type negativeLengthCapacityComparisonCheck struct{}
 
-func (negativeLengthCapacityComparisonRule) Meta() Meta {
+func (negativeLengthCapacityComparisonCheck) Meta() Meta {
 	return Meta{
 		Code:            "negative-length-capacity-comparison",
 		Summary:         "detect checks for negative len or cap results",
@@ -23,7 +23,7 @@ func (negativeLengthCapacityComparisonRule) Meta() Meta {
 	}
 }
 
-func (negativeLengthCapacityComparisonRule) Run(pass *Pass) {
+func (negativeLengthCapacityComparisonCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.BinaryExpr)(nil),
@@ -74,7 +74,7 @@ func integerZero(pass *Pass, expression ast.Expr) bool {
 	return value != nil && value.Kind() == constant.Int && constant.Sign(value) == 0
 }
 
-func (negativeLengthCapacityComparisonRule) Requirements() Requirements {
+func (negativeLengthCapacityComparisonCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

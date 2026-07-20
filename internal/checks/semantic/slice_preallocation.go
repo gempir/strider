@@ -10,14 +10,14 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type slicePreallocationRule struct{}
+type slicePreallocationCheck struct{}
 
 type emptySliceCandidate struct {
 	identifier *ast.Ident
 	variable   *types.Var
 }
 
-func (slicePreallocationRule) Meta() Meta {
+func (slicePreallocationCheck) Meta() Meta {
 	return Meta{
 		Code:            "slice-preallocation",
 		Summary:         "detect slices that can use range-source capacity",
@@ -28,7 +28,7 @@ func (slicePreallocationRule) Meta() Meta {
 	}
 }
 
-func (slicePreallocationRule) Run(pass *Pass) {
+func (slicePreallocationCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.BlockStmt)(nil),
@@ -303,7 +303,7 @@ func statementMutatesSlice(pass *Pass, statement ast.Stmt, variable *types.Var) 
 	return mutated
 }
 
-func (slicePreallocationRule) Requirements() Requirements {
+func (slicePreallocationCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

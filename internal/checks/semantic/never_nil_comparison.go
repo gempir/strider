@@ -10,9 +10,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type neverNilComparisonRule struct{}
+type neverNilComparisonCheck struct{}
 
-func (neverNilComparisonRule) Meta() Meta {
+func (neverNilComparisonCheck) Meta() Meta {
 	return Meta{
 		Code:            "never-nil-comparison",
 		Summary:         "detect nil checks on values proven to be non-nil",
@@ -23,7 +23,7 @@ func (neverNilComparisonRule) Meta() Meta {
 	}
 }
 
-func (neverNilComparisonRule) Run(pass *Pass) {
+func (neverNilComparisonCheck) Run(pass *Pass) {
 	for _, function := range pass.Functions {
 		if function == nil || function.Synthetic != "" || function.Blocks == nil || function.Syntax() == nil {
 			continue
@@ -121,7 +121,7 @@ func ssaValueNeverNil(value ssa.Value, seen map[ssa.Value]bool) bool {
 	}
 }
 
-func (neverNilComparisonRule) Requirements() Requirements {
+func (neverNilComparisonCheck) Requirements() Requirements {
 	return Requirements{
 		Stage:       AnalysisStageSSA,
 		SSAFeatures: SSAFeatureGlobalDebug,

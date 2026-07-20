@@ -7,9 +7,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type swappedSeekArgumentsRule struct{}
+type swappedSeekArgumentsCheck struct{}
 
-func (swappedSeekArgumentsRule) Meta() Meta {
+func (swappedSeekArgumentsCheck) Meta() Meta {
 	return Meta{
 		Code:            "swapped-seek-arguments",
 		Summary:         "detect swapped io.Seeker.Seek arguments",
@@ -20,7 +20,7 @@ func (swappedSeekArgumentsRule) Meta() Meta {
 	}
 }
 
-func (swappedSeekArgumentsRule) Run(pass *Pass) {
+func (swappedSeekArgumentsCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.CallExpr)(nil),
@@ -74,7 +74,7 @@ func hasSeekerSignature(pass *Pass, selector *ast.SelectorExpr) bool {
 	) && types.Identical(signature.Results().At(1).Type(), types.Universe.Lookup("error").Type())
 }
 
-func (swappedSeekArgumentsRule) Requirements() Requirements {
+func (swappedSeekArgumentsCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

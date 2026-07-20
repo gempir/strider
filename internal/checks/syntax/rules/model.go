@@ -18,18 +18,14 @@ type Meta = core.Meta
 // keeps a single traversal and dispatches only the selected interests.
 type NodeKind string
 
-// SyntaxCheck is a concrete-syntax check selected by the registry. The
+// Check is a concrete-syntax check selected by the registry. The
 // traversal owns walking the CST; checks declare their metadata here and are
 // the only source of enabled syntax work.
-type SyntaxCheck interface {
+type Check interface {
 	core.Check
 	Interests() []NodeKind
 	Inspect(*Pass, cst.Node)
 }
-
-// Rule is retained as a compatibility alias while callers migrate to the
-// product-wide “check” vocabulary.
-type Rule = SyntaxCheck
 
 type definition struct {
 	meta     Meta
@@ -41,44 +37,39 @@ type syntaxBehavior struct {
 	inspect   func(*Pass, cst.Node)
 }
 
-// Pass is the shared lossless traversal context supplied to syntax checks.
-// It is intentionally private in behavior while the dispatch migration is in
-// progress; checks receive it rather than reaching into package globals.
-type Pass = cstAnalyzer
-
-// Finding is a rule result before the syntax package converts source positions
+// Finding is a check result before the syntax package converts source positions
 // and applies suppression directives.
 type Finding struct {
-	ConcreteNode     cst.Node
-	ConcreteStart    int
-	ConcreteEnd      int
-	HasConcreteRange bool
-	Code             string
-	Message          string
-	Fixes            []diagnostic.Fix
+	Node     cst.Node
+	Start    int
+	End      int
+	HasRange bool
+	Code     string
+	Message  string
+	Fixes    []diagnostic.Fix
 }
 
 // CSTInput contains everything needed for the concrete-syntax lint pass.
 type CSTInput struct {
 	Filename         string
 	Tree             *cst.Tree
-	Checks           []SyntaxCheck
+	Checks           []Check
 	BannedCharacters []rune
 	Limits           map[string]int
 	BlockedImports   []string
 	Report           func(Finding)
 }
 
-func (rule definition) Meta() Meta {
-	return rule.meta
+func (check definition) Meta() Meta {
+	return check.meta
 }
 
-func (rule definition) Interests() []NodeKind {
-	return append([]NodeKind(nil), rule.behavior.interests...)
+func (check definition) Interests() []NodeKind {
+	return append([]NodeKind(nil), check.behavior.interests...)
 }
 
-func (rule definition) Inspect(pass *Pass, node cst.Node) {
-	if rule.behavior.inspect != nil {
-		rule.behavior.inspect(pass, node)
+func (check definition) Inspect(pass *Pass, node cst.Node) {
+	if check.behavior.inspect != nil {
+		check.behavior.inspect(pass, node)
 	}
 }

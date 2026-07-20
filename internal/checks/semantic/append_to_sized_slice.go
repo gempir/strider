@@ -12,7 +12,7 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type appendToSizedSliceRule struct{}
+type appendToSizedSliceCheck struct{}
 
 type sizedSliceCandidate struct {
 	name string
@@ -24,7 +24,7 @@ type sizedSliceTrace struct {
 	valid  bool
 }
 
-func (appendToSizedSliceRule) Meta() Meta {
+func (appendToSizedSliceCheck) Meta() Meta {
 	return Meta{
 		Code:            "append-to-sized-slice",
 		Summary:         "detect appends to slices created with a known positive length",
@@ -35,7 +35,7 @@ func (appendToSizedSliceRule) Meta() Meta {
 	}
 }
 
-func (appendToSizedSliceRule) Run(pass *Pass) {
+func (appendToSizedSliceCheck) Run(pass *Pass) {
 	eligible := localPositiveLengthMakes(pass)
 	reported := make(map[token.Pos]bool)
 	for _, function := range pass.Functions {
@@ -240,7 +240,7 @@ func traceSizedSliceOrigin(value ssa.Value, visiting map[ssa.Value]bool) sizedSl
 	}
 }
 
-func (appendToSizedSliceRule) Requirements() Requirements {
+func (appendToSizedSliceCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageSSA,
 	}

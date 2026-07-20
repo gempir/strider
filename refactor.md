@@ -270,13 +270,17 @@ Pick **one noun: "check."** It is the product word (`strider check`,
 `strider.toml [checks.<code>]`). Today "rule", "check", "lint", "analysis",
 and "analyzer" are used interchangeably:
 
-- [ ] Types/identifiers: `Rule`→`Check`, `RuleConfig`→`CheckConfig`,
+- [x] Types/identifiers: `Rule`→`Check`, `RuleConfig`→`CheckConfig`,
   `ruleCatalog`→`checkCatalog`, `builtinrules` import alias, `lintFile`,
   `validateConfiguredRules("lint", ...)`, `cstAnalyzer`, error strings
   `"unknown lint rule(s)"` vs `"unknown analysis rule(s)"` → `"unknown
   check(s)"` (matching `checks/registry.go:106`).
+  **Implemented:** compatibility aliases are removed; registries expose
+  `Checks`, catalogs and state use check terminology, the syntax engine owns a
+  real `Pass`, `lintFile` is `checkFile`, and unknown-code errors consistently
+  use `unknown check(s)`. The TOML-facing map is `ToolConfig.Settings`.
 - [x] CLI: `check --list-checks` with `--list-rules` kept as a hidden alias.
-- [ ] **Rename session-artifact files by content, one check per file:**
+- [x] **Rename session-artifact files by content, one check per file:**
   - `semantic/research_style.go` → split into `blank_identifiers.go`,
     `task_comment.go`, `doc_comment_period.go`, etc.
   - `semantic/moved_syntax_rules.go` → `time_value_equality.go`,
@@ -284,7 +288,11 @@ and "analyzer" are used interchangeably:
   - `research_correctness_test.go` / `research_performance_test.go` /
     `research_additional_checks*.go` → per-check test files colocated with
     what they test.
-- [ ] **Give shared helpers a home.** Package-level traversal helpers hide in
+  **Implemented:** all listed `research_*`, `moved_syntax_rules*`, and
+  `research_additional_checks*` artifacts are deleted. Production code and
+  behavioral tests are now named and colocated per check; only purpose-named
+  shared test helpers remain shared.
+- [x] **Give shared helpers a home.** Package-level traversal helpers hide in
   `nil_error_returns.go:107-153`; `positionNode` in `invalid_regexp.go:15`;
   `normalizeGoVersion` in `leaky_time_tick.go:67`; `pluralSuffix` in
   `moved_syntax_rules.go:265`. Move to `semantic/helpers.go` (or the shared
@@ -292,26 +300,41 @@ and "analyzer" are used interchangeably:
   helper prefixes (`checkConcrete*`, `concrete*`, `cst*`) and drop the
   redundant `cst_` file-name prefix inside a package that is entirely about
   the CST.
+  **Implemented:** semantic traversal/type/version helpers live in
+  `semantic/helpers.go`. Syntax behavior methods use `check*`, helpers use
+  direct descriptive names, state uses check terminology, and redundant
+  `cst_` filename prefixes are gone.
 - [x] `pathfilter.Matches` returns true when a path is **excluded**; every
   call site reads `if !pathfilter.Matches(...)` to keep a file. Rename to
   `pathfilter.Excluded(...)`.
-- [ ] Formatter: rename `concrete_printer.go` identifiers to drop the
+- [x] Formatter: rename `concrete_printer.go` identifiers to drop the
   `concrete` stutter; `Session` → something honest (it holds only a module
   cache); `PreviewTree` → a name that says "unverified"
   (`FormatTreeUnverified` or `Verify bool` option);
   `validateConcreteSyntax` cannot fail and doesn't validate — rename or
   inline; fix the `ExprCaseClause = gc.ExprCaseClauseListNode` alias
   (singular name for a list node, `cst/cst.go:51`).
-- [ ] `stringsHasArguments` (`cst_control_rules.go:167`) has nothing to do
+  **Implemented:** `printer.go` uses `layout`, `writer`, `group`, and
+  `importEntry`; the stateful formatter is `Formatter`/`NewFormatter`, and the
+  unverified rendering name is explicit. The no-op validation path was
+  already absent on audit, and the CST alias is `ExprCaseClauseList`.
+- [x] `stringsHasArguments` (`cst_control_rules.go:167`) has nothing to do
   with the `strings` package and hand-rolls `strings.HasPrefix` — rename and
   simplify.
-- [ ] Standardize error message style: lowercase, one quoting convention for
+  **Implemented:** `hasArguments` uses a typed switch over the four CST
+  argument productions.
+- [x] Standardize error message style: lowercase, one quoting convention for
   enums (`--color must be auto, always, or never` vs config's quoted
   variant), one phrasing per condition (`"--watch cannot update a baseline"`
   vs `"watch mode cannot update a baseline"`), consistent
   operation-context prefixes.
-- [ ] Import aliases: `checkengine`/`fixengine` vs bare `syntax`/`semantic`/
+  **Implemented:** enum choices use one unquoted list style, watch-mode
+  conflicts use one phrase, and validation errors consistently start
+  lowercase with operation context added at package boundaries.
+- [x] Import aliases: `checkengine`/`fixengine` vs bare `syntax`/`semantic`/
   `formatter` in `internal/app` — pick bare names.
+  **Implemented:** app orchestration uses bare `checks`, `fix`, and
+  `formatter` imports.
 
 ## Phase 3 — Split `internal/app` (SRP for the CLI)
 

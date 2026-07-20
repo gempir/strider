@@ -92,7 +92,7 @@ func Load(path string) (File, error) {
 
 // ApplyCatalogSelection preserves known checks that were inactive for this
 // run while treating codes outside the current catalog as stale. This keeps a
-// severity-filtered baseline intact without retaining entries for rules that
+// severity-filtered baseline intact without retaining entries for checks that
 // were removed or renamed.
 func ApplyCatalogSelection(path string, baseline File, diagnostics []diagnostic.Diagnostic, selectedCodes, knownCodes map[string]bool) (Result, error) {
 	return applySelection(path, baseline, diagnostics, selectedCodes, knownCodes)

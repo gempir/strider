@@ -146,7 +146,7 @@ func buildPackageFacts(files []*ast.File, required FactSet) packageFactData {
 
 // buildPackageSSAFacts is the shared SSA dispatch index. It deliberately
 // indexes only statically resolved calls: every consumer already rejects
-// dynamic calls, and grouping by package keeps each rule's candidate set
+// dynamic calls, and grouping by package keeps each check's candidate set
 // small without changing its matching logic.
 func buildPackageSSAFacts(functions []*ssa.Function, required FactSet, staticCallPackages ...map[string]bool) packageSSAFactData {
 	result := packageSSAFactData{}

@@ -1,0 +1,197 @@
+package rules
+
+import (
+	"bytes"
+	"fmt"
+	"path/filepath"
+	"regexp"
+	"slices"
+	"strconv"
+	"strings"
+	"unicode/utf8"
+
+	"github.com/gempir/strider/internal/cst"
+)
+
+var (
+	validFilenamePattern = regexp.MustCompile(`^[_A-Za-z0-9][_A-Za-z0-9-]*\.go$`)
+	validPackagePattern  = regexp.MustCompile(`^[a-z][a-z0-9]*$`)
+)
+
+func (a *Pass) checkFilenameAndPackage() {
+	nameToken := a.packageNameToken()
+	if !nameToken.IsValid() {
+		return
+	}
+	name := nameToken.Src()
+	base := filepath.Base(a.filename)
+	packageName := name
+	if strings.HasSuffix(base, "_test.go") && strings.HasSuffix(packageName, "_test") {
+		packageName = strings.TrimSuffix(packageName, "_test")
+	}
+	if a.active("filename-format") && !validFilenamePattern.MatchString(base) {
+		a.report("filename-format", nameToken, "filename does not match the supported Go filename format")
+	}
+	if a.active("package-naming") && name != "main" && !validPackagePattern.MatchString(packageName) {
+		a.report("package-naming", nameToken, "package name should be short, lower-case, and contain no separators")
+	}
+	if a.active("package-directory-mismatch") && packageName != "main" && !pathContains(a.filename, "testdata") {
+		directory := filepath.Base(filepath.Dir(a.filename))
+		normalized := strings.ReplaceAll(strings.ReplaceAll(directory, "-", ""), "_", "")
+		if normalized != "" && normalized != packageName && !strings.HasPrefix(directory, ".") {
+			a.report("package-directory-mismatch", nameToken, fmt.Sprintf("package %s does not match directory %s", name, directory))
+		}
+	}
+}
+
+func (a *Pass) checkImport(spec *cst.ImportSpec) {
+	path, err := strconv.Unquote(spec.ImportPath.Src())
+	if err != nil {
+		return
+	}
+	state := a.imports()
+	state.paths[path] = true
+	if a.active("imports-blocklist") && a.blockedImports[path] {
+		a.report("imports-blocklist", spec, fmt.Sprintf("import %s is blocked by configuration", path))
+	}
+	if state.seen[path] {
+		if a.active("duplicated-imports") {
+			a.report("duplicated-imports", spec, fmt.Sprintf("package %s is imported more than once", path))
+		}
+	} else {
+		state.seen[path] = true
+	}
+	alias := ""
+	var aliasNode cst.Node
+	switch {
+	case spec.PERIOD.IsValid():
+		alias, aliasNode = ".", spec.PERIOD
+	case spec.PackageName.IsValid():
+		alias, aliasNode = spec.PackageName.Src(), spec.PackageName
+	}
+	switch alias {
+	case "":
+	case ".":
+		a.report("dot-imports", spec, "dot imports obscure where identifiers come from")
+	case "_":
+		if a.active("blank-imports") && a.packageNameToken().Src() != "main" && !strings.HasSuffix(a.filename, "_test.go") && !importHasComment(a.tree, spec) {
+			a.report("blank-imports", spec, "blank import should be justified by a comment")
+		}
+	default:
+		if a.active("import-alias-naming") && !validPackagePattern.MatchString(alias) {
+			a.report("import-alias-naming", aliasNode, "import alias should contain lower-case letters and digits")
+		}
+		if a.active("redundant-import-alias") && alias == filepath.Base(path) {
+			a.report("redundant-import-alias", aliasNode, "import alias is identical to the package name")
+		}
+	}
+	importName := filepath.Base(path)
+	if alias != "" && alias != "." && alias != "_" {
+		importName = alias
+	}
+	if importName != "." && importName != "_" {
+		state.names[importName] = true
+	}
+}
+
+func importHasComment(tree *cst.Tree, spec *cst.ImportSpec) bool {
+	start, end := cst.Range(spec)
+	startPosition := tree.Position(start)
+	endPosition := tree.Position(end)
+	source := tree.Bytes()
+	for _, comment := range tree.Comments() {
+		if comment.Line == endPosition.Line || (comment.End <= start && strings.Count(string(source[comment.End:start]), "\n") <= 1 && comment.Line+1 >= startPosition.Line) {
+			return true
+		}
+	}
+	return false
+}
+
+func (a *Pass) checkLinesAndComments() {
+	lines := bytes.Split(a.content, []byte("\n"))
+	if limit := a.limits["file-length-limit"]; a.active("file-length-limit") && limit > 0 && len(lines) > limit {
+		a.reportRange("file-length-limit", 0, len(a.content), fmt.Sprintf("file has %d lines; maximum is %d", len(lines), limit))
+	}
+	if a.active("bidirectional-control-character") {
+		for offset := 0; offset < len(a.content); {
+			character, width := utf8.DecodeRune(a.content[offset:])
+			if width == 0 {
+				break
+			}
+			if bidirectionalControl(character) {
+				a.reportRange(
+					"bidirectional-control-character",
+					offset,
+					offset+width,
+					fmt.Sprintf("source contains invisible bidirectional control character U+%04X", character),
+				)
+			}
+			offset += width
+		}
+	}
+	comments := a.tree.Comments()
+	a.checkCompilerDirectiveSpacing(comments)
+	a.checkPackageComment(comments)
+	a.checkBuildTags(comments)
+}
+
+func (a *Pass) checkCompilerDirectiveSpacing(comments []cst.Comment) {
+	for _, comment := range comments {
+		if !a.active("spaced-compiler-directive") || comment.Column != 1 || !strings.HasPrefix(comment.Text, "//") {
+			continue
+		}
+		body := comment.Text[2:]
+		trimmed := strings.TrimLeft(body, " \t")
+		name := strings.TrimPrefix(trimmed, "go:")
+		if len(trimmed) != len(body) && strings.HasPrefix(trimmed, "go:") && name != "" && name[0] >= 'a' && name[0] <= 'z' {
+			a.reportRange("spaced-compiler-directive", comment.Start, comment.End, "compiler directive is ignored because whitespace follows //")
+		}
+	}
+}
+
+func (a *Pass) checkPackageComment(comments []cst.Comment) {
+	if !a.active("package-comments") || strings.HasSuffix(a.filename, "_test.go") {
+		return
+	}
+	nameToken := a.packageNameToken()
+	packageStart, _ := cst.Range(nameToken)
+	for _, comment := range comments {
+		if comment.End >= packageStart {
+			break
+		}
+		text := strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(comment.Text, "//"), "/*"))
+		text = strings.TrimSpace(strings.TrimSuffix(text, "*/"))
+		if strings.HasPrefix(text, "Package "+nameToken.Src()) || strings.HasPrefix(strings.TrimPrefix(text, "Package "), nameToken.Src()) {
+			return
+		}
+	}
+	a.report("package-comments", nameToken, "package should have a documentation comment")
+}
+
+func (a *Pass) checkBuildTags(comments []cst.Comment) {
+	if !a.active("redundant-build-tag") {
+		return
+	}
+	hasGoBuild := false
+	plusBuild := []cst.Comment{}
+	for _, comment := range comments {
+		hasGoBuild = hasGoBuild || strings.HasPrefix(comment.Text, "//go:build")
+		if strings.HasPrefix(comment.Text, "// +build") {
+			plusBuild = append(plusBuild, comment)
+		}
+	}
+	if hasGoBuild {
+		for _, comment := range plusBuild {
+			a.reportRange("redundant-build-tag", comment.Start, comment.End, "legacy +build line is redundant with go:build")
+		}
+	}
+	for index, comment := range plusBuild {
+		constraint := legacyBuildTerms(comment.Text)
+		for earlier := range index {
+			if slices.Equal(constraint, legacyBuildTerms(plusBuild[earlier].Text)) {
+				a.reportRange("redundant-build-tag", comment.Start, comment.End, "legacy build constraint duplicates an earlier constraint")
+				break
+			}
+		}
+	}
+}

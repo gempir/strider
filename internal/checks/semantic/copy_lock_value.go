@@ -9,9 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type copyLockValueRule struct{}
+type copyLockValueCheck struct{}
 
-func (copyLockValueRule) Meta() Meta {
+func (copyLockValueCheck) Meta() Meta {
 	return Meta{
 		Code:            "copy-lock-value",
 		Summary:         "detect copying values that contain sync.Mutex or sync.RWMutex",
@@ -22,7 +22,7 @@ func (copyLockValueRule) Meta() Meta {
 	}
 }
 
-func (copyLockValueRule) Run(pass *Pass) {
+func (copyLockValueCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.AssignStmt)(nil),
@@ -322,7 +322,7 @@ func analysisTypeName(valueType types.Type) string {
 	})
 }
 
-func (copyLockValueRule) Requirements() Requirements {
+func (copyLockValueCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

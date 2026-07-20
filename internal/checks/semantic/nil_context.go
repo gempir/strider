@@ -7,9 +7,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type nilContextRule struct{}
+type nilContextCheck struct{}
 
-func (nilContextRule) Meta() Meta {
+func (nilContextCheck) Meta() Meta {
 	return Meta{
 		Code:            "nil-context",
 		Summary:         "detect nil context.Context arguments",
@@ -20,7 +20,7 @@ func (nilContextRule) Meta() Meta {
 	}
 }
 
-func (nilContextRule) Run(pass *Pass) {
+func (nilContextCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.CallExpr)(nil),
@@ -51,7 +51,7 @@ func isNilIdentifier(expression ast.Expr) bool {
 	return ok && identifier.Name == "nil"
 }
 
-func (nilContextRule) Requirements() Requirements {
+func (nilContextCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

@@ -18,7 +18,7 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-func TestInitialRules(t *testing.T) {
+func TestInitialChecks(t *testing.T) {
 	source := `package p
 var global = 1
 func init() {}
@@ -151,20 +151,20 @@ func closeThing() {}
 	}
 }
 
-func TestOnlyAndUnknownRule(t *testing.T) {
+func TestOnlyAndUnknownCheck(t *testing.T) {
 	registry, err := NewRegistry([]string{
 		"no-init",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(registry.Rules()) != 1 || registry.Rules()[0].Meta().Code != "no-init" {
-		t.Fatalf("unexpected registry: %#v", registry.Rules())
+	if len(registry.Checks()) != 1 || registry.Checks()[0].Meta().Code != "no-init" {
+		t.Fatalf("unexpected registry: %#v", registry.Checks())
 	}
 	if _, err := NewRegistry([]string{
-		"not-a-rule",
+		"not-a-check",
 	}); err == nil {
-		t.Fatal("expected unknown rule error")
+		t.Fatal("expected unknown check error")
 	}
 }
 
@@ -587,7 +587,7 @@ func TestBidirectionalControlCharacterReportsInvisibleSourceControl(t *testing.T
 	}
 }
 
-func TestConcreteNamingRules(t *testing.T) {
+func TestConcreteNamingChecks(t *testing.T) {
 	fixture := writeFixture(
 		t,
 		`package sample
@@ -627,7 +627,7 @@ func use(fmt int, len int, bad_name int) { _, _, _ = fmt, len, bad_name }
 	}
 }
 
-func TestConcreteFunctionRules(t *testing.T) {
+func TestConcreteFunctionChecks(t *testing.T) {
 	fixture := writeFixture(
 		t,
 		`package sample
@@ -763,7 +763,7 @@ func assertions(input any) {
 	}
 }
 
-func TestConcreteCallRules(t *testing.T) {
+func TestConcreteCallChecks(t *testing.T) {
 	fixture := writeFixture(
 		t,
 		`package sample
@@ -822,7 +822,7 @@ func helper() {
 	}
 }
 
-func TestConcreteImportRules(t *testing.T) {
+func TestConcreteImportChecks(t *testing.T) {
 	fixture := writeFixture(t, `package sample
 
 import (
@@ -917,7 +917,7 @@ func TestFileLengthLimitDefaultsTo500AndExplicitZeroDisables(t *testing.T) {
 			Only: []string{
 				"file-length-limit",
 			},
-			Settings: map[string]config.RuleConfig{
+			Settings: map[string]config.CheckConfig{
 				"file-length-limit": {
 					MaxLines: 12,
 				},
@@ -940,10 +940,10 @@ func TestFileLengthLimitDefaultsTo500AndExplicitZeroDisables(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	setting := configuration.Checks.Rules["file-length-limit"]
+	setting := configuration.Checks.Settings["file-length-limit"]
 	disabledRegistry, err := NewRegistryConfigured([]string{
 		"file-length-limit",
-	}, map[string]config.RuleConfig{
+	}, map[string]config.CheckConfig{
 		"file-length-limit": setting,
 	}, configuration.Root)
 	if err != nil {
@@ -970,11 +970,11 @@ func TestCatalogIsCompleteDocumentedAndRunnable(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rules := all.Rules()
-	if len(rules) != expectedCount {
-		t.Fatalf("catalog has %d rules; want %d", len(rules), expectedCount)
+	checks := all.Checks()
+	if len(checks) != expectedCount {
+		t.Fatalf("catalog has %d checks; want %d", len(checks), expectedCount)
 	}
-	names := make([]string, 0, len(rules))
+	names := make([]string, 0, len(checks))
 	seen := map[string]bool{}
 	_, testFile, _, _ := runtime.Caller(0)
 	docsDirectory := filepath.Join(filepath.Dir(testFile), "..", "..", "..", "docs", "src", "content", "docs", "lints")
@@ -988,24 +988,24 @@ func TestCatalogIsCompleteDocumentedAndRunnable(t *testing.T) {
 		"no-naked-return":       true,
 		"no-package-var":        true,
 	}
-	for _, rule := range rules {
-		meta := rule.Meta()
+	for _, check := range checks {
+		meta := check.Meta()
 		if seen[meta.Code] {
-			t.Errorf("duplicate rule %q", meta.Code)
+			t.Errorf("duplicate check %q", meta.Code)
 		}
 		seen[meta.Code] = true
 		names = append(names, meta.Code)
 		if strings.TrimSpace(meta.GoodExample) == "" || strings.TrimSpace(meta.BadExample) == "" {
-			t.Errorf("rule %s has incomplete examples", meta.Code)
+			t.Errorf("check %s has incomplete examples", meta.Code)
 		}
-		if strings.HasPrefix(meta.GoodExample, "See the rule reference") || strings.HasPrefix(meta.BadExample, "See the rule reference") {
-			t.Errorf("rule %s still has placeholder examples", meta.Code)
+		if strings.HasPrefix(meta.GoodExample, "See the check reference") || strings.HasPrefix(meta.BadExample, "See the check reference") {
+			t.Errorf("check %s still has placeholder examples", meta.Code)
 		}
 		if !coreCodes[meta.Code] && (meta.Explanation == meta.Summary+"." || !strings.Contains(meta.Explanation, "Default:")) {
-			t.Errorf("extended rule %s explanation does not add its default contract: %q", meta.Code, meta.Explanation)
+			t.Errorf("extended check %s explanation does not add its default contract: %q", meta.Code, meta.Explanation)
 		}
 		if _, err := os.Stat(filepath.Join(docsDirectory, meta.Code+".md")); err != nil {
-			t.Errorf("rule %s has no documentation: %v", meta.Code, err)
+			t.Errorf("check %s has no documentation: %v", meta.Code, err)
 		}
 		registry, err := NewRegistry([]string{
 			meta.Code,
@@ -1023,21 +1023,21 @@ func TestCatalogIsCompleteDocumentedAndRunnable(t *testing.T) {
 	sort.Strings(names)
 	digest := sha256.Sum256([]byte(strings.Join(names, "\n") + "\n"))
 	if got := fmt.Sprintf("%x", digest); got != expectedNamesSHA256 {
-		t.Errorf("rule-name catalog changed: got digest %s", got)
+		t.Errorf("check-name catalog changed: got digest %s", got)
 	}
-	if got, want := len(all.Rules()), expectedCount; got != want {
-		t.Errorf("registry contains %d rules; want %d", got, want)
+	if got, want := len(all.Checks()), expectedCount; got != want {
+		t.Errorf("registry contains %d checks; want %d", got, want)
 	}
 }
 
-func TestEveryLintRuleAcceptsCommonConfiguration(t *testing.T) {
+func TestEveryLintCheckAcceptsCommonConfiguration(t *testing.T) {
 	all, err := NewRegistry(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	settings := make(map[string]config.RuleConfig, len(all.Rules()))
-	for _, rule := range all.Rules() {
-		settings[rule.Meta().Code] = config.RuleConfig{
+	settings := make(map[string]config.CheckConfig, len(all.Checks()))
+	for _, check := range all.Checks() {
+		settings[check.Meta().Code] = config.CheckConfig{
 			Severity: "note",
 		}
 	}
@@ -1045,12 +1045,12 @@ func TestEveryLintRuleAcceptsCommonConfiguration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := len(configured.Rules()), len(all.Rules()); got != want {
-		t.Fatalf("configured %d rules; want %d", got, want)
+	if got, want := len(configured.Checks()), len(all.Checks()); got != want {
+		t.Fatalf("configured %d checks; want %d", got, want)
 	}
-	for _, rule := range configured.Rules() {
-		if severity := configured.Severity(rule.Meta().Code); severity != diagnostic.SeverityNote {
-			t.Errorf("%s severity = %s", rule.Meta().Code, severity)
+	for _, check := range configured.Checks() {
+		if severity := configured.Severity(check.Meta().Code); severity != diagnostic.SeverityNote {
+			t.Errorf("%s severity = %s", check.Meta().Code, severity)
 		}
 	}
 }
@@ -1058,14 +1058,14 @@ func TestEveryLintRuleAcceptsCommonConfiguration(t *testing.T) {
 func TestBannedCharactersUsesDefaultsAndConfiguration(t *testing.T) {
 	filename := writeFixture(t, "package p\nvar ᐸname, under_score int\n")
 	for name, test := range map[string]struct {
-		settings map[string]config.RuleConfig
+		settings map[string]config.CheckConfig
 		wanted   string
 	}{
 		"defaults": {
 			wanted: "ᐸ",
 		},
 		"configured": {
-			settings: map[string]config.RuleConfig{
+			settings: map[string]config.CheckConfig{
 				"banned-characters": {
 					Characters: []string{
 						"_",
@@ -1107,7 +1107,7 @@ func TestBannedCharactersUsesDefaultsAndConfiguration(t *testing.T) {
 }
 
 func TestBannedCharactersRejectsInvalidConfiguration(t *testing.T) {
-	for name, settings := range map[string]map[string]config.RuleConfig{
+	for name, settings := range map[string]map[string]config.CheckConfig{
 		"multiple runes": {
 			"banned-characters": {
 				Characters: []string{
@@ -1115,7 +1115,7 @@ func TestBannedCharactersRejectsInvalidConfiguration(t *testing.T) {
 				},
 			},
 		},
-		"unrelated rule": {
+		"unrelated check": {
 			"no-init": {
 				Characters: []string{
 					"_",
@@ -1143,7 +1143,7 @@ func TestLintRegistryFiltersByEffectiveSeverityBeforeExecution(t *testing.T) {
 			Only: []string{
 				"no-init",
 			},
-			Settings: map[string]config.RuleConfig{
+			Settings: map[string]config.CheckConfig{
 				"no-init": {
 					Severity: "warning",
 				},
@@ -1151,7 +1151,7 @@ func TestLintRegistryFiltersByEffectiveSeverityBeforeExecution(t *testing.T) {
 			MinimumSeverity: diagnostic.SeverityError,
 		},
 		"all": {
-			Settings: map[string]config.RuleConfig{
+			Settings: map[string]config.CheckConfig{
 				"no-init": {
 					Severity: "warning",
 				},
@@ -1167,8 +1167,8 @@ func TestLintRegistryFiltersByEffectiveSeverityBeforeExecution(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				for _, rule := range registry.Rules() {
-					if rule.Meta().Code == "no-init" {
+				for _, check := range registry.Checks() {
+					if check.Meta().Code == "no-init" {
 						t.Fatal("selection bypassed the minimum severity")
 					}
 				}
@@ -1193,7 +1193,7 @@ func TestLintRegistryFiltersByEffectiveSeverityBeforeExecution(t *testing.T) {
 			Only: []string{
 				"no-init",
 			},
-			Settings: map[string]config.RuleConfig{
+			Settings: map[string]config.CheckConfig{
 				"no-init": {
 					Severity: "error",
 				},
@@ -1204,8 +1204,8 @@ func TestLintRegistryFiltersByEffectiveSeverityBeforeExecution(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := len(registry.Rules()); got != 1 {
-		t.Fatalf("rules after severity override = %d, want 1", got)
+	if got := len(registry.Checks()); got != 1 {
+		t.Fatalf("checks after severity override = %d, want 1", got)
 	}
 	if severity := registry.Severity("no-init"); severity != diagnostic.SeverityError {
 		t.Fatalf("effective severity = %s, want error", severity)
@@ -1220,22 +1220,22 @@ func TestLintRegistryRejectsInvalidMinimumSeverity(t *testing.T) {
 		t.Fatalf("got %v, want minimum severity error", err)
 	}
 	_, err = NewRegistryWithOptions(RegistryOptions{
-		Settings: map[string]config.RuleConfig{
+		Settings: map[string]config.CheckConfig{
 			"no-init": {
 				Severity: "fatal",
 			},
 		},
 	})
 	if err == nil || !strings.Contains(err.Error(), "severity must be") {
-		t.Fatalf("got %v, want rule severity error", err)
+		t.Fatalf("got %v, want check severity error", err)
 	}
 }
 
-func TestLintRuleConfigurationCanExcludePaths(t *testing.T) {
+func TestLintCheckConfigurationCanExcludePaths(t *testing.T) {
 	fixture := writeFixture(t, "package p\nfunc init() {}\n")
 	registry, err := NewRegistryConfigured([]string{
 		"no-init",
-	}, map[string]config.RuleConfig{
+	}, map[string]config.CheckConfig{
 		"no-init": {
 			Excludes: []string{
 				"**/*.go",
@@ -1255,7 +1255,7 @@ func TestLintRuleConfigurationCanExcludePaths(t *testing.T) {
 		t.Fatal("clean single-file lint returned a nil diagnostics slice")
 	}
 	if len(diagnostics) != 0 {
-		t.Fatalf("excluded rule reported diagnostics: %#v", diagnostics)
+		t.Fatalf("excluded check reported diagnostics: %#v", diagnostics)
 	}
 }
 
@@ -1273,7 +1273,7 @@ func TestRunWithoutFilesReturnsEmptyDiagnostics(t *testing.T) {
 	}
 }
 
-func TestExtendedNativeRulesReportRepresentativeFindings(t *testing.T) {
+func TestExtendedNativeChecksReportRepresentativeFindings(t *testing.T) {
 	source := `// Package sample demonstrates compatibility checks.
 package sample
 import (
@@ -1327,7 +1327,7 @@ func Assert(v interface{}) { _ = v.(string) }
 	}
 }
 
-func TestCSTPolicyRulesReportRepresentativeFindings(t *testing.T) {
+func TestCSTPolicyChecksReportRepresentativeFindings(t *testing.T) {
 	filename := writeFixture(
 		t,
 		`package sample
@@ -1382,7 +1382,7 @@ func (current item) mutate(value int, group sync.WaitGroup, closer interface{ Cl
 	}
 }
 
-func TestExtendedRuleOrderingIsDeterministic(t *testing.T) {
+func TestExtendedCheckOrderingIsDeterministic(t *testing.T) {
 	filename := writeFixture(t, `package p
 func f(values map[string]int) {
 	for key, value := range values {

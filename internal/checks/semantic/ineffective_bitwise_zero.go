@@ -10,9 +10,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type ineffectiveBitwiseZeroRule struct{}
+type ineffectiveBitwiseZeroCheck struct{}
 
-func (ineffectiveBitwiseZeroRule) Meta() Meta {
+func (ineffectiveBitwiseZeroCheck) Meta() Meta {
 	return Meta{
 		Code:            "ineffective-bitwise-zero",
 		Summary:         "detect bitwise operations whose zero operand fixes the result",
@@ -23,7 +23,7 @@ func (ineffectiveBitwiseZeroRule) Meta() Meta {
 	}
 }
 
-func (ineffectiveBitwiseZeroRule) Run(pass *Pass) {
+func (ineffectiveBitwiseZeroCheck) Run(pass *Pass) {
 	iotaConstants := directIotaConstants(pass)
 	pass.Inspect(
 		[]ast.Node{
@@ -119,7 +119,7 @@ func bitwiseZeroOperand(pass *Pass, expression ast.Expr, iotaConstants map[*type
 	return true, identifier.Name
 }
 
-func (ineffectiveBitwiseZeroRule) Requirements() Requirements {
+func (ineffectiveBitwiseZeroCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

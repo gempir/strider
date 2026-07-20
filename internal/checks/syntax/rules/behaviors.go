@@ -65,7 +65,7 @@ var (
 	importBehavior = behavior([]NodeKind{
 		"ImportSpec",
 	}, func(pass *Pass, node cst.Node) {
-		pass.checkConcreteImport(node.(*cst.ImportSpec))
+		pass.checkImport(node.(*cst.ImportSpec))
 	})
 	importShadowingBehavior = behavior(
 		[]NodeKind{
@@ -92,9 +92,9 @@ var (
 		func(pass *Pass, node cst.Node) {
 			switch current := node.(type) {
 			case *cst.ImportSpec:
-				pass.checkConcreteImport(current)
+				pass.checkImport(current)
 			case *cst.FieldDecl:
-				pass.checkConcreteStructField(current)
+				pass.checkStructField(current)
 			}
 		},
 	)
@@ -131,9 +131,9 @@ var (
 		func(pass *Pass, node cst.Node) {
 			switch current := node.(type) {
 			case *cst.IfStmt:
-				pass.checkConcreteIf(current)
+				pass.checkIf(current)
 			case *cst.IfElseStmt:
-				pass.checkConcreteIfElse(current)
+				pass.checkIfElse(current)
 			}
 		},
 	)
@@ -147,14 +147,14 @@ var (
 			"ExprSwitchStmt",
 		},
 		func(pass *Pass, node cst.Node) {
-			pass.checkConcreteControlNesting(node)
+			pass.checkControlNesting(node)
 		},
 	)
 	switchBehavior = behavior([]NodeKind{
 		"TypeSwitchStmt",
 		"ExprSwitchStmt",
 	}, func(pass *Pass, node cst.Node) {
-		pass.checkConcreteSwitch(node)
+		pass.checkSwitch(node)
 	})
 	varSpecBehavior = behavior([]NodeKind{
 		"VarSpec",
@@ -168,9 +168,9 @@ var (
 		func(pass *Pass, node cst.Node) {
 			switch current := node.(type) {
 			case *cst.Assignment:
-				pass.checkConcreteAssignmentPolicy(current)
+				pass.checkAssignmentPolicy(current)
 			case *cst.ShortVarDecl:
-				pass.checkConcreteShortDeclarationPolicy(current)
+				pass.checkShortDeclarationPolicy(current)
 			}
 		},
 	)
@@ -191,12 +191,12 @@ var (
 	loopBehavior = behavior([]NodeKind{
 		"ForStmt",
 	}, func(pass *Pass, node cst.Node) {
-		pass.checkConcreteFor(node.(*cst.ForStmt))
+		pass.checkFor(node.(*cst.ForStmt))
 	})
 	blockBehavior = behavior([]NodeKind{
 		"Block",
 	}, func(pass *Pass, node cst.Node) {
-		pass.checkConcreteBlock(node.(*cst.Block))
+		pass.checkBlock(node.(*cst.Block))
 	})
 	binaryBehavior = behavior([]NodeKind{
 		"BinaryExpression",
@@ -211,12 +211,12 @@ var (
 	callBehavior = behavior([]NodeKind{
 		"PrimaryExpr",
 	}, func(pass *Pass, node cst.Node) {
-		pass.checkConcreteCall(node.(*cst.PrimaryExpr))
+		pass.checkCall(node.(*cst.PrimaryExpr))
 	})
 	structBehavior = behavior([]NodeKind{
 		"StructType",
 	}, func(pass *Pass, node cst.Node) {
-		pass.checkConcreteStruct(node.(*cst.StructType))
+		pass.checkStruct(node.(*cst.StructType))
 	})
 	interfaceBehavior = behavior([]NodeKind{
 		"InterfaceType",
@@ -226,22 +226,22 @@ var (
 	typeAssertionBehavior = behavior([]NodeKind{
 		"TypeAssertion",
 	}, func(pass *Pass, node cst.Node) {
-		pass.checkConcreteTypeAssertion(node.(*cst.TypeAssertion))
+		pass.checkTypeAssertion(node.(*cst.TypeAssertion))
 	})
 	typeDefinitionBehavior = behavior([]NodeKind{
 		"TypeDef",
 	}, func(pass *Pass, node cst.Node) {
-		pass.checkConcreteTypeDefinition(node.(*cst.TypeDef))
+		pass.checkTypeDefinition(node.(*cst.TypeDef))
 	})
 	breakBehavior = behavior([]NodeKind{
 		"BreakStmt",
 	}, func(pass *Pass, node cst.Node) {
-		pass.checkConcreteBreak(node.(*cst.BreakStmt))
+		pass.checkBreak(node.(*cst.BreakStmt))
 	})
 	stringLiteralBehavior = behavior([]NodeKind{
 		"BasicLit",
 	}, func(pass *Pass, node cst.Node) {
-		pass.checkConcreteStringLiteral(node.(*cst.BasicLit))
+		pass.checkStringLiteral(node.(*cst.BasicLit))
 	})
 )
 
@@ -266,22 +266,22 @@ func inspectExportedDeclarationCheck(pass *Pass, node cst.Node) {
 	switch current := node.(type) {
 	case *cst.FunctionDecl:
 		if current.FunctionName != nil {
-			pass.checkConcreteExportedFunction(current.FunctionName.IDENT, current, false)
+			pass.checkExportedFunction(current.FunctionName.IDENT, current, false)
 		}
 	case *cst.MethodDecl:
-		pass.checkConcreteExportedFunction(current.MethodName, current, true)
+		pass.checkExportedFunction(current.MethodName, current, true)
 	case *cst.VarSpec:
-		pass.checkConcreteExportedDeclaration(current.IDENT, current)
+		pass.checkExportedDeclaration(current.IDENT, current)
 	case *cst.VarSpec2:
-		pass.checkConcreteExportedList(current.IdentifierList, current)
+		pass.checkExportedList(current.IdentifierList, current)
 	case *cst.ConstSpec:
-		pass.checkConcreteExportedDeclaration(current.IDENT, current)
+		pass.checkExportedDeclaration(current.IDENT, current)
 	case *cst.ConstSpec2:
-		pass.checkConcreteExportedList(current.IdentifierList, current)
+		pass.checkExportedList(current.IdentifierList, current)
 	case *cst.TypeDef:
-		pass.checkConcreteTypeDefinition(current)
+		pass.checkTypeDefinition(current)
 	case *cst.AliasDecl:
-		pass.checkConcreteExportedDeclaration(current.IDENT, current)
+		pass.checkExportedDeclaration(current.IDENT, current)
 	}
 }
 
@@ -290,15 +290,15 @@ func inspectTimeNamingCheck(pass *Pass, node cst.Node) {
 	case *cst.FunctionDecl, *cst.MethodDecl:
 		inspectFunctionCheck(pass, current)
 	case *cst.VarSpec:
-		pass.checkConcreteVarSpec(current.IDENT, current.TypeNode, current.ExpressionList)
+		pass.checkVarSpec(current.IDENT, current.TypeNode, current.ExpressionList)
 	case *cst.VarSpec2:
-		pass.checkConcreteVarSpecList(current.IdentifierList, current.TypeNode, current.ExpressionList)
+		pass.checkVarSpecList(current.IdentifierList, current.TypeNode, current.ExpressionList)
 	}
 }
 
 func inspectImportShadowingCheck(pass *Pass, node cst.Node) {
 	if spec, ok := node.(*cst.ImportSpec); ok {
-		pass.checkConcreteImport(spec)
+		pass.checkImport(spec)
 		return
 	}
 	inspectIdentifierCheck(pass, node)
@@ -308,43 +308,43 @@ func inspectIdentifierCheck(pass *Pass, node cst.Node) {
 	switch current := node.(type) {
 	case *cst.FunctionDecl:
 		if current.FunctionName != nil {
-			pass.checkConcreteFoldedName("_", current.FunctionName.IDENT)
+			pass.checkFoldedName("_", current.FunctionName.IDENT)
 		}
 	case *cst.MethodDecl:
-		pass.checkConcreteMethodName(current)
+		pass.checkMethodName(current)
 	case *cst.ShortVarDecl:
-		pass.checkConcreteIdentifierList(current.IdentifierList)
+		pass.checkIdentifierList(current.IdentifierList)
 	case *cst.FieldDecl:
-		pass.checkConcreteFieldNames(current)
+		pass.checkFieldNames(current)
 	case *cst.ParameterDecl:
-		pass.checkConcreteIdentifierList(current.IdentifierList)
+		pass.checkIdentifierList(current.IdentifierList)
 	case *cst.VarSpec:
-		pass.checkConcreteIdentifier(current.IDENT)
+		pass.checkIdentifier(current.IDENT)
 	case *cst.VarSpec2:
-		pass.checkConcreteIdentifierList(current.IdentifierList)
+		pass.checkIdentifierList(current.IdentifierList)
 	case *cst.ConstSpec:
-		pass.checkConcreteIdentifier(current.IDENT)
+		pass.checkIdentifier(current.IDENT)
 	case *cst.ConstSpec2:
-		pass.checkConcreteIdentifierList(current.IdentifierList)
+		pass.checkIdentifierList(current.IdentifierList)
 	case *cst.TypeDef:
-		pass.checkConcreteIdentifier(current.IDENT)
+		pass.checkIdentifier(current.IDENT)
 	case *cst.AliasDecl:
-		pass.checkConcreteIdentifier(current.IDENT)
+		pass.checkIdentifier(current.IDENT)
 	}
 }
 
 func inspectVarSpecCheck(pass *Pass, node cst.Node) {
 	switch current := node.(type) {
 	case *cst.VarSpec:
-		pass.checkConcreteVarSpec(current.IDENT, current.TypeNode, current.ExpressionList)
+		pass.checkVarSpec(current.IDENT, current.TypeNode, current.ExpressionList)
 	case *cst.VarSpec2:
-		pass.checkConcreteVarSpecList(current.IdentifierList, current.TypeNode, current.ExpressionList)
+		pass.checkVarSpecList(current.IdentifierList, current.TypeNode, current.ExpressionList)
 	}
 }
 
 func inspectRepeatedLiteralCheck(pass *Pass, node cst.Node) {
 	if node == nil {
-		pass.finishConcreteRepeatedLiterals()
+		pass.finishRepeatedLiterals()
 		return
 	}
 	pass.observeRepeatedLiteral(node.(*cst.BasicLit), pass.ancestors)

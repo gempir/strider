@@ -10,9 +10,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type invalidTimeParseRule struct{}
+type invalidTimeParseCheck struct{}
 
-func (invalidTimeParseRule) Meta() Meta {
+func (invalidTimeParseCheck) Meta() Meta {
 	return Meta{
 		Code:            "invalid-time-layout",
 		Summary:         "detect invalid time.Parse layouts",
@@ -23,7 +23,7 @@ func (invalidTimeParseRule) Meta() Meta {
 	}
 }
 
-func (invalidTimeParseRule) Run(pass *Pass) {
+func (invalidTimeParseCheck) Run(pass *Pass) {
 	calls := pass.firstArgumentsByCallPosition()
 	for _, call := range pass.staticCallsInPackage("time") {
 		if !isStaticFunction(call, "time", "Parse") || len(call.Common().Args) == 0 {
@@ -55,7 +55,7 @@ func isStaticFunction(call ssa.CallInstruction, packagePath, name string) bool {
 	return function != nil && function.Pkg() != nil && function.Pkg().Path() == packagePath && function.Name() == name
 }
 
-func (invalidTimeParseRule) Requirements() Requirements {
+func (invalidTimeParseCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageSSA,
 		Facts: FactCallArguments | FactStaticCalls,

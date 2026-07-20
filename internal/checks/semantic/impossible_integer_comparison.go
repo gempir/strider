@@ -10,9 +10,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type impossibleIntegerComparisonRule struct{}
+type impossibleIntegerComparisonCheck struct{}
 
-func (impossibleIntegerComparisonRule) Meta() Meta {
+func (impossibleIntegerComparisonCheck) Meta() Meta {
 	return Meta{
 		Code:            "impossible-integer-comparison",
 		Summary:         "detect integer comparisons that are fixed by the type's range",
@@ -23,7 +23,7 @@ func (impossibleIntegerComparisonRule) Meta() Meta {
 	}
 }
 
-func (impossibleIntegerComparisonRule) Run(pass *Pass) {
+func (impossibleIntegerComparisonCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.BinaryExpr)(nil),
@@ -165,7 +165,7 @@ func comparisonFixedByBounds(operator token.Token, bound, minimum, maximum const
 	return false, false
 }
 
-func (impossibleIntegerComparisonRule) Requirements() Requirements {
+func (impossibleIntegerComparisonCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

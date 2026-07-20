@@ -19,7 +19,7 @@ const (
 	FactParents
 	FactDeprecations
 	// FactStaticCalls indexes statically resolved SSA calls by callee package.
-	// Rules using this fact avoid walking every instruction independently.
+	// Checks using this fact avoid walking every instruction independently.
 	FactStaticCalls
 )
 
@@ -27,158 +27,158 @@ const (
 	SSAFeatureGlobalDebug SSAFeatureSet = 1 << iota
 )
 
-var ruleCatalog = []Rule{
-	invalidRegexpRule{},
-	invalidTemplateRule{},
-	invalidTimeParseRule{},
-	unsupportedBinaryWriteRule{},
-	suspiciousSleepRule{},
-	invalidExecCommandRule{},
-	dynamicPrintfRule{},
-	invalidURLRule{},
-	nonCanonicalHeaderRule{},
-	regexpFindAllZeroRule{},
-	invalidUTF8StringArgumentRule{},
-	nilContextRule{},
-	swappedSeekArgumentsRule{},
-	nonPointerUnmarshalRule{},
-	leakyTimeTickRule{},
-	untrappableSignalRule{},
-	unbufferedSignalChannelRule{},
-	zeroReplacementLimitRule{},
-	deprecatedAPIUsageRule{},
-	invalidListenAddressRule{},
-	ipByteComparisonRule{},
-	writerBufferMutationRule{},
-	duplicateTrimCutsetRule{},
-	timerResetDrainRaceRule{},
-	unsupportedMarshalTypeRule{},
-	misalignedAtomic64Rule{},
-	sortNonSliceRule{},
-	contextKeyTypeRule{},
-	invalidStrconvArgumentRule{},
-	overlappingEncodeBuffersRule{},
-	swappedErrorsIsArgumentsRule{},
-	waitGroupAddInsideGoroutineRule{},
-	emptyCriticalSectionRule{},
-	testingFatalInGoroutineRule{},
-	deferredLockAfterLockRule{},
-	testMainMissingExitRule{},
-	timeValueEqualityRule{},
-	waitGroupGoForbiddenCallRule{},
-	rangeValueCaptureRule{},
-	benchmarkIterationMutationRule{},
-	identicalBinaryOperandsRule{},
-	impossibleIntegerComparisonRule{},
-	singleIterationLoopRule{},
-	ineffectiveValueReceiverAssignmentRule{},
-	overwrittenBeforeUseRule{},
-	unchangedLoopConditionRule{},
-	argumentOverwrittenBeforeUseRule{},
-	unusedAppendResultRule{},
-	nanComparisonRule{},
-	pointlessIntegerMathRule{},
-	ineffectiveBitwiseZeroRule{},
-	discardedPureResultRule{},
-	selfAssignmentRule{},
-	unreachableTypeSwitchCaseRule{},
-	singleArgumentAppendRule{},
-	addressNilComparisonRule{},
-	impossibleInterfaceNilComparisonRule{},
-	negativeLengthCapacityComparisonRule{},
-	constantNegativeZeroRule{},
-	urlQueryCopyMutationRule{},
-	sortConversionWithoutSortRule{},
-	randomBoundOneRule{},
-	neverNilComparisonRule{},
-	impossiblePlatformComparisonRule{},
-	nilMapAssignmentRule{},
-	deferCloseBeforeErrorCheckRule{},
-	spinningEmptyLoopRule{},
-	finalizerCapturesObjectRule{},
-	infiniteRecursionRule{},
-	invalidPrintfCallRule{},
-	contradictoryInterfaceAssertionRule{},
-	possibleNilDereferenceRule{},
-	oddPairedArgumentsRule{},
-	regexpMatchInLoopRule{},
-	separateByteStringMapKeyRule{},
-	nonPointerSyncPoolValueRule{},
-	caseInsensitiveStringComparisonRule{},
-	byteStringWriteRule{},
-	decimalFileModeRule{},
-	partiallyTypedConstantGroupRule{},
-	unexportedSerializationFieldsRule{},
-	oversizedFixedWidthShiftRule{},
-	dangerousDirectoryRemovalRule{},
-	failedAssertionShadowReadRule{},
-	deferredReturnFunctionNotCalledRule{},
-	durationMultipliedByDurationRule{},
-	contextStoredInStructRule{},
-	unsafeFormattedURLHostPortRule{},
-	uncheckedRowsErrorRule{},
-	excessiveBlankIdentifiersRule{},
-	taskCommentRule{},
-	docCommentPeriodRule{},
-	errorTypeNamingRule{},
-	standardHTTPMethodConstantRule{},
-	weakCryptographyRule{},
-	appendToSizedSliceRule{},
-	redundantConversionRule{},
-	slicePreallocationRule{},
-	inefficientSprintfRule{},
-	interfaceMethodLimitRule{},
-	constructorInterfaceReturnRule{},
-	slogArgumentShapeRule{},
-	externalCallInLoopRule{},
-	nilErrorReturnRule{},
-	nilValueWithNilErrorRule{},
-	unclosedHTTPResponseBodyRule{},
-	unclosedSQLResourceRule{},
-	contextCancelInLoopRule{},
-	copyLockValueRule{},
-	discardedErrorResultRule{},
-	testParallelismRule{},
-	topLevelDeclarationOrderRule{},
+var checkCatalog = []Check{
+	invalidRegexpCheck{},
+	invalidTemplateCheck{},
+	invalidTimeParseCheck{},
+	unsupportedBinaryWriteCheck{},
+	suspiciousSleepCheck{},
+	invalidExecCommandCheck{},
+	dynamicPrintfCheck{},
+	invalidURLCheck{},
+	nonCanonicalHeaderCheck{},
+	regexpFindAllZeroCheck{},
+	invalidUTF8StringArgumentCheck{},
+	nilContextCheck{},
+	swappedSeekArgumentsCheck{},
+	nonPointerUnmarshalCheck{},
+	leakyTimeTickCheck{},
+	untrappableSignalCheck{},
+	unbufferedSignalChannelCheck{},
+	zeroReplacementLimitCheck{},
+	deprecatedAPIUsageCheck{},
+	invalidListenAddressCheck{},
+	ipByteComparisonCheck{},
+	writerBufferMutationCheck{},
+	duplicateTrimCutsetCheck{},
+	timerResetDrainRaceCheck{},
+	unsupportedMarshalTypeCheck{},
+	misalignedAtomic64Check{},
+	sortNonSliceCheck{},
+	contextKeyTypeCheck{},
+	invalidStrconvArgumentCheck{},
+	overlappingEncodeBuffersCheck{},
+	swappedErrorsIsArgumentsCheck{},
+	waitGroupAddInsideGoroutineCheck{},
+	emptyCriticalSectionCheck{},
+	testingFatalInGoroutineCheck{},
+	deferredLockAfterLockCheck{},
+	testMainMissingExitCheck{},
+	timeValueEqualityCheck{},
+	waitGroupGoForbiddenCallCheck{},
+	rangeValueCaptureCheck{},
+	benchmarkIterationMutationCheck{},
+	identicalBinaryOperandsCheck{},
+	impossibleIntegerComparisonCheck{},
+	singleIterationLoopCheck{},
+	ineffectiveValueReceiverAssignmentCheck{},
+	overwrittenBeforeUseCheck{},
+	unchangedLoopConditionCheck{},
+	argumentOverwrittenBeforeUseCheck{},
+	unusedAppendResultCheck{},
+	nanComparisonCheck{},
+	pointlessIntegerMathCheck{},
+	ineffectiveBitwiseZeroCheck{},
+	discardedPureResultCheck{},
+	selfAssignmentCheck{},
+	unreachableTypeSwitchCaseCheck{},
+	singleArgumentAppendCheck{},
+	addressNilComparisonCheck{},
+	impossibleInterfaceNilComparisonCheck{},
+	negativeLengthCapacityComparisonCheck{},
+	constantNegativeZeroCheck{},
+	urlQueryCopyMutationCheck{},
+	sortConversionWithoutSortCheck{},
+	randomBoundOneCheck{},
+	neverNilComparisonCheck{},
+	impossiblePlatformComparisonCheck{},
+	nilMapAssignmentCheck{},
+	deferCloseBeforeErrorCheckCheck{},
+	spinningEmptyLoopCheck{},
+	finalizerCapturesObjectCheck{},
+	infiniteRecursionCheck{},
+	invalidPrintfCallCheck{},
+	contradictoryInterfaceAssertionCheck{},
+	possibleNilDereferenceCheck{},
+	oddPairedArgumentsCheck{},
+	regexpMatchInLoopCheck{},
+	separateByteStringMapKeyCheck{},
+	nonPointerSyncPoolValueCheck{},
+	caseInsensitiveStringComparisonCheck{},
+	byteStringWriteCheck{},
+	decimalFileModeCheck{},
+	partiallyTypedConstantGroupCheck{},
+	unexportedSerializationFieldsCheck{},
+	oversizedFixedWidthShiftCheck{},
+	dangerousDirectoryRemovalCheck{},
+	failedAssertionShadowReadCheck{},
+	deferredReturnFunctionNotCalledCheck{},
+	durationMultipliedByDurationCheck{},
+	contextStoredInStructCheck{},
+	unsafeFormattedURLHostPortCheck{},
+	uncheckedRowsErrorCheck{},
+	excessiveBlankIdentifiersCheck{},
+	taskCommentCheck{},
+	docCommentPeriodCheck{},
+	errorTypeNamingCheck{},
+	standardHTTPMethodConstantCheck{},
+	weakCryptographyCheck{},
+	appendToSizedSliceCheck{},
+	redundantConversionCheck{},
+	slicePreallocationCheck{},
+	inefficientSprintfCheck{},
+	interfaceMethodLimitCheck{},
+	constructorInterfaceReturnCheck{},
+	slogArgumentShapeCheck{},
+	externalCallInLoopCheck{},
+	nilErrorReturnCheck{},
+	nilValueWithNilErrorCheck{},
+	unclosedHTTPResponseBodyCheck{},
+	unclosedSQLResourceCheck{},
+	contextCancelInLoopCheck{},
+	copyLockValueCheck{},
+	discardedErrorResultCheck{},
+	testParallelismCheck{},
+	topLevelDeclarationOrderCheck{},
 }
 
-// Registry is an immutable selection of analysis rules.
+// Registry is an immutable selection of analysis checks.
 type Registry struct {
-	rules      []Rule
-	settings   map[string]configuredRule
+	checks     []Check
+	settings   map[string]configuredCheck
 	knownCodes map[string]bool
 	root       string
 }
 
-type configuredRule struct {
+type configuredCheck struct {
 	severity diagnostic.Severity
 	excludes []string
-	config   config.RuleConfig
+	config   config.CheckConfig
 }
 
-// RegistryOptions selects and configures package-aware rules.
+// RegistryOptions selects and configures package-aware checks.
 type RegistryOptions struct {
 	Only            []string
-	Settings        map[string]config.RuleConfig
+	Settings        map[string]config.CheckConfig
 	Root            string
 	MinimumSeverity diagnostic.Severity
 }
 
 // AnalysisStage is the most expensive program representation needed by a
-// rule. Every current syntax rule is type-aware, so there is deliberately no
+// check. Every current syntax check is type-aware, so there is deliberately no
 // untyped AST stage yet.
 type AnalysisStage uint8
 
 // FactSet identifies shared, lazily constructed analysis indexes. Facts are
-// orthogonal to the representation stage: typed and SSA rules can both depend
+// orthogonal to the representation stage: typed and SSA checks can both depend
 // on them.
 type FactSet uint8
 
 // SSAFeatureSet identifies optional SSA metadata that is expensive enough to
-// build only when a selected rule consumes it.
+// build only when a selected check consumes it.
 type SSAFeatureSet uint8
 
-// Requirements describes the internal data dependencies of one rule.
+// Requirements describes the internal data dependencies of one check.
 type Requirements struct {
 	Stage              AnalysisStage
 	Facts              FactSet
@@ -196,10 +196,10 @@ func (facts FactSet) Has(wanted FactSet) bool {
 	return facts&wanted == wanted
 }
 
-func compileExecutionPlan(rules []Rule) executionPlan {
+func compileExecutionPlan(checks []Check) executionPlan {
 	plan := executionPlan{}
-	for _, rule := range rules {
-		requirements := rule.Requirements()
+	for _, check := range checks {
+		requirements := check.Requirements()
 		if requirements.Stage > plan.requirements.Stage {
 			plan.requirements.Stage = requirements.Stage
 		}
@@ -223,14 +223,14 @@ func (registry *Registry) executionPlan() executionPlan {
 	if registry == nil {
 		return executionPlan{}
 	}
-	return compileExecutionPlan(registry.rules)
+	return compileExecutionPlan(registry.checks)
 }
 
 // NewRegistry applies project settings and a minimum effective severity.
 // Explicit selection never bypasses the severity threshold.
 func NewRegistry(options RegistryOptions) (*Registry, error) {
-	all := allRules()
-	selection, err := core.Select(core.SelectionOptions[Rule]{
+	all := allChecks()
+	selection, err := core.Select(core.SelectionOptions[Check]{
 		Checks:          all,
 		Only:            options.Only,
 		Settings:        options.Settings,
@@ -240,16 +240,16 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 		return nil, err
 	}
 	registry := &Registry{
-		settings:   make(map[string]configuredRule, len(all)),
+		settings:   make(map[string]configuredCheck, len(all)),
 		knownCodes: selection.KnownCodes,
 		root:       options.Root,
 	}
-	for _, rule := range selection.Checks {
-		meta := rule.Meta()
+	for _, check := range selection.Checks {
+		meta := check.Meta()
 		setting := selection.Settings[strings.ToLower(meta.Code)]
 		severity := selection.Severities[meta.Code]
-		registry.rules = append(registry.rules, rule)
-		registry.settings[meta.Code] = configuredRule{
+		registry.checks = append(registry.checks, check)
+		registry.settings[meta.Code] = configuredCheck{
 			severity: severity,
 			excludes: setting.Excludes,
 			config:   setting,
@@ -266,12 +266,12 @@ func (registry *Registry) Excluded(code, filename string) bool {
 	return pathfilter.Excluded(registry.root, filename, registry.settings[code].excludes)
 }
 
-// Rules returns a copy of the selected rules.
-func (registry *Registry) Rules() []Rule {
-	return append([]Rule(nil), registry.rules...)
+// Checks returns a copy of the selected checks.
+func (registry *Registry) Checks() []Check {
+	return append([]Check(nil), registry.checks...)
 }
 
-// KnownCodes returns every package-aware rule code, including rules that are
+// KnownCodes returns every package-aware check code, including checks that are
 // disabled or below the current severity threshold.
 func (registry *Registry) KnownCodes() map[string]bool {
 	if registry == nil {
@@ -292,14 +292,14 @@ func UsesSSA(code string) bool {
 
 // RequirementsFor returns the colocated requirements for code.
 func RequirementsFor(code string) (Requirements, bool) {
-	for _, rule := range ruleCatalog {
-		if strings.EqualFold(rule.Meta().Code, code) {
-			return rule.Requirements(), true
+	for _, check := range checkCatalog {
+		if strings.EqualFold(check.Meta().Code, code) {
+			return check.Requirements(), true
 		}
 	}
 	return Requirements{}, false
 }
 
-func allRules() []Rule {
-	return append([]Rule(nil), ruleCatalog...)
+func allChecks() []Check {
+	return append([]Check(nil), checkCatalog...)
 }

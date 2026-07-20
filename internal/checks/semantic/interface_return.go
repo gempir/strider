@@ -11,9 +11,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type constructorInterfaceReturnRule struct{}
+type constructorInterfaceReturnCheck struct{}
 
-func (constructorInterfaceReturnRule) Meta() Meta {
+func (constructorInterfaceReturnCheck) Meta() Meta {
 	return Meta{
 		Code:            "constructor-interface-return",
 		Summary:         "detect constructors that hide a single concrete result",
@@ -24,7 +24,7 @@ func (constructorInterfaceReturnRule) Meta() Meta {
 	}
 }
 
-func (constructorInterfaceReturnRule) Run(pass *Pass) {
+func (constructorInterfaceReturnCheck) Run(pass *Pass) {
 	for _, file := range pass.Files {
 		for _, declaration := range file.Decls {
 			function, ok := declaration.(*ast.FuncDecl)
@@ -184,7 +184,7 @@ func performanceTypeQualifier(current *types.Package) types.Qualifier {
 	}
 }
 
-func (constructorInterfaceReturnRule) Requirements() Requirements {
+func (constructorInterfaceReturnCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

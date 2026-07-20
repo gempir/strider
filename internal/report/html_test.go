@@ -195,7 +195,7 @@ func TestHTMLLimitsDetailsButSummarizesAllDiagnostics(t *testing.T) {
 	if strings.Contains(page, "common two") {
 		t.Fatal("report rendered a diagnostic beyond the detail limit")
 	}
-	if strings.Index(page, "data-rule=\"common-rule\"") > strings.Index(page, "data-rule=\"rare-rule\"") {
-		t.Fatal("rule summary was not sorted by descending finding count")
+	if strings.Index(page, "data-check=\"common-rule\"") > strings.Index(page, "data-check=\"rare-rule\"") {
+		t.Fatal("check summary was not sorted by descending finding count")
 	}
 }

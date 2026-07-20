@@ -9,9 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type unchangedLoopConditionRule struct{}
+type unchangedLoopConditionCheck struct{}
 
-func (unchangedLoopConditionRule) Meta() Meta {
+func (unchangedLoopConditionCheck) Meta() Meta {
 	return Meta{
 		Code:            "unchanged-loop-condition",
 		Summary:         "detect counted loops whose condition variable never changes",
@@ -22,7 +22,7 @@ func (unchangedLoopConditionRule) Meta() Meta {
 	}
 }
 
-func (unchangedLoopConditionRule) Run(pass *Pass) {
+func (unchangedLoopConditionCheck) Run(pass *Pass) {
 	for _, function := range pass.Functions {
 		if function == nil || function.Synthetic != "" || function.Blocks == nil || function.Syntax() == nil {
 			continue
@@ -86,7 +86,7 @@ func unchangedConditionCandidate(pass *Pass, loop *ast.ForStmt) (*ast.BinaryExpr
 	return condition, true
 }
 
-func (unchangedLoopConditionRule) Requirements() Requirements {
+func (unchangedLoopConditionCheck) Requirements() Requirements {
 	return Requirements{
 		Stage:       AnalysisStageSSA,
 		SSAFeatures: SSAFeatureGlobalDebug,

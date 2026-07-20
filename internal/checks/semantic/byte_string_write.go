@@ -7,9 +7,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type byteStringWriteRule struct{}
+type byteStringWriteCheck struct{}
 
-func (byteStringWriteRule) Meta() Meta {
+func (byteStringWriteCheck) Meta() Meta {
 	return Meta{
 		Code:            "byte-string-write",
 		Summary:         "detect byte slices converted to strings for io.WriteString",
@@ -20,7 +20,7 @@ func (byteStringWriteRule) Meta() Meta {
 	}
 }
 
-func (byteStringWriteRule) Run(pass *Pass) {
+func (byteStringWriteCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.CallExpr)(nil),
@@ -56,7 +56,7 @@ func (byteStringWriteRule) Run(pass *Pass) {
 	)
 }
 
-func (byteStringWriteRule) Requirements() Requirements {
+func (byteStringWriteCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

@@ -8,9 +8,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type unsafeFormattedURLHostPortRule struct{}
+type unsafeFormattedURLHostPortCheck struct{}
 
-func (unsafeFormattedURLHostPortRule) Meta() Meta {
+func (unsafeFormattedURLHostPortCheck) Meta() Meta {
 	return Meta{
 		Code:            "unsafe-formatted-url-host-port",
 		Summary:         "detect URL and network-address construction that breaks IPv6",
@@ -21,7 +21,7 @@ func (unsafeFormattedURLHostPortRule) Meta() Meta {
 	}
 }
 
-func (unsafeFormattedURLHostPortRule) Run(pass *Pass) {
+func (unsafeFormattedURLHostPortCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.CallExpr)(nil),
@@ -123,7 +123,7 @@ func formatsURLHostAndPort(format string) bool {
 	return strings.Contains(authority, "%s:") || strings.Contains(authority, "%v:")
 }
 
-func (unsafeFormattedURLHostPortRule) Requirements() Requirements {
+func (unsafeFormattedURLHostPortCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

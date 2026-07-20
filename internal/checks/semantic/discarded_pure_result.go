@@ -90,7 +90,7 @@ var pureStandardFunctions = map[string]bool{
 	"(time.Time).ZoneBounds":          true,
 }
 
-type discardedPureResultRule struct{}
+type discardedPureResultCheck struct{}
 
 type purityState uint8
 
@@ -99,7 +99,7 @@ type purityChecker struct {
 	state map[*ssa.Function]purityState
 }
 
-func (discardedPureResultRule) Meta() Meta {
+func (discardedPureResultCheck) Meta() Meta {
 	return Meta{
 		Code:            "discarded-pure-result",
 		Summary:         "detect ignored results from functions without side effects",
@@ -110,7 +110,7 @@ func (discardedPureResultRule) Meta() Meta {
 	}
 }
 
-func (discardedPureResultRule) Run(pass *Pass) {
+func (discardedPureResultCheck) Run(pass *Pass) {
 	purity := newPurityChecker(pass)
 	for _, function := range pass.Functions {
 		if benchmarkHelper(function) {
@@ -287,7 +287,7 @@ func knownPureFunction(function *types.Func) bool {
 	return pureStandardFunctions[function.FullName()]
 }
 
-func (discardedPureResultRule) Requirements() Requirements {
+func (discardedPureResultCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageSSA,
 	}

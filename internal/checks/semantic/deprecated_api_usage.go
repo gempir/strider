@@ -17,7 +17,7 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type deprecatedAPIUsageRule struct{}
+type deprecatedAPIUsageCheck struct{}
 
 type deprecationSourceKey struct {
 	line  int
@@ -42,7 +42,7 @@ type deprecationIndex struct {
 	physicalFiles          map[*types.Package][]string
 }
 
-func (deprecatedAPIUsageRule) Meta() Meta {
+func (deprecatedAPIUsageCheck) Meta() Meta {
 	return Meta{
 		Code:            "deprecated-api-usage",
 		Summary:         "detect uses of deprecated packages and APIs",
@@ -53,7 +53,7 @@ func (deprecatedAPIUsageRule) Meta() Meta {
 	}
 }
 
-func (deprecatedAPIUsageRule) Run(pass *Pass) {
+func (deprecatedAPIUsageCheck) Run(pass *Pass) {
 	selectors := make(map[*ast.Ident]bool)
 	pass.Inspect(
 		[]ast.Node{
@@ -540,7 +540,7 @@ func deprecationMessage(group *ast.CommentGroup) string {
 	return ""
 }
 
-func (deprecatedAPIUsageRule) Requirements() Requirements {
+func (deprecatedAPIUsageCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 		Facts: FactDeprecations,

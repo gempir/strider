@@ -8,11 +8,11 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type nilErrorReturnRule struct{}
+type nilErrorReturnCheck struct{}
 
-type nilValueWithNilErrorRule struct{}
+type nilValueWithNilErrorCheck struct{}
 
-func (nilErrorReturnRule) Meta() Meta {
+func (nilErrorReturnCheck) Meta() Meta {
 	return Meta{
 		Code:            "nil-error-return",
 		Summary:         "detect nil errors returned from branches that prove an error is non-nil",
@@ -23,7 +23,7 @@ func (nilErrorReturnRule) Meta() Meta {
 	}
 }
 
-func (nilErrorReturnRule) Run(pass *Pass) {
+func (nilErrorReturnCheck) Run(pass *Pass) {
 	forEachAnalysisFunction(
 		pass,
 		func(body *ast.BlockStmt, signature *types.Signature) {
@@ -51,7 +51,7 @@ func (nilErrorReturnRule) Run(pass *Pass) {
 	)
 }
 
-func (nilValueWithNilErrorRule) Meta() Meta {
+func (nilValueWithNilErrorCheck) Meta() Meta {
 	return Meta{
 		Code:            "nil-value-with-nil-error",
 		Summary:         "detect nil payloads returned together with a nil error",
@@ -62,7 +62,7 @@ func (nilValueWithNilErrorRule) Meta() Meta {
 	}
 }
 
-func (nilValueWithNilErrorRule) Run(pass *Pass) {
+func (nilValueWithNilErrorCheck) Run(pass *Pass) {
 	forEachAnalysisFunction(
 		pass,
 		func(body *ast.BlockStmt, signature *types.Signature) {
@@ -137,22 +137,6 @@ func forEachAnalysisFunction(pass *Pass, visit func(*ast.BlockStmt, *types.Signa
 			return true
 		},
 	)
-}
-
-// inspectFunctionBody visits a function body without descending into nested
-// function literals. A nested literal has its own control-flow scope.
-func inspectFunctionBody(root ast.Node, visit func(ast.Node) bool) {
-	first := true
-	ast.Inspect(root, func(node ast.Node) bool {
-		if node == nil {
-			return true
-		}
-		if _, nested := node.(*ast.FuncLit); nested && !first {
-			return false
-		}
-		first = false
-		return visit(node)
-	})
 }
 
 func nonNilErrorComparison(pass *Pass, expression ast.Expr, operator token.Token) types.Object {
@@ -298,13 +282,13 @@ func isNilableType(valueType types.Type) bool {
 	}
 }
 
-func (nilErrorReturnRule) Requirements() Requirements {
+func (nilErrorReturnCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}
 }
 
-func (nilValueWithNilErrorRule) Requirements() Requirements {
+func (nilValueWithNilErrorCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

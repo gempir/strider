@@ -8,9 +8,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type finalizerCapturesObjectRule struct{}
+type finalizerCapturesObjectCheck struct{}
 
-func (finalizerCapturesObjectRule) Meta() Meta {
+func (finalizerCapturesObjectCheck) Meta() Meta {
 	return Meta{
 		Code:            "finalizer-captures-object",
 		Summary:         "detect finalizers that retain the object they should release",
@@ -21,7 +21,7 @@ func (finalizerCapturesObjectRule) Meta() Meta {
 	}
 }
 
-func (finalizerCapturesObjectRule) Run(pass *Pass) {
+func (finalizerCapturesObjectCheck) Run(pass *Pass) {
 	for _, call := range pass.staticCallsInPackage("runtime") {
 		if !isStaticFunction(call, "runtime", "SetFinalizer") || len(call.Common().Args) < 2 {
 			continue
@@ -63,7 +63,7 @@ func closureCapturesFinalizerObject(closure *ssa.MakeClosure, object ssa.Value) 
 	return false
 }
 
-func (finalizerCapturesObjectRule) Requirements() Requirements {
+func (finalizerCapturesObjectCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageSSA,
 		Facts: FactStaticCalls,

@@ -6,9 +6,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type waitGroupAddInsideGoroutineRule struct{}
+type waitGroupAddInsideGoroutineCheck struct{}
 
-func (waitGroupAddInsideGoroutineRule) Meta() Meta {
+func (waitGroupAddInsideGoroutineCheck) Meta() Meta {
 	return Meta{
 		Code:            "waitgroup-add-inside-goroutine",
 		Summary:         "detect WaitGroup.Add calls inside newly started goroutines",
@@ -19,7 +19,7 @@ func (waitGroupAddInsideGoroutineRule) Meta() Meta {
 	}
 }
 
-func (waitGroupAddInsideGoroutineRule) Run(pass *Pass) {
+func (waitGroupAddInsideGoroutineCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.GoStmt)(nil),
@@ -57,7 +57,7 @@ func (waitGroupAddInsideGoroutineRule) Run(pass *Pass) {
 	)
 }
 
-func (waitGroupAddInsideGoroutineRule) Requirements() Requirements {
+func (waitGroupAddInsideGoroutineCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

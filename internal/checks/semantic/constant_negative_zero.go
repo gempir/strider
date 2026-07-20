@@ -9,9 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type constantNegativeZeroRule struct{}
+type constantNegativeZeroCheck struct{}
 
-func (constantNegativeZeroRule) Meta() Meta {
+func (constantNegativeZeroCheck) Meta() Meta {
 	return Meta{
 		Code:            "constant-negative-zero",
 		Summary:         "detect constant expressions that cannot represent negative zero",
@@ -22,7 +22,7 @@ func (constantNegativeZeroRule) Meta() Meta {
 	}
 }
 
-func (constantNegativeZeroRule) Run(pass *Pass) {
+func (constantNegativeZeroCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.CallExpr)(nil),
@@ -86,7 +86,7 @@ func zeroLiteral(pass *Pass, literal *ast.BasicLit) bool {
 	return value != nil && (value.Kind() == constant.Int || value.Kind() == constant.Float) && constant.Sign(value) == 0
 }
 
-func (constantNegativeZeroRule) Requirements() Requirements {
+func (constantNegativeZeroCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

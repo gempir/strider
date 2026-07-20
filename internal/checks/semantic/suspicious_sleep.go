@@ -9,9 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type suspiciousSleepRule struct{}
+type suspiciousSleepCheck struct{}
 
-func (suspiciousSleepRule) Meta() Meta {
+func (suspiciousSleepCheck) Meta() Meta {
 	return Meta{
 		Code:            "suspicious-sleep",
 		Summary:         "detect suspiciously small time.Sleep constants",
@@ -22,7 +22,7 @@ func (suspiciousSleepRule) Meta() Meta {
 	}
 }
 
-func (suspiciousSleepRule) Run(pass *Pass) {
+func (suspiciousSleepCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.CallExpr)(nil),
@@ -50,7 +50,7 @@ func (suspiciousSleepRule) Run(pass *Pass) {
 	)
 }
 
-func (suspiciousSleepRule) Requirements() Requirements {
+func (suspiciousSleepCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

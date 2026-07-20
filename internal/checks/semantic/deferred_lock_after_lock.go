@@ -6,9 +6,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type deferredLockAfterLockRule struct{}
+type deferredLockAfterLockCheck struct{}
 
-func (deferredLockAfterLockRule) Meta() Meta {
+func (deferredLockAfterLockCheck) Meta() Meta {
 	return Meta{
 		Code:            "deferred-lock-after-lock",
 		Summary:         "detect deferring Lock immediately after locking",
@@ -19,7 +19,7 @@ func (deferredLockAfterLockRule) Meta() Meta {
 	}
 }
 
-func (deferredLockAfterLockRule) Run(pass *Pass) {
+func (deferredLockAfterLockCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.BlockStmt)(nil),
@@ -89,7 +89,7 @@ func syncLockCall(pass *Pass, call *ast.CallExpr) (ast.Expr, string, bool) {
 	return selector.X, function.Name(), true
 }
 
-func (deferredLockAfterLockRule) Requirements() Requirements {
+func (deferredLockAfterLockCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

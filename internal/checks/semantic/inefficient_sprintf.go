@@ -9,9 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type inefficientSprintfRule struct{}
+type inefficientSprintfCheck struct{}
 
-func (inefficientSprintfRule) Meta() Meta {
+func (inefficientSprintfCheck) Meta() Meta {
 	return Meta{
 		Code:            "inefficient-sprintf",
 		Summary:         "detect fmt.Sprintf calls used only for simple conversions",
@@ -22,7 +22,7 @@ func (inefficientSprintfRule) Meta() Meta {
 	}
 }
 
-func (inefficientSprintfRule) Run(pass *Pass) {
+func (inefficientSprintfCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.CallExpr)(nil),
@@ -94,7 +94,7 @@ func simpleSprintfReplacement(format string, valueType types.Type) string {
 	return ""
 }
 
-func (inefficientSprintfRule) Requirements() Requirements {
+func (inefficientSprintfCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

@@ -11,9 +11,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type overwrittenBeforeUseRule struct{}
+type overwrittenBeforeUseCheck struct{}
 
-func (overwrittenBeforeUseRule) Meta() Meta {
+func (overwrittenBeforeUseCheck) Meta() Meta {
 	return Meta{
 		Code:            "overwritten-before-use",
 		Summary:         "detect assigned values that are replaced before being used",
@@ -24,7 +24,7 @@ func (overwrittenBeforeUseRule) Meta() Meta {
 	}
 }
 
-func (overwrittenBeforeUseRule) Run(pass *Pass) {
+func (overwrittenBeforeUseCheck) Run(pass *Pass) {
 	for _, function := range pass.Functions {
 		if function == nil || function.Synthetic != "" || function.Blocks == nil || isExampleFunction(function) {
 			continue
@@ -172,7 +172,7 @@ func ssaValueHasUse(value ssa.Value, switchTags map[ssa.Value]bool, seen map[ssa
 	return false
 }
 
-func (overwrittenBeforeUseRule) Requirements() Requirements {
+func (overwrittenBeforeUseCheck) Requirements() Requirements {
 	return Requirements{
 		Stage:       AnalysisStageSSA,
 		SSAFeatures: SSAFeatureGlobalDebug,

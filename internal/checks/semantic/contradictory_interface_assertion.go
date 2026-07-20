@@ -8,9 +8,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type contradictoryInterfaceAssertionRule struct{}
+type contradictoryInterfaceAssertionCheck struct{}
 
-func (contradictoryInterfaceAssertionRule) Meta() Meta {
+func (contradictoryInterfaceAssertionCheck) Meta() Meta {
 	return Meta{
 		Code:            "contradictory-interface-assertion",
 		Summary:         "detect interface assertions with conflicting method signatures",
@@ -21,7 +21,7 @@ func (contradictoryInterfaceAssertionRule) Meta() Meta {
 	}
 }
 
-func (contradictoryInterfaceAssertionRule) Run(pass *Pass) {
+func (contradictoryInterfaceAssertionCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.TypeAssertExpr)(nil),
@@ -69,7 +69,7 @@ func (contradictoryInterfaceAssertionRule) Run(pass *Pass) {
 	)
 }
 
-func (contradictoryInterfaceAssertionRule) Requirements() Requirements {
+func (contradictoryInterfaceAssertionCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

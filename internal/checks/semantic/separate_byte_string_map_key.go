@@ -7,9 +7,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type separateByteStringMapKeyRule struct{}
+type separateByteStringMapKeyCheck struct{}
 
-func (separateByteStringMapKeyRule) Meta() Meta {
+func (separateByteStringMapKeyCheck) Meta() Meta {
 	return Meta{
 		Code:            "separate-byte-string-map-key",
 		Summary:         "detect allocated byte-to-string temporaries used only for map lookups",
@@ -20,7 +20,7 @@ func (separateByteStringMapKeyRule) Meta() Meta {
 	}
 }
 
-func (separateByteStringMapKeyRule) Run(pass *Pass) {
+func (separateByteStringMapKeyCheck) Run(pass *Pass) {
 	parents := pass.analysisParents()
 	pass.Inspect(
 		[]ast.Node{
@@ -101,7 +101,7 @@ func usedOnlyAsStringMapKey(pass *Pass, parents map[ast.Node]ast.Node, object ty
 	return uses != 0
 }
 
-func (separateByteStringMapKeyRule) Requirements() Requirements {
+func (separateByteStringMapKeyCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 		Facts: FactParents,

@@ -57,14 +57,14 @@ characters = ["ᐸ", "ᐳ"]
 	if configuration.Checks.Baseline != "strider-baseline.toml" || configuration.Checks.MinimumSeverity != "warning" {
 		t.Fatalf("unexpected checks config: %#v", configuration.Checks)
 	}
-	rule := configuration.EffectiveCheckRule("no-init")
-	if rule.Severity != "none" {
-		t.Fatalf("unexpected effective rule: %#v", rule)
+	check := configuration.EffectiveCheck("no-init")
+	if check.Severity != "none" {
+		t.Fatalf("unexpected effective check: %#v", check)
 	}
-	if strings.Join(rule.Excludes, ",") != "generated/**,legacy/**" {
-		t.Fatalf("effective excludes = %q", rule.Excludes)
+	if strings.Join(check.Excludes, ",") != "generated/**,legacy/**" {
+		t.Fatalf("effective excludes = %q", check.Excludes)
 	}
-	if got := strings.Join(configuration.EffectiveCheckRule("banned-characters").Characters, ","); got != "ᐸ,ᐳ" {
+	if got := strings.Join(configuration.EffectiveCheck("banned-characters").Characters, ","); got != "ᐸ,ᐳ" {
 		t.Fatalf("banned characters = %q", got)
 	}
 	canonicalRoot, err := filepath.EvalSymlinks(root)
@@ -179,7 +179,7 @@ func TestLoadRejectsUnknownAndInvalidSettings(t *testing.T) {
 	}
 }
 
-func TestLoadTracksExplicitZeroValuedRuleOptions(t *testing.T) {
+func TestLoadTracksExplicitZeroValuedCheckOptions(t *testing.T) {
 	path := filepath.Join(t.TempDir(), Filename)
 	contents := "version = 1\n[checks.no-init]\nmax-lines = 0\n"
 	if err := os.WriteFile(path, []byte(contents), 0o600); err != nil {
@@ -189,11 +189,11 @@ func TestLoadTracksExplicitZeroValuedRuleOptions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rule := configuration.Checks.Rules["no-init"]
-	if !rule.HasExplicitOption("max-lines") {
+	check := configuration.Checks.Settings["no-init"]
+	if !check.HasExplicitOption("max-lines") {
 		t.Fatal("explicit max-lines = 0 was not retained for check-specific validation")
 	}
-	if rule.HasExplicitOption("max-methods") {
+	if check.HasExplicitOption("max-methods") {
 		t.Fatal("omitted option was marked explicit")
 	}
 }

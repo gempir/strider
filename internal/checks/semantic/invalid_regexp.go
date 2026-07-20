@@ -9,9 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type invalidRegexpRule struct{}
+type invalidRegexpCheck struct{}
 
-func (invalidRegexpRule) Meta() Meta {
+func (invalidRegexpCheck) Meta() Meta {
 	return Meta{
 		Code:            "invalid-regexp",
 		Summary:         "detect invalid regular expressions",
@@ -22,7 +22,7 @@ func (invalidRegexpRule) Meta() Meta {
 	}
 }
 
-func (invalidRegexpRule) Run(pass *Pass) {
+func (invalidRegexpCheck) Run(pass *Pass) {
 	calls := pass.firstArgumentsByCallPosition()
 	for _, call := range pass.staticCallsInPackage("regexp") {
 		if !isRegexpCompileCall(call) || len(call.Common().Args) == 0 {
@@ -76,7 +76,7 @@ func ssaConstant(value ssa.Value) *ssa.Const {
 	}
 }
 
-func (invalidRegexpRule) Requirements() Requirements {
+func (invalidRegexpCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageSSA,
 		Facts: FactCallArguments | FactStaticCalls,

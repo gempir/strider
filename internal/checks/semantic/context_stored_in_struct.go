@@ -6,9 +6,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type contextStoredInStructRule struct{}
+type contextStoredInStructCheck struct{}
 
-func (contextStoredInStructRule) Meta() Meta {
+func (contextStoredInStructCheck) Meta() Meta {
 	return Meta{
 		Code:            "context-stored-in-struct",
 		Summary:         "detect context.Context fields in structs",
@@ -19,7 +19,7 @@ func (contextStoredInStructRule) Meta() Meta {
 	}
 }
 
-func (contextStoredInStructRule) Run(pass *Pass) {
+func (contextStoredInStructCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.StructType)(nil),
@@ -41,7 +41,7 @@ func (contextStoredInStructRule) Run(pass *Pass) {
 	)
 }
 
-func (contextStoredInStructRule) Requirements() Requirements {
+func (contextStoredInStructCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

@@ -8,9 +8,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type writerBufferMutationRule struct{}
+type writerBufferMutationCheck struct{}
 
-func (writerBufferMutationRule) Meta() Meta {
+func (writerBufferMutationCheck) Meta() Meta {
 	return Meta{
 		Code:            "writer-buffer-mutation",
 		Summary:         "detect io.Writer implementations that modify their input buffer",
@@ -21,7 +21,7 @@ func (writerBufferMutationRule) Meta() Meta {
 	}
 }
 
-func (writerBufferMutationRule) Run(pass *Pass) {
+func (writerBufferMutationCheck) Run(pass *Pass) {
 	for _, function := range pass.Functions {
 		if !isWriterMethod(function) {
 			continue
@@ -63,7 +63,7 @@ func modifiesWriterBuffer(instruction ssa.Instruction, buffer ssa.Value) bool {
 	}
 }
 
-func (writerBufferMutationRule) Requirements() Requirements {
+func (writerBufferMutationCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageSSA,
 	}

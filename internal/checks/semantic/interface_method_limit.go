@@ -10,9 +10,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type interfaceMethodLimitRule struct{}
+type interfaceMethodLimitCheck struct{}
 
-func (interfaceMethodLimitRule) Meta() Meta {
+func (interfaceMethodLimitCheck) Meta() Meta {
 	return Meta{
 		Code:            "interface-method-limit",
 		Summary:         "limit interface method count",
@@ -30,16 +30,16 @@ func (interfaceMethodLimitRule) Meta() Meta {
 	}
 }
 
-func (interfaceMethodLimitRule) Run(pass *Pass) {
-	interfaceMethodLimitRule{}.RunConfigured(pass, config.CheckConfig{})
+func (interfaceMethodLimitCheck) Run(pass *Pass) {
+	interfaceMethodLimitCheck{}.RunConfigured(pass, config.CheckConfig{})
 }
 
-func (interfaceMethodLimitRule) RunConfigured(pass *Pass, setting config.CheckConfig) {
-	limit, _ := core.IntOption(interfaceMethodLimitRule{}.Meta(), setting, "max-methods")
-	interfaceMethodLimitRule{}.run(pass, limit)
+func (interfaceMethodLimitCheck) RunConfigured(pass *Pass, setting config.CheckConfig) {
+	limit, _ := core.IntOption(interfaceMethodLimitCheck{}.Meta(), setting, "max-methods")
+	interfaceMethodLimitCheck{}.run(pass, limit)
 }
 
-func (interfaceMethodLimitRule) run(pass *Pass, limit int) {
+func (interfaceMethodLimitCheck) run(pass *Pass, limit int) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.InterfaceType)(nil),
@@ -70,7 +70,7 @@ func (interfaceMethodLimitRule) run(pass *Pass, limit int) {
 	)
 }
 
-func (interfaceMethodLimitRule) Requirements() Requirements {
+func (interfaceMethodLimitCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

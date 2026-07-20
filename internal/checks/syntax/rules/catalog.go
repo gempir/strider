@@ -1107,7 +1107,7 @@ var catalog = []definition{
 }
 
 // Select returns every check, or only the explicitly requested checks.
-func Select(only []string) ([]SyntaxCheck, error) {
+func Select(only []string) ([]Check, error) {
 	all := allChecks()
 	wanted := make(map[string]bool, len(only))
 	for _, code := range only {
@@ -1125,7 +1125,7 @@ func Select(only []string) ([]SyntaxCheck, error) {
 		return nil, fmt.Errorf("unknown check(s): %s", strings.Join(unknown, ", "))
 	}
 
-	selected := make([]SyntaxCheck, 0, len(all))
+	selected := make([]Check, 0, len(all))
 	for _, check := range all {
 		if len(only) != 0 && !wantedCode(only, check.Meta().Code) {
 			continue
@@ -1135,8 +1135,8 @@ func Select(only []string) ([]SyntaxCheck, error) {
 	return selected, nil
 }
 
-func allChecks() []SyntaxCheck {
-	checks := make([]SyntaxCheck, len(catalog))
+func allChecks() []Check {
+	checks := make([]Check, len(catalog))
 	for index := range catalog {
 		checks[index] = catalog[index]
 	}

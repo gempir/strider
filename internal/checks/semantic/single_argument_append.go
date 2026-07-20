@@ -8,9 +8,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type singleArgumentAppendRule struct{}
+type singleArgumentAppendCheck struct{}
 
-func (singleArgumentAppendRule) Meta() Meta {
+func (singleArgumentAppendCheck) Meta() Meta {
 	return Meta{
 		Code:            "single-argument-append",
 		Summary:         "detect append calls that add no elements",
@@ -21,7 +21,7 @@ func (singleArgumentAppendRule) Meta() Meta {
 	}
 }
 
-func (singleArgumentAppendRule) Run(pass *Pass) {
+func (singleArgumentAppendCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.CallExpr)(nil),
@@ -80,7 +80,7 @@ func hasCommentBetween(groups []*ast.CommentGroup, start, end token.Pos) bool {
 	return false
 }
 
-func (singleArgumentAppendRule) Requirements() Requirements {
+func (singleArgumentAppendCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

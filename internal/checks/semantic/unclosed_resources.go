@@ -15,12 +15,12 @@ const (
 	httpResponseResource acquiredResourceKind = iota + 1
 	sqlRowsResource
 	sqlStmtResource
-	sqlResource // selector used by the rule to include both SQL kinds
+	sqlResource // selector used by the check to include both SQL kinds
 )
 
-type unclosedHTTPResponseBodyRule struct{}
+type unclosedHTTPResponseBodyCheck struct{}
 
-type unclosedSQLResourceRule struct{}
+type unclosedSQLResourceCheck struct{}
 
 type acquiredResourceKind uint8
 
@@ -67,7 +67,7 @@ type literalPathState struct {
 	reached bool
 }
 
-func (unclosedHTTPResponseBodyRule) Meta() Meta {
+func (unclosedHTTPResponseBodyCheck) Meta() Meta {
 	return Meta{
 		Code:            "unclosed-http-response-body",
 		Summary:         "detect locally acquired HTTP response bodies that are not closed",
@@ -78,11 +78,11 @@ func (unclosedHTTPResponseBodyRule) Meta() Meta {
 	}
 }
 
-func (unclosedHTTPResponseBodyRule) Run(pass *Pass) {
-	runUnclosedResourceRule(pass, httpResponseResource)
+func (unclosedHTTPResponseBodyCheck) Run(pass *Pass) {
+	runUnclosedResourceCheck(pass, httpResponseResource)
 }
 
-func (unclosedSQLResourceRule) Meta() Meta {
+func (unclosedSQLResourceCheck) Meta() Meta {
 	return Meta{
 		Code:            "unclosed-sql-resource",
 		Summary:         "detect locally acquired sql.Rows and sql.Stmt values that are not closed",
@@ -93,11 +93,11 @@ func (unclosedSQLResourceRule) Meta() Meta {
 	}
 }
 
-func (unclosedSQLResourceRule) Run(pass *Pass) {
-	runUnclosedResourceRule(pass, sqlResource)
+func (unclosedSQLResourceCheck) Run(pass *Pass) {
+	runUnclosedResourceCheck(pass, sqlResource)
 }
 
-func runUnclosedResourceRule(pass *Pass, wanted acquiredResourceKind) {
+func runUnclosedResourceCheck(pass *Pass, wanted acquiredResourceKind) {
 	forEachAnalysisFunction(
 		pass,
 		func(body *ast.BlockStmt, signature *types.Signature) {
@@ -910,13 +910,13 @@ func transferredResourceObject(pass *Pass, expression ast.Expr, assignments []re
 	return pass.TypesInfo.ObjectOf(identifier), httpResponseResource
 }
 
-func (unclosedHTTPResponseBodyRule) Requirements() Requirements {
+func (unclosedHTTPResponseBodyCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}
 }
 
-func (unclosedSQLResourceRule) Requirements() Requirements {
+func (unclosedSQLResourceCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

@@ -7,9 +7,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type uncheckedRowsErrorRule struct{}
+type uncheckedRowsErrorCheck struct{}
 
-func (uncheckedRowsErrorRule) Meta() Meta {
+func (uncheckedRowsErrorCheck) Meta() Meta {
 	return Meta{
 		Code:            "unchecked-rows-error",
 		Summary:         "detect sql.Rows iteration without an Err check",
@@ -20,7 +20,7 @@ func (uncheckedRowsErrorRule) Meta() Meta {
 	}
 }
 
-func (uncheckedRowsErrorRule) Run(pass *Pass) {
+func (uncheckedRowsErrorCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.FuncDecl)(nil),
@@ -93,7 +93,7 @@ func reportUncheckedRowsErrors(pass *Pass, body *ast.BlockStmt) {
 	}
 }
 
-func (uncheckedRowsErrorRule) Requirements() Requirements {
+func (uncheckedRowsErrorCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

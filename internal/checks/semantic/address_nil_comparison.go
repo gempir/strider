@@ -8,9 +8,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type addressNilComparisonRule struct{}
+type addressNilComparisonCheck struct{}
 
-func (addressNilComparisonRule) Meta() Meta {
+func (addressNilComparisonCheck) Meta() Meta {
 	return Meta{
 		Code:            "address-nil-comparison",
 		Summary:         "detect comparisons between a freshly taken address and nil",
@@ -21,7 +21,7 @@ func (addressNilComparisonRule) Meta() Meta {
 	}
 }
 
-func (addressNilComparisonRule) Run(pass *Pass) {
+func (addressNilComparisonCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.BinaryExpr)(nil),
@@ -61,7 +61,7 @@ func addressComparedWithNil(pass *Pass, addressExpression, nilExpression ast.Exp
 	return isNil
 }
 
-func (addressNilComparisonRule) Requirements() Requirements {
+func (addressNilComparisonCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

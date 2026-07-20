@@ -7,9 +7,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type slogArgumentShapeRule struct{}
+type slogArgumentShapeCheck struct{}
 
-func (slogArgumentShapeRule) Meta() Meta {
+func (slogArgumentShapeCheck) Meta() Meta {
 	return Meta{
 		Code:            "slog-argument-shape",
 		Summary:         "detect malformed or inconsistent log/slog arguments",
@@ -20,7 +20,7 @@ func (slogArgumentShapeRule) Meta() Meta {
 	}
 }
 
-func (slogArgumentShapeRule) Run(pass *Pass) {
+func (slogArgumentShapeCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.CallExpr)(nil),
@@ -98,7 +98,7 @@ func exactSlogStringKey(valueType types.Type) bool {
 	return ok && basic.Info()&types.IsString != 0
 }
 
-func (slogArgumentShapeRule) Requirements() Requirements {
+func (slogArgumentShapeCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

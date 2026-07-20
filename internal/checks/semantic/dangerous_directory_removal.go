@@ -8,9 +8,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type dangerousDirectoryRemovalRule struct{}
+type dangerousDirectoryRemovalCheck struct{}
 
-func (dangerousDirectoryRemovalRule) Meta() Meta {
+func (dangerousDirectoryRemovalCheck) Meta() Meta {
 	return Meta{
 		Code:            "dangerous-directory-removal",
 		Summary:         "detect removal of whole system or user directories",
@@ -21,7 +21,7 @@ func (dangerousDirectoryRemovalRule) Meta() Meta {
 	}
 }
 
-func (dangerousDirectoryRemovalRule) Run(pass *Pass) {
+func (dangerousDirectoryRemovalCheck) Run(pass *Pass) {
 	for _, call := range pass.staticCallsInPackage("os") {
 		if !isStaticFunction(call, "os", "RemoveAll") || len(call.Common().Args) == 0 {
 			continue
@@ -64,7 +64,7 @@ func dangerousDirectorySource(value ssa.Value) (string, string) {
 	}
 }
 
-func (dangerousDirectoryRemovalRule) Requirements() Requirements {
+func (dangerousDirectoryRemovalCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageSSA,
 		Facts: FactStaticCalls,

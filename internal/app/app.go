@@ -73,7 +73,7 @@ type stagedFile struct {
 
 type stringList []string
 
-type ruleListEntry struct {
+type checkListEntry struct {
 	code     string
 	severity diagnostic.Severity
 	summary  string
@@ -491,7 +491,7 @@ func formatFiles(files []*workspace.File, options formatter.Options, verify bool
 		return formatted, errorsByFile
 	}
 
-	session := formatter.NewSession()
+	session := formatter.NewFormatter()
 	jobs := make(chan int)
 	workers := min(runtime.GOMAXPROCS(0), len(files))
 	var group sync.WaitGroup
@@ -685,7 +685,7 @@ func colorSeverityText(severity diagnostic.Severity, text string, palette ui.Pal
 	}
 }
 
-func writeRuleList(writer io.Writer, palette ui.Palette, entries []ruleListEntry) {
+func writeCheckList(writer io.Writer, palette ui.Palette, entries []checkListEntry) {
 	sort.Slice(entries, func(left, right int) bool {
 		return entries[left].code < entries[right].code
 	})

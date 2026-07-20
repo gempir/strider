@@ -7,9 +7,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type nonPointerSyncPoolValueRule struct{}
+type nonPointerSyncPoolValueCheck struct{}
 
-func (nonPointerSyncPoolValueRule) Meta() Meta {
+func (nonPointerSyncPoolValueCheck) Meta() Meta {
 	return Meta{
 		Code:            "non-pointer-sync-pool-value",
 		Summary:         "detect sync.Pool values that allocate while being stored",
@@ -20,7 +20,7 @@ func (nonPointerSyncPoolValueRule) Meta() Meta {
 	}
 }
 
-func (nonPointerSyncPoolValueRule) Run(pass *Pass) {
+func (nonPointerSyncPoolValueCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.CallExpr)(nil),
@@ -72,7 +72,7 @@ func poolPointerLike(valueType types.Type) bool {
 	}
 }
 
-func (nonPointerSyncPoolValueRule) Requirements() Requirements {
+func (nonPointerSyncPoolValueCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

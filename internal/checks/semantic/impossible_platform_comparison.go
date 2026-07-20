@@ -61,9 +61,9 @@ var knownArchitectures = map[string]bool{
 	"wasm":     true,
 }
 
-type impossiblePlatformComparisonRule struct{}
+type impossiblePlatformComparisonCheck struct{}
 
-func (impossiblePlatformComparisonRule) Meta() Meta {
+func (impossiblePlatformComparisonCheck) Meta() Meta {
 	return Meta{
 		Code:            "impossible-platform-comparison",
 		Summary:         "detect GOOS and GOARCH comparisons excluded by build constraints",
@@ -74,7 +74,7 @@ func (impossiblePlatformComparisonRule) Meta() Meta {
 	}
 }
 
-func (impossiblePlatformComparisonRule) Run(pass *Pass) {
+func (impossiblePlatformComparisonCheck) Run(pass *Pass) {
 	constraints := make(map[*ast.File]constraint.Expr)
 	for _, file := range pass.Files {
 		buildConstraint, ok := parsedFileConstraint(file)
@@ -238,7 +238,7 @@ func knownPlatformTarget(kind, target string) bool {
 	return knownArchitectures[target]
 }
 
-func (impossiblePlatformComparisonRule) Requirements() Requirements {
+func (impossiblePlatformComparisonCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

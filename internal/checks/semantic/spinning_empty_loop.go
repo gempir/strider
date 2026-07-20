@@ -8,9 +8,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type spinningEmptyLoopRule struct{}
+type spinningEmptyLoopCheck struct{}
 
-func (spinningEmptyLoopRule) Meta() Meta {
+func (spinningEmptyLoopCheck) Meta() Meta {
 	return Meta{
 		Code:            "spinning-empty-loop",
 		Summary:         "detect empty loops that consume a core while waiting unsafely",
@@ -21,7 +21,7 @@ func (spinningEmptyLoopRule) Meta() Meta {
 	}
 }
 
-func (spinningEmptyLoopRule) Run(pass *Pass) {
+func (spinningEmptyLoopCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.ForStmt)(nil),
@@ -74,7 +74,7 @@ func constantFalse(pass *Pass, expression ast.Expr) bool {
 	return value != nil && value.Kind() == constant.Bool && !constant.BoolVal(value)
 }
 
-func (spinningEmptyLoopRule) Requirements() Requirements {
+func (spinningEmptyLoopCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

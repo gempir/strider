@@ -7,9 +7,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type benchmarkIterationMutationRule struct{}
+type benchmarkIterationMutationCheck struct{}
 
-func (benchmarkIterationMutationRule) Meta() Meta {
+func (benchmarkIterationMutationCheck) Meta() Meta {
 	return Meta{
 		Code:            "benchmark-iteration-mutation",
 		Summary:         "detect assignments to testing.B.N",
@@ -20,7 +20,7 @@ func (benchmarkIterationMutationRule) Meta() Meta {
 	}
 }
 
-func (benchmarkIterationMutationRule) Run(pass *Pass) {
+func (benchmarkIterationMutationCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.AssignStmt)(nil),
@@ -44,7 +44,7 @@ func (benchmarkIterationMutationRule) Run(pass *Pass) {
 	)
 }
 
-func (benchmarkIterationMutationRule) Requirements() Requirements {
+func (benchmarkIterationMutationCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

@@ -10,9 +10,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type oversizedFixedWidthShiftRule struct{}
+type oversizedFixedWidthShiftCheck struct{}
 
-func (oversizedFixedWidthShiftRule) Meta() Meta {
+func (oversizedFixedWidthShiftCheck) Meta() Meta {
 	return Meta{
 		Code:            "oversized-fixed-width-shift",
 		Summary:         "detect shifts that always clear fixed-width integers",
@@ -23,7 +23,7 @@ func (oversizedFixedWidthShiftRule) Meta() Meta {
 	}
 }
 
-func (oversizedFixedWidthShiftRule) Run(pass *Pass) {
+func (oversizedFixedWidthShiftCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.AssignStmt)(nil),
@@ -74,7 +74,7 @@ func fixedWidthInteger(kind types.BasicKind) bool {
 	}
 }
 
-func (oversizedFixedWidthShiftRule) Requirements() Requirements {
+func (oversizedFixedWidthShiftCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

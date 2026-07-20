@@ -9,9 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type sortConversionWithoutSortRule struct{}
+type sortConversionWithoutSortCheck struct{}
 
-func (sortConversionWithoutSortRule) Meta() Meta {
+func (sortConversionWithoutSortCheck) Meta() Meta {
 	return Meta{
 		Code:            "sort-conversion-without-sort",
 		Summary:         "detect slice type conversions mistaken for sorting calls",
@@ -22,7 +22,7 @@ func (sortConversionWithoutSortRule) Meta() Meta {
 	}
 }
 
-func (sortConversionWithoutSortRule) Run(pass *Pass) {
+func (sortConversionWithoutSortCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.AssignStmt)(nil),
@@ -84,7 +84,7 @@ func sortSliceTypeName(pass *Pass, expression ast.Expr) string {
 	}
 }
 
-func (sortConversionWithoutSortRule) Requirements() Requirements {
+func (sortConversionWithoutSortCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

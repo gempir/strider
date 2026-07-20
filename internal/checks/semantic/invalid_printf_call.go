@@ -12,7 +12,7 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type invalidPrintfCallRule struct{}
+type invalidPrintfCallCheck struct{}
 
 type printfUse struct {
 	raw   string
@@ -21,7 +21,7 @@ type printfUse struct {
 	stars []int
 }
 
-func (invalidPrintfCallRule) Meta() Meta {
+func (invalidPrintfCallCheck) Meta() Meta {
 	return Meta{
 		Code:            "invalid-printf-call",
 		Summary:         "detect malformed printf formats and mismatched arguments",
@@ -32,7 +32,7 @@ func (invalidPrintfCallRule) Meta() Meta {
 	}
 }
 
-func (invalidPrintfCallRule) Run(pass *Pass) {
+func (invalidPrintfCallCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.CallExpr)(nil),
@@ -391,7 +391,7 @@ func implementsError(valueType types.Type) bool {
 	return signature != nil && signature.Params().Len() == 0 && signature.Results().Len() == 1 && printfBasicInfo(signature.Results().At(0).Type(), types.IsString)
 }
 
-func (invalidPrintfCallRule) Requirements() Requirements {
+func (invalidPrintfCallCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

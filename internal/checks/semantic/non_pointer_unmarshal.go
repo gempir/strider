@@ -9,7 +9,7 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type nonPointerUnmarshalRule struct{}
+type nonPointerUnmarshalCheck struct{}
 
 type unmarshalCall struct {
 	name           string
@@ -17,7 +17,7 @@ type unmarshalCall struct {
 	sourceArgument int
 }
 
-func (nonPointerUnmarshalRule) Meta() Meta {
+func (nonPointerUnmarshalCheck) Meta() Meta {
 	return Meta{
 		Code:            "non-pointer-unmarshal",
 		Summary:         "detect non-pointer unmarshal destinations",
@@ -28,7 +28,7 @@ func (nonPointerUnmarshalRule) Meta() Meta {
 	}
 }
 
-func (nonPointerUnmarshalRule) Run(pass *Pass) {
+func (nonPointerUnmarshalCheck) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
 	for _, packagePath := range []string{
 		"encoding/json",
@@ -99,7 +99,7 @@ func isPointerOrInterface(valueType types.Type) bool {
 	}
 }
 
-func (nonPointerUnmarshalRule) Requirements() Requirements {
+func (nonPointerUnmarshalCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageSSA,
 		Facts: FactCallArguments | FactStaticCalls,

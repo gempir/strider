@@ -16,7 +16,7 @@ import (
 // RegistryOptions selects and configures checks.
 type RegistryOptions struct {
 	Only            []string
-	Settings        map[string]config.RuleConfig
+	Settings        map[string]config.CheckConfig
 	MinimumSeverity diagnostic.Severity
 	FormatExcludes  []string
 	Root            string
@@ -24,8 +24,8 @@ type RegistryOptions struct {
 
 // Registry is an immutable, capability-aware selection of checks.
 type Registry struct {
-	rules      []Rule
-	settings   map[string]configuredRule
+	checks     []Check
+	settings   map[string]configuredCheck
 	knownCodes map[string]bool
 	root       string
 	format     bool
@@ -33,7 +33,7 @@ type Registry struct {
 	semantic   *semantic.Registry
 }
 
-type configuredRule struct {
+type configuredCheck struct {
 	severity diagnostic.Severity
 	excludes []string
 }
@@ -41,11 +41,11 @@ type configuredRule struct {
 // NewRegistry builds one namespace across formatting, CST, AST, type, and SSA
 // checks. Codes are case-insensitive and globally unique.
 func NewRegistry(options RegistryOptions) (*Registry, error) {
-	available, syntaxCodes, semanticCodes, err := availableRules()
+	available, syntaxCodes, semanticCodes, err := availableChecks()
 	if err != nil {
 		return nil, err
 	}
-	settings := make(map[string]config.RuleConfig, len(options.Settings)+1)
+	settings := make(map[string]config.CheckConfig, len(options.Settings)+1)
 	for code, setting := range options.Settings {
 		settings[strings.ToLower(code)] = setting
 	}
@@ -54,7 +54,7 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 	if len(formatSetting.Excludes) != 0 || formatSetting.Severity != "" {
 		settings[formatMeta.Code] = formatSetting
 	}
-	selection, err := core.Select(core.SelectionOptions[Rule]{
+	selection, err := core.Select(core.SelectionOptions[Check]{
 		Checks:          available,
 		Only:            options.Only,
 		Settings:        settings,
@@ -64,19 +64,19 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 		return nil, err
 	}
 
-	syntaxOnly := selectedRuleCodes(selection.Checks, syntaxCodes)
-	semanticOnly := selectedRuleCodes(selection.Checks, semanticCodes)
+	syntaxOnly := selectedCheckCodes(selection.Checks, syntaxCodes)
+	semanticOnly := selectedCheckCodes(selection.Checks, semanticCodes)
 
 	registry := &Registry{
-		rules:      append([]Rule(nil), selection.Checks...),
-		settings:   make(map[string]configuredRule, len(selection.Checks)),
+		checks:     append([]Check(nil), selection.Checks...),
+		settings:   make(map[string]configuredCheck, len(selection.Checks)),
 		knownCodes: selection.KnownCodes,
 		root:       options.Root,
 	}
 	for _, selected := range selection.Checks {
 		meta := selected.Meta()
 		setting := selection.Settings[strings.ToLower(meta.Code)]
-		registry.settings[meta.Code] = configuredRule{
+		registry.settings[meta.Code] = configuredCheck{
 			severity: selection.Severities[meta.Code],
 			excludes: append([]string(nil), setting.Excludes...),
 		}
@@ -112,9 +112,9 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 	return registry, nil
 }
 
-func availableRules() ([]Rule, map[string]bool, map[string]bool, error) {
-	available := []Rule{
-		{
+func availableChecks() ([]Check, map[string]bool, map[string]bool, error) {
+	available := []Check{
+		catalogCheck{
 			meta: formatMeta,
 		},
 	}
@@ -127,14 +127,14 @@ func availableRules() ([]Rule, map[string]bool, map[string]bool, error) {
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	for _, rule := range syntaxRegistry.Rules() {
-		meta := rule.Meta()
+	for _, check := range syntaxRegistry.Checks() {
+		meta := check.Meta()
 		code := strings.ToLower(meta.Code)
 		if known[code] {
 			return nil, nil, nil, fmt.Errorf("duplicate check code %q", meta.Code)
 		}
 		meta.Capabilities = CapabilityCST
-		available = append(available, Rule{
+		available = append(available, catalogCheck{
 			meta: meta,
 		})
 		known[code] = true
@@ -144,14 +144,14 @@ func availableRules() ([]Rule, map[string]bool, map[string]bool, error) {
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	for _, rule := range semanticRegistry.Rules() {
-		meta := rule.Meta()
+	for _, check := range semanticRegistry.Checks() {
+		meta := check.Meta()
 		code := strings.ToLower(meta.Code)
 		if known[code] {
 			return nil, nil, nil, fmt.Errorf("duplicate check code %q", meta.Code)
 		}
 		capabilities := CapabilityAST | CapabilityTypes
-		requirements := rule.Requirements()
+		requirements := check.Requirements()
 		if requirements.Facts != 0 {
 			capabilities |= CapabilityFacts
 		}
@@ -159,7 +159,7 @@ func availableRules() ([]Rule, map[string]bool, map[string]bool, error) {
 			capabilities |= CapabilitySSA
 		}
 		meta.Capabilities = capabilities
-		available = append(available, Rule{
+		available = append(available, catalogCheck{
 			meta: meta,
 		})
 		known[code] = true
@@ -171,10 +171,10 @@ func availableRules() ([]Rule, map[string]bool, map[string]bool, error) {
 	return available, syntaxCodes, semanticCodes, nil
 }
 
-func selectedRuleCodes(selected []Rule, category map[string]bool) []string {
+func selectedCheckCodes(selected []Check, category map[string]bool) []string {
 	result := make([]string, 0)
-	for _, rule := range selected {
-		code := strings.ToLower(rule.Meta().Code)
+	for _, check := range selected {
+		code := strings.ToLower(check.Meta().Code)
 		if category[code] {
 			result = append(result, code)
 		}
@@ -183,20 +183,20 @@ func selectedRuleCodes(selected []Rule, category map[string]bool) []string {
 	return result
 }
 
-func selectedSettings(settings map[string]config.RuleConfig, category map[string]bool) map[string]config.RuleConfig {
-	result := make(map[string]config.RuleConfig, len(category))
+func selectedSettings(settings map[string]config.CheckConfig, category map[string]bool) map[string]config.CheckConfig {
+	result := make(map[string]config.CheckConfig, len(category))
 	for code := range category {
 		result[code] = settings[code]
 	}
 	return result
 }
 
-// Rules returns the selected checks in code order.
-func (registry *Registry) Rules() []Rule {
+// Checks returns the selected checks in code order.
+func (registry *Registry) Checks() []Check {
 	if registry == nil {
 		return nil
 	}
-	return append([]Rule(nil), registry.rules...)
+	return append([]Check(nil), registry.checks...)
 }
 
 // KnownCodes returns every unified check code, including checks that are
@@ -218,8 +218,8 @@ func (registry *Registry) Capabilities() Capability {
 		return 0
 	}
 	var capabilities Capability
-	for _, rule := range registry.rules {
-		capabilities |= rule.Meta().Capabilities
+	for _, check := range registry.checks {
+		capabilities |= check.Meta().Capabilities
 	}
 	return capabilities
 }

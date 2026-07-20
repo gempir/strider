@@ -11,7 +11,7 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type unsupportedMarshalTypeRule struct{}
+type unsupportedMarshalTypeCheck struct{}
 
 type marshalCall struct {
 	format         string
@@ -19,7 +19,7 @@ type marshalCall struct {
 	sourceArgument int
 }
 
-func (unsupportedMarshalTypeRule) Meta() Meta {
+func (unsupportedMarshalTypeCheck) Meta() Meta {
 	return Meta{
 		Code:            "unsupported-marshal-type",
 		Summary:         "detect channels and functions passed to JSON or XML marshaling",
@@ -30,7 +30,7 @@ func (unsupportedMarshalTypeRule) Meta() Meta {
 	}
 }
 
-func (unsupportedMarshalTypeRule) Run(pass *Pass) {
+func (unsupportedMarshalTypeCheck) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
 	for _, packagePath := range []string{
 		"encoding/json",
@@ -181,7 +181,7 @@ func ignoredMarshalField(tag, format string) bool {
 	return value == "-" || strings.HasPrefix(value, "-,")
 }
 
-func (unsupportedMarshalTypeRule) Requirements() Requirements {
+func (unsupportedMarshalTypeCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageSSA,
 		Facts: FactCallArguments | FactStaticCalls,

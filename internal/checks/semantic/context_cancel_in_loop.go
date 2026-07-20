@@ -10,7 +10,7 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type contextCancelInLoopRule struct{}
+type contextCancelInLoopCheck struct{}
 
 type contextCancelAcquisition struct {
 	call   *ast.CallExpr
@@ -29,7 +29,7 @@ type contextCancelPathState struct {
 	active bool
 }
 
-func (contextCancelInLoopRule) Meta() Meta {
+func (contextCancelInLoopCheck) Meta() Meta {
 	return Meta{
 		Code:            "context-cancel-in-loop",
 		Summary:         "detect derived contexts whose cancellation is retained across loop iterations",
@@ -40,7 +40,7 @@ func (contextCancelInLoopRule) Meta() Meta {
 	}
 }
 
-func (contextCancelInLoopRule) Run(pass *Pass) {
+func (contextCancelInLoopCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.ForStmt)(nil),
@@ -261,7 +261,7 @@ func calledCancelObject(pass *Pass, expression ast.Expr) types.Object {
 	return object
 }
 
-func (contextCancelInLoopRule) Requirements() Requirements {
+func (contextCancelInLoopCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

@@ -7,9 +7,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type dynamicPrintfRule struct{}
+type dynamicPrintfCheck struct{}
 
-func (dynamicPrintfRule) Meta() Meta {
+func (dynamicPrintfCheck) Meta() Meta {
 	return Meta{
 		Code:            "dynamic-printf",
 		Summary:         "detect Printf calls with a lone dynamic format",
@@ -20,7 +20,7 @@ func (dynamicPrintfRule) Meta() Meta {
 	}
 }
 
-func (dynamicPrintfRule) Run(pass *Pass) {
+func (dynamicPrintfCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.CallExpr)(nil),
@@ -75,7 +75,7 @@ func dynamicPrintfFormatIndex(pass *Pass, call *ast.CallExpr) (int, bool) {
 	return 0, false
 }
 
-func (dynamicPrintfRule) Requirements() Requirements {
+func (dynamicPrintfCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

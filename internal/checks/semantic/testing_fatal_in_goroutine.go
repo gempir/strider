@@ -9,9 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type testingFatalInGoroutineRule struct{}
+type testingFatalInGoroutineCheck struct{}
 
-func (testingFatalInGoroutineRule) Meta() Meta {
+func (testingFatalInGoroutineCheck) Meta() Meta {
 	return Meta{
 		Code:            "testing-fatal-in-goroutine",
 		Summary:         "detect test termination methods called from child goroutines",
@@ -22,7 +22,7 @@ func (testingFatalInGoroutineRule) Meta() Meta {
 	}
 }
 
-func (testingFatalInGoroutineRule) Run(pass *Pass) {
+func (testingFatalInGoroutineCheck) Run(pass *Pass) {
 	for _, function := range pass.Functions {
 		for _, block := range function.Blocks {
 			for _, instruction := range block.Instrs {
@@ -72,7 +72,7 @@ func terminatingTestMethod(function *ssa.Function) string {
 	return ""
 }
 
-func (testingFatalInGoroutineRule) Requirements() Requirements {
+func (testingFatalInGoroutineCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageSSA,
 	}

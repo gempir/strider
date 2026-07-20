@@ -10,9 +10,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type oddPairedArgumentsRule struct{}
+type oddPairedArgumentsCheck struct{}
 
-func (oddPairedArgumentsRule) Meta() Meta {
+func (oddPairedArgumentsCheck) Meta() Meta {
 	return Meta{
 		Code:            "odd-paired-arguments",
 		Summary:         "detect odd element counts passed to pair-oriented APIs",
@@ -23,7 +23,7 @@ func (oddPairedArgumentsRule) Meta() Meta {
 	}
 }
 
-func (oddPairedArgumentsRule) Run(pass *Pass) {
+func (oddPairedArgumentsCheck) Run(pass *Pass) {
 	contracts := pairedArgumentContracts(pass)
 	pass.Inspect(
 		[]ast.Node{
@@ -219,7 +219,7 @@ func knownCompositeLength(pass *Pass, expression ast.Expr) int {
 	return len(composite.Elts)
 }
 
-func (oddPairedArgumentsRule) Requirements() Requirements {
+func (oddPairedArgumentsCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

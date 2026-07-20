@@ -28,8 +28,8 @@ type target struct {
 }
 
 type analysisTask struct {
-	pass *Pass
-	rule Rule
+	pass  *Pass
+	check Check
 }
 
 type ssaBuildResult struct {
@@ -56,7 +56,7 @@ type analysisFileInfoCacheEntry struct {
 	info analysisFileInfo
 }
 
-// Run loads the requested packages, executes the selected rules, and returns
+// Run loads the requested packages, executes the selected checks, and returns
 // deterministic diagnostics. Directories are analyzed recursively, matching
 // the path behavior of strider syntax.
 func Run(paths []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
@@ -71,7 +71,7 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnos
 	if err != nil {
 		return nil, err
 	}
-	if len(registry.rules) == 0 {
+	if len(registry.checks) == 0 {
 		return []diagnostic.Diagnostic{}, nil
 	}
 	plan := registry.executionPlan()
@@ -168,7 +168,7 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnos
 		return entry.info
 	}
 
-	taskCount := len(passes) * len(registry.rules)
+	taskCount := len(passes) * len(registry.checks)
 	jobs := make(chan analysisTask, taskCount)
 	results := make(chan []analysisFinding, taskCount)
 	workers := min(runtime.GOMAXPROCS(0), max(1, taskCount))
@@ -183,10 +183,10 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnos
 		}()
 	}
 	for _, pass := range passes {
-		for _, rule := range registry.rules {
+		for _, check := range registry.checks {
 			jobs <- analysisTask{
-				pass: pass,
-				rule: rule,
+				pass:  pass,
+				check: check,
 			}
 		}
 	}
@@ -274,7 +274,7 @@ func selectInitialPackages(loaded []*packages.Package) []*packages.Package {
 }
 
 func runAnalysisTask(task analysisTask, registry *Registry, fileInfoFor func(string) analysisFileInfo) []analysisFinding {
-	meta := task.rule.Meta()
+	meta := task.check.Meta()
 	severity := registry.Severity(meta.Code)
 	pass := *task.pass
 	findings := []analysisFinding{}
@@ -303,10 +303,10 @@ func runAnalysisTask(task analysisTask, registry *Registry, fileInfoFor func(str
 			},
 		)
 	}
-	if configurable, ok := task.rule.(configurableRule); ok {
+	if configurable, ok := task.check.(configurableCheck); ok {
 		configurable.RunConfigured(&pass, registry.settings[meta.Code].config)
 	} else {
-		task.rule.Run(&pass)
+		task.check.Run(&pass)
 	}
 	return findings
 }

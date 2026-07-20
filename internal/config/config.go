@@ -17,7 +17,7 @@ import (
 
 const Filename = "strider.toml"
 
-var behavioralRuleOptions = []string{
+var behavioralCheckOptions = []string{
 	"characters",
 	"max-lines",
 	"max-statements",
@@ -48,7 +48,7 @@ type ToolConfig struct {
 	Excludes        []string               `toml:"excludes"`
 	Baseline        string                 `toml:"baseline"`
 	MinimumSeverity string                 `toml:"minimum-severity"`
-	Rules           map[string]CheckConfig `toml:"-"`
+	Settings        map[string]CheckConfig `toml:"-"`
 }
 
 type fileConfig struct {
@@ -73,11 +73,6 @@ type CheckConfig struct {
 	definedOptions   map[string]bool
 }
 
-// RuleConfig is retained for source compatibility while callers migrate to
-// the product-wide check vocabulary.
-// Deprecated: use CheckConfig.
-type RuleConfig = CheckConfig
-
 func Defaults() Config {
 	return Config{
 		Version: 1,
@@ -92,7 +87,7 @@ func Defaults() Config {
 func defaultToolConfig() ToolConfig {
 	return ToolConfig{
 		MinimumSeverity: string(diagnostic.SeverityWarning),
-		Rules:           make(map[string]CheckConfig),
+		Settings:        make(map[string]CheckConfig),
 	}
 }
 
@@ -147,7 +142,7 @@ func Load(explicitPath string, disabled bool) (Config, error) {
 		sort.Strings(keys)
 		return Config{}, fmt.Errorf("%s: unknown configuration key(s): %s", absolute, strings.Join(keys, ", "))
 	}
-	recordDefinedRuleOptions(&configuration, metadata)
+	recordDefinedCheckOptions(&configuration, metadata)
 	configuration.Path = absolute
 	configuration.Root = filepath.Dir(absolute)
 	if err := configuration.validate(); err != nil {
@@ -156,18 +151,18 @@ func Load(explicitPath string, disabled bool) (Config, error) {
 	return configuration, nil
 }
 
-func recordDefinedRuleOptions(configuration *Config, metadata toml.MetaData) {
-	for code, rule := range configuration.Checks.Rules {
-		for _, option := range behavioralRuleOptions {
+func recordDefinedCheckOptions(configuration *Config, metadata toml.MetaData) {
+	for code, check := range configuration.Checks.Settings {
+		for _, option := range behavioralCheckOptions {
 			if !metadata.IsDefined("checks", code, option) {
 				continue
 			}
-			if rule.definedOptions == nil {
-				rule.definedOptions = make(map[string]bool)
+			if check.definedOptions == nil {
+				check.definedOptions = make(map[string]bool)
 			}
-			rule.definedOptions[option] = true
+			check.definedOptions[option] = true
 		}
-		configuration.Checks.Rules[code] = rule
+		configuration.Checks.Settings[code] = check
 	}
 }
 
@@ -198,19 +193,19 @@ func decodeChecks(destination *ToolConfig, values map[string]toml.Primitive, met
 		if metadata.Type("checks", code) != "Hash" {
 			return fmt.Errorf("unknown configuration key(s): checks.%s", code)
 		}
-		rule := CheckConfig{}
-		if err := metadata.PrimitiveDecode(value, &rule); err != nil {
+		check := CheckConfig{}
+		if err := metadata.PrimitiveDecode(value, &check); err != nil {
 			return err
 		}
-		destination.Rules[code] = rule
+		destination.Settings[code] = check
 	}
 	return nil
 }
 
 // HasExplicitOption reports whether a behavioral option was present in the
 // decoded TOML, including when its value decoded to the Go zero value.
-func (rule CheckConfig) HasExplicitOption(option string) bool {
-	return rule.definedOptions[option]
+func (check CheckConfig) HasExplicitOption(option string) bool {
+	return check.definedOptions[option]
 }
 
 func discover() (string, error) {
@@ -240,7 +235,7 @@ func (configuration Config) validate() error {
 		return fmt.Errorf("unsupported configuration version %d; expected 1", configuration.Version)
 	}
 	if !ui.ValidColorMode(configuration.Color) {
-		return fmt.Errorf("color must be \"auto\", \"always\", or \"never\"")
+		return fmt.Errorf("color must be auto, always, or never")
 	}
 	if configuration.Formatter.PrintWidth < 40 || configuration.Formatter.PrintWidth > 500 {
 		return fmt.Errorf("formatter.print-width must be between 40 and 500")
@@ -252,17 +247,17 @@ func validateTool(name string, tool ToolConfig) error {
 	if !diagnostic.ValidSeverity(diagnostic.Severity(tool.MinimumSeverity)) {
 		return fmt.Errorf("%s.minimum-severity must be none, note, warning, or error", name)
 	}
-	for code, rule := range tool.Rules {
-		if rule.Severity != "" && !diagnostic.ValidSeverity(diagnostic.Severity(rule.Severity)) {
+	for code, check := range tool.Settings {
+		if check.Severity != "" && !diagnostic.ValidSeverity(diagnostic.Severity(check.Severity)) {
 			return fmt.Errorf("%s.%s.severity must be none, note, warning, or error", name, code)
 		}
 		for option, value := range map[string]int{
-			"max-lines":          rule.MaxLines,
-			"max-statements":     rule.MaxStatements,
-			"max-results":        rule.MaxResults,
-			"max-parameters":     rule.MaxParameters,
-			"max-public-structs": rule.MaxPublicStructs,
-			"max-methods":        rule.MaxMethods,
+			"max-lines":          check.MaxLines,
+			"max-statements":     check.MaxStatements,
+			"max-results":        check.MaxResults,
+			"max-parameters":     check.MaxParameters,
+			"max-public-structs": check.MaxPublicStructs,
+			"max-methods":        check.MaxMethods,
 		} {
 			if value < 0 {
 				return fmt.Errorf("%s.%s.%s must not be negative", name, code, option)
@@ -279,22 +274,22 @@ func (configuration Config) Resolve(path string) string {
 	return filepath.Join(configuration.Root, filepath.FromSlash(path))
 }
 
-// EffectiveCheckRule returns one rule setting with the tool-wide exclusions
+// EffectiveCheck returns one check setting with the tool-wide exclusions
 // appended.
-func (configuration Config) EffectiveCheckRule(code string) CheckConfig {
-	rule := cloneRuleConfig(configuration.Checks.Rules[code])
-	rule.Excludes = append(append([]string(nil), configuration.Checks.Excludes...), rule.Excludes...)
-	return rule
+func (configuration Config) EffectiveCheck(code string) CheckConfig {
+	check := cloneCheckConfig(configuration.Checks.Settings[code])
+	check.Excludes = append(append([]string(nil), configuration.Checks.Excludes...), check.Excludes...)
+	return check
 }
 
-func cloneRuleConfig(rule CheckConfig) CheckConfig {
-	cloned := rule
-	cloned.Excludes = append([]string(nil), rule.Excludes...)
-	cloned.Characters = append([]string(nil), rule.Characters...)
-	cloned.BlockedImports = append([]string(nil), rule.BlockedImports...)
-	if rule.definedOptions != nil {
-		cloned.definedOptions = make(map[string]bool, len(rule.definedOptions))
-		for option := range rule.definedOptions {
+func cloneCheckConfig(check CheckConfig) CheckConfig {
+	cloned := check
+	cloned.Excludes = append([]string(nil), check.Excludes...)
+	cloned.Characters = append([]string(nil), check.Characters...)
+	cloned.BlockedImports = append([]string(nil), check.BlockedImports...)
+	if check.definedOptions != nil {
+		cloned.definedOptions = make(map[string]bool, len(check.definedOptions))
+		for option := range check.definedOptions {
 			cloned.definedOptions[option] = true
 		}
 	}

@@ -8,9 +8,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type identicalBinaryOperandsRule struct{}
+type identicalBinaryOperandsCheck struct{}
 
-func (identicalBinaryOperandsRule) Meta() Meta {
+func (identicalBinaryOperandsCheck) Meta() Meta {
 	return Meta{
 		Code:            "identical-binary-operands",
 		Summary:         "detect suspicious binary operations with identical operands",
@@ -21,7 +21,7 @@ func (identicalBinaryOperandsRule) Meta() Meta {
 	}
 }
 
-func (identicalBinaryOperandsRule) Run(pass *Pass) {
+func (identicalBinaryOperandsCheck) Run(pass *Pass) {
 	parents := pass.analysisParents()
 	pass.Inspect(
 		[]ast.Node{
@@ -98,7 +98,7 @@ func isComparableAssertion(binary *ast.BinaryExpr, parents map[ast.Node]ast.Node
 	return false
 }
 
-func (identicalBinaryOperandsRule) Requirements() Requirements {
+func (identicalBinaryOperandsCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 		Facts: FactParents,

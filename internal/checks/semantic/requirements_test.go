@@ -12,37 +12,37 @@ import (
 	"golang.org/x/tools/go/ssa"
 )
 
-func TestRuleRequirementsCoverCatalog(t *testing.T) {
-	seen := make(map[string]bool, len(ruleCatalog))
+func TestCheckRequirementsCoverCatalog(t *testing.T) {
+	seen := make(map[string]bool, len(checkCatalog))
 	typed := 0
-	ssaRules := 0
-	for _, rule := range ruleCatalog {
-		code := rule.Meta().Code
+	ssaChecks := 0
+	for _, check := range checkCatalog {
+		code := check.Meta().Code
 		if seen[code] {
-			t.Fatalf("duplicate rule %q", code)
+			t.Fatalf("duplicate check %q", code)
 		}
 		seen[code] = true
 		requirements, ok := RequirementsFor(code)
 		if !ok {
-			t.Fatalf("rule %q has no requirements", code)
+			t.Fatalf("check %q has no requirements", code)
 		}
 		switch requirements.Stage {
 		case AnalysisStageTypes:
 			typed++
 		case AnalysisStageSSA:
-			ssaRules++
+			ssaChecks++
 		default:
-			t.Fatalf("rule %q has invalid stage %d", code, requirements.Stage)
+			t.Fatalf("check %q has invalid stage %d", code, requirements.Stage)
 		}
 		if UsesSSA(code) != (requirements.Stage == AnalysisStageSSA) {
 			t.Fatalf("UsesSSA(%q) disagrees with its requirements", code)
 		}
 		if requirements.Facts.Has(FactStaticCalls) != (len(requirements.staticCallPackages) != 0) {
-			t.Fatalf("rule %q has inconsistent static-call requirements", code)
+			t.Fatalf("check %q has inconsistent static-call requirements", code)
 		}
 	}
-	if typed != 68 || ssaRules != 44 {
-		t.Fatalf("got %d typed and %d SSA rules, want 68 and 44", typed, ssaRules)
+	if typed != 68 || ssaChecks != 44 {
+		t.Fatalf("got %d typed and %d SSA checks, want 68 and 44", typed, ssaChecks)
 	}
 }
 

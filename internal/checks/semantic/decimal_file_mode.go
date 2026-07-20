@@ -9,9 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type decimalFileModeRule struct{}
+type decimalFileModeCheck struct{}
 
-func (decimalFileModeRule) Meta() Meta {
+func (decimalFileModeCheck) Meta() Meta {
 	return Meta{
 		Code:            "decimal-file-mode",
 		Summary:         "detect decimal file modes that look like octal permissions",
@@ -22,7 +22,7 @@ func (decimalFileModeRule) Meta() Meta {
 	}
 }
 
-func (decimalFileModeRule) Run(pass *Pass) {
+func (decimalFileModeCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.CallExpr)(nil),
@@ -70,7 +70,7 @@ func looksLikeDecimalMode(value string) bool {
 	return true
 }
 
-func (decimalFileModeRule) Requirements() Requirements {
+func (decimalFileModeCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

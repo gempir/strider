@@ -24,9 +24,9 @@ type Result struct {
 	Ignored bool
 }
 
-// Session reuses formatter metadata across a batch of files. A Session is safe
+// Formatter reuses formatter metadata across a batch of files. A Formatter is safe
 // for concurrent use by independent formatting calls.
-type Session struct {
+type Formatter struct {
 	modules modulePathCache
 }
 
@@ -36,8 +36,8 @@ func DefaultOptions() Options {
 	}
 }
 
-func NewSession() *Session {
-	return &Session{}
+func NewFormatter() *Formatter {
+	return &Formatter{}
 }
 
 func Format(filename string, source []byte) (Result, error) {
@@ -45,10 +45,10 @@ func Format(filename string, source []byte) (Result, error) {
 }
 
 func FormatWithOptions(filename string, source []byte, options Options) (Result, error) {
-	return NewSession().FormatWithOptions(filename, source, options)
+	return NewFormatter().FormatWithOptions(filename, source, options)
 }
 
-func (s *Session) FormatWithOptions(filename string, source []byte, options Options) (Result, error) {
+func (s *Formatter) FormatWithOptions(filename string, source []byte, options Options) (Result, error) {
 	if IsIgnored(source) {
 		copyOfSource := append([]byte(nil), source...)
 		return Result{
@@ -86,7 +86,7 @@ func IsIgnored(source []byte) bool {
 
 // FormatTree formats a previously parsed source tree. The tree and its source
 // remain immutable and may be shared with other checks.
-func (s *Session) FormatTree(filename string, originalTree *cst.Tree, options Options) (Result, error) {
+func (s *Formatter) FormatTree(filename string, originalTree *cst.Tree, options Options) (Result, error) {
 	options = normalizeOptions(options)
 	preview, module, err := s.previewTree(filename, originalTree, options)
 	if err != nil || preview.Ignored {
@@ -112,12 +112,12 @@ func (s *Session) FormatTree(filename string, originalTree *cst.Tree, options Op
 // FormatTreeUnverified renders a read-only formatting candidate without reparsing it.
 // It is intended for drift checks; callers that may expose or write the
 // candidate must use FormatTree and its equivalence/idempotence checks.
-func (s *Session) FormatTreeUnverified(filename string, originalTree *cst.Tree, options Options) (Result, error) {
+func (s *Formatter) FormatTreeUnverified(filename string, originalTree *cst.Tree, options Options) (Result, error) {
 	result, _, err := s.previewTree(filename, originalTree, options)
 	return result, err
 }
 
-func (s *Session) previewTree(filename string, originalTree *cst.Tree, options Options) (Result, string, error) {
+func (s *Formatter) previewTree(filename string, originalTree *cst.Tree, options Options) (Result, string, error) {
 	if originalTree == nil {
 		return Result{}, "", fmt.Errorf("format %s: nil concrete syntax tree", filename)
 	}
@@ -163,7 +163,7 @@ func (s *Session) previewTree(filename string, originalTree *cst.Tree, options O
 }
 
 func renderCandidate(filename string, tree *cst.Tree, options Options, module string) ([]byte, error) {
-	formatted, err := goformat.Source([]byte(renderConcreteWithModule(tree, options, module)))
+	formatted, err := goformat.Source([]byte(renderWithModule(tree, options, module)))
 	if err != nil {
 		return nil, fmt.Errorf("formatter gofmt compatibility: %w", err)
 	}

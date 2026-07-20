@@ -8,9 +8,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type untrappableSignalRule struct{}
+type untrappableSignalCheck struct{}
 
-func (untrappableSignalRule) Meta() Meta {
+func (untrappableSignalCheck) Meta() Meta {
 	return Meta{
 		Code:            "untrappable-signal",
 		Summary:         "detect attempts to handle signals that cannot be trapped",
@@ -21,7 +21,7 @@ func (untrappableSignalRule) Meta() Meta {
 	}
 }
 
-func (untrappableSignalRule) Run(pass *Pass) {
+func (untrappableSignalCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.CallExpr)(nil),
@@ -104,7 +104,7 @@ func untrappableSignalName(info *types.Info, expression ast.Expr) string {
 	}
 }
 
-func (untrappableSignalRule) Requirements() Requirements {
+func (untrappableSignalCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

@@ -8,9 +8,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type deferCloseBeforeErrorCheckRule struct{}
+type deferCloseBeforeErrorCheckCheck struct{}
 
-func (deferCloseBeforeErrorCheckRule) Meta() Meta {
+func (deferCloseBeforeErrorCheckCheck) Meta() Meta {
 	return Meta{
 		Code:            "defer-close-before-error-check",
 		Summary:         "detect deferred Close calls scheduled before checking acquisition errors",
@@ -21,7 +21,7 @@ func (deferCloseBeforeErrorCheckRule) Meta() Meta {
 	}
 }
 
-func (deferCloseBeforeErrorCheckRule) Run(pass *Pass) {
+func (deferCloseBeforeErrorCheckCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.BlockStmt)(nil),
@@ -93,7 +93,7 @@ func selectorRootIdentifier(expression ast.Expr) *ast.Ident {
 	}
 }
 
-func (deferCloseBeforeErrorCheckRule) Requirements() Requirements {
+func (deferCloseBeforeErrorCheckCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

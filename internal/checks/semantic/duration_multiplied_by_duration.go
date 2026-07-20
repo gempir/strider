@@ -7,9 +7,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type durationMultipliedByDurationRule struct{}
+type durationMultipliedByDurationCheck struct{}
 
-func (durationMultipliedByDurationRule) Meta() Meta {
+func (durationMultipliedByDurationCheck) Meta() Meta {
 	return Meta{
 		Code:            "duration-multiplied-by-duration",
 		Summary:         "detect multiplication of two time.Duration values",
@@ -20,7 +20,7 @@ func (durationMultipliedByDurationRule) Meta() Meta {
 	}
 }
 
-func (durationMultipliedByDurationRule) Run(pass *Pass) {
+func (durationMultipliedByDurationCheck) Run(pass *Pass) {
 	pass.InspectWithStack(
 		[]ast.Node{
 			(*ast.AssignStmt)(nil),
@@ -122,7 +122,7 @@ func isUnitlessDurationConversion(pass *Pass, expression ast.Expr) bool {
 	return semanticDurationFactors(pass, call.Args[0]) == 0
 }
 
-func (durationMultipliedByDurationRule) Requirements() Requirements {
+func (durationMultipliedByDurationCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

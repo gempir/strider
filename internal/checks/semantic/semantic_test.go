@@ -3267,7 +3267,7 @@ func good(rows *sql.Rows) error {
 	}
 }
 
-func TestRegistryRejectsUnknownRule(t *testing.T) {
+func TestRegistryRejectsUnknownCheck(t *testing.T) {
 	if _, err := newRegistry([]string{
 		"missing-analyzer",
 	}); err == nil || !strings.Contains(err.Error(), "missing-analyzer") {
@@ -3276,9 +3276,9 @@ func TestRegistryRejectsUnknownRule(t *testing.T) {
 }
 
 func TestEveryAnalyzerAcceptsCommonConfiguration(t *testing.T) {
-	settings := make(map[string]config.RuleConfig, len(allRules()))
-	for _, rule := range allRules() {
-		settings[rule.Meta().Code] = config.RuleConfig{
+	settings := make(map[string]config.CheckConfig, len(allChecks()))
+	for _, check := range allChecks() {
+		settings[check.Meta().Code] = config.CheckConfig{
 			Severity: "note",
 		}
 	}
@@ -3288,12 +3288,12 @@ func TestEveryAnalyzerAcceptsCommonConfiguration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := len(registry.Rules()), len(allRules()); got != want {
+	if got, want := len(registry.Checks()), len(allChecks()); got != want {
 		t.Fatalf("configured %d analyzers; want %d", got, want)
 	}
-	for _, rule := range registry.Rules() {
-		if severity := registry.Severity(rule.Meta().Code); severity != diagnostic.SeverityNote {
-			t.Errorf("%s severity = %s", rule.Meta().Code, severity)
+	for _, check := range registry.Checks() {
+		if severity := registry.Severity(check.Meta().Code); severity != diagnostic.SeverityNote {
+			t.Errorf("%s severity = %s", check.Meta().Code, severity)
 		}
 	}
 }
@@ -3305,7 +3305,7 @@ func TestAnalyzerRegistryFiltersByEffectiveSeverityBeforePlanning(t *testing.T) 
 				"regexp-match-in-loop",
 				"invalid-template",
 			},
-			Settings: map[string]config.RuleConfig{
+			Settings: map[string]config.CheckConfig{
 				"regexp-match-in-loop": {
 					Severity: "warning",
 				},
@@ -3319,8 +3319,8 @@ func TestAnalyzerRegistryFiltersByEffectiveSeverityBeforePlanning(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := len(registry.Rules()); got != 1 || registry.Rules()[0].Meta().Code != "invalid-template" {
-		t.Fatalf("filtered analyzers = %#v, want invalid-template", registry.Rules())
+	if got := len(registry.Checks()); got != 1 || registry.Checks()[0].Meta().Code != "invalid-template" {
+		t.Fatalf("filtered analyzers = %#v, want invalid-template", registry.Checks())
 	}
 	if registry.executionPlan().needsSSA() {
 		t.Fatal("filtered SSA analyzer still affected the execution plan")
@@ -3332,7 +3332,7 @@ func TestAnalyzerRegistryFiltersByEffectiveSeverityBeforePlanning(t *testing.T) 
 				"regexp-match-in-loop",
 				"invalid-template",
 			},
-			Settings: map[string]config.RuleConfig{
+			Settings: map[string]config.CheckConfig{
 				"regexp-match-in-loop": {
 					Severity: "error",
 				},
@@ -3346,8 +3346,8 @@ func TestAnalyzerRegistryFiltersByEffectiveSeverityBeforePlanning(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := len(registry.Rules()); got != 1 || registry.Rules()[0].Meta().Code != "regexp-match-in-loop" {
-		t.Fatalf("overridden analyzers = %#v, want regexp-match-in-loop", registry.Rules())
+	if got := len(registry.Checks()); got != 1 || registry.Checks()[0].Meta().Code != "regexp-match-in-loop" {
+		t.Fatalf("overridden analyzers = %#v, want regexp-match-in-loop", registry.Checks())
 	}
 	if !registry.executionPlan().needsSSA() {
 		t.Fatal("included SSA analyzer was omitted from the execution plan")
@@ -3362,14 +3362,14 @@ func TestAnalyzerRegistryRejectsInvalidMinimumSeverity(t *testing.T) {
 		t.Fatalf("got %v, want minimum severity error", err)
 	}
 	_, err = NewRegistry(RegistryOptions{
-		Settings: map[string]config.RuleConfig{
+		Settings: map[string]config.CheckConfig{
 			"invalid-template": {
 				Severity: "fatal",
 			},
 		},
 	})
 	if err == nil || !strings.Contains(err.Error(), "severity must be") {
-		t.Fatalf("got %v, want rule severity error", err)
+		t.Fatalf("got %v, want check severity error", err)
 	}
 }
 
@@ -3379,7 +3379,7 @@ func TestAnalyzerRegistrySkipsLoadingWhenSeverityFilterIsEmpty(t *testing.T) {
 			Only: []string{
 				"suspicious-sleep",
 			},
-			Settings: map[string]config.RuleConfig{
+			Settings: map[string]config.CheckConfig{
 				"suspicious-sleep": {
 					Severity: "warning",
 				},

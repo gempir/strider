@@ -9,9 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type timerResetDrainRaceRule struct{}
+type timerResetDrainRaceCheck struct{}
 
-func (timerResetDrainRaceRule) Meta() Meta {
+func (timerResetDrainRaceCheck) Meta() Meta {
 	return Meta{
 		Code:            "timer-reset-drain-race",
 		Summary:         "detect attempts to drain a timer based on Reset's result",
@@ -22,7 +22,7 @@ func (timerResetDrainRaceRule) Meta() Meta {
 	}
 }
 
-func (timerResetDrainRaceRule) Run(pass *Pass) {
+func (timerResetDrainRaceCheck) Run(pass *Pass) {
 	for _, function := range pass.Functions {
 		for _, block := range function.Blocks {
 			for _, instruction := range block.Instrs {
@@ -121,7 +121,7 @@ func isTimeChannel(valueType types.Type) bool {
 	return isNamedType(channel.Elem(), "time", "Time")
 }
 
-func (timerResetDrainRaceRule) Requirements() Requirements {
+func (timerResetDrainRaceCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageSSA,
 	}

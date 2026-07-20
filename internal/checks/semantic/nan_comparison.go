@@ -8,9 +8,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type nanComparisonRule struct{}
+type nanComparisonCheck struct{}
 
-func (nanComparisonRule) Meta() Meta {
+func (nanComparisonCheck) Meta() Meta {
 	return Meta{
 		Code:            "nan-comparison",
 		Summary:         "detect direct comparisons with NaN",
@@ -21,7 +21,7 @@ func (nanComparisonRule) Meta() Meta {
 	}
 }
 
-func (nanComparisonRule) Run(pass *Pass) {
+func (nanComparisonCheck) Run(pass *Pass) {
 	for _, function := range pass.Functions {
 		for _, block := range function.Blocks {
 			for _, instruction := range block.Instrs {
@@ -78,7 +78,7 @@ func flattenEquivalentPhi(value ssa.Value) ssa.Value {
 	return result
 }
 
-func (nanComparisonRule) Requirements() Requirements {
+func (nanComparisonCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageSSA,
 	}

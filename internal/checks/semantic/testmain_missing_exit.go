@@ -7,9 +7,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type testMainMissingExitRule struct{}
+type testMainMissingExitCheck struct{}
 
-func (testMainMissingExitRule) Meta() Meta {
+func (testMainMissingExitCheck) Meta() Meta {
 	return Meta{
 		Code:            "test-main-missing-exit",
 		Summary:         "detect legacy TestMain functions that lose the test exit code",
@@ -20,7 +20,7 @@ func (testMainMissingExitRule) Meta() Meta {
 	}
 }
 
-func (testMainMissingExitRule) Run(pass *Pass) {
+func (testMainMissingExitCheck) Run(pass *Pass) {
 	if pass.GoVersion == "" || version.Compare(normalizeGoVersion(pass.GoVersion), "go1.15") >= 0 {
 		return
 	}
@@ -70,7 +70,7 @@ func isTestMainFunction(pass *Pass, function *ast.FuncDecl) bool {
 	return isPointerToNamedType(pass.TypesInfo.TypeOf(function.Type.Params.List[0].Type), "testing", "M")
 }
 
-func (testMainMissingExitRule) Requirements() Requirements {
+func (testMainMissingExitCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

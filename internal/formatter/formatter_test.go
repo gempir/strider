@@ -514,7 +514,7 @@ type options struct {
 	}
 }
 
-func TestFormatConcreteDeclarationsAndHeaders(t *testing.T) {
+func TestFormatSyntaxDeclarationsAndHeaders(t *testing.T) {
 	input := []byte(`package p
 const(alpha=1;beta=2)
 type values struct{Items []int}
@@ -710,7 +710,7 @@ func TestFormatTreeMatchesSourceFormatting(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	session := NewSession()
+	session := NewFormatter()
 	fromTree, err := session.FormatTree("tree.go", tree, DefaultOptions())
 	if err != nil {
 		t.Fatal(err)

@@ -9,14 +9,14 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type invalidStrconvArgumentRule struct{}
+type invalidStrconvArgumentCheck struct{}
 
 type strconvConstraint struct {
 	index    int
 	validate func(int64) string
 }
 
-func (invalidStrconvArgumentRule) Meta() Meta {
+func (invalidStrconvArgumentCheck) Meta() Meta {
 	return Meta{
 		Code:            "invalid-strconv-argument",
 		Summary:         "detect invalid constant arguments to strconv functions",
@@ -27,7 +27,7 @@ func (invalidStrconvArgumentRule) Meta() Meta {
 	}
 }
 
-func (invalidStrconvArgumentRule) Run(pass *Pass) {
+func (invalidStrconvArgumentCheck) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
 	for _, call := range pass.staticCallsInPackage("strconv") {
 		constraints := strconvConstraints(call)
@@ -184,7 +184,7 @@ func validateFloatFormat(value int64) string {
 	}
 }
 
-func (invalidStrconvArgumentRule) Requirements() Requirements {
+func (invalidStrconvArgumentCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageSSA,
 		Facts: FactCallArguments | FactStaticCalls,

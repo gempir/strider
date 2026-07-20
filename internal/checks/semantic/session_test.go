@@ -302,7 +302,7 @@ func check() { time.Sleep(1) }
 			Only: []string{
 				"suspicious-sleep",
 			},
-			Settings: map[string]config.RuleConfig{
+			Settings: map[string]config.CheckConfig{
 				"suspicious-sleep": {
 					Severity: "warning",
 					Excludes: []string{
@@ -354,7 +354,7 @@ func check() { time.Sleep(2) }
 			Only: []string{
 				"suspicious-sleep",
 			},
-			Settings: map[string]config.RuleConfig{
+			Settings: map[string]config.CheckConfig{
 				"suspicious-sleep": {
 					Severity: "warning",
 					Excludes: []string{
@@ -384,7 +384,7 @@ func check() { time.Sleep(2) }
 			Only: []string{
 				"suspicious-sleep",
 			},
-			Settings: map[string]config.RuleConfig{
+			Settings: map[string]config.CheckConfig{
 				"suspicious-sleep": {
 					Severity: "error",
 					Excludes: []string{

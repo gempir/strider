@@ -6,9 +6,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type nilMapAssignmentRule struct{}
+type nilMapAssignmentCheck struct{}
 
-func (nilMapAssignmentRule) Meta() Meta {
+func (nilMapAssignmentCheck) Meta() Meta {
 	return Meta{
 		Code:            "nil-map-assignment",
 		Summary:         "detect assignments into maps proven to be nil",
@@ -19,7 +19,7 @@ func (nilMapAssignmentRule) Meta() Meta {
 	}
 }
 
-func (nilMapAssignmentRule) Run(pass *Pass) {
+func (nilMapAssignmentCheck) Run(pass *Pass) {
 	for _, function := range pass.Functions {
 		for _, block := range function.Blocks {
 			for _, instruction := range block.Instrs {
@@ -33,7 +33,7 @@ func (nilMapAssignmentRule) Run(pass *Pass) {
 	}
 }
 
-func (nilMapAssignmentRule) Requirements() Requirements {
+func (nilMapAssignmentCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageSSA,
 	}

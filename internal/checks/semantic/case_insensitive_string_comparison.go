@@ -7,9 +7,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type caseInsensitiveStringComparisonRule struct{}
+type caseInsensitiveStringComparisonCheck struct{}
 
-func (caseInsensitiveStringComparisonRule) Meta() Meta {
+func (caseInsensitiveStringComparisonCheck) Meta() Meta {
 	return Meta{
 		Code:            "case-insensitive-string-comparison",
 		Summary:         "detect allocating case conversions used only for comparison",
@@ -20,7 +20,7 @@ func (caseInsensitiveStringComparisonRule) Meta() Meta {
 	}
 }
 
-func (caseInsensitiveStringComparisonRule) Run(pass *Pass) {
+func (caseInsensitiveStringComparisonCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.BinaryExpr)(nil),
@@ -56,7 +56,7 @@ func (caseInsensitiveStringComparisonRule) Run(pass *Pass) {
 	)
 }
 
-func (caseInsensitiveStringComparisonRule) Requirements() Requirements {
+func (caseInsensitiveStringComparisonCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

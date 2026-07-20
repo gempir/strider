@@ -12,9 +12,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type selfAssignmentRule struct{}
+type selfAssignmentCheck struct{}
 
-func (selfAssignmentRule) Meta() Meta {
+func (selfAssignmentCheck) Meta() Meta {
 	return Meta{
 		Code:            "self-assignment",
 		Summary:         "detect assignments that store an expression back into itself",
@@ -25,7 +25,7 @@ func (selfAssignmentRule) Meta() Meta {
 	}
 }
 
-func (selfAssignmentRule) Run(pass *Pass) {
+func (selfAssignmentCheck) Run(pass *Pass) {
 	purity := newPurityChecker(pass)
 	functions := functionsByObject(pass.Functions)
 	pass.Inspect(
@@ -121,7 +121,7 @@ func pureBuiltinCall(call *ast.CallExpr) bool {
 	}
 }
 
-func (selfAssignmentRule) Requirements() Requirements {
+func (selfAssignmentCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageSSA,
 	}

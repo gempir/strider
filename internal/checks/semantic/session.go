@@ -360,26 +360,26 @@ func addRegistryFingerprint(writer *fingerprintWriter, registry *Registry) {
 		severity string
 		excludes []string
 	}
-	rules := make([]ruleFingerprint, 0, len(registry.rules))
-	for _, rule := range registry.rules {
-		code := rule.Meta().Code
+	checks := make([]ruleFingerprint, 0, len(registry.checks))
+	for _, check := range registry.checks {
+		code := check.Meta().Code
 		setting := registry.settings[code]
 		excludes := append([]string(nil), setting.excludes...)
 		sort.Strings(excludes)
-		rules = append(rules, ruleFingerprint{
+		checks = append(checks, ruleFingerprint{
 			code:     code,
 			severity: string(setting.severity),
 			excludes: excludes,
 		})
 	}
-	sort.Slice(rules, func(leftIndex, rightIndex int) bool {
-		return rules[leftIndex].code < rules[rightIndex].code
+	sort.Slice(checks, func(leftIndex, rightIndex int) bool {
+		return checks[leftIndex].code < checks[rightIndex].code
 	})
 	writer.addString(registry.root)
-	for _, rule := range rules {
-		writer.addString(rule.code)
-		writer.addString(rule.severity)
-		writer.addStrings(rule.excludes)
+	for _, check := range checks {
+		writer.addString(check.code)
+		writer.addString(check.severity)
+		writer.addStrings(check.excludes)
 	}
 	plan := registry.executionPlan()
 	writer.addUint64(uint64(plan.requirements.Stage))

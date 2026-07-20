@@ -8,9 +8,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type invalidExecCommandRule struct{}
+type invalidExecCommandCheck struct{}
 
-func (invalidExecCommandRule) Meta() Meta {
+func (invalidExecCommandCheck) Meta() Meta {
 	return Meta{
 		Code:            "invalid-exec-command",
 		Summary:         "detect shell commands passed as exec.Command programs",
@@ -21,7 +21,7 @@ func (invalidExecCommandRule) Meta() Meta {
 	}
 }
 
-func (invalidExecCommandRule) Run(pass *Pass) {
+func (invalidExecCommandCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.CallExpr)(nil),
@@ -46,7 +46,7 @@ func (invalidExecCommandRule) Run(pass *Pass) {
 	)
 }
 
-func (invalidExecCommandRule) Requirements() Requirements {
+func (invalidExecCommandCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

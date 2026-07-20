@@ -7,9 +7,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type deferredReturnFunctionNotCalledRule struct{}
+type deferredReturnFunctionNotCalledCheck struct{}
 
-func (deferredReturnFunctionNotCalledRule) Meta() Meta {
+func (deferredReturnFunctionNotCalledCheck) Meta() Meta {
 	return Meta{
 		Code:            "deferred-return-function-not-called",
 		Summary:         "detect deferred setup calls whose returned function is not called",
@@ -20,7 +20,7 @@ func (deferredReturnFunctionNotCalledRule) Meta() Meta {
 	}
 }
 
-func (deferredReturnFunctionNotCalledRule) Run(pass *Pass) {
+func (deferredReturnFunctionNotCalledCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.DeferStmt)(nil),
@@ -45,7 +45,7 @@ func (deferredReturnFunctionNotCalledRule) Run(pass *Pass) {
 	)
 }
 
-func (deferredReturnFunctionNotCalledRule) Requirements() Requirements {
+func (deferredReturnFunctionNotCalledCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

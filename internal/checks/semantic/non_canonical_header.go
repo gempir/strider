@@ -9,9 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type nonCanonicalHeaderRule struct{}
+type nonCanonicalHeaderCheck struct{}
 
-func (nonCanonicalHeaderRule) Meta() Meta {
+func (nonCanonicalHeaderCheck) Meta() Meta {
 	return Meta{
 		Code:            "non-canonical-header",
 		Summary:         "detect non-canonical keys in http.Header reads",
@@ -22,7 +22,7 @@ func (nonCanonicalHeaderRule) Meta() Meta {
 	}
 }
 
-func (nonCanonicalHeaderRule) Run(pass *Pass) {
+func (nonCanonicalHeaderCheck) Run(pass *Pass) {
 	assigned := make(map[*ast.IndexExpr]bool)
 	pass.Inspect(
 		[]ast.Node{
@@ -60,7 +60,7 @@ func (nonCanonicalHeaderRule) Run(pass *Pass) {
 	)
 }
 
-func (nonCanonicalHeaderRule) Requirements() Requirements {
+func (nonCanonicalHeaderCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

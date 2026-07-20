@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/gempir/strider/internal/baseline"
-	checkengine "github.com/gempir/strider/internal/checks"
+	"github.com/gempir/strider/internal/checks"
 	"github.com/gempir/strider/internal/ui"
 	"github.com/gempir/strider/internal/workspace"
 )
@@ -164,7 +164,7 @@ func TestCommandUsageShowsShortAndLongOptions(t *testing.T) {
 	}
 }
 
-func TestCommandUsageColorsOptionsAndHidesLegacyRuleFlags(t *testing.T) {
+func TestCommandUsageColorsOptionsAndHidesLegacyCheckFlags(t *testing.T) {
 	t.Setenv("FORCE_COLOR", "")
 	t.Setenv("NO_COLOR", "")
 	for _, command := range []string{
@@ -757,7 +757,7 @@ func TestCheckListsOneUnifiedCatalog(t *testing.T) {
 	}
 }
 
-func TestCheckExplainsKnownRuleBelowSeverityFloor(t *testing.T) {
+func TestCheckExplainsKnownCheckBelowSeverityFloor(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run([]string{
 		"--no-config",
@@ -780,7 +780,7 @@ func TestCheckExplainsKnownRuleBelowSeverityFloor(t *testing.T) {
 	}
 }
 
-func TestCheckListAlignsAndColorsRulesBySeverity(t *testing.T) {
+func TestCheckListAlignsAndColorsChecksBySeverity(t *testing.T) {
 	t.Setenv("FORCE_COLOR", "")
 	t.Setenv("NO_COLOR", "")
 	var stdout, stderr bytes.Buffer
@@ -900,7 +900,7 @@ func TestCheckWatcherReportsOnlyChangedGenerations(t *testing.T) {
 	if err := os.WriteFile(filename, []byte("package sample\nfunc init() {}\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	registry, err := checkengine.NewRegistry(checkengine.RegistryOptions{
+	registry, err := checks.NewRegistry(checks.RegistryOptions{
 		Only: []string{
 			"no-init",
 		},
@@ -908,7 +908,7 @@ func TestCheckWatcherReportsOnlyChangedGenerations(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	session, err := checkengine.NewSession(registry, checkengine.RunOptions{}, checkengine.SessionOptions{})
+	session, err := checks.NewSession(registry, checks.RunOptions{}, checks.SessionOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1096,7 +1096,7 @@ func TestMinimumSeverityNoneExecutesSuppressedCheck(t *testing.T) {
 	}
 }
 
-func TestCategoryCommandsFilterUnifiedRuleSettings(t *testing.T) {
+func TestCategoryCommandsFilterUnifiedCheckSettings(t *testing.T) {
 	root := t.TempDir()
 	configurationPath := filepath.Join(root, "strider.toml")
 	configuration := `version = 1
@@ -1142,7 +1142,7 @@ severity = "warning"
 	}
 }
 
-func TestCategoryCommandsRejectUnknownUnifiedRules(t *testing.T) {
+func TestCategoryCommandsRejectUnknownUnifiedChecks(t *testing.T) {
 	root := t.TempDir()
 	configurationPath := filepath.Join(root, "strider.toml")
 	configuration := `version = 1
@@ -1461,10 +1461,10 @@ func TestLintListsCompleteRegistry(t *testing.T) {
 		t.Fatalf("exit %d, stderr %s", code, stderr.String())
 	}
 	_, marshalListed := listedSeverity(stdout.String(), "marshal-receiver")
-	_, splitRuleListed := listedSeverity(stdout.String(), "redundant-final-return")
-	_, removedFormatterRuleListed := listedSeverity(stdout.String(), "multiline-if-init")
-	if !marshalListed || !splitRuleListed || removedFormatterRuleListed {
-		t.Fatalf("complete registry is missing extended rules: %s", stdout.String())
+	_, splitCheckListed := listedSeverity(stdout.String(), "redundant-final-return")
+	_, removedFormatterCheckListed := listedSeverity(stdout.String(), "multiline-if-init")
+	if !marshalListed || !splitCheckListed || removedFormatterCheckListed {
+		t.Fatalf("complete registry is missing extended checks: %s", stdout.String())
 	}
 }
 
@@ -1565,7 +1565,7 @@ func TestAnalyzeInvalidRegexpJSONAndExitCode(t *testing.T) {
 	}
 }
 
-func TestAnalyzeListsRules(t *testing.T) {
+func TestAnalyzeListsChecks(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run([]string{
 		"check",

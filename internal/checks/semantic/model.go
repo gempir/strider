@@ -24,13 +24,9 @@ type Check interface {
 	Run(*Pass)
 }
 
-// Rule is retained for source compatibility while callers migrate to Check.
-// Deprecated: use Check.
-type Rule = Check
-
-// configurableRule keeps per-check settings with the check that consumes
+// configurableCheck keeps per-check settings with the check that consumes
 // them instead of widening Pass for a single option.
-type configurableRule interface {
+type configurableCheck interface {
 	RunConfigured(*Pass, config.CheckConfig)
 }
 
@@ -51,7 +47,7 @@ type Pass struct {
 	report      func(token.Pos, token.Pos, string, []diagnostic.Fix)
 }
 
-// Report emits a diagnostic for the rule currently running.
+// Report emits a diagnostic for the check currently running.
 func (pass *Pass) Report(node ast.Node, message string) {
 	pass.ReportPos(node.Pos(), message)
 }
@@ -84,7 +80,7 @@ func (pass *Pass) Inspect(nodeFilter []ast.Node, visit func(ast.Node) bool) {
 }
 
 // InspectWithStack visits only the requested node types and supplies their
-// complete ancestor stack without requiring a rule-owned traversal.
+// complete ancestor stack without requiring a check-owned traversal.
 func (pass *Pass) InspectWithStack(nodeFilter []ast.Node, visit func(ast.Node, []ast.Node) bool) {
 	inspector := pass.inspector
 	if inspector == nil {

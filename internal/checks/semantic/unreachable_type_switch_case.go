@@ -8,14 +8,14 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type unreachableTypeSwitchCaseRule struct{}
+type unreachableTypeSwitchCaseCheck struct{}
 
 type typedCaseClause struct {
 	clause *ast.CaseClause
 	types  []types.Type
 }
 
-func (unreachableTypeSwitchCaseRule) Meta() Meta {
+func (unreachableTypeSwitchCaseCheck) Meta() Meta {
 	return Meta{
 		Code:            "unreachable-type-switch-case",
 		Summary:         "detect type-switch cases hidden by earlier interfaces",
@@ -26,7 +26,7 @@ func (unreachableTypeSwitchCaseRule) Meta() Meta {
 	}
 }
 
-func (unreachableTypeSwitchCaseRule) Run(pass *Pass) {
+func (unreachableTypeSwitchCaseCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.TypeSwitchStmt)(nil),
@@ -111,7 +111,7 @@ func subsumingCaseTypes(earlier, later []types.Type) (types.Type, types.Type, bo
 	return nil, nil, false
 }
 
-func (unreachableTypeSwitchCaseRule) Requirements() Requirements {
+func (unreachableTypeSwitchCaseCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

@@ -9,9 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type emptyCriticalSectionRule struct{}
+type emptyCriticalSectionCheck struct{}
 
-func (emptyCriticalSectionRule) Meta() Meta {
+func (emptyCriticalSectionCheck) Meta() Meta {
 	return Meta{
 		Code:            "empty-critical-section",
 		Summary:         "detect adjacent lock and unlock calls",
@@ -22,7 +22,7 @@ func (emptyCriticalSectionRule) Meta() Meta {
 	}
 }
 
-func (emptyCriticalSectionRule) Run(pass *Pass) {
+func (emptyCriticalSectionCheck) Run(pass *Pass) {
 	if pass.PackagePath == "sync_test" {
 		return
 	}
@@ -92,7 +92,7 @@ func renderAnalysisExpression(pass *Pass, expression ast.Expr) string {
 	return output.String()
 }
 
-func (emptyCriticalSectionRule) Requirements() Requirements {
+func (emptyCriticalSectionCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

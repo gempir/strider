@@ -8,9 +8,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type redundantConversionRule struct{}
+type redundantConversionCheck struct{}
 
-func (redundantConversionRule) Meta() Meta {
+func (redundantConversionCheck) Meta() Meta {
 	return Meta{
 		Code:            "redundant-conversion",
 		Summary:         "detect conversions to the value's existing type",
@@ -21,7 +21,7 @@ func (redundantConversionRule) Meta() Meta {
 	}
 }
 
-func (redundantConversionRule) Run(pass *Pass) {
+func (redundantConversionCheck) Run(pass *Pass) {
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.CallExpr)(nil),
@@ -43,7 +43,7 @@ func (redundantConversionRule) Run(pass *Pass) {
 	)
 }
 
-func (redundantConversionRule) Requirements() Requirements {
+func (redundantConversionCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,
 	}

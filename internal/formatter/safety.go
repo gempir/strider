@@ -18,8 +18,8 @@ type syntaxFingerprint struct {
 }
 
 func equivalentTrees(originalTree, formattedTree *cst.Tree) error {
-	original := concreteFingerprint(originalTree)
-	formatted := concreteFingerprint(formattedTree)
+	original := fingerprintTree(originalTree)
+	formatted := fingerprintTree(formattedTree)
 	if !slices.Equal(original.imports, formatted.imports) || !bytes.Equal(original.syntax, formatted.syntax) {
 		return errors.New("formatted output changed the concrete syntax tree")
 	}
@@ -44,19 +44,16 @@ func equivalentTrees(originalTree, formattedTree *cst.Tree) error {
 	return nil
 }
 
-func concreteFingerprint(tree *cst.Tree) syntaxFingerprint {
+func fingerprintTree(tree *cst.Tree) syntaxFingerprint {
 	imports := []string{}
 	output := make([]byte, 0, len(tree.Bytes()))
 	var visit func(cst.Node)
 	visit = func(node cst.Node) {
 		if cst.Kind(node) == "TopLevelDeclList" {
-			declarations := concreteTopLevelDeclarations(node)
-			sort.SliceStable(
-				declarations,
-				func(left, right int) bool {
-					return concreteDeclarationRank(declarations[left]) < concreteDeclarationRank(declarations[right])
-				},
-			)
+			declarations := topLevelDeclarationNodes(node)
+			sort.SliceStable(declarations, func(left, right int) bool {
+				return syntaxDeclarationRank(declarations[left]) < syntaxDeclarationRank(declarations[right])
+			})
 			for _, declaration := range declarations {
 				visit(declaration)
 			}
@@ -115,11 +112,11 @@ func concreteFingerprint(tree *cst.Tree) syntaxFingerprint {
 	}
 }
 
-func concreteTopLevelDeclarations(node cst.Node) []cst.Node {
+func topLevelDeclarationNodes(node cst.Node) []cst.Node {
 	declarations := []cst.Node{}
 	for _, child := range cst.Children(node) {
 		if cst.Kind(child) == "TopLevelDeclList" {
-			declarations = append(declarations, concreteTopLevelDeclarations(child)...)
+			declarations = append(declarations, topLevelDeclarationNodes(child)...)
 			continue
 		}
 		if _, isToken := child.(cst.Token); !isToken {
@@ -129,7 +126,7 @@ func concreteTopLevelDeclarations(node cst.Node) []cst.Node {
 	return declarations
 }
 
-func concreteDeclarationRank(node cst.Node) int {
+func syntaxDeclarationRank(node cst.Node) int {
 	for _, current := range cst.NodeTokens(node) {
 		switch current.Ch() {
 		case token.CONST:

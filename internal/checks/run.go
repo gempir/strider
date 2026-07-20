@@ -72,7 +72,7 @@ func Run(shared *workspace.Workspace, registry *Registry, options RunOptions) (R
 }
 
 func appendAnalysis(result *Result, shared *workspace.Workspace, registry *Registry, options RunOptions, run analysisRunner) error {
-	if registry.semantic == nil || len(registry.semantic.Rules()) == 0 {
+	if registry.semantic == nil || len(registry.semantic.Checks()) == 0 {
 		return nil
 	}
 	packageDiagnostics, err := run(shared.Inputs(), registry.semantic)
@@ -102,7 +102,7 @@ func runConcreteChecks(files []*workspace.File, registry *Registry, formatOption
 		return result, nil
 	}
 
-	session := formatter.NewSession()
+	session := formatter.NewFormatter()
 	workers := min(runtime.GOMAXPROCS(0), len(applicable))
 	jobs := make(chan *workspace.File)
 	results := make(chan fileResult, len(applicable))
@@ -149,7 +149,7 @@ func runConcreteChecks(files []*workspace.File, registry *Registry, formatOption
 	return result, nil
 }
 
-func runConcreteFile(file *workspace.File, registry *Registry, session *formatter.Session, formatOptions formatter.Options, collectCandidate bool) fileResult {
+func runConcreteFile(file *workspace.File, registry *Registry, session *formatter.Formatter, formatOptions formatter.Options, collectCandidate bool) fileResult {
 	filename := file.Path()
 	defer file.Release()
 	lintApplies := registry.syntax != nil && registry.syntax.Applies(filename)

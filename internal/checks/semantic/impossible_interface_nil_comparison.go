@@ -16,7 +16,7 @@ const (
 	interfaceNilFromCall
 )
 
-type impossibleInterfaceNilComparisonRule struct{}
+type impossibleInterfaceNilComparisonCheck struct{}
 
 type interfaceNilProof uint8
 
@@ -31,7 +31,7 @@ type interfaceNilChecker struct {
 	results  map[interfaceResultKey]interfaceNilProof
 }
 
-func (impossibleInterfaceNilComparisonRule) Meta() Meta {
+func (impossibleInterfaceNilComparisonCheck) Meta() Meta {
 	return Meta{
 		Code:            "impossible-interface-nil-comparison",
 		Summary:         "detect interface comparisons made non-nil by a concrete dynamic type",
@@ -42,7 +42,7 @@ func (impossibleInterfaceNilComparisonRule) Meta() Meta {
 	}
 }
 
-func (impossibleInterfaceNilComparisonRule) Run(pass *Pass) {
+func (impossibleInterfaceNilComparisonCheck) Run(pass *Pass) {
 	checker := newInterfaceNilChecker(pass)
 	for _, function := range pass.Functions {
 		for _, block := range function.Blocks {
@@ -183,7 +183,7 @@ func copyValueSet(values map[ssa.Value]bool) map[ssa.Value]bool {
 	return copy
 }
 
-func (impossibleInterfaceNilComparisonRule) Requirements() Requirements {
+func (impossibleInterfaceNilComparisonCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageSSA,
 	}

@@ -36,11 +36,10 @@ type Meta = core.Meta
 // Check is the shared metadata contract implemented by every check.
 type Check = core.Check
 
-// Rule is a selected check and its metadata.
-type Rule struct {
+type catalogCheck struct {
 	meta Meta
 }
 
-func (rule Rule) Meta() Meta {
-	return rule.meta
+func (check catalogCheck) Meta() Meta {
+	return check.meta
 }

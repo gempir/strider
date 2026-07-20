@@ -1,0 +1,4 @@
+fixture.go:3:11-3:30 invalid-struct-tag
+fixture.go:4:11-4:30 invalid-struct-tag
+fixture.go:5:11-5:28 invalid-struct-tag
+fixture.go:6:11-6:31 invalid-struct-tag

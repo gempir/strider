@@ -619,22 +619,40 @@ We don't have to solve every problem. Candidates to demote or delete:
 
 ## Phase 8 — Tests
 
-- [ ] Split `semantic_test.go` (3,430 lines) and `app_test.go` (1,893 lines)
+- [x] Split `semantic_test.go` (3,430 lines) and `app_test.go` (1,893 lines)
   per check/command; colocate check tests with the check file so grep isn't
   the test-discovery mechanism.
-- [ ] Replace count-based assertions (`len(diagnostics) != 4`) with
+  **Implemented:** semantic integration cases now live in check-named test
+  files (the largest is the 209-line deprecation suite), while app coverage
+  is grouped into format, check, lint, analyze, baseline, and CLI suites.
+- [x] Replace count-based assertions (`len(diagnostics) != 4`) with
   position-anchored expectations (`// want`-style comments or golden files);
   failures become localizable and refinements stop breaking unrelated tests.
-- [ ] Remove `os.Chdir`-based test setup in semantic tests
+  **Implemented:** positive semantic and syntax findings use golden
+  `filename:line:column-range code` snapshots. Zero-finding assertions and
+  assertions about messages/fixes remain explicit in the owning test.
+- [x] Remove `os.Chdir`-based test setup in semantic tests
   (`semantic_test.go:3406-3430`) — it forces serial execution; use
   `packages.Config.Dir` (and `Overlay` where possible) instead.
-- [ ] Replace change-detector tests with intention-revealing ones: the
+  **Implemented:** package discovery returns an explicit load directory for
+  directory targets, which is passed to `packages.Load`; overlay validation
+  continues to use `packages.Config.Overlay`. Tests no longer change the
+  process working directory, and default diagnostic roots follow the loaded
+  module without weakening explicitly configured roots.
+- [x] Replace change-detector tests with intention-revealing ones: the
   hardcoded rule counts (`requirements_test.go:41`, `syntax_test.go:967`) and
   the SHA-256 catalog digest (`syntax_test.go:1024-1027`) fail without a
   diff. A golden list of check codes gives an actual diff on failure.
-- [ ] Add the missing formatter tests noted in review: `Session` reuse across
+  **Implemented:** syntax and semantic inventories are compared to readable,
+  sorted code lists under each package's `testdata`; failures print both
+  lists instead of an opaque count or digest.
+- [x] Add the missing formatter tests noted in review: `Session` reuse across
   modules, direct unit tests for `safety.go`'s fingerprint (currently a bug
   making `equivalentTrees` always pass would go unnoticed).
+  **Implemented:** one formatter session is exercised against two module
+  roots to catch cache contamination. Direct safety tests prove that import
+  reordering/layout tokens preserve fingerprints and that syntax or comment
+  changes are rejected.
 
 ---
 

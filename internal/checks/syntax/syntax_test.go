@@ -1,8 +1,6 @@
 package syntax
 
 import (
-	"crypto/sha256"
-	"fmt"
 	"go/token"
 	"os"
 	"path/filepath"
@@ -150,7 +148,8 @@ func closeThing() {}
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(diagnostics) != 1 || diagnostics[0].Code != "no-package-var" {
+	assertDiagnosticGolden(t, diagnostics)
+	if diagnostics[0].Code != "no-package-var" {
 		t.Fatalf("got diagnostics %#v", diagnostics)
 	}
 }
@@ -186,9 +185,7 @@ func TestIneffectivePointerCopyReportsPointerRoundTrips(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(diagnostics) != 2 {
-		t.Fatalf("got %d diagnostics, want 2: %#v", len(diagnostics), diagnostics)
-	}
+	assertDiagnosticGolden(t, diagnostics)
 }
 
 func TestDoubleNegationReportsRedundantBooleanNegation(t *testing.T) {
@@ -205,9 +202,7 @@ func TestDoubleNegationReportsRedundantBooleanNegation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(diagnostics) != 1 {
-		t.Fatalf("got %d diagnostics, want 1: %#v", len(diagnostics), diagnostics)
-	}
+	assertDiagnosticGolden(t, diagnostics)
 }
 
 func TestIdenticalIfElseIfConditionsRequireSideEffectFreeChain(t *testing.T) {
@@ -246,9 +241,7 @@ func changing(next func() bool) int {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(diagnostics) != 1 {
-		t.Fatalf("got %d diagnostics, want 1: %#v", len(diagnostics), diagnostics)
-	}
+	assertDiagnosticGolden(t, diagnostics)
 }
 
 func TestRedundantBuildTagReportsEquivalentLegacyConstraints(t *testing.T) {
@@ -269,9 +262,7 @@ package sample
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(diagnostics) != 1 {
-		t.Fatalf("got %d diagnostics, want 1: %#v", len(diagnostics), diagnostics)
-	}
+	assertDiagnosticGolden(t, diagnostics)
 }
 
 func TestZeroIntegerDivisionReportsLiteralTruncation(t *testing.T) {
@@ -293,9 +284,7 @@ func floating() float64 { return 2 / 3.0 }
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(diagnostics) != 1 {
-		t.Fatalf("got %d diagnostics, want 1: %#v", len(diagnostics), diagnostics)
-	}
+	assertDiagnosticGolden(t, diagnostics)
 }
 
 func TestModuloOneReportsConstantZeroRemainder(t *testing.T) {
@@ -316,9 +305,7 @@ func useful(value int) int { return value % 2 }
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(diagnostics) != 1 {
-		t.Fatalf("got %d diagnostics, want 1: %#v", len(diagnostics), diagnostics)
-	}
+	assertDiagnosticGolden(t, diagnostics)
 }
 
 func TestSpinningSelectDefaultReportsEmptyDefault(t *testing.T) {
@@ -345,9 +332,7 @@ func spin(messages <-chan string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(diagnostics) != 1 {
-		t.Fatalf("got %d diagnostics, want 1: %#v", len(diagnostics), diagnostics)
-	}
+	assertDiagnosticGolden(t, diagnostics)
 }
 
 func TestStructTagReportsDuplicateKeysAndInvalidOptions(t *testing.T) {
@@ -374,9 +359,7 @@ type tagged struct {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(diagnostics) != 4 {
-		t.Fatalf("got %d diagnostics, want 4: %#v", len(diagnostics), diagnostics)
-	}
+	assertDiagnosticGolden(t, diagnostics)
 }
 
 func TestRangeReportsUnnecessaryRuneSliceConversion(t *testing.T) {
@@ -406,9 +389,7 @@ func runes(text string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(diagnostics) != 1 {
-		t.Fatalf("got %d diagnostics, want 1: %#v", len(diagnostics), diagnostics)
-	}
+	assertDiagnosticGolden(t, diagnostics)
 }
 
 func TestEmptyBlockReportsConditionalBranchesOnly(t *testing.T) {
@@ -441,9 +422,7 @@ func branches(value bool) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(diagnostics) != 2 {
-		t.Fatalf("got %d diagnostics, want 2: %#v", len(diagnostics), diagnostics)
-	}
+	assertDiagnosticGolden(t, diagnostics)
 }
 
 func TestSpacedCompilerDirectiveReportsIgnoredDirective(t *testing.T) {
@@ -470,9 +449,7 @@ func local() { // go:noinline
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(diagnostics) != 1 {
-		t.Fatalf("got %d diagnostics, want 1: %#v", len(diagnostics), diagnostics)
-	}
+	assertDiagnosticGolden(t, diagnostics)
 }
 
 func TestDeferAllowsReturnedFunctionInvocation(t *testing.T) {
@@ -586,9 +563,7 @@ func TestBidirectionalControlCharacterReportsInvisibleSourceControl(t *testing.T
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(diagnostics) != 1 {
-		t.Fatalf("got %d diagnostics, want 1: %#v", len(diagnostics), diagnostics)
-	}
+	assertDiagnosticGolden(t, diagnostics)
 }
 
 func TestConcreteNamingChecks(t *testing.T) {
@@ -724,7 +699,8 @@ func controlsFlow(flag bool) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(diagnostics) != 1 || !strings.Contains(diagnostics[0].Message, "flag") {
+	assertDiagnosticGolden(t, diagnostics)
+	if !strings.Contains(diagnostics[0].Message, "flag") {
 		t.Fatalf("got %#v, want only controlsFlow's flag parameter", diagnostics)
 	}
 }
@@ -762,9 +738,7 @@ func assertions(input any) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(diagnostics) != 3 {
-		t.Fatalf("got %d diagnostics, want 3 unchecked assertions: %#v", len(diagnostics), diagnostics)
-	}
+	assertDiagnosticGolden(t, diagnostics)
 }
 
 func TestConcreteCallChecks(t *testing.T) {
@@ -913,9 +887,7 @@ func TestFileLengthLimitDefaultsTo500AndExplicitZeroDisables(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(diagnostics) != 1 {
-		t.Fatalf("default file length produced %d diagnostics, want 1: %#v", len(diagnostics), diagnostics)
-	}
+	assertDiagnosticGolden(t, diagnostics)
 	configuredRegistry, err := NewRegistryWithOptions(
 		RegistryOptions{
 			Only: []string{
@@ -968,16 +940,11 @@ func TestFileLengthLimitDefaultsTo500AndExplicitZeroDisables(t *testing.T) {
 }
 
 func TestCatalogIsCompleteDocumentedAndRunnable(t *testing.T) {
-	const expectedCount = 97
-	const expectedNamesSHA256 = "b47a5f601a71a8d0e6f97b408203e0d638ace7de23422f3f0edeb465bb29d085"
 	all, err := NewRegistry(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	checks := all.Checks()
-	if len(checks) != expectedCount {
-		t.Fatalf("catalog has %d checks; want %d", len(checks), expectedCount)
-	}
 	names := make([]string, 0, len(checks))
 	seen := map[string]bool{}
 	_, testFile, _, _ := runtime.Caller(0)
@@ -1025,12 +992,12 @@ func TestCatalogIsCompleteDocumentedAndRunnable(t *testing.T) {
 		}
 	}
 	sort.Strings(names)
-	digest := sha256.Sum256([]byte(strings.Join(names, "\n") + "\n"))
-	if got := fmt.Sprintf("%x", digest); got != expectedNamesSHA256 {
-		t.Errorf("check-name catalog changed: got digest %s", got)
+	want, err := os.ReadFile(filepath.Join(filepath.Dir(testFile), "testdata", "check_codes.txt"))
+	if err != nil {
+		t.Fatal(err)
 	}
-	if got, want := len(all.Checks()), expectedCount; got != want {
-		t.Errorf("registry contains %d checks; want %d", got, want)
+	if got := strings.Join(names, "\n") + "\n"; got != string(want) {
+		t.Errorf("check catalog differs from testdata/check_codes.txt\ngot:\n%s\nwant:\n%s", got, want)
 	}
 }
 
@@ -1097,7 +1064,8 @@ func TestBannedCharactersUsesDefaultsAndConfiguration(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				if len(diagnostics) != 1 || !strings.Contains(diagnostics[0].Message, test.wanted) {
+				assertDiagnosticGolden(t, diagnostics)
+				if !strings.Contains(diagnostics[0].Message, test.wanted) {
 					t.Fatalf("diagnostics = %#v, want one finding for %q", diagnostics, test.wanted)
 				}
 				if diagnostics[0].Severity != diagnostic.SeverityError {

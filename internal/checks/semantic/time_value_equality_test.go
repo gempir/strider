@@ -37,9 +37,7 @@ func compare(left, right time.Time, alias TimeAlias, localLeft, localRight local
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(diagnostics) != 2 {
-		t.Fatalf("got %d diagnostics, want 2: %#v", len(diagnostics), diagnostics)
-	}
+	assertDiagnosticGolden(t, diagnostics)
 	for _, item := range diagnostics {
 		if item.Code != "time-value-equality" || item.Severity != diagnostic.SeverityWarning {
 			t.Fatalf("unexpected diagnostic: %#v", item)

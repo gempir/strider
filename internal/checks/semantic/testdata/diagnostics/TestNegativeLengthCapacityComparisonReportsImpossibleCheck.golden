@@ -1,0 +1,2 @@
+main.go:4:9-4:9 negative-length-capacity-comparison
+main.go:4:28-4:28 negative-length-capacity-comparison

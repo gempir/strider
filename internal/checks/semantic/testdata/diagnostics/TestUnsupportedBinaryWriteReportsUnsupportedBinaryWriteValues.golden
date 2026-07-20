@@ -1,0 +1,5 @@
+main.go:20:48-20:48 unsupported-binary-write
+main.go:22:48-22:48 unsupported-binary-write
+main.go:24:48-24:48 unsupported-binary-write
+main.go:25:48-25:48 unsupported-binary-write
+main.go:26:48-26:48 unsupported-binary-write

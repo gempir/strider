@@ -1,0 +1,2 @@
+main.go:3:8-3:8 deprecated-api-usage
+main.go:6:9-6:9 deprecated-api-usage

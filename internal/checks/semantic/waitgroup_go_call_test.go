@@ -55,9 +55,7 @@ func check(group *sync.WaitGroup, fake fakeGroup) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(diagnostics) != 3 {
-		t.Fatalf("got %d diagnostics, want 3: %#v", len(diagnostics), diagnostics)
-	}
+	assertDiagnosticGolden(t, diagnostics)
 	for _, item := range diagnostics {
 		if item.Code != "waitgroup-go-forbidden-call" || item.Severity != diagnostic.SeverityError {
 			t.Fatalf("unexpected diagnostic: %#v", item)

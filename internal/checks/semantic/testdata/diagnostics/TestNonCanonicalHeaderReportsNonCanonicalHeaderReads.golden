@@ -1,0 +1,4 @@
+main.go:9:6-9:6 non-canonical-header
+main.go:10:6-10:6 non-canonical-header
+main.go:11:6-11:6 non-canonical-header
+main.go:15:27-15:27 non-canonical-header

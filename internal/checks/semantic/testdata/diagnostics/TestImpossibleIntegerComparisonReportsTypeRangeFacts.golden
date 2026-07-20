@@ -1,0 +1,3 @@
+main.go:4:15-4:15 impossible-integer-comparison
+main.go:5:17-5:17 impossible-integer-comparison
+main.go:6:18-6:18 impossible-integer-comparison

@@ -143,6 +143,7 @@ type Registry struct {
 	settings   map[string]configuredCheck
 	knownCodes map[string]bool
 	root       string
+	rootSet    bool
 }
 
 type configuredCheck struct {
@@ -238,6 +239,7 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 		settings:   make(map[string]configuredCheck, len(all)),
 		knownCodes: selection.KnownCodes,
 		root:       source.ResolveRoot(options.Root),
+		rootSet:    options.Root != "",
 	}
 	for _, check := range selection.Checks {
 		meta := check.Meta()

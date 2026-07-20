@@ -1,0 +1,2 @@
+main.go:10:14-10:14 dangerous-directory-removal
+main.go:12:14-12:14 dangerous-directory-removal

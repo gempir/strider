@@ -1,0 +1,2 @@
+main.go:6:10-6:10 ineffective-bitwise-zero
+main.go:7:11-7:11 ineffective-bitwise-zero

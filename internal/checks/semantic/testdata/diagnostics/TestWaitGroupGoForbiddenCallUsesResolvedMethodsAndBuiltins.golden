@@ -1,0 +1,3 @@
+main.go:12:3-12:3 waitgroup-go-forbidden-call
+main.go:13:3-13:3 waitgroup-go-forbidden-call
+main.go:14:3-14:3 waitgroup-go-forbidden-call

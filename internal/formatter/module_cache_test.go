@@ -3,9 +3,50 @@ package formatter
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 )
+
+func TestFormatterSessionKeepsModuleImportsSeparate(t *testing.T) {
+	root := t.TempDir()
+	session := NewFormatter()
+	for _, test := range []struct {
+		name   string
+		module string
+	}{
+		{
+			name:   "first",
+			module: "example.com/first",
+		},
+		{
+			name:   "second",
+			module: "example.org/second",
+		},
+	} {
+		t.Run(
+			test.name,
+			func(t *testing.T) {
+				moduleRoot := filepath.Join(root, test.name)
+				if err := os.MkdirAll(moduleRoot, 0o700); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.WriteFile(filepath.Join(moduleRoot, "go.mod"), []byte("module "+test.module+"\n"), 0o600); err != nil {
+					t.Fatal(err)
+				}
+				source := []byte("package sample\nimport (\n\"" + test.module + "/local\"\n\"fmt\"\n\"example.net/external\"\n)\nvar _ = fmt.Println\n")
+				result, err := session.FormatWithOptions(filepath.Join(moduleRoot, "main.go"), source, DefaultOptions())
+				if err != nil {
+					t.Fatal(err)
+				}
+				wantGroups := "\"fmt\"\n\n\t\"example.net/external\"\n\n\t\"" + test.module + "/local\""
+				if !strings.Contains(string(result.Source), wantGroups) {
+					t.Fatalf("imports were not grouped for %s:\n%s", test.module, result.Source)
+				}
+			},
+		)
+	}
+}
 
 func TestModulePathCacheReusesPositiveLookupConcurrently(t *testing.T) {
 	root := t.TempDir()

@@ -1,0 +1,4 @@
+main.go:11:22-11:22 non-pointer-unmarshal
+main.go:12:22-12:22 non-pointer-unmarshal
+main.go:15:30-15:30 non-pointer-unmarshal
+main.go:16:21-16:21 non-pointer-unmarshal

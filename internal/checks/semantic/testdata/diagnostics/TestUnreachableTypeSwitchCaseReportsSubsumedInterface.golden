@@ -1,0 +1,1 @@
+main.go:12:2-12:2 unreachable-type-switch-case

@@ -1,0 +1,3 @@
+main.go:3:14-3:14 constant-negative-zero
+main.go:4:17-4:17 constant-negative-zero
+main.go:5:22-5:22 constant-negative-zero

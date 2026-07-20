@@ -36,9 +36,7 @@ func check(w writer) {
 `,
 	)
 	diagnostics := runStandaloneAnalysisCheck(t, root, discardedErrorResultCheck{})
-	if len(diagnostics) != 7 {
-		t.Fatalf("got %d diagnostics, want 7: %#v", len(diagnostics), diagnostics)
-	}
+	assertDiagnosticGolden(t, diagnostics)
 	for _, item := range diagnostics {
 		if item.Code != "discarded-error-result" || item.Severity != diagnostic.SeverityError {
 			t.Fatalf("unexpected diagnostic: %#v", item)

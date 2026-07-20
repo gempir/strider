@@ -1,0 +1,2 @@
+main.go:6:24-6:24 invalid-utf8
+main.go:8:31-8:31 invalid-utf8

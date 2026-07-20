@@ -4,6 +4,11 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"os"
+	"path/filepath"
+	"runtime"
+	"sort"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -14,23 +19,21 @@ import (
 
 func TestCheckRequirementsCoverCatalog(t *testing.T) {
 	seen := make(map[string]bool, len(checkCatalog))
-	typed := 0
-	ssaChecks := 0
+	codes := make([]string, 0, len(checkCatalog))
 	for _, check := range checkCatalog {
 		code := check.Meta().Code
 		if seen[code] {
 			t.Fatalf("duplicate check %q", code)
 		}
 		seen[code] = true
+		codes = append(codes, code)
 		requirements, ok := RequirementsFor(code)
 		if !ok {
 			t.Fatalf("check %q has no requirements", code)
 		}
 		switch requirements.Stage {
 		case AnalysisStageTypes:
-			typed++
 		case AnalysisStageSSA:
-			ssaChecks++
 		default:
 			t.Fatalf("check %q has invalid stage %d", code, requirements.Stage)
 		}
@@ -41,8 +44,14 @@ func TestCheckRequirementsCoverCatalog(t *testing.T) {
 			t.Fatalf("check %q has inconsistent static-call requirements", code)
 		}
 	}
-	if typed != 63 || ssaChecks != 43 {
-		t.Fatalf("got %d typed and %d SSA checks, want 63 and 43", typed, ssaChecks)
+	sort.Strings(codes)
+	_, testFile, _, _ := runtime.Caller(0)
+	want, err := os.ReadFile(filepath.Join(filepath.Dir(testFile), "testdata", "check_codes.txt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Join(codes, "\n") + "\n"; got != string(want) {
+		t.Errorf("check catalog differs from testdata/check_codes.txt\ngot:\n%s\nwant:\n%s", got, want)
 	}
 }
 

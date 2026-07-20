@@ -10,11 +10,12 @@ import (
 // ValidateOverlay parses and type-checks the packages containing paths with
 // the supplied in-memory source files. Overlay keys must be absolute paths.
 func ValidateOverlay(paths []string, overlay map[string][]byte) error {
-	patterns, _, err := loadInputs(paths)
+	loadDirectory, patterns, _, err := loadInputs(paths)
 	if err != nil {
 		return err
 	}
 	loaded, err := packages.Load(&packages.Config{
+		Dir:     loadDirectory,
 		Mode:    loadMode,
 		Tests:   true,
 		Overlay: overlay,

@@ -209,20 +209,17 @@ func TestAdditionalResearchRuleSeverities(t *testing.T) {
 func runStandaloneAnalysisRule(t *testing.T, root string, rule Rule) []diagnostic.Diagnostic {
 	t.Helper()
 	meta := rule.Meta()
-	previous, existed := requirementsByCode[meta.Code]
-	requirementsByCode[meta.Code] = Requirements{
-		Stage: AnalysisStageTypes,
-	}
-	defer func() {
-		if existed {
-			requirementsByCode[meta.Code] = previous
-		} else {
-			delete(requirementsByCode, meta.Code)
-		}
-	}()
 	registry := &Registry{
 		rules: []Rule{
 			rule,
+		},
+		definitions: []ruleDefinition{
+			{
+				rule: rule,
+				requirements: Requirements{
+					Stage: AnalysisStageTypes,
+				},
+			},
 		},
 		settings: map[string]configuredRule{
 			meta.Code: {

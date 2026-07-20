@@ -254,15 +254,8 @@ func testingTParameter(pass *Pass, function *ast.FuncType) *types.Var {
 }
 
 func isTestingTType(valueType types.Type) bool {
-	if valueType == nil {
-		return false
-	}
-	pointer, ok := types.Unalias(valueType).(*types.Pointer)
-	if !ok {
-		return false
-	}
-	named, ok := types.Unalias(pointer.Elem()).(*types.Named)
-	return ok && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "testing" && named.Obj().Name() == "T"
+	named := namedType(valueType)
+	return named != nil && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "testing" && named.Obj().Name() == "T"
 }
 
 func hasTestingParallelCall(pass *Pass, body *ast.BlockStmt, parameter *types.Var) bool {

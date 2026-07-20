@@ -17,7 +17,6 @@ const (
 
 const (
 	FactCallArguments FactSet = 1 << iota
-	FactFirstCallArgument
 	FactParents
 	FactDeprecations
 	// FactStaticCalls indexes statically resolved SSA calls by callee package.
@@ -30,14 +29,14 @@ const (
 )
 
 var ruleCatalog = []ruleDefinition{
-	ssaStaticCallDefinition(invalidRegexpRule{}, FactFirstCallArgument, "regexp"),
+	ssaStaticCallDefinition(invalidRegexpRule{}, FactCallArguments, "regexp"),
 	typedDefinition(invalidTemplateRule{}, 0),
-	ssaStaticCallDefinition(invalidTimeParseRule{}, FactFirstCallArgument, "time"),
+	ssaStaticCallDefinition(invalidTimeParseRule{}, FactCallArguments, "time"),
 	ssaStaticCallDefinition(unsupportedBinaryWriteRule{}, FactCallArguments, "encoding/binary"),
 	typedDefinition(suspiciousSleepRule{}, 0),
 	typedDefinition(invalidExecCommandRule{}, 0),
 	typedDefinition(dynamicPrintfRule{}, 0),
-	ssaStaticCallDefinition(invalidURLRule{}, FactFirstCallArgument, "net/url"),
+	ssaStaticCallDefinition(invalidURLRule{}, FactCallArguments, "net/url"),
 	typedDefinition(nonCanonicalHeaderRule{}, 0),
 	ssaStaticCallDefinition(regexpFindAllZeroRule{}, FactCallArguments, "regexp"),
 	ssaStaticCallDefinition(invalidUTF8StringArgumentRule{}, FactCallArguments, "strings"),
@@ -144,24 +143,13 @@ var ruleCatalog = []ruleDefinition{
 	typedDefinition(topLevelDeclarationOrderRule{}, 0),
 }
 
-var requirementsByCode = func() map[string]Requirements {
-	result := make(map[string]Requirements, len(ruleCatalog))
-	for _, definition := range ruleCatalog {
-		code := strings.ToLower(definition.rule.Meta().Code)
-		if _, duplicate := result[code]; duplicate {
-			panic("duplicate analysis rule: " + code)
-		}
-		result[code] = definition.requirements
-	}
-	return result
-}()
-
 // Registry is an immutable selection of analysis rules.
 type Registry struct {
-	rules      []Rule
-	settings   map[string]configuredRule
-	knownCodes map[string]bool
-	root       string
+	rules       []Rule
+	definitions []ruleDefinition
+	settings    map[string]configuredRule
+	knownCodes  map[string]bool
+	root        string
 }
 
 type configuredRule struct {
@@ -215,21 +203,15 @@ func (facts FactSet) Has(wanted FactSet) bool {
 	return facts&wanted == wanted
 }
 
-func compileExecutionPlan(rules []Rule) executionPlan {
+func compileExecutionPlan(definitions []ruleDefinition) executionPlan {
 	plan := executionPlan{}
-	for _, rule := range rules {
-		requirements, ok := RequirementsFor(rule.Meta().Code)
-		if !ok {
-			panic("analysis rule has no requirements: " + rule.Meta().Code)
-		}
+	for _, definition := range definitions {
+		requirements := definition.requirements
 		if requirements.Stage > plan.requirements.Stage {
 			plan.requirements.Stage = requirements.Stage
 		}
 		plan.requirements.Facts |= requirements.Facts
 		plan.requirements.SSAFeatures |= requirements.SSAFeatures
-		if requirements.Facts.Has(FactStaticCalls) != (len(requirements.staticCallPackages) != 0) {
-			panic("analysis rule has inconsistent static-call requirements: " + rule.Meta().Code)
-		}
 		for _, packagePath := range requirements.staticCallPackages {
 			if plan.staticCallPackages == nil {
 				plan.staticCallPackages = make(map[string]bool)
@@ -248,7 +230,7 @@ func (registry *Registry) executionPlan() executionPlan {
 	if registry == nil {
 		return executionPlan{}
 	}
-	return compileExecutionPlan(registry.rules)
+	return compileExecutionPlan(registry.definitions)
 }
 
 // NewRegistry applies project settings and a minimum effective severity.
@@ -286,6 +268,7 @@ func NewRegistry(input any) (*Registry, error) {
 		setting := selection.Settings[strings.ToLower(meta.Code)]
 		severity := selection.Severities[meta.Code]
 		registry.rules = append(registry.rules, rule)
+		registry.definitions = append(registry.definitions, definitionFor(rule))
 		registry.settings[meta.Code] = configuredRule{
 			severity: severity,
 			excludes: setting.Excludes,
@@ -329,8 +312,26 @@ func UsesSSA(code string) bool {
 
 // RequirementsFor returns the colocated requirements for code.
 func RequirementsFor(code string) (Requirements, bool) {
-	requirements, ok := requirementsByCode[strings.ToLower(code)]
-	return requirements, ok
+	for _, definition := range ruleCatalog {
+		if strings.EqualFold(definition.rule.Meta().Code, code) {
+			return definition.requirements, true
+		}
+	}
+	return Requirements{}, false
+}
+
+func definitionFor(rule Rule) ruleDefinition {
+	for _, definition := range ruleCatalog {
+		if strings.EqualFold(definition.rule.Meta().Code, rule.Meta().Code) {
+			return definition
+		}
+	}
+	return ruleDefinition{
+		rule: rule,
+		requirements: Requirements{
+			Stage: AnalysisStageTypes,
+		},
+	}
 }
 
 func typedDefinition(rule Rule, facts FactSet) ruleDefinition {

@@ -37,6 +37,9 @@ func TestRuleRequirementsCoverCatalog(t *testing.T) {
 		if UsesSSA(code) != (requirements.Stage == AnalysisStageSSA) {
 			t.Fatalf("UsesSSA(%q) disagrees with its requirements", code)
 		}
+		if requirements.Facts.Has(FactStaticCalls) != (len(requirements.staticCallPackages) != 0) {
+			t.Fatalf("rule %q has inconsistent static-call requirements", code)
+		}
 	}
 	if typed != 68 || ssaRules != 44 {
 		t.Fatalf("got %d typed and %d SSA rules, want 68 and 44", typed, ssaRules)
@@ -50,7 +53,7 @@ func TestExecutionPlanSelectsNamedFacts(t *testing.T) {
 	}{
 		{
 			code:  "invalid-regexp",
-			facts: FactFirstCallArgument | FactStaticCalls,
+			facts: FactCallArguments | FactStaticCalls,
 		},
 		{
 			code:  "unsupported-binary-write",
@@ -217,7 +220,7 @@ func TestNamedPackageFactsInitializeOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	required := FactCallArguments | FactFirstCallArgument | FactParents
+	required := FactCallArguments | FactParents
 	facts := newPackageFacts(required)
 	var builds atomic.Int32
 	facts.builder = func(files []*ast.File, required FactSet) packageFactData {

@@ -433,7 +433,7 @@ func analyzeCSTFindings(filename string, tree *cst.Tree, rules []Rule) []Finding
 	AnalyzeCST(CSTInput{
 		Filename: filename,
 		Tree:     tree,
-		Rules:    rules,
+		Checks:   rules,
 		Report: func(finding Finding) {
 			result = append(result, finding)
 		},
@@ -550,7 +550,7 @@ func benchmarkAnalyzeCST(b *testing.B) {
 	input := CSTInput{
 		Filename: "fixture.go",
 		Tree:     tree,
-		Rules:    rules,
+		Checks:   rules,
 		Report: func(Finding) {
 			reports++
 		},

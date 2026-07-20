@@ -37,14 +37,14 @@ type cstAnalyzer struct {
 
 // AnalyzeCST runs selected native CST rules over one lossless source tree.
 func AnalyzeCST(input CSTInput) {
-	enabled := make(map[string]bool, len(input.Rules))
-	for _, rule := range input.Rules {
-		enabled[rule.Meta().Code] = true
+	enabled := make(map[string]bool, len(input.Checks))
+	for _, check := range input.Checks {
+		enabled[check.Meta().Code] = true
 	}
 	if len(enabled) == 0 || input.Tree == nil {
 		return
 	}
-	plan := compileCSTExecutionPlan(enabled)
+	plan := compileCSTExecutionPlan(input.Checks)
 	analyzer := &cstAnalyzer{
 		filename: input.Filename,
 		tree:     input.Tree,

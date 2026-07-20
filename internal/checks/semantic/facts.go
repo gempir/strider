@@ -1,7 +1,6 @@
 package semantic
 
 import (
-	"fmt"
 	"go/ast"
 	"go/token"
 	"sync"
@@ -9,7 +8,7 @@ import (
 	"golang.org/x/tools/go/ssa"
 )
 
-const syntaxFacts = FactCallArguments | FactFirstCallArgument | FactParents
+const syntaxFacts = FactCallArguments | FactParents
 
 const ssaFacts = FactStaticCalls
 
@@ -54,7 +53,7 @@ func newPackageFacts(required FactSet, staticCallPackages ...map[string]bool) *p
 
 func (facts *packageFacts) require(files []*ast.File, wanted FactSet) {
 	if facts == nil || !facts.required.Has(wanted) {
-		panic(fmt.Sprintf("analysis fact %d was not included in the execution plan", wanted))
+		return
 	}
 	facts.syntaxOnce.Do(func() {
 		builder := facts.builder
@@ -67,7 +66,7 @@ func (facts *packageFacts) require(files []*ast.File, wanted FactSet) {
 
 func (facts *packageFacts) requireSSA(functions []*ssa.Function, wanted FactSet) {
 	if facts == nil || !facts.required.Has(wanted) {
-		panic(fmt.Sprintf("analysis fact %d was not included in the execution plan", wanted))
+		return
 	}
 	facts.ssaOnce.Do(
 		func() {
@@ -87,7 +86,7 @@ func (facts *packageFacts) requireSSA(functions []*ssa.Function, wanted FactSet)
 func buildPackageFacts(files []*ast.File, required FactSet) packageFactData {
 	result := packageFactData{}
 	wantArguments := required.Has(FactCallArguments)
-	wantFirstArgument := required.Has(FactFirstCallArgument)
+	wantFirstArgument := required.Has(FactCallArguments)
 	wantParents := required.Has(FactParents)
 	if wantArguments {
 		result.arguments = make(map[token.Pos][]ast.Node)
@@ -202,24 +201,33 @@ func buildPackageSSAFacts(functions []*ssa.Function, required FactSet, staticCal
 }
 
 func (pass *Pass) argumentsByCallPosition() map[token.Pos][]ast.Node {
+	if pass.facts == nil {
+		return nil
+	}
 	pass.facts.require(pass.Files, FactCallArguments)
 	return pass.facts.data.arguments
 }
 
 func (pass *Pass) firstArgumentsByCallPosition() map[token.Pos]ast.Node {
-	pass.facts.require(pass.Files, FactFirstCallArgument)
+	if pass.facts == nil {
+		return nil
+	}
+	pass.facts.require(pass.Files, FactCallArguments)
 	return pass.facts.data.firstArguments
 }
 
 func (pass *Pass) analysisParents() map[ast.Node]ast.Node {
+	if pass.facts == nil {
+		return nil
+	}
 	pass.facts.require(pass.Files, FactParents)
 	return pass.facts.data.parents
 }
 
 func (pass *Pass) staticCallsInPackage(packagePath string) []ssa.CallInstruction {
-	pass.facts.requireSSA(pass.Functions, FactStaticCalls)
-	if pass.facts.staticCallPackages != nil && !pass.facts.staticCallPackages[packagePath] {
-		panic("static-call package was not included in the execution plan: " + packagePath)
+	if pass.facts == nil || pass.facts.staticCallPackages != nil && !pass.facts.staticCallPackages[packagePath] {
+		return nil
 	}
+	pass.facts.requireSSA(pass.Functions, FactStaticCalls)
 	return pass.facts.ssaData.staticCallsByPackage[packagePath]
 }

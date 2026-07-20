@@ -55,7 +55,13 @@ type cstFunctionFacts struct {
 	finalStatement      cst.Node
 }
 
-func compileCSTExecutionPlan(enabled map[string]bool) cstExecutionPlan {
+// compileCSTExecutionPlan derives traversal work from the selected check
+// declarations. No caller can accidentally enable a path that lacks a check.
+func compileCSTExecutionPlan(checks []SyntaxCheck) cstExecutionPlan {
+	enabled := make(map[string]bool, len(checks))
+	for _, check := range checks {
+		enabled[check.Meta().Code] = true
+	}
 	any := func(codes ...string) bool {
 		for _, code := range codes {
 			if enabled[code] {

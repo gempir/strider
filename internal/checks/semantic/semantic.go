@@ -268,7 +268,6 @@ func runAnalysisTask(task analysisTask, registry *Registry, fileInfoFor func(str
 	meta := task.rule.Meta()
 	severity := registry.Severity(meta.Code)
 	pass := *task.pass
-	pass.maxMethods = registry.settings[meta.Code].config.MaxMethods
 	findings := []analysisFinding{}
 	pass.report = func(start, end token.Pos, message string, fixes []diagnostic.Fix) {
 		position := pass.FileSet.Position(start)
@@ -295,7 +294,11 @@ func runAnalysisTask(task analysisTask, registry *Registry, fileInfoFor func(str
 			},
 		)
 	}
-	task.rule.Run(&pass)
+	if configurable, ok := task.rule.(configurableRule); ok {
+		configurable.RunConfigured(&pass, registry.settings[meta.Code].config)
+	} else {
+		task.rule.Run(&pass)
+	}
 	return findings
 }
 

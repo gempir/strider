@@ -5,6 +5,7 @@ import (
 	"go/ast"
 	"go/types"
 
+	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
@@ -24,36 +25,40 @@ func (interfaceMethodLimitRule) Meta() Meta {
 }
 
 func (interfaceMethodLimitRule) Run(pass *Pass) {
-	limit := pass.maxMethods
+	interfaceMethodLimitRule{}.run(pass, 0)
+}
+
+func (interfaceMethodLimitRule) RunConfigured(pass *Pass, setting config.RuleConfig) {
+	interfaceMethodLimitRule{}.run(pass, setting.MaxMethods)
+}
+
+func (interfaceMethodLimitRule) run(pass *Pass, limit int) {
 	if limit == 0 {
 		limit = interfaceMethodLimit
 	}
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				declaration,
-					ok := node.(*ast.InterfaceType)
-				if !ok {
-					return true
-				}
-				declaredType := pass.TypesInfo.TypeOf(declaration)
-				if declaredType == nil {
-					return true
-				}
-				interfaceType,
-					ok := types.Unalias(declaredType).Underlying().(*types.Interface)
-				if !ok {
-					return true
-				}
-				interfaceType.Complete()
-				methodCount := interfaceType.NumMethods()
-				if methodCount <= limit {
-					return true
-				}
-				pass.Report(declaration, fmt.Sprintf("interface has %d methods, exceeding the configured design limit of %d", methodCount, limit))
+	pass.Inspect(
+		func(node ast.Node) bool {
+			declaration,
+				ok := node.(*ast.InterfaceType)
+			if !ok {
 				return true
-			},
-		)
-	}
+			}
+			declaredType := pass.TypesInfo.TypeOf(declaration)
+			if declaredType == nil {
+				return true
+			}
+			interfaceType,
+				ok := types.Unalias(declaredType).Underlying().(*types.Interface)
+			if !ok {
+				return true
+			}
+			interfaceType.Complete()
+			methodCount := interfaceType.NumMethods()
+			if methodCount <= limit {
+				return true
+			}
+			pass.Report(declaration, fmt.Sprintf("interface has %d methods, exceeding the configured design limit of %d", methodCount, limit))
+			return true
+		},
+	)
 }

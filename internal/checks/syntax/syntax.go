@@ -339,7 +339,7 @@ func analyzeTree(filename string, concreteTree *cst.Tree, activeRules []builtinr
 		builtinrules.CSTInput{
 			Filename:         filename,
 			Tree:             concreteTree,
-			Rules:            activeRules,
+			Checks:           activeRules,
 			BannedCharacters: registry.bannedCharacters(),
 			Limits:           registry.limits(),
 			BlockedImports:   registry.settings["imports-blocklist"].config.BlockedImports,

@@ -9,11 +9,16 @@ import (
 // Meta describes one built-in syntax check.
 type Meta = core.Meta
 
-// Rule is the common contract used to select, list, explain, and run every
-// built-in syntax check.
-type Rule interface {
+// SyntaxCheck is a concrete-syntax check selected by the registry. The
+// traversal owns walking the CST; checks declare their metadata here and are
+// the only source of enabled syntax work.
+type SyntaxCheck interface {
 	core.Check
 }
+
+// Rule is retained as a compatibility alias while callers migrate to the
+// product-wide “check” vocabulary.
+type Rule = SyntaxCheck
 
 type definition struct {
 	meta Meta
@@ -35,7 +40,7 @@ type Finding struct {
 type CSTInput struct {
 	Filename         string
 	Tree             *cst.Tree
-	Rules            []Rule
+	Checks           []SyntaxCheck
 	BannedCharacters []rune
 	Limits           map[string]int
 	BlockedImports   []string

@@ -50,8 +50,7 @@ func (timeValueEqualityRule) Run(pass *Pass) {
 }
 
 func isTimeValue(valueType types.Type) bool {
-	named, ok := types.Unalias(valueType).(*types.Named)
-	return ok && named.Obj() != nil && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "time" && named.Obj().Name() == "Time"
+	return isNamedType(valueType, "time", "Time")
 }
 
 func (waitGroupGoForbiddenCallRule) Meta() Meta {

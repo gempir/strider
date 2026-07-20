@@ -38,13 +38,11 @@ func (invalidPrintfCallCheck) Run(pass *Pass) {
 			(*ast.CallExpr)(nil),
 		},
 		func(node ast.Node) bool {
-			call,
-				ok := node.(*ast.CallExpr)
+			call, ok := node.(*ast.CallExpr)
 			if !ok || call.Ellipsis.IsValid() {
 				return true
 			}
-			formatIndex,
-				ok := dynamicPrintfFormatIndex(pass, call)
+			formatIndex, ok := dynamicPrintfFormatIndex(pass, call)
 			if !ok || formatIndex >= len(call.Args) {
 				return true
 			}
@@ -53,9 +51,7 @@ func (invalidPrintfCallCheck) Run(pass *Pass) {
 				return true
 			}
 			formatText := constant.StringVal(formatValue)
-			uses,
-				indexed,
-				err := parsePrintfUses(formatText)
+			uses, indexed, err := parsePrintfUses(formatText)
 			if err != nil {
 				pass.Report(call.Args[formatIndex], err.Error())
 				return true

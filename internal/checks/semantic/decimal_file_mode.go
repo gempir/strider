@@ -28,14 +28,12 @@ func (decimalFileModeCheck) Run(pass *Pass) {
 			(*ast.CallExpr)(nil),
 		},
 		func(node ast.Node) bool {
-			call,
-				ok := node.(*ast.CallExpr)
+			call, ok := node.(*ast.CallExpr)
 			if !ok {
 				return true
 			}
 			for _, argument := range call.Args {
-				literal,
-					ok := argument.(*ast.BasicLit)
+				literal, ok := argument.(*ast.BasicLit)
 				if !ok || literal.Kind != token.INT || !looksLikeDecimalMode(literal.Value) || !(isNamedType(pass.TypesInfo.TypeOf(literal), "os", "FileMode") || isNamedType(
 					pass.TypesInfo.TypeOf(literal),
 					"io/fs",
@@ -43,8 +41,7 @@ func (decimalFileModeCheck) Run(pass *Pass) {
 				)) {
 					continue
 				}
-				value,
-					err := strconv.ParseInt(literal.Value, 10, 64)
+				value, err := strconv.ParseInt(literal.Value, 10, 64)
 				if err != nil {
 					continue
 				}

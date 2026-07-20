@@ -288,8 +288,7 @@ func TestUnifiedRegistryAcceptsOnlySupportedBehavioralOptions(t *testing.T) {
 		t.Run(
 			code,
 			func(t *testing.T) {
-				if _,
-					err := NewRegistry(RegistryOptions{
+				if _, err := NewRegistry(RegistryOptions{
 					Settings: map[string]config.CheckConfig{
 						code: setting,
 					},
@@ -325,8 +324,7 @@ func TestUnifiedRegistryRejectsBehavioralOptionOnWrongCheck(t *testing.T) {
 		t.Run(
 			code,
 			func(t *testing.T) {
-				_,
-					err := NewRegistry(RegistryOptions{
+				_, err := NewRegistry(RegistryOptions{
 					Settings: map[string]config.CheckConfig{
 						code: setting,
 					},

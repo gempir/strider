@@ -26,21 +26,18 @@ func (waitGroupGoForbiddenCallCheck) Run(pass *Pass) {
 			(*ast.CallExpr)(nil),
 		},
 		func(node ast.Node) bool {
-			call,
-				ok := node.(*ast.CallExpr)
+			call, ok := node.(*ast.CallExpr)
 			if !ok || !isNamedMethod(pass.TypesInfo, call.Fun, "sync", "WaitGroup", "Go") || len(call.Args) == 0 {
 				return true
 			}
-			closure,
-				ok := ast.Unparen(call.Args[len(call.Args)-1]).(*ast.FuncLit)
+			closure, ok := ast.Unparen(call.Args[len(call.Args)-1]).(*ast.FuncLit)
 			if !ok || closure.Body == nil {
 				return true
 			}
 			inspectFunctionBody(
 				closure.Body,
 				func(nested ast.Node) bool {
-					forbidden,
-						ok := nested.(*ast.CallExpr)
+					forbidden, ok := nested.(*ast.CallExpr)
 					if !ok {
 						return true
 					}

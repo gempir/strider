@@ -45,9 +45,8 @@ func TestSessionCachesDeepCopiedWholeTargetResult(t *testing.T) {
 		func([]string, *Registry) ([]diagnostic.Diagnostic, error) {
 			runs.Add(1)
 			return []diagnostic.Diagnostic{
-					want,
-				},
-				nil
+				want,
+			}, nil
 		},
 	)
 	registry := &Registry{}
@@ -89,11 +88,10 @@ func TestSessionConcurrentRunCoalescesWholeTarget(t *testing.T) {
 		func([]string, *Registry) ([]diagnostic.Diagnostic, error) {
 			runs.Add(1)
 			return []diagnostic.Diagnostic{
-					{
-						Code: "check",
-					},
+				{
+					Code: "check",
 				},
-				nil
+			}, nil
 		},
 	)
 	registry := &Registry{}
@@ -134,8 +132,7 @@ func TestSessionRetriesGenerationChangedDuringAnalysis(t *testing.T) {
 			MaxBytes:   1 << 20,
 		},
 		func([]string, *Registry) (analysisCacheKey, error) {
-			return sha256.Sum256([]byte(fmt.Sprint(generation.Load()))),
-				nil
+			return sha256.Sum256([]byte(fmt.Sprint(generation.Load()))), nil
 		},
 		func([]string, *Registry) ([]diagnostic.Diagnostic, error) {
 			current := runs.Add(1)
@@ -143,11 +140,10 @@ func TestSessionRetriesGenerationChangedDuringAnalysis(t *testing.T) {
 				generation.Store(1)
 			}
 			return []diagnostic.Diagnostic{
-					{
-						Code: fmt.Sprint(current),
-					},
+				{
+					Code: fmt.Sprint(current),
 				},
-				nil
+			}, nil
 		},
 	)
 	diagnostics, err := session.Run([]string{
@@ -178,13 +174,11 @@ func TestSessionRejectsContinuallyChangingGeneration(t *testing.T) {
 			MaxBytes:   1 << 20,
 		},
 		func([]string, *Registry) (analysisCacheKey, error) {
-			return sha256.Sum256([]byte(fmt.Sprint(fingerprints.Add(1)))),
-				nil
+			return sha256.Sum256([]byte(fmt.Sprint(fingerprints.Add(1)))), nil
 		},
 		func([]string, *Registry) ([]diagnostic.Diagnostic, error) {
 			runs.Add(1)
-			return nil,
-				nil
+			return nil, nil
 		},
 	)
 	if _, err := session.Run([]string{
@@ -211,11 +205,10 @@ func TestSessionInvalidationAndDeterministicEviction(t *testing.T) {
 		func(paths []string, _ *Registry) ([]diagnostic.Diagnostic, error) {
 			runs.Add(1)
 			return []diagnostic.Diagnostic{
-					{
-						Code: paths[0],
-					},
+				{
+					Code: paths[0],
 				},
-				nil
+			}, nil
 		},
 	)
 	registry := &Registry{}
@@ -264,12 +257,11 @@ func TestSessionDoesNotRetainOversizedResult(t *testing.T) {
 		func([]string, *Registry) ([]diagnostic.Diagnostic, error) {
 			runs.Add(1)
 			return []diagnostic.Diagnostic{
-					{
-						Code:    "check",
-						Message: "large",
-					},
+				{
+					Code:    "check",
+					Message: "large",
 				},
-				nil
+			}, nil
 		},
 	)
 	for range 2 {
@@ -818,8 +810,7 @@ func TestProbeConfigurationTracksVendorModulesMetadata(t *testing.T) {
 				if !found {
 					t.Fatalf("vendor metadata %s is not a configuration input", metadata)
 				}
-				missing,
-					err := probe.currentKey()
+				missing, err := probe.currentKey()
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -829,8 +820,7 @@ func TestProbeConfigurationTracksVendorModulesMetadata(t *testing.T) {
 				if err := os.WriteFile(metadata, []byte("# first\n"), 0o600); err != nil {
 					t.Fatal(err)
 				}
-				created,
-					err := probe.currentKey()
+				created, err := probe.currentKey()
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -840,8 +830,7 @@ func TestProbeConfigurationTracksVendorModulesMetadata(t *testing.T) {
 				if err := os.WriteFile(metadata, []byte("# second\n"), 0o600); err != nil {
 					t.Fatal(err)
 				}
-				changed,
-					err := probe.currentKey()
+				changed, err := probe.currentKey()
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -851,8 +840,7 @@ func TestProbeConfigurationTracksVendorModulesMetadata(t *testing.T) {
 				if err := os.Remove(metadata); err != nil {
 					t.Fatal(err)
 				}
-				deleted,
-					err := probe.currentKey()
+				deleted, err := probe.currentKey()
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -880,12 +868,11 @@ func BenchmarkSessionWholeTargetHit(benchmark *testing.B) {
 		labelFingerprint,
 		func([]string, *Registry) ([]diagnostic.Diagnostic, error) {
 			return []diagnostic.Diagnostic{
-					{
-						Code:    "check",
-						Message: "finding",
-					},
+				{
+					Code:    "check",
+					Message: "finding",
 				},
-				nil
+			}, nil
 		},
 	)
 	registry := &Registry{}
@@ -927,8 +914,7 @@ func BenchmarkSessionWatchIteration(benchmark *testing.B) {
 		func(benchmark *testing.B) {
 			benchmark.ReportAllocs()
 			for range benchmark.N {
-				if _,
-					err := Run([]string{
+				if _, err := Run([]string{
 					root,
 				}, registry); err != nil {
 					benchmark.Fatal(err)
@@ -943,8 +929,7 @@ func BenchmarkSessionWatchIteration(benchmark *testing.B) {
 				MaxEntries: 8,
 				MaxBytes:   64 << 20,
 			})
-			if _,
-				err := session.Run([]string{
+			if _, err := session.Run([]string{
 				root,
 			}, registry); err != nil {
 				benchmark.Fatal(err)
@@ -952,8 +937,7 @@ func BenchmarkSessionWatchIteration(benchmark *testing.B) {
 			benchmark.ReportAllocs()
 			benchmark.ResetTimer()
 			for range benchmark.N {
-				if _,
-					err := session.Run([]string{
+				if _, err := session.Run([]string{
 					root,
 				}, registry); err != nil {
 					benchmark.Fatal(err)
@@ -968,8 +952,7 @@ func BenchmarkSessionWatchIteration(benchmark *testing.B) {
 				MaxEntries: 8,
 				MaxBytes:   64 << 20,
 			})
-			if _,
-				err := session.Run([]string{
+			if _, err := session.Run([]string{
 				root,
 			}, registry); err != nil {
 				benchmark.Fatal(err)
@@ -983,8 +966,7 @@ func BenchmarkSessionWatchIteration(benchmark *testing.B) {
 					benchmark.Fatal(err)
 				}
 				benchmark.StartTimer()
-				if _,
-					err := session.Run([]string{
+				if _, err := session.Run([]string{
 					root,
 				}, registry); err != nil {
 					benchmark.Fatal(err)

@@ -30,8 +30,7 @@ func (oddPairedArgumentsCheck) Run(pass *Pass) {
 			(*ast.CallExpr)(nil),
 		},
 		func(node ast.Node) bool {
-			call,
-				ok := node.(*ast.CallExpr)
+			call, ok := node.(*ast.CallExpr)
 			if !ok {
 				return true
 			}
@@ -39,18 +38,14 @@ func (oddPairedArgumentsCheck) Run(pass *Pass) {
 			if function == nil {
 				return true
 			}
-			parameterIndex,
-				known := contracts[function]
+			parameterIndex, known := contracts[function]
 			if function.Pkg() != nil && function.Pkg().Path() == "strings" && function.Name() == "NewReplacer" {
-				parameterIndex,
-					known = 0,
-					true
+				parameterIndex, known = 0, true
 			}
 			if !known {
 				return true
 			}
-			length,
-				argument := pairedCallLength(pass, call, function, parameterIndex)
+			length, argument := pairedCallLength(pass, call, function, parameterIndex)
 			if length < 0 || length%2 == 0 {
 				return true
 			}
@@ -75,8 +70,7 @@ func pairedArgumentContracts(pass *Pass) map[*types.Func]int {
 			ast.Inspect(
 				functionDeclaration.Body,
 				func(node ast.Node) bool {
-					conditional,
-						ok := node.(*ast.IfStmt)
+					conditional, ok := node.(*ast.IfStmt)
 					if !ok || !blockImmediatelyPanics(pass, conditional.Body) {
 						return true
 					}
@@ -84,8 +78,7 @@ func pairedArgumentContracts(pass *Pass) map[*types.Func]int {
 					if parameter == nil {
 						return true
 					}
-					signature,
-						_ := function.Type().(*types.Signature)
+					signature, _ := function.Type().(*types.Signature)
 					if signature == nil {
 						return true
 					}

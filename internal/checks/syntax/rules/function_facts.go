@@ -50,15 +50,11 @@ func (a *Pass) functionFacts(node cst.Node) *functionFacts {
 	cst.WalkProductionsWithAncestors(
 		facts.body,
 		func(current cst.Node, ancestors []cst.Node) bool {
-			if list,
-				ok := current.(*cst.StatementList); ok && list.Statement != nil {
+			if list, ok := current.(*cst.StatementList); ok && list.Statement != nil {
 				facts.statements++
 			}
 			switch typed := current.(type) {
-			case *cst.IfStmt,
-				*cst.IfElseStmt,
-				*cst.ForStmt,
-				*cst.TypeSwitchStmt:
+			case *cst.IfStmt, *cst.IfElseStmt, *cst.ForStmt, *cst.TypeSwitchStmt:
 				facts.complexity++
 			case *cst.CommCase:
 				if typed.CASE.IsValid() {
@@ -92,10 +88,7 @@ func (a *Pass) functionFacts(node cst.Node) *functionFacts {
 				return true
 			}
 			switch cst.Kind(current) {
-			case "BreakStmt",
-				"ContinueStmt",
-				"GotoStmt",
-				"FallthroughStmt":
+			case "BreakStmt", "ContinueStmt", "GotoStmt", "FallthroughStmt":
 				facts.cognitiveComplexity++
 			}
 			return true

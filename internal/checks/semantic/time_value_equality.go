@@ -26,8 +26,7 @@ func (timeValueEqualityCheck) Run(pass *Pass) {
 			(*ast.BinaryExpr)(nil),
 		},
 		func(node ast.Node) bool {
-			binary,
-				ok := node.(*ast.BinaryExpr)
+			binary, ok := node.(*ast.BinaryExpr)
 			if !ok || (binary.Op != token.EQL && binary.Op != token.NEQ) {
 				return true
 			}

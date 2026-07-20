@@ -27,8 +27,7 @@ func (unsafeFormattedURLHostPortCheck) Run(pass *Pass) {
 			(*ast.CallExpr)(nil),
 		},
 		func(node ast.Node) bool {
-			call,
-				ok := node.(*ast.CallExpr)
+			call, ok := node.(*ast.CallExpr)
 			if !ok {
 				return true
 			}

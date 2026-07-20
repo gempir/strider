@@ -32,17 +32,14 @@ func (unreachableTypeSwitchCaseCheck) Run(pass *Pass) {
 			(*ast.TypeSwitchStmt)(nil),
 		},
 		func(node ast.Node) bool {
-			switchStatement,
-				ok := node.(*ast.TypeSwitchStmt)
+			switchStatement, ok := node.(*ast.TypeSwitchStmt)
 			if !ok {
 				return true
 			}
 			cases := typeSwitchCases(pass, switchStatement)
 			for earlierIndex, earlier := range cases {
 				for _, later := range cases[earlierIndex+1:] {
-					first,
-						hidden,
-						ok := subsumingCaseTypes(earlier.types, later.types)
+					first, hidden, ok := subsumingCaseTypes(earlier.types, later.types)
 					if !ok {
 						continue
 					}

@@ -26,8 +26,7 @@ func (nonPointerSyncPoolValueCheck) Run(pass *Pass) {
 			(*ast.CallExpr)(nil),
 		},
 		func(node ast.Node) bool {
-			call,
-				ok := node.(*ast.CallExpr)
+			call, ok := node.(*ast.CallExpr)
 			if !ok || len(call.Args) != 1 || !syncPoolPutCall(pass, call) {
 				return true
 			}

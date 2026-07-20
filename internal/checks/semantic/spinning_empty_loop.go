@@ -27,8 +27,7 @@ func (spinningEmptyLoopCheck) Run(pass *Pass) {
 			(*ast.ForStmt)(nil),
 		},
 		func(node ast.Node) bool {
-			loop,
-				ok := node.(*ast.ForStmt)
+			loop, ok := node.(*ast.ForStmt)
 			if !ok || len(loop.Body.List) != 0 || loop.Init != nil || loop.Post != nil {
 				return true
 			}

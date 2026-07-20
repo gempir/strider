@@ -73,13 +73,11 @@ func functionSwitchTags(function *ssa.Function, syntax ast.Node) map[ssa.Value]b
 	inspectFunctionSyntax(
 		syntax,
 		func(node ast.Node) bool {
-			switchStatement,
-				ok := node.(*ast.SwitchStmt)
+			switchStatement, ok := node.(*ast.SwitchStmt)
 			if !ok || switchStatement.Tag == nil {
 				return true
 			}
-			value,
-				_ := function.ValueForExpr(switchStatement.Tag)
+			value, _ := function.ValueForExpr(switchStatement.Tag)
 			if value != nil {
 				tags[value] = true
 			}

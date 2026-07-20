@@ -45,8 +45,7 @@ func (interfaceMethodLimitCheck) run(pass *Pass, limit int) {
 			(*ast.InterfaceType)(nil),
 		},
 		func(node ast.Node) bool {
-			declaration,
-				ok := node.(*ast.InterfaceType)
+			declaration, ok := node.(*ast.InterfaceType)
 			if !ok {
 				return true
 			}
@@ -54,8 +53,7 @@ func (interfaceMethodLimitCheck) run(pass *Pass, limit int) {
 			if declaredType == nil {
 				return true
 			}
-			interfaceType,
-				ok := types.Unalias(declaredType).Underlying().(*types.Interface)
+			interfaceType, ok := types.Unalias(declaredType).Underlying().(*types.Interface)
 			if !ok {
 				return true
 			}

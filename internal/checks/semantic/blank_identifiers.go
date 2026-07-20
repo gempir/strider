@@ -25,15 +25,13 @@ func (excessiveBlankIdentifiersCheck) Run(pass *Pass) {
 			(*ast.AssignStmt)(nil),
 		},
 		func(node ast.Node) bool {
-			assignment,
-				ok := node.(*ast.AssignStmt)
+			assignment, ok := node.(*ast.AssignStmt)
 			if !ok {
 				return true
 			}
 			blanks := 0
 			for _, expression := range assignment.Lhs {
-				identifier,
-					_ := expression.(*ast.Ident)
+				identifier, _ := expression.(*ast.Ident)
 				if identifier != nil && identifier.Name == "_" {
 					blanks++
 				}

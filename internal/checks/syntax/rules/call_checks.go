@@ -11,7 +11,7 @@ import (
 )
 
 func (a *Pass) checkCall(call *cst.PrimaryExpr) {
-	if call == nil || !strings.HasPrefix(cst.Kind(call.Postfix), "Arguments") {
+	if call == nil || !cst.IsArguments(call.Postfix) {
 		return
 	}
 	name := cst.Spelling(call.PrimaryExpr)
@@ -121,7 +121,7 @@ func (a *Pass) checkTimeDate(arguments []cst.Node) {
 }
 
 func callName(call *cst.PrimaryExpr) string {
-	if call == nil || !strings.HasPrefix(cst.Kind(call.Postfix), "Arguments") {
+	if call == nil || !cst.IsArguments(call.Postfix) {
 		return ""
 	}
 	return cst.Spelling(call.PrimaryExpr)

@@ -168,9 +168,7 @@ func (probe *analysisProbe) collectPackageGraph(writer *fingerprintWriter, roots
 	sort.Slice(
 		all,
 		func(leftIndex, rightIndex int) bool {
-			left,
-				right := all[leftIndex],
-				all[rightIndex]
+			left, right := all[leftIndex], all[rightIndex]
 			if left.ID != right.ID {
 				return left.ID < right.ID
 			}
@@ -322,8 +320,7 @@ func addRecursiveTargetTopology(writer *fingerprintWriter, root string, packageD
 					return filepath.SkipDir
 				}
 				boundary := filepath.Join(path, "go.mod")
-				info,
-					err := os.Stat(boundary)
+				info, err := os.Stat(boundary)
 				switch {
 				case err == nil && info.Mode().IsRegular():
 					writer.addString("nested-module-boundary")
@@ -395,8 +392,7 @@ func addDirectoryFingerprint(writer *fingerprintWriter, directory string, recurs
 			if path != directory && entry.IsDir() && (entry.Name() == ".git" || strings.HasPrefix(entry.Name(), ".strider-")) {
 				return filepath.SkipDir
 			}
-			relative,
-				err := filepath.Rel(directory, path)
+			relative, err := filepath.Rel(directory, path)
 			if err != nil {
 				return err
 			}

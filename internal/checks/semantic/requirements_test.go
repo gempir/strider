@@ -80,8 +80,7 @@ func TestExecutionPlanSelectsNamedFacts(t *testing.T) {
 		t.Run(
 			test.code,
 			func(t *testing.T) {
-				registry,
-					err := newRegistry([]string{
+				registry, err := newRegistry([]string{
 					test.code,
 				})
 				if err != nil {
@@ -187,8 +186,7 @@ func TestSSADebugMetadataIsCapabilityDriven(t *testing.T) {
 		t.Run(
 			test.code,
 			func(t *testing.T) {
-				registry,
-					err := newRegistry([]string{
+				registry, err := newRegistry([]string{
 					test.code,
 				})
 				if err != nil {

@@ -219,8 +219,7 @@ func printFlagDefaults(writer io.Writer, flags *flag.FlagSet, aliases map[string
 				return
 			}
 			value := " VALUE"
-			if boolean,
-				ok := option.Value.(interface {
+			if boolean, ok := option.Value.(interface {
 				IsBoolFlag() bool
 			}); ok && boolean.IsBoolFlag() {
 				value = ""

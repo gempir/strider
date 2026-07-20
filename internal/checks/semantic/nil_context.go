@@ -26,8 +26,7 @@ func (nilContextCheck) Run(pass *Pass) {
 			(*ast.CallExpr)(nil),
 		},
 		func(node ast.Node) bool {
-			call,
-				ok := node.(*ast.CallExpr)
+			call, ok := node.(*ast.CallExpr)
 			if !ok || len(call.Args) == 0 || !isNilIdentifier(call.Args[0]) {
 				return true
 			}
@@ -35,8 +34,7 @@ func (nilContextCheck) Run(pass *Pass) {
 			if function == nil {
 				return true
 			}
-			signature,
-				ok := function.Type().(*types.Signature)
+			signature, ok := function.Type().(*types.Signature)
 			if !ok || signature.Params().Len() == 0 || !isNamedType(signature.Params().At(0).Type(), "context", "Context") {
 				return true
 			}

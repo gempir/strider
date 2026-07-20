@@ -31,8 +31,7 @@ func (discardedErrorResultCheck) Run(pass *Pass) {
 		func(node ast.Node) bool {
 			switch node := node.(type) {
 			case *ast.ExprStmt:
-				call,
-					ok := ast.Unparen(node.X).(*ast.CallExpr)
+				call, ok := ast.Unparen(node.X).(*ast.CallExpr)
 				if !ok || len(discardedErrorResultIndexes(pass, call)) == 0 {
 					return true
 				}

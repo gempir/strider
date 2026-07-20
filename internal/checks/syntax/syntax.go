@@ -279,9 +279,7 @@ func sortDiagnostics(diagnostics []diagnostic.Diagnostic) {
 	sort.SliceStable(
 		diagnostics,
 		func(i, j int) bool {
-			left,
-				right := diagnostics[i],
-				diagnostics[j]
+			left, right := diagnostics[i], diagnostics[j]
 			if left.File != right.File {
 				return left.File < right.File
 			}
@@ -442,8 +440,7 @@ func concreteSuppressionCandidates(tree *cst.Tree) []concreteSuppression {
 			if !strings.HasSuffix(kind, "Decl") && !strings.HasSuffix(kind, "Stmt") {
 				return true
 			}
-			start,
-				end := cst.Range(node)
+			start, end := cst.Range(node)
 			if end > start {
 				result = append(result, concreteSuppression{
 					start: start,

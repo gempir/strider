@@ -92,15 +92,13 @@ func capture(values []int) {
 			test.name,
 			func(t *testing.T) {
 				root := analysisModuleVersion(t, test.goVersion, test.source)
-				registry,
-					err := newRegistry([]string{
+				registry, err := newRegistry([]string{
 					"range-value-capture",
 				})
 				if err != nil {
 					t.Fatal(err)
 				}
-				diagnostics,
-					err := Run([]string{
+				diagnostics, err := Run([]string{
 					root,
 				}, registry)
 				if err != nil {

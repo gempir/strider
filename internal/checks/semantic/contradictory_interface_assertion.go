@@ -27,15 +27,13 @@ func (contradictoryInterfaceAssertionCheck) Run(pass *Pass) {
 			(*ast.TypeAssertExpr)(nil),
 		},
 		func(node ast.Node) bool {
-			assertion,
-				ok := node.(*ast.TypeAssertExpr)
+			assertion, ok := node.(*ast.TypeAssertExpr)
 			if !ok || assertion.Type == nil {
 				return true
 			}
 			left := pass.TypesInfo.TypeOf(assertion.X)
 			right := pass.TypesInfo.TypeOf(assertion.Type)
-			rightInterface,
-				ok := right.Underlying().(*types.Interface)
+			rightInterface, ok := right.Underlying().(*types.Interface)
 			if !ok {
 				return true
 			}
@@ -45,8 +43,7 @@ func (contradictoryInterfaceAssertionCheck) Run(pass *Pass) {
 				if selection == nil {
 					continue
 				}
-				leftMethod,
-					ok := selection.Obj().(*types.Func)
+				leftMethod, ok := selection.Obj().(*types.Func)
 				if !ok || leftMethod.Origin() != leftMethod || method.Origin() != method {
 					return true
 				}

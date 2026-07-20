@@ -254,13 +254,14 @@ func Plan(snapshot Snapshot, diagnostics []diagnostic.Diagnostic, candidates map
 		return result.guards[left].Path < result.guards[right].Path
 	})
 
+	formatterSession := formatter.NewFormatter()
 	for _, path := range paths {
 		file := snapshot.Files[path]
 		after := append([]byte(nil), file.Before...)
 		if selected := acceptedByFile[path]; len(selected) != 0 {
 			after = applyEdits(after, selected)
 			if !formatExcluded(options.Root, file.Path, options.FormatExcludes) {
-				formatted, err := formatter.FormatWithOptions(path, after, options.Formatter)
+				formatted, err := formatterSession.FormatWithOptions(path, after, options.Formatter)
 				if err != nil {
 					return Result{}, fmt.Errorf("format fixes for %s: %w", source.DisplayPath(path), err)
 				}

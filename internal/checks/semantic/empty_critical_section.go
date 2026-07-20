@@ -31,18 +31,13 @@ func (emptyCriticalSectionCheck) Run(pass *Pass) {
 			(*ast.BlockStmt)(nil),
 		},
 		func(node ast.Node) bool {
-			block,
-				ok := node.(*ast.BlockStmt)
+			block, ok := node.(*ast.BlockStmt)
 			if !ok || len(block.List) < 2 {
 				return true
 			}
 			for index := 0; index+1 < len(block.List); index++ {
-				firstReceiver,
-					firstMethod,
-					firstOK := lockStatement(pass, block.List[index])
-				secondReceiver,
-					secondMethod,
-					secondOK := lockStatement(pass, block.List[index+1])
+				firstReceiver, firstMethod, firstOK := lockStatement(pass, block.List[index])
+				secondReceiver, secondMethod, secondOK := lockStatement(pass, block.List[index+1])
 				if !firstOK || !secondOK || !matchingLockMethods(firstMethod, secondMethod) || renderAnalysisExpression(pass, firstReceiver) != renderAnalysisExpression(
 					pass,
 					secondReceiver,

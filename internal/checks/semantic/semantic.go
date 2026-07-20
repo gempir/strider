@@ -150,11 +150,9 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnos
 		entry := cached.(*analysisFileInfoCacheEntry)
 		entry.once.Do(
 			func() {
-				canonical,
-					pathErr := canonicalPath(filename)
+				canonical, pathErr := canonicalPath(filename)
 				if pathErr == nil && matchesTarget(canonical, targets) {
-					generated,
-						generatedErr := source.IsGenerated(canonical)
+					generated, generatedErr := source.IsGenerated(canonical)
 					if generatedErr == nil && !generated {
 						entry.info = analysisFileInfo{
 							filename: canonical,
@@ -462,9 +460,7 @@ func sortDiagnostics(diagnostics []diagnostic.Diagnostic) {
 	sort.SliceStable(
 		diagnostics,
 		func(i, j int) bool {
-			left,
-				right := diagnostics[i],
-				diagnostics[j]
+			left, right := diagnostics[i], diagnostics[j]
 			if left.File != right.File {
 				return left.File < right.File
 			}

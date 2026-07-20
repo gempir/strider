@@ -28,27 +28,22 @@ func (sortConversionWithoutSortCheck) Run(pass *Pass) {
 			(*ast.AssignStmt)(nil),
 		},
 		func(node ast.Node) bool {
-			assignment,
-				ok := node.(*ast.AssignStmt)
+			assignment, ok := node.(*ast.AssignStmt)
 			if !ok || assignment.Tok != token.ASSIGN || len(assignment.Lhs) != 1 || len(assignment.Rhs) != 1 {
 				return true
 			}
-			target,
-				ok := assignment.Lhs[0].(*ast.Ident)
+			target, ok := assignment.Lhs[0].(*ast.Ident)
 			if !ok {
 				return true
 			}
-			if _,
-				plainSlice := types.Unalias(pass.TypesInfo.TypeOf(target)).(*types.Slice); !plainSlice {
+			if _, plainSlice := types.Unalias(pass.TypesInfo.TypeOf(target)).(*types.Slice); !plainSlice {
 				return true
 			}
-			conversion,
-				ok := ast.Unparen(assignment.Rhs[0]).(*ast.CallExpr)
+			conversion, ok := ast.Unparen(assignment.Rhs[0]).(*ast.CallExpr)
 			if !ok || len(conversion.Args) != 1 {
 				return true
 			}
-			argument,
-				ok := ast.Unparen(conversion.Args[0]).(*ast.Ident)
+			argument, ok := ast.Unparen(conversion.Args[0]).(*ast.Ident)
 			if !ok || pass.TypesInfo.ObjectOf(argument) != pass.TypesInfo.ObjectOf(target) {
 				return true
 			}

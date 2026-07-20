@@ -27,8 +27,7 @@ func (invalidExecCommandCheck) Run(pass *Pass) {
 			(*ast.CallExpr)(nil),
 		},
 		func(node ast.Node) bool {
-			call,
-				ok := node.(*ast.CallExpr)
+			call, ok := node.(*ast.CallExpr)
 			if !ok || len(call.Args) == 0 || !isPackageFunction(pass.TypesInfo, call.Fun, "os/exec", "Command") {
 				return true
 			}

@@ -27,19 +27,16 @@ func (errorTypeNamingCheck) Run(pass *Pass) {
 			(*ast.TypeSpec)(nil),
 		},
 		func(node ast.Node) bool {
-			spec,
-				ok := node.(*ast.TypeSpec)
+			spec, ok := node.(*ast.TypeSpec)
 			if !ok || spec.Assign.IsValid() || strings.HasSuffix(spec.Name.Name, "Error") {
 				return true
 			}
-			object,
-				_ := pass.TypesInfo.Defs[spec.Name].(*types.TypeName)
+			object, _ := pass.TypesInfo.Defs[spec.Name].(*types.TypeName)
 			if object == nil {
 				return true
 			}
 			valueType := object.Type()
-			errorInterface,
-				_ := types.Universe.Lookup("error").Type().Underlying().(*types.Interface)
+			errorInterface, _ := types.Universe.Lookup("error").Type().Underlying().(*types.Interface)
 			if types.Implements(valueType, errorInterface) || types.Implements(types.NewPointer(valueType), errorInterface) {
 				pass.Report(spec.Name, "error implementation type should have an Error suffix")
 			}

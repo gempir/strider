@@ -90,8 +90,7 @@ func (item) method() {}
 		tree.Root(),
 		func(node cst.Node, _ []cst.Node) bool {
 			switch node.(type) {
-			case *cst.FunctionDecl,
-				*cst.MethodDecl:
+			case *cst.FunctionDecl, *cst.MethodDecl:
 				functions = append(functions, analyzer.functionFacts(node))
 			}
 			return true
@@ -191,8 +190,7 @@ func GetThing(first, second, third, fourth, fifth, sixth int, flag bool, unused 
 		t.Run(
 			code,
 			func(t *testing.T) {
-				checks,
-					selectErr := Select([]string{
+				checks, selectErr := Select([]string{
 					code,
 				})
 				if selectErr != nil {
@@ -237,8 +235,7 @@ func (value *item) UnmarshalJSON([]byte) error { return nil }
 		t.Run(
 			code,
 			func(t *testing.T) {
-				checks,
-					selectErr := Select([]string{
+				checks, selectErr := Select([]string{
 					code,
 				})
 				if selectErr != nil {
@@ -421,8 +418,7 @@ func TestRedundantSwitchBreakFixRemovesOnlyCleanStatementLine(t *testing.T) {
 				if test.name == "inline" {
 					source = []byte("package sample\n\nfunc choose(value int) {\n\tswitch value {\n" + test.statement + "\t}\n}\n")
 				}
-				tree,
-					parseErr := cst.Parse("sample.go", source)
+				tree, parseErr := cst.Parse("sample.go", source)
 				if parseErr != nil {
 					t.Fatal(parseErr)
 				}
@@ -480,11 +476,7 @@ func referenceCyclomaticComplexity(body cst.Node) int {
 			switch current := node.(type) {
 			case cst.Token:
 				switch current.Ch() {
-				case token.IF,
-					token.FOR,
-					token.CASE,
-					token.LAND,
-					token.LOR:
+				case token.IF, token.FOR, token.CASE, token.LAND, token.LOR:
 					complexity++
 				}
 			case *cst.TypeSwitchStmt:

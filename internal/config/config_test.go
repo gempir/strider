@@ -169,8 +169,7 @@ func TestLoadRejectsUnknownAndInvalidSettings(t *testing.T) {
 				if err := os.WriteFile(path, []byte(test.contents), 0o600); err != nil {
 					t.Fatal(err)
 				}
-				_,
-					err := Load(path, false)
+				_, err := Load(path, false)
 				if err == nil || !strings.Contains(err.Error(), test.wanted) {
 					t.Fatalf("got %v, want error containing %q", err, test.wanted)
 				}

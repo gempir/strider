@@ -29,26 +29,19 @@ func (impossibleIntegerComparisonCheck) Run(pass *Pass) {
 			(*ast.BinaryExpr)(nil),
 		},
 		func(node ast.Node) bool {
-			binary,
-				ok := node.(*ast.BinaryExpr)
+			binary, ok := node.(*ast.BinaryExpr)
 			if !ok || !relationalOperator(binary.Op) {
 				return true
 			}
-			value,
-				bound,
-				operator,
-				ok := integerComparisonParts(pass, binary)
+			value, bound, operator, ok := integerComparisonParts(pass, binary)
 			if !ok {
 				return true
 			}
-			minimum,
-				maximum,
-				ok := integerTypeBounds(pass.TypesInfo.TypeOf(value), pass.TypesSizes)
+			minimum, maximum, ok := integerTypeBounds(pass.TypesInfo.TypeOf(value), pass.TypesSizes)
 			if !ok {
 				return true
 			}
-			fixed,
-				truth := comparisonFixedByBounds(operator, bound, minimum, maximum)
+			fixed, truth := comparisonFixedByBounds(operator, bound, minimum, maximum)
 			if fixed {
 				pass.Report(binary, fmt.Sprintf("comparison is always %t for type %s", truth, pass.TypesInfo.TypeOf(value)))
 			}

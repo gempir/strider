@@ -1082,8 +1082,7 @@ func TestBannedCharactersUsesDefaultsAndConfiguration(t *testing.T) {
 		t.Run(
 			name,
 			func(t *testing.T) {
-				registry,
-					err := NewRegistryWithOptions(RegistryOptions{
+				registry, err := NewRegistryWithOptions(RegistryOptions{
 					Only: []string{
 						"banned-characters",
 					},
@@ -1092,8 +1091,7 @@ func TestBannedCharactersUsesDefaultsAndConfiguration(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				diagnostics,
-					err := Run([]string{
+				diagnostics, err := Run([]string{
 					filename,
 				}, registry)
 				if err != nil {
@@ -1130,8 +1128,7 @@ func TestBannedCharactersRejectsInvalidConfiguration(t *testing.T) {
 		t.Run(
 			name,
 			func(t *testing.T) {
-				if _,
-					err := NewRegistryWithOptions(RegistryOptions{
+				if _, err := NewRegistryWithOptions(RegistryOptions{
 					Settings: settings,
 				}); err == nil {
 					t.Fatal("expected invalid character configuration to fail")
@@ -1166,8 +1163,7 @@ func TestLintRegistryFiltersByEffectiveSeverityBeforeExecution(t *testing.T) {
 		t.Run(
 			name,
 			func(t *testing.T) {
-				registry,
-					err := NewRegistryWithOptions(options)
+				registry, err := NewRegistryWithOptions(options)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -1177,8 +1173,7 @@ func TestLintRegistryFiltersByEffectiveSeverityBeforeExecution(t *testing.T) {
 					}
 				}
 				if name == "only" {
-					diagnostics,
-						runErr := Run([]string{
+					diagnostics, runErr := Run([]string{
 						filepath.Join(t.TempDir(), "missing.go"),
 					}, registry)
 					if runErr != nil {

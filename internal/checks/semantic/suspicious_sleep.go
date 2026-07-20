@@ -28,19 +28,16 @@ func (suspiciousSleepCheck) Run(pass *Pass) {
 			(*ast.CallExpr)(nil),
 		},
 		func(node ast.Node) bool {
-			call,
-				ok := node.(*ast.CallExpr)
+			call, ok := node.(*ast.CallExpr)
 			if !ok || len(call.Args) != 1 || !isPackageFunction(pass.TypesInfo, call.Fun, "time", "Sleep") {
 				return true
 			}
-			literal,
-				ok := call.Args[0].(*ast.BasicLit)
+			literal, ok := call.Args[0].(*ast.BasicLit)
 			if !ok || literal.Kind != token.INT {
 				return true
 			}
 			value := pass.TypesInfo.Types[literal].Value
-			nanoseconds,
-				exact := constant.Int64Val(value)
+			nanoseconds, exact := constant.Int64Val(value)
 			if !exact || nanoseconds == 0 || nanoseconds > 120 {
 				return true
 			}

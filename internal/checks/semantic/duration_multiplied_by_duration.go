@@ -37,8 +37,7 @@ func (durationMultipliedByDurationCheck) Run(pass *Pass) {
 				if expression.Op != token.MUL {
 					return true
 				}
-				if binaryParent,
-					ok := parent.(*ast.BinaryExpr); ok && binaryParent.Op == token.MUL {
+				if binaryParent, ok := parent.(*ast.BinaryExpr); ok && binaryParent.Op == token.MUL {
 					return true
 				}
 				candidate = expression

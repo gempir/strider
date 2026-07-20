@@ -60,8 +60,7 @@ func (deprecatedAPIUsageCheck) Run(pass *Pass) {
 			(*ast.SelectorExpr)(nil),
 		},
 		func(node ast.Node) bool {
-			selector,
-				ok := node.(*ast.SelectorExpr)
+			selector, ok := node.(*ast.SelectorExpr)
 			if !ok {
 				return true
 			}

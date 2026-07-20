@@ -28,13 +28,11 @@ func (failedAssertionShadowReadCheck) Run(pass *Pass) {
 			(*ast.IfStmt)(nil),
 		},
 		func(node ast.Node) bool {
-			statement,
-				ok := node.(*ast.IfStmt)
+			statement, ok := node.(*ast.IfStmt)
 			if !ok || statement.Else == nil {
 				return true
 			}
-			shadow,
-				ok := failedAssertionShadow(pass, statement)
+			shadow, ok := failedAssertionShadow(pass, statement)
 			if !ok {
 				return true
 			}
@@ -142,12 +140,10 @@ func scanFailedAssertionStatement(pass *Pass, statement ast.Stmt, shadow types.O
 			ast.Inspect(
 				statement.Decl,
 				func(node ast.Node) bool {
-					if literal,
-						ok := node.(*ast.FuncLit); ok && literal != nil {
+					if literal, ok := node.(*ast.FuncLit); ok && literal != nil {
 						return false
 					}
-					identifier,
-						ok := node.(*ast.Ident)
+					identifier, ok := node.(*ast.Ident)
 					if ok && pass.TypesInfo.ObjectOf(identifier) == shadow {
 						pass.Report(identifier, failedAssertionMessage(identifier.Name))
 					}
@@ -210,12 +206,10 @@ func reportFailedAssertionReads(pass *Pass, node ast.Node, shadow types.Object) 
 	ast.Inspect(
 		node,
 		func(node ast.Node) bool {
-			if _,
-				ok := node.(*ast.FuncLit); ok {
+			if _, ok := node.(*ast.FuncLit); ok {
 				return false
 			}
-			identifier,
-				ok := node.(*ast.Ident)
+			identifier, ok := node.(*ast.Ident)
 			if ok && pass.TypesInfo.ObjectOf(identifier) == shadow {
 				pass.Report(identifier, failedAssertionMessage(identifier.Name))
 			}

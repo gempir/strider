@@ -30,19 +30,16 @@ func (nonCanonicalHeaderCheck) Run(pass *Pass) {
 			(*ast.IndexExpr)(nil),
 		},
 		func(node ast.Node) bool {
-			if assignment,
-				ok := node.(*ast.AssignStmt); ok {
+			if assignment, ok := node.(*ast.AssignStmt); ok {
 				for _, expression := range assignment.Lhs {
-					index,
-						ok := ast.Unparen(expression).(*ast.IndexExpr)
+					index, ok := ast.Unparen(expression).(*ast.IndexExpr)
 					if ok && isNamedType(pass.TypesInfo.TypeOf(index.X), "net/http", "Header") {
 						assigned[index] = true
 					}
 				}
 				return true
 			}
-			index,
-				ok := node.(*ast.IndexExpr)
+			index, ok := node.(*ast.IndexExpr)
 			if !ok || assigned[index] || !isNamedType(pass.TypesInfo.TypeOf(index.X), "net/http", "Header") {
 				return true
 			}

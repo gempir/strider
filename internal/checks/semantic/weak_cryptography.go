@@ -25,8 +25,7 @@ func (weakCryptographyCheck) Run(pass *Pass) {
 			(*ast.CallExpr)(nil),
 		},
 		func(node ast.Node) bool {
-			call,
-				ok := node.(*ast.CallExpr)
+			call, ok := node.(*ast.CallExpr)
 			if !ok {
 				return true
 			}
@@ -35,10 +34,7 @@ func (weakCryptographyCheck) Run(pass *Pass) {
 				return true
 			}
 			switch function.Pkg().Path() {
-			case "crypto/md5",
-				"crypto/sha1",
-				"crypto/des",
-				"crypto/rc4":
+			case "crypto/md5", "crypto/sha1", "crypto/des", "crypto/rc4":
 				pass.Report(call, "deprecated cryptographic primitive "+function.Pkg().Path()+"."+function.Name()+" should not protect new data")
 			}
 			return true

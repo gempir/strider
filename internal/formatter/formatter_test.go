@@ -169,8 +169,7 @@ func TestFormatGotoAndFallthrough(t *testing.T) {
 		t.Run(
 			name,
 			func(t *testing.T) {
-				result,
-					err := Format(name+".go", []byte(test.input))
+				result, err := Format(name+".go", []byte(test.input))
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -191,8 +190,6 @@ var _=Map[string,int]
 `)
 	want := `package p
 
-var _ = Map[string, int]
-
 type Pair[Left, Right any] struct {
 	First  Left
 	Second Right
@@ -209,6 +206,8 @@ func Map[Input any, Output comparable](values []Input, convert func(Input) Outpu
 	}
 	return result
 }
+
+var _ = Map[string, int]
 `
 	result, err := Format("generics.go", input)
 	if err != nil {
@@ -235,6 +234,32 @@ func TestFormatBreaksLongGenericLists(t *testing.T) {
 		if !strings.Contains(formatted, want) {
 			t.Fatalf("formatted source does not contain %q:\n%s", want, formatted)
 		}
+	}
+}
+
+func TestFormatKeepsNestedAssignmentListsTogether(t *testing.T) {
+	input := []byte(`package p
+func Run(){Wrap(func(){left,right:=pair();_,_=left,right})}
+`)
+	want := `package p
+
+func Run() {
+	Wrap(
+		func() {
+			left, right := pair()
+			_, _ = left, right
+		},
+	)
+}
+`
+	result, err := FormatWithOptions("nested_assignment.go", input, Options{
+		PrintWidth: 40,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := string(result.Source); got != want {
+		t.Fatalf("formatted source:\n%s\nwant:\n%s", got, want)
 	}
 }
 
@@ -471,6 +496,11 @@ var array = [2]int{1, 2}
 `)
 	want := `package p
 
+type options struct {
+	Name    string
+	Enabled bool
+}
+
 var compact = options{
 	Name:    "compact",
 	Enabled: true,
@@ -496,11 +526,6 @@ var values = []int{
 var array = [2]int{
 	1,
 	2,
-}
-
-type options struct {
-	Name    string
-	Enabled bool
 }
 `
 	result, err := FormatWithOptions("composite_literals.go", input, Options{
@@ -565,7 +590,7 @@ func B() {}
 	}
 }
 
-func TestFormatMovesDetachedCommentsWithFollowingDeclaration(t *testing.T) {
+func TestFormatPreservesDetachedCommentPlacement(t *testing.T) {
 	input := []byte(`package p
 
 func Run() {}
@@ -574,14 +599,7 @@ func Run() {}
 
 type item struct{}
 `)
-	want := `package p
-
-// This is section context, not type documentation.
-
-type item struct{}
-
-func Run() {}
-`
+	want := string(input)
 	result, err := Format("detached_comment_order.go", input)
 	if err != nil {
 		t.Fatal(err)
@@ -591,7 +609,7 @@ func Run() {}
 	}
 }
 
-func TestFormatOrdersTopLevelDeclarationsByKind(t *testing.T) {
+func TestFormatPreservesTopLevelDeclarationOrder(t *testing.T) {
 	input := []byte(`package p
 
 // Run uses the current item.
@@ -608,21 +626,21 @@ const second = 2
 `)
 	want := `package p
 
-const first = 1
+// Run uses the current item.
+func Run() item {
+	return current
+}
 
-const second = 2
+// item is the stored value.
+type item struct{}
 
 var current item
 
 var fallback item
 
-// item is the stored value.
-type item struct{}
+const first = 1
 
-// Run uses the current item.
-func Run() item {
-	return current
-}
+const second = 2
 `
 	result, err := Format("declaration_order.go", input)
 	if err != nil {
@@ -677,13 +695,11 @@ func FuzzFormatRoundTrip(f *testing.F) {
 			if !strings.Contains(source, "package ") {
 				return
 			}
-			result,
-				err := Format("fuzz.go", []byte(source))
+			result, err := Format("fuzz.go", []byte(source))
 			if err != nil {
 				return
 			}
-			second,
-				err := Format("fuzz.go", result.Source)
+			second, err := Format("fuzz.go", result.Source)
 			if err != nil {
 				t.Fatal(err)
 			}

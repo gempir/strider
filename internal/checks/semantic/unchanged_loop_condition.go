@@ -30,18 +30,15 @@ func (unchangedLoopConditionCheck) Run(pass *Pass) {
 		inspectFunctionSyntax(
 			function.Syntax(),
 			func(node ast.Node) bool {
-				loop,
-					ok := node.(*ast.ForStmt)
+				loop, ok := node.(*ast.ForStmt)
 				if !ok {
 					return true
 				}
-				condition,
-					ok := unchangedConditionCandidate(pass, loop)
+				condition, ok := unchangedConditionCandidate(pass, loop)
 				if !ok {
 					return true
 				}
-				value,
-					isAddress := function.ValueForExpr(condition.X)
+				value, isAddress := function.ValueForExpr(condition.X)
 				if value == nil || isAddress {
 					return true
 				}

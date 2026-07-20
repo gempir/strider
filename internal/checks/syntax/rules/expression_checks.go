@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"go/constant"
 	"go/token"
-	"strings"
 
 	"github.com/gempir/strider/internal/cst"
 	"github.com/gempir/strider/internal/diagnostic"
@@ -51,7 +50,7 @@ func expressionCost(node cst.Node) int {
 		node,
 		func(child cst.Node) bool {
 			switch {
-			case strings.HasPrefix(cst.Kind(child), "Arguments"):
+			case cst.IsArguments(child):
 				cost += 10
 			case cst.Kind(child) == "Index" || cst.Kind(child) == "Selector":
 				cost += 2

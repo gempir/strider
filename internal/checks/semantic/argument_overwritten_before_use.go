@@ -96,14 +96,12 @@ func firstAssignmentToObject(pass *Pass, body *ast.BlockStmt, object types.Objec
 			if found != nil {
 				return false
 			}
-			assignment,
-				ok := node.(*ast.AssignStmt)
+			assignment, ok := node.(*ast.AssignStmt)
 			if !ok {
 				return true
 			}
 			for _, left := range assignment.Lhs {
-				identifier,
-					ok := left.(*ast.Ident)
+				identifier, ok := left.(*ast.Ident)
 				if ok && pass.TypesInfo.ObjectOf(identifier) == object {
 					found = assignment
 					return false

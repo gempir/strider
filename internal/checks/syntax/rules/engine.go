@@ -248,8 +248,7 @@ func (a *Pass) checkDefer(statement *cst.DeferStmt) {
 	cst.Walk(
 		call.PrimaryExpr,
 		func(node cst.Node) bool {
-			literal,
-				ok := node.(*cst.FunctionLit)
+			literal, ok := node.(*cst.FunctionLit)
 			if !ok || literal.Signature == nil || literal.Signature.Result == nil {
 				return true
 			}

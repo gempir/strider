@@ -34,8 +34,7 @@ func (slicePreallocationCheck) Run(pass *Pass) {
 			(*ast.BlockStmt)(nil),
 		},
 		func(node ast.Node) bool {
-			block,
-				ok := node.(*ast.BlockStmt)
+			block, ok := node.(*ast.BlockStmt)
 			if !ok {
 				return true
 			}
@@ -190,8 +189,7 @@ func rangeAppendsExactlyOnce(pass *Pass, loop *ast.RangeStmt, variable *types.Va
 	ast.Inspect(
 		loop.Body,
 		func(node ast.Node) bool {
-			if _,
-				nested := node.(*ast.FuncLit); nested {
+			if _, nested := node.(*ast.FuncLit); nested {
 				return false
 			}
 			switch node := node.(type) {
@@ -201,15 +199,13 @@ func rangeAppendsExactlyOnce(pass *Pass, loop *ast.RangeStmt, variable *types.Va
 				}
 			case *ast.AssignStmt:
 				for _, left := range node.Lhs {
-					identifier,
-						ok := left.(*ast.Ident)
+					identifier, ok := left.(*ast.Ident)
 					if ok && pass.TypesInfo.ObjectOf(identifier) == variable {
 						assignments++
 					}
 				}
 			case *ast.UnaryExpr:
-				identifier,
-					ok := node.X.(*ast.Ident)
+				identifier, ok := node.X.(*ast.Ident)
 				if node.Op == token.AND && ok && pass.TypesInfo.ObjectOf(identifier) == variable {
 					addressTaken = true
 				}
@@ -277,8 +273,7 @@ func statementMutatesSlice(pass *Pass, statement ast.Stmt, variable *types.Var) 
 			switch node := node.(type) {
 			case *ast.AssignStmt:
 				for _, left := range node.Lhs {
-					identifier,
-						ok := left.(*ast.Ident)
+					identifier, ok := left.(*ast.Ident)
 					if ok && pass.TypesInfo.ObjectOf(identifier) == variable {
 						mutated = true
 						return false
@@ -290,8 +285,7 @@ func statementMutatesSlice(pass *Pass, statement ast.Stmt, variable *types.Var) 
 					return false
 				}
 			case *ast.UnaryExpr:
-				identifier,
-					ok := node.X.(*ast.Ident)
+				identifier, ok := node.X.(*ast.Ident)
 				if node.Op == token.AND && ok && pass.TypesInfo.ObjectOf(identifier) == variable {
 					mutated = true
 					return false

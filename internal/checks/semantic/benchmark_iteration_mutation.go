@@ -26,14 +26,12 @@ func (benchmarkIterationMutationCheck) Run(pass *Pass) {
 			(*ast.AssignStmt)(nil),
 		},
 		func(node ast.Node) bool {
-			assignment,
-				ok := node.(*ast.AssignStmt)
+			assignment, ok := node.(*ast.AssignStmt)
 			if !ok || assignment.Tok != token.ASSIGN {
 				return true
 			}
 			for _, left := range assignment.Lhs {
-				selector,
-					ok := left.(*ast.SelectorExpr)
+				selector, ok := left.(*ast.SelectorExpr)
 				if !ok || selector.Sel.Name != "N" || !isPointerToNamedType(pass.TypesInfo.TypeOf(selector.X), "testing", "B") {
 					continue
 				}

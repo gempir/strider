@@ -27,38 +27,31 @@ func (deferCloseBeforeErrorCheckCheck) Run(pass *Pass) {
 			(*ast.BlockStmt)(nil),
 		},
 		func(node ast.Node) bool {
-			block,
-				ok := node.(*ast.BlockStmt)
+			block, ok := node.(*ast.BlockStmt)
 			if !ok {
 				return true
 			}
 			for index := 0; index+1 < len(block.List); index++ {
-				assignment,
-					ok := block.List[index].(*ast.AssignStmt)
+				assignment, ok := block.List[index].(*ast.AssignStmt)
 				if !ok || len(assignment.Rhs) != 1 || len(assignment.Lhs) < 2 {
 					continue
 				}
-				if ignored,
-					ok := assignment.Lhs[len(assignment.Lhs)-1].(*ast.Ident); ok && ignored.Name == "_" {
+				if ignored, ok := assignment.Lhs[len(assignment.Lhs)-1].(*ast.Ident); ok && ignored.Name == "_" {
 					continue
 				}
-				call,
-					ok := ast.Unparen(assignment.Rhs[0]).(*ast.CallExpr)
+				call, ok := ast.Unparen(assignment.Rhs[0]).(*ast.CallExpr)
 				if !ok || !callReturnsValueAndError(pass, call) {
 					continue
 				}
-				resource,
-					ok := assignment.Lhs[0].(*ast.Ident)
+				resource, ok := assignment.Lhs[0].(*ast.Ident)
 				if !ok {
 					continue
 				}
-				deferred,
-					ok := block.List[index+1].(*ast.DeferStmt)
+				deferred, ok := block.List[index+1].(*ast.DeferStmt)
 				if !ok || deferred.Call == nil {
 					continue
 				}
-				selector,
-					ok := deferred.Call.Fun.(*ast.SelectorExpr)
+				selector, ok := deferred.Call.Fun.(*ast.SelectorExpr)
 				if !ok || selector.Sel.Name != "Close" {
 					continue
 				}

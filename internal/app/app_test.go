@@ -71,8 +71,7 @@ func TestShortOptionAliases(t *testing.T) {
 		t.Run(
 			arguments[1],
 			func(t *testing.T) {
-				var stdout,
-					stderr bytes.Buffer
+				var stdout, stderr bytes.Buffer
 				if code := Run(arguments, strings.NewReader(""), &stdout, &stderr); code != exitSuccess {
 					t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 				}
@@ -131,8 +130,7 @@ func TestLongOptionsRequireTwoDashes(t *testing.T) {
 		t.Run(
 			name,
 			func(t *testing.T) {
-				var stdout,
-					stderr bytes.Buffer
+				var stdout, stderr bytes.Buffer
 				code := Run(arguments, strings.NewReader(""), &stdout, &stderr)
 				if code != exitError || !strings.Contains(stderr.String(), "must use two dashes") {
 					t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
@@ -198,8 +196,7 @@ func TestCommandUsageColorsOptionsAndHidesLegacyCheckFlags(t *testing.T) {
 		t.Run(
 			command,
 			func(t *testing.T) {
-				var stdout,
-					stderr bytes.Buffer
+				var stdout, stderr bytes.Buffer
 				code := Run([]string{
 					"--color",
 					"always",
@@ -470,8 +467,7 @@ func TestLineDiffReconstructsBothInputs(t *testing.T) {
 				before := splitSourceLines([]byte(sources[0]))
 				after := splitSourceLines([]byte(sources[1]))
 				operations := lineDiff(before, after)
-				var reconstructedBefore,
-					reconstructedAfter []sourceLine
+				var reconstructedBefore, reconstructedAfter []sourceLine
 				for _, operation := range operations {
 					if operation.kind != diffAdd {
 						reconstructedBefore = append(reconstructedBefore, operation.line)
@@ -609,10 +605,8 @@ func TestCheckFixFormatsAndReruns(t *testing.T) {
 		t.Run(
 			flag,
 			func(t *testing.T) {
-				_,
-					filename := checkFixModule(t, "package sample\nfunc Ready( )bool{return true}\n")
-				var stdout,
-					stderr bytes.Buffer
+				_, filename := checkFixModule(t, "package sample\nfunc Ready( )bool{return true}\n")
+				var stdout, stderr bytes.Buffer
 				code := Run(
 					[]string{
 						"--no-config",
@@ -631,8 +625,7 @@ func TestCheckFixFormatsAndReruns(t *testing.T) {
 				if code != exitSuccess || stdout.String() != "0 issues\n" || stderr.Len() != 0 {
 					t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 				}
-				contents,
-					err := os.ReadFile(filename)
+				contents, err := os.ReadFile(filename)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -847,8 +840,7 @@ func TestCheckFixRejectsIncompatibleModes(t *testing.T) {
 					"--no-config",
 					"check",
 				}, test.args...)
-				var stdout,
-					stderr bytes.Buffer
+				var stdout, stderr bytes.Buffer
 				code := Run(args, strings.NewReader(""), &stdout, &stderr)
 				if code != exitError || stdout.Len() != 0 || !strings.Contains(stderr.String(), test.want) {
 					t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
@@ -1259,8 +1251,7 @@ severity = "warning"
 		t.Run(
 			name,
 			func(t *testing.T) {
-				var stdout,
-					stderr bytes.Buffer
+				var stdout, stderr bytes.Buffer
 				code := Run([]string{
 					"--config",
 					configurationPath,
@@ -1270,10 +1261,8 @@ severity = "warning"
 				if code != exitSuccess || stderr.Len() != 0 {
 					t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 				}
-				severity,
-					included := listedSeverity(stdout.String(), test.includedCode)
-				_,
-					excluded := listedSeverity(stdout.String(), test.excludedCode)
+				severity, included := listedSeverity(stdout.String(), test.includedCode)
+				_, excluded := listedSeverity(stdout.String(), test.excludedCode)
 				if !included || severity != test.includedSeverity || excluded {
 					t.Fatalf("canonical settings were not scoped: %q", stdout.String())
 				}
@@ -1296,8 +1285,7 @@ severity = "none"
 		t.Run(
 			command,
 			func(t *testing.T) {
-				var stdout,
-					stderr bytes.Buffer
+				var stdout, stderr bytes.Buffer
 				code := Run([]string{
 					"--config",
 					configurationPath,
@@ -1334,8 +1322,7 @@ severity = "warning"
 				}
 				args = append(args, command[0], "--minimum-severity", "error")
 				args = append(args, command[1:]...)
-				var stdout,
-					stderr bytes.Buffer
+				var stdout, stderr bytes.Buffer
 				if code := Run(args, strings.NewReader(""), &stdout, &stderr); code != exitSuccess || stdout.Len() != 0 || stderr.Len() != 0 {
 					t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 				}
@@ -1356,8 +1343,7 @@ func TestCommandsRejectInvalidMinimumSeverity(t *testing.T) {
 		t.Run(
 			name,
 			func(t *testing.T) {
-				var stdout,
-					stderr bytes.Buffer
+				var stdout, stderr bytes.Buffer
 				arguments := append([]string{
 					"--no-config",
 				}, args...)

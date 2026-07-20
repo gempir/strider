@@ -25,8 +25,7 @@ func (contextStoredInStructCheck) Run(pass *Pass) {
 			(*ast.StructType)(nil),
 		},
 		func(node ast.Node) bool {
-			structure,
-				ok := node.(*ast.StructType)
+			structure, ok := node.(*ast.StructType)
 			if !ok || structure.Fields == nil {
 				return true
 			}

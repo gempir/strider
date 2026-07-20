@@ -29,13 +29,11 @@ func (invalidTemplateCheck) Run(pass *Pass) {
 			(*ast.CallExpr)(nil),
 		},
 		func(node ast.Node) bool {
-			call,
-				ok := node.(*ast.CallExpr)
+			call, ok := node.(*ast.CallExpr)
 			if !ok || len(call.Args) == 0 {
 				return true
 			}
-			selector,
-				ok := call.Fun.(*ast.SelectorExpr)
+			selector, ok := call.Fun.(*ast.SelectorExpr)
 			if !ok {
 				return true
 			}

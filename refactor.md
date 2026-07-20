@@ -465,46 +465,75 @@ removes `lint`/`analyze`, split what remains:
 
 ## Phase 5 — Formatter and CST cleanups
 
-- [ ] **Split `concrete_printer.go` (844 lines, five concerns)** into
+- [x] **Split `concrete_printer.go` (844 lines, five concerns)** into
   `layout.go`, `render.go`, `writer.go`, `imports.go`, and
   `module_cache.go` (the tests for the module cache already point at that
   missing file name). Filesystem I/O (`modulePathIn` reading `go.mod`) does
   not belong in a printer file.
-- [ ] Replace the 13-parallel-boolean-slices layout storage
+  **Implemented:** the Phase 2 `printer.go` successor is split along those
+  five boundaries; `module_cache.go` now owns all `go.mod` filesystem I/O.
+- [x] Replace the 13-parallel-boolean-slices layout storage
   (concrete_printer.go:221-241) with a per-token struct — same performance,
   no hand-counted slice bounds.
-- [ ] Unify the duplicated declaration-rank tables
+  **Implemented:** every token has one `tokenLayout` record containing its
+  delimiter endpoints and layout flags; the parallel integer and boolean
+  backing slices are gone.
+- [x] Unify the duplicated declaration-rank tables
   (`concreteDeclarationRank` safety.go:132-146 vs
   `formatterDeclarationRank` declaration_order.go:104-122) — if they drift,
   the safety check validates the wrong invariant. Same for the duplicated
   import-spec walk (safety.go:71-91 vs concrete_printer.go:480-501).
-- [ ] **Question: top-level declaration reordering.** The formatter *moves
+  **Implemented:** removing formatter declaration reordering deleted both
+  rank tables. `cst.ImportSpecs` and one `importSpecName` helper now provide
+  the shared import walk and alias spelling.
+- [x] **Question: top-level declaration reordering.** The formatter *moves
   code* (const→var→type→func), which destroys intentional grouping, inflates
   first-run diffs, and forces the sorted-comment fingerprint hack in
   `safety.go`. Recommendation: make it a check with an automatic fix (the
   semantic package already has `top-level-declaration-order`!) and remove it
   from the format pass. This deletes `declaration_order.go`'s parser round
   trip and simplifies `safety.go` substantially.
-- [ ] Make `internal/fix` use a shared formatter session instead of the free
+  **Implemented:** formatting preserves source declaration order;
+  `declaration_order.go`, its parser round trip, and the safety fingerprint's
+  declaration/comment sorting workarounds were deleted. Ordering remains the
+  responsibility of the existing check.
+- [x] Make `internal/fix` use a shared formatter session instead of the free
   `Format` function in a loop (fix.go:305), which allocates a fresh module
   cache per file.
-- [ ] Remove the double `IsIgnored`/`normalizeOptions` calls on the
+  **Implemented:** a fix plan creates one formatter session and reuses its
+  module cache for every edited file.
+- [x] Remove the double `IsIgnored`/`normalizeOptions` calls on the
   `FormatTree` path (formatter.go:83/169, 121/158).
-- [ ] Investigate the convergence loop (up to 100 re-renders,
+  **Implemented:** public entry points normalize once; byte-source formatting
+  performs its required pre-parse ignore check once and the private tree path
+  knows not to repeat it.
+- [x] Investigate the convergence loop (up to 100 re-renders,
   formatter.go:188-207): a formatter needing fixpoint iteration means layout
   decisions depend on prior output. At minimum document why; ideally make
   `shouldBreak` deterministic in one pass. Related: the formatter's own
   output splits short-var-decl LHS across lines
   (`spec,\n  isSpec := ...`) throughout this repo — the style rule that
   produces this should be revisited.
-- [ ] `cst`: the reflection fallbacks (~250 lines: `collectChildren`,
+  **Implemented:** the loop now documents that CST trivia can move to its
+  canonical token boundary on the first render and is bounded defensively
+  while the final idempotence check remains authoritative. Commas are now
+  tied to their owning delimited group, so a broken outer call no longer
+  splits nested assignment LHS lists; the repository was reformatted once to
+  remove the old style.
+- [x] `cst`: the reflection fallbacks (~250 lines: `collectChildren`,
   `appendChildrenReverse`, `collectTokenBounds`, three generic variants)
   exist only for test-only foreign node types. Consider deleting them and
   letting gencst's hard-fail guarantee coverage. Keep `cmd/gencst` as is —
   it is the strongest code in the repo (schema hash, dependency-version
   pinning, CI check).
-- [ ] Consider exporting a `cst.IsArguments(node)`-style helper so consumers
+  **Implemented:** production traversal, kind, nil, and token-bound paths now
+  use generated accessors plus explicit token handling only. Reflection stays
+  solely in tests as an independent reference implementation for generated
+  coverage and benchmarks.
+- [x] Consider exporting a `cst.IsArguments(node)`-style helper so consumers
   stop writing `strings.HasPrefix(cst.Kind(x), "Arguments")` in four places.
+  **Implemented:** `cst.IsArguments` uses a typed switch over all four grammar
+  variants and replaces every prefix check in formatter and syntax consumers.
 
 ## Phase 6 — Right-size the incremental/watch machinery
 

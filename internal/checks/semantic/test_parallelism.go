@@ -51,8 +51,7 @@ func (testParallelismCheck) Run(pass *Pass) {
 			if file == nil || !strings.HasSuffix(pass.FileSet.Position(file.Pos()).Filename, "_test.go") || !isTestingMethod(pass, call.Fun, "Run") || len(call.Args) != 2 {
 				return true
 			}
-			literal,
-				ok := ast.Unparen(call.Args[1]).(*ast.FuncLit)
+			literal, ok := ast.Unparen(call.Args[1]).(*ast.FuncLit)
 			if !ok {
 				return true
 			}
@@ -95,18 +94,15 @@ func hasTestingParallelCall(pass *Pass, body *ast.BlockStmt, parameter *types.Va
 	inspectFunctionBody(
 		body,
 		func(node ast.Node) bool {
-			call,
-				ok := node.(*ast.CallExpr)
+			call, ok := node.(*ast.CallExpr)
 			if !ok || !isTestingMethod(pass, call.Fun, "Parallel") {
 				return true
 			}
-			selector,
-				ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
+			selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
 			if !ok {
 				return true
 			}
-			identifier,
-				ok := ast.Unparen(selector.X).(*ast.Ident)
+			identifier, ok := ast.Unparen(selector.X).(*ast.Ident)
 			if ok && pass.TypesInfo.ObjectOf(identifier) == parameter {
 				found = true
 			}

@@ -25,23 +25,19 @@ func (urlQueryCopyMutationCheck) Run(pass *Pass) {
 			(*ast.CallExpr)(nil),
 		},
 		func(node ast.Node) bool {
-			call,
-				ok := node.(*ast.CallExpr)
+			call, ok := node.(*ast.CallExpr)
 			if !ok {
 				return true
 			}
-			mutation,
-				ok := call.Fun.(*ast.SelectorExpr)
+			mutation, ok := call.Fun.(*ast.SelectorExpr)
 			if !ok || !isURLValuesMutation(pass, mutation) {
 				return true
 			}
-			queryCall,
-				ok := ast.Unparen(mutation.X).(*ast.CallExpr)
+			queryCall, ok := ast.Unparen(mutation.X).(*ast.CallExpr)
 			if !ok || len(queryCall.Args) != 0 {
 				return true
 			}
-			querySelector,
-				ok := queryCall.Fun.(*ast.SelectorExpr)
+			querySelector, ok := queryCall.Fun.(*ast.SelectorExpr)
 			if !ok || !isNetURLMethod(pass, querySelector, "Query") {
 				return true
 			}

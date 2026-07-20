@@ -70,8 +70,7 @@ func (copyLockValueCheck) Run(pass *Pass) {
 			inspectFunctionBody(
 				body,
 				func(node ast.Node) bool {
-					statement,
-						ok := node.(*ast.ReturnStmt)
+					statement, ok := node.(*ast.ReturnStmt)
 					if ok {
 						reportLockReturn(pass, statement, signature)
 					}

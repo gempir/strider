@@ -97,12 +97,10 @@ func consistentConcreteReturns(pass *Pass, body *ast.BlockStmt, signature *types
 			if !valid {
 				return false
 			}
-			if _,
-				nested := node.(*ast.FuncLit); nested {
+			if _, nested := node.(*ast.FuncLit); nested {
 				return false
 			}
-			statement,
-				ok := node.(*ast.ReturnStmt)
+			statement, ok := node.(*ast.ReturnStmt)
 			if !ok {
 				return true
 			}

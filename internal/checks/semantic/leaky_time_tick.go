@@ -41,13 +41,11 @@ func (leakyTimeTickCheck) Run(pass *Pass) {
 				}
 				if node != root {
 					switch node.(type) {
-					case *ast.FuncDecl,
-						*ast.FuncLit:
+					case *ast.FuncDecl, *ast.FuncLit:
 						return false
 					}
 				}
-				call,
-					ok := node.(*ast.CallExpr)
+				call, ok := node.(*ast.CallExpr)
 				if !ok || len(call.Args) != 1 || !isPackageFunction(pass.TypesInfo, call.Fun, "time", "Tick") {
 					return true
 				}

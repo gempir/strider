@@ -26,18 +26,15 @@ func (caseInsensitiveStringComparisonCheck) Run(pass *Pass) {
 			(*ast.BinaryExpr)(nil),
 		},
 		func(node ast.Node) bool {
-			comparison,
-				ok := node.(*ast.BinaryExpr)
+			comparison, ok := node.(*ast.BinaryExpr)
 			if !ok || (comparison.Op != token.EQL && comparison.Op != token.NEQ) {
 				return true
 			}
-			left,
-				ok := comparison.X.(*ast.CallExpr)
+			left, ok := comparison.X.(*ast.CallExpr)
 			if !ok || len(left.Args) != 1 {
 				return true
 			}
-			right,
-				ok := comparison.Y.(*ast.CallExpr)
+			right, ok := comparison.Y.(*ast.CallExpr)
 			if !ok || len(right.Args) != 1 {
 				return true
 			}

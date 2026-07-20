@@ -30,20 +30,16 @@ func (ineffectiveBitwiseZeroCheck) Run(pass *Pass) {
 			(*ast.BinaryExpr)(nil),
 		},
 		func(node ast.Node) bool {
-			binary,
-				ok := node.(*ast.BinaryExpr)
+			binary, ok := node.(*ast.BinaryExpr)
 			if !ok || !allIntegerTypes(pass.TypesInfo.TypeOf(binary)) {
 				return true
 			}
 			switch binary.Op {
-			case token.AND,
-				token.OR,
-				token.XOR:
+			case token.AND, token.OR, token.XOR:
 			default:
 				return true
 			}
-			zero,
-				iotaName := bitwiseZeroOperand(pass, binary.Y, iotaConstants)
+			zero, iotaName := bitwiseZeroOperand(pass, binary.Y, iotaConstants)
 			if !zero {
 				return true
 			}
@@ -53,8 +49,7 @@ func (ineffectiveBitwiseZeroCheck) Run(pass *Pass) {
 			switch binary.Op {
 			case token.AND:
 				message = fmt.Sprintf("%s always equals zero", expression)
-			case token.OR,
-				token.XOR:
+			case token.OR, token.XOR:
 				message = fmt.Sprintf("%s always equals %s", expression, left)
 			}
 			if iotaName != "" {
@@ -73,18 +68,15 @@ func directIotaConstants(pass *Pass) map[*types.Const]bool {
 			(*ast.ValueSpec)(nil),
 		},
 		func(node ast.Node) bool {
-			specification,
-				ok := node.(*ast.ValueSpec)
+			specification, ok := node.(*ast.ValueSpec)
 			if !ok || len(specification.Names) != 1 || len(specification.Values) != 1 {
 				return true
 			}
-			identifier,
-				ok := ast.Unparen(specification.Values[0]).(*ast.Ident)
+			identifier, ok := ast.Unparen(specification.Values[0]).(*ast.Ident)
 			if !ok || !isUniverseIota(pass.TypesInfo.ObjectOf(identifier)) {
 				return true
 			}
-			object,
-				ok := pass.TypesInfo.Defs[specification.Names[0]].(*types.Const)
+			object, ok := pass.TypesInfo.Defs[specification.Names[0]].(*types.Const)
 			if ok {
 				constants[object] = true
 			}

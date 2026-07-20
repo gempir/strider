@@ -77,22 +77,19 @@ func localPositiveLengthMakes(pass *Pass) map[token.Pos]sizedSliceCandidate {
 						if index >= len(node.Lhs) {
 							break
 						}
-						identifier,
-							ok := node.Lhs[index].(*ast.Ident)
+						identifier, ok := node.Lhs[index].(*ast.Ident)
 						if !ok {
 							continue
 						}
 						addPositiveLengthMake(pass, result, identifier, right)
 					}
 				case *ast.DeclStmt:
-					declaration,
-						ok := node.Decl.(*ast.GenDecl)
+					declaration, ok := node.Decl.(*ast.GenDecl)
 					if !ok || declaration.Tok != token.VAR {
 						return true
 					}
 					for _, specification := range declaration.Specs {
-						value,
-							ok := specification.(*ast.ValueSpec)
+						value, ok := specification.(*ast.ValueSpec)
 						if !ok {
 							continue
 						}

@@ -410,9 +410,7 @@ func addPackageGraphFingerprint(writer *fingerprintWriter, roots []*packages.Pac
 	sort.Slice(
 		all,
 		func(leftIndex, rightIndex int) bool {
-			left,
-				right := all[leftIndex],
-				all[rightIndex]
+			left, right := all[leftIndex], all[rightIndex]
 			if left.ID != right.ID {
 				return left.ID < right.ID
 			}

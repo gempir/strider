@@ -50,22 +50,18 @@ func reportUncheckedRowsErrors(pass *Pass, body *ast.BlockStmt) {
 	ast.Inspect(
 		body,
 		func(node ast.Node) bool {
-			if _,
-				nested := node.(*ast.FuncLit); nested {
+			if _, nested := node.(*ast.FuncLit); nested {
 				return false
 			}
-			call,
-				ok := node.(*ast.CallExpr)
+			call, ok := node.(*ast.CallExpr)
 			if !ok {
 				return true
 			}
-			selector,
-				ok := call.Fun.(*ast.SelectorExpr)
+			selector, ok := call.Fun.(*ast.SelectorExpr)
 			if !ok || !isPointerToNamedType(pass.TypesInfo.TypeOf(selector.X), "database/sql", "Rows") {
 				return true
 			}
-			receiver,
-				ok := unparenExpression(selector.X).(*ast.Ident)
+			receiver, ok := unparenExpression(selector.X).(*ast.Ident)
 			if !ok {
 				return true
 			}
@@ -74,8 +70,7 @@ func reportUncheckedRowsErrors(pass *Pass, body *ast.BlockStmt) {
 				return true
 			}
 			switch selector.Sel.Name {
-			case "Next",
-				"NextResultSet":
+			case "Next", "NextResultSet":
 				if iterated[object] == nil {
 					iterated[object] = call
 				}

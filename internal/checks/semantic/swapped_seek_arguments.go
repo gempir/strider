@@ -26,13 +26,11 @@ func (swappedSeekArgumentsCheck) Run(pass *Pass) {
 			(*ast.CallExpr)(nil),
 		},
 		func(node ast.Node) bool {
-			call,
-				ok := node.(*ast.CallExpr)
+			call, ok := node.(*ast.CallExpr)
 			if !ok || len(call.Args) != 2 || !isIOSeekConstant(pass, call.Args[0]) {
 				return true
 			}
-			selector,
-				ok := call.Fun.(*ast.SelectorExpr)
+			selector, ok := call.Fun.(*ast.SelectorExpr)
 			if !ok || selector.Sel.Name != "Seek" || !hasSeekerSignature(pass, selector) {
 				return true
 			}

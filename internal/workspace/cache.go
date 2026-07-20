@@ -95,8 +95,7 @@ type fileSnapshot struct {
 func (snapshot *fileSnapshot) CST() (*cst.Tree, error) {
 	snapshot.treeOnce.Do(
 		func() {
-			snapshot.tree,
-				snapshot.treeErr = cst.Parse(snapshot.path, snapshot.source)
+			snapshot.tree, snapshot.treeErr = cst.Parse(snapshot.path, snapshot.source)
 			if snapshot.tree != nil && snapshot.onTree != nil {
 				snapshot.onTree(estimatedCSTBytes(snapshot.source))
 			}

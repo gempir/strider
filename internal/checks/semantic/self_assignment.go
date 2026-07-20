@@ -33,8 +33,7 @@ func (selfAssignmentCheck) Run(pass *Pass) {
 			(*ast.AssignStmt)(nil),
 		},
 		func(node ast.Node) bool {
-			assignment,
-				ok := node.(*ast.AssignStmt)
+			assignment, ok := node.(*ast.AssignStmt)
 			if !ok || assignment.Tok != token.ASSIGN || len(assignment.Lhs) != len(assignment.Rhs) {
 				return true
 			}

@@ -26,8 +26,7 @@ func (deferredReturnFunctionNotCalledCheck) Run(pass *Pass) {
 			(*ast.DeferStmt)(nil),
 		},
 		func(node ast.Node) bool {
-			statement,
-				ok := node.(*ast.DeferStmt)
+			statement, ok := node.(*ast.DeferStmt)
 			if !ok || statement.Call == nil {
 				return true
 			}
@@ -35,8 +34,7 @@ func (deferredReturnFunctionNotCalledCheck) Run(pass *Pass) {
 			if result == nil {
 				return true
 			}
-			if _,
-				ok := result.Underlying().(*types.Signature); !ok {
+			if _, ok := result.Underlying().(*types.Signature); !ok {
 				return true
 			}
 			pass.Report(statement, "the deferred call returns a function that is never called; use a second call to defer the returned function")

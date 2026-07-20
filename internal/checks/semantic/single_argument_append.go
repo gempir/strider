@@ -27,18 +27,15 @@ func (singleArgumentAppendCheck) Run(pass *Pass) {
 			(*ast.CallExpr)(nil),
 		},
 		func(node ast.Node) bool {
-			call,
-				ok := node.(*ast.CallExpr)
+			call, ok := node.(*ast.CallExpr)
 			if !ok || len(call.Args) != 1 || call.Ellipsis.IsValid() {
 				return true
 			}
-			identifier,
-				ok := call.Fun.(*ast.Ident)
+			identifier, ok := call.Fun.(*ast.Ident)
 			if !ok {
 				return true
 			}
-			builtin,
-				ok := pass.TypesInfo.ObjectOf(identifier).(*types.Builtin)
+			builtin, ok := pass.TypesInfo.ObjectOf(identifier).(*types.Builtin)
 			if !ok || builtin.Name() != "append" {
 				return true
 			}

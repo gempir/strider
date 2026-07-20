@@ -25,13 +25,11 @@ func (waitGroupAddInsideGoroutineCheck) Run(pass *Pass) {
 			(*ast.GoStmt)(nil),
 		},
 		func(node ast.Node) bool {
-			statement,
-				ok := node.(*ast.GoStmt)
+			statement, ok := node.(*ast.GoStmt)
 			if !ok {
 				return true
 			}
-			literal,
-				ok := statement.Call.Fun.(*ast.FuncLit)
+			literal, ok := statement.Call.Fun.(*ast.FuncLit)
 			if !ok {
 				return true
 			}
@@ -39,13 +37,11 @@ func (waitGroupAddInsideGoroutineCheck) Run(pass *Pass) {
 				literal.Body,
 				func(nested ast.Node) bool {
 					if nested != literal.Body {
-						if _,
-							nestedFunction := nested.(*ast.FuncLit); nestedFunction {
+						if _, nestedFunction := nested.(*ast.FuncLit); nestedFunction {
 							return false
 						}
 					}
-					call,
-						ok := nested.(*ast.CallExpr)
+					call, ok := nested.(*ast.CallExpr)
 					if ok && isNamedMethod(pass.TypesInfo, call.Fun, "sync", "WaitGroup", "Add") {
 						pass.Report(call, "call WaitGroup.Add before starting the goroutine to avoid racing with Wait")
 					}

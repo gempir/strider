@@ -27,25 +27,21 @@ func (dynamicPrintfCheck) Run(pass *Pass) {
 			(*ast.Ident)(nil),
 		},
 		func(node ast.Node) bool {
-			call,
-				ok := node.(*ast.CallExpr)
+			call, ok := node.(*ast.CallExpr)
 			if !ok {
 				return true
 			}
-			formatIndex,
-				ok := dynamicPrintfFormatIndex(pass, call)
+			formatIndex, ok := dynamicPrintfFormatIndex(pass, call)
 			if !ok || len(call.Args) != formatIndex+1 {
 				return true
 			}
 			format := call.Args[formatIndex]
 			switch format.(type) {
-			case *ast.CallExpr,
-				*ast.Ident:
+			case *ast.CallExpr, *ast.Ident:
 			default:
 				return true
 			}
-			if _,
-				tuple := pass.TypesInfo.TypeOf(format).(*types.Tuple); tuple {
+			if _, tuple := pass.TypesInfo.TypeOf(format).(*types.Tuple); tuple {
 				return true
 			}
 			pass.Report(call, "printf-style function with dynamic format string and no further arguments should use print-style function instead")

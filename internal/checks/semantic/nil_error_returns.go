@@ -33,8 +33,7 @@ func (nilErrorReturnCheck) Run(pass *Pass) {
 			inspectFunctionBody(
 				body,
 				func(node ast.Node) bool {
-					statement,
-						ok := node.(*ast.IfStmt)
+					statement, ok := node.(*ast.IfStmt)
 					if !ok {
 						return true
 					}
@@ -73,8 +72,7 @@ func (nilValueWithNilErrorCheck) Run(pass *Pass) {
 			inspectFunctionBody(
 				body,
 				func(node ast.Node) bool {
-					statement,
-						ok := node.(*ast.ReturnStmt)
+					statement, ok := node.(*ast.ReturnStmt)
 					if !ok || len(statement.Results) != signature.Results().Len() || !isExplicitNil(pass, statement.Results[errorIndex]) {
 						return true
 					}
@@ -113,22 +111,18 @@ func forEachAnalysisFunction(pass *Pass, visit func(*ast.BlockStmt, *types.Signa
 		func(node ast.Node) bool {
 			switch function := node.(type) {
 			case *ast.FuncDecl:
-				object,
-					_ := pass.TypesInfo.Defs[function.Name].(*types.Func)
+				object, _ := pass.TypesInfo.Defs[function.Name].(*types.Func)
 				if object == nil {
 					return true
 				}
-				signature,
-					_ := object.Type().(*types.Signature)
+				signature, _ := object.Type().(*types.Signature)
 				if signature != nil {
 					visit(function.Body, signature)
 				}
 			case *ast.FuncLit:
-				signature,
-					_ := pass.TypesInfo.TypeOf(function.Type).(*types.Signature)
+				signature, _ := pass.TypesInfo.TypeOf(function.Type).(*types.Signature)
 				if signature == nil {
-					signature,
-						_ = pass.TypesInfo.TypeOf(function).(*types.Signature)
+					signature, _ = pass.TypesInfo.TypeOf(function).(*types.Signature)
 				}
 				if signature != nil {
 					visit(function.Body, signature)
@@ -167,8 +161,7 @@ func reportNilErrorsInProvenBranch(pass *Pass, branch ast.Node, signature *types
 	inspectFunctionBody(
 		branch,
 		func(node ast.Node) bool {
-			statement,
-				ok := node.(*ast.ReturnStmt)
+			statement, ok := node.(*ast.ReturnStmt)
 			if !ok || len(statement.Results) != signature.Results().Len() {
 				return true
 			}

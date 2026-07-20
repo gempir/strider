@@ -148,13 +148,11 @@ func hasSideEffects(node cst.Node) bool {
 	cst.Walk(
 		node,
 		func(child cst.Node) bool {
-			if _,
-				ok := child.(*cst.PrimaryExpr); ok && hasArguments(child) {
+			if primary, ok := child.(*cst.PrimaryExpr); ok && cst.IsArguments(primary.Postfix) {
 				found = true
 				return false
 			}
-			if unary,
-				ok := child.(*cst.UnaryExpr); ok && unary.Op.Src() == "<-" {
+			if unary, ok := child.(*cst.UnaryExpr); ok && unary.Op.Src() == "<-" {
 				found = true
 				return false
 			}
@@ -162,19 +160,6 @@ func hasSideEffects(node cst.Node) bool {
 		},
 	)
 	return found
-}
-
-func hasArguments(node cst.Node) bool {
-	primary, ok := node.(*cst.PrimaryExpr)
-	if !ok {
-		return false
-	}
-	switch primary.Postfix.(type) {
-	case *cst.Arguments, *cst.Arguments1, *cst.Arguments2, *cst.Arguments3:
-		return true
-	default:
-		return false
-	}
 }
 
 func booleanBlock(block *cst.Block) (bool, bool) {

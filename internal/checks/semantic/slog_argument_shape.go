@@ -26,14 +26,12 @@ func (slogArgumentShapeCheck) Run(pass *Pass) {
 			(*ast.CallExpr)(nil),
 		},
 		func(node ast.Node) bool {
-			call,
-				ok := node.(*ast.CallExpr)
+			call, ok := node.(*ast.CallExpr)
 			if !ok || call.Ellipsis.IsValid() {
 				return true
 			}
 			function := calledFunction(pass.TypesInfo, call.Fun)
-			start,
-				ok := slogLooseArgumentStart(function)
+			start, ok := slogLooseArgumentStart(function)
 			if !ok || start > len(call.Args) {
 				return true
 			}

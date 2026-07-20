@@ -91,24 +91,18 @@ func (impossiblePlatformComparisonCheck) Run(pass *Pass) {
 			if buildConstraint == nil {
 				return true
 			}
-			binary,
-				ok := node.(*ast.BinaryExpr)
+			binary, ok := node.(*ast.BinaryExpr)
 			if !ok || binary.Op != token.EQL && binary.Op != token.NEQ {
 				return true
 			}
-			kind,
-				target,
-				ok := platformComparison(pass, binary.X, binary.Y)
+			kind, target, ok := platformComparison(pass, binary.X, binary.Y)
 			if !ok {
-				kind,
-					target,
-					ok = platformComparison(pass, binary.Y, binary.X)
+				kind, target, ok = platformComparison(pass, binary.Y, binary.X)
 			}
 			if !ok || !knownPlatformTarget(kind, target) {
 				return true
 			}
-			possible,
-				checked := platformConstraintPossible(buildConstraint, kind, target)
+			possible, checked := platformConstraintPossible(buildConstraint, kind, target)
 			if checked && !possible {
 				pass.Report(binary, fmt.Sprintf("runtime.%s can never equal %q under this file's build constraints", kind, target))
 			}
@@ -176,11 +170,9 @@ func platformConstraintPossible(expression constraint.Expr, kind, target string)
 	}
 	possible := expression.Eval(
 		func(tag string) bool {
-			matched,
-				special := evaluateSpecial(tag)
+			matched, special := evaluateSpecial(tag)
 			if !special {
-				if _,
-					exists := unknown[tag]; !exists {
+				if _, exists := unknown[tag]; !exists {
 					unknown[tag] = len(unknown)
 				}
 			}

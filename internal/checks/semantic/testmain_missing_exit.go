@@ -35,21 +35,18 @@ func (testMainMissingExitCheck) Run(pass *Pass) {
 			ast.Inspect(
 				function.Body,
 				func(node ast.Node) bool {
-					call,
-						ok := node.(*ast.CallExpr)
+					call, ok := node.(*ast.CallExpr)
 					if !ok {
 						return true
 					}
 					if isPackageFunction(pass.TypesInfo, call.Fun, "os", "Exit") {
 						callsExit = true
 					}
-					selector,
-						ok := call.Fun.(*ast.SelectorExpr)
+					selector, ok := call.Fun.(*ast.SelectorExpr)
 					if !ok || selector.Sel.Name != "Run" {
 						return true
 					}
-					identifier,
-						ok := selector.X.(*ast.Ident)
+					identifier, ok := selector.X.(*ast.Ident)
 					if ok && pass.TypesInfo.Uses[identifier] == parameter {
 						callsRun = true
 					}

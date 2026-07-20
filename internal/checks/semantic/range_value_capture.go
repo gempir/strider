@@ -33,8 +33,7 @@ func (rangeValueCaptureCheck) Run(pass *Pass) {
 			(*ast.RangeStmt)(nil),
 		},
 		func(node ast.Node) bool {
-			loop,
-				ok := node.(*ast.RangeStmt)
+			loop, ok := node.(*ast.RangeStmt)
 			if !ok || loop.Body == nil || (loop.Tok == token.DEFINE && modernRangeVariables) {
 				return true
 			}
@@ -45,8 +44,7 @@ func (rangeValueCaptureCheck) Run(pass *Pass) {
 			ast.Inspect(
 				loop.Body,
 				func(candidate ast.Node) bool {
-					closure,
-						ok := candidate.(*ast.FuncLit)
+					closure, ok := candidate.(*ast.FuncLit)
 					if !ok {
 						return true
 					}
@@ -91,8 +89,7 @@ func directlyCapturedRangeVariables(pass *Pass, closure *ast.FuncLit, variables 
 	inspectFunctionBody(
 		closure.Body,
 		func(node ast.Node) bool {
-			identifier,
-				ok := node.(*ast.Ident)
+			identifier, ok := node.(*ast.Ident)
 			if !ok {
 				return true
 			}

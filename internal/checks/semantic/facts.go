@@ -120,8 +120,7 @@ func buildPackageFacts(files []*ast.File, required FactSet) packageFactData {
 				if !wantArguments && !wantFirstArgument {
 					return true
 				}
-				call,
-					ok := node.(*ast.CallExpr)
+				call, ok := node.(*ast.CallExpr)
 				if !ok {
 					return true
 				}

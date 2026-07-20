@@ -28,8 +28,7 @@ func (inefficientSprintfCheck) Run(pass *Pass) {
 			(*ast.CallExpr)(nil),
 		},
 		func(node ast.Node) bool {
-			call,
-				ok := node.(*ast.CallExpr)
+			call, ok := node.(*ast.CallExpr)
 			if !ok || call.Ellipsis.IsValid() || len(call.Args) != 2 || !isPackageFunction(pass.TypesInfo, call.Fun, "fmt", "Sprintf") {
 				return true
 			}

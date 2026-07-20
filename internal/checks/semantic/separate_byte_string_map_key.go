@@ -34,8 +34,7 @@ func (separateByteStringMapKeyCheck) Run(pass *Pass) {
 					return true
 				}
 				for index, left := range declaration.Lhs {
-					identifier,
-						ok := left.(*ast.Ident)
+					identifier, ok := left.(*ast.Ident)
 					if !ok {
 						continue
 					}

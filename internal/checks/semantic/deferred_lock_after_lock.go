@@ -25,26 +25,20 @@ func (deferredLockAfterLockCheck) Run(pass *Pass) {
 			(*ast.BlockStmt)(nil),
 		},
 		func(node ast.Node) bool {
-			block,
-				ok := node.(*ast.BlockStmt)
+			block, ok := node.(*ast.BlockStmt)
 			if !ok || len(block.List) < 2 {
 				return true
 			}
 			for index := 0; index+1 < len(block.List); index++ {
-				receiver,
-					method,
-					ok := syncLockExpression(pass, block.List[index])
+				receiver, method, ok := syncLockExpression(pass, block.List[index])
 				if !ok {
 					continue
 				}
-				deferred,
-					ok := block.List[index+1].(*ast.DeferStmt)
+				deferred, ok := block.List[index+1].(*ast.DeferStmt)
 				if !ok {
 					continue
 				}
-				deferredReceiver,
-					deferredMethod,
-					ok := syncLockCall(pass, deferred.Call)
+				deferredReceiver, deferredMethod, ok := syncLockCall(pass, deferred.Call)
 				if !ok || method != deferredMethod || renderAnalysisExpression(pass, receiver) != renderAnalysisExpression(pass, deferredReceiver) {
 					continue
 				}

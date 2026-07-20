@@ -73,9 +73,7 @@ func reportLoopContextCancellations(pass *Pass, body *ast.BlockStmt) {
 			}
 			if !first {
 				switch node.(type) {
-				case *ast.FuncLit,
-					*ast.ForStmt,
-					*ast.RangeStmt:
+				case *ast.FuncLit, *ast.ForStmt, *ast.RangeStmt:
 					return false
 				}
 			}

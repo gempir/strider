@@ -51,8 +51,7 @@ func (a *Pass) checkRange(clause *cst.RangeClause, body *cst.Block) {
 		cst.Walk(
 			body,
 			func(node cst.Node) bool {
-				if current,
-					ok := node.(*cst.UnaryExpr); ok {
+				if current, ok := node.(*cst.UnaryExpr); ok {
 					if current.Op.Src() == "&" && containsIdentifier(current.UnaryExpr, name) {
 						a.report("range-value-address", current, fmt.Sprintf("taking the address of range value %s can be misleading", name))
 					}

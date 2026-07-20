@@ -159,8 +159,7 @@ func loopHasEscape(pass *Pass, loop ast.Stmt, body *ast.BlockStmt, labels map[ty
 	inspectWithoutClosures(
 		body,
 		func(node ast.Node) bool {
-			branch,
-				ok := node.(*ast.BranchStmt)
+			branch, ok := node.(*ast.BranchStmt)
 			if !ok {
 				return true
 			}

@@ -60,7 +60,7 @@ func (s *Formatter) FormatWithOptions(filename string, source []byte, options Op
 	if err != nil {
 		return Result{}, err
 	}
-	return s.FormatTree(filename, originalTree, options)
+	return s.formatTree(filename, originalTree, normalizeOptions(options), false)
 }
 
 // IsIgnored reports whether a header comment before the package clause opts
@@ -87,8 +87,11 @@ func IsIgnored(source []byte) bool {
 // FormatTree formats a previously parsed source tree. The tree and its source
 // remain immutable and may be shared with other checks.
 func (s *Formatter) FormatTree(filename string, originalTree *cst.Tree, options Options) (Result, error) {
-	options = normalizeOptions(options)
-	preview, module, err := s.previewTree(filename, originalTree, options)
+	return s.formatTree(filename, originalTree, normalizeOptions(options), true)
+}
+
+func (s *Formatter) formatTree(filename string, originalTree *cst.Tree, options Options, checkIgnored bool) (Result, error) {
+	preview, module, err := s.previewTree(filename, originalTree, options, checkIgnored)
 	if err != nil || preview.Ignored {
 		return preview, err
 	}
@@ -99,7 +102,7 @@ func (s *Formatter) FormatTree(filename string, originalTree *cst.Tree, options 
 	if err := equivalentTrees(originalTree, formattedTree); err != nil {
 		return Result{}, fmt.Errorf("formatter safety check: %w", err)
 	}
-	second, err := renderCandidate(filename, formattedTree, options, module)
+	second, err := renderCandidate(formattedTree, options, module)
 	if err != nil {
 		return Result{}, fmt.Errorf("formatter idempotence check: %w", err)
 	}
@@ -113,20 +116,19 @@ func (s *Formatter) FormatTree(filename string, originalTree *cst.Tree, options 
 // It is intended for drift checks; callers that may expose or write the
 // candidate must use FormatTree and its equivalence/idempotence checks.
 func (s *Formatter) FormatTreeUnverified(filename string, originalTree *cst.Tree, options Options) (Result, error) {
-	result, _, err := s.previewTree(filename, originalTree, options)
+	result, _, err := s.previewTree(filename, originalTree, normalizeOptions(options), true)
 	return result, err
 }
 
-func (s *Formatter) previewTree(filename string, originalTree *cst.Tree, options Options) (Result, string, error) {
+func (s *Formatter) previewTree(filename string, originalTree *cst.Tree, options Options, checkIgnored bool) (Result, string, error) {
 	if originalTree == nil {
 		return Result{}, "", fmt.Errorf("format %s: nil concrete syntax tree", filename)
 	}
-	options = normalizeOptions(options)
 	if options.PrintWidth < 40 || options.PrintWidth > 500 {
 		return Result{}, "", fmt.Errorf("format %s: print width must be between 40 and 500", filename)
 	}
 	source := originalTree.Bytes()
-	if IsIgnored(source) {
+	if checkIgnored && IsIgnored(source) {
 		copyOfSource := append([]byte(nil), source...)
 		return Result{
 			Source:  copyOfSource,
@@ -138,16 +140,20 @@ func (s *Formatter) previewTree(filename string, originalTree *cst.Tree, options
 	if hasImports {
 		module = s.modules.find(filename)
 	}
-	formatted, err := renderCandidate(filename, originalTree, options, module)
+	formatted, err := renderCandidate(originalTree, options, module)
 	if err != nil {
 		return Result{}, "", err
 	}
+	// Rendering uses CST trivia to preserve deliberate vertical space. Because a
+	// render can move that trivia to its canonical token boundary, render the new
+	// tree until those boundaries stabilize. The bound is defensive; the separate
+	// idempotence check above still verifies the stable candidate once more.
 	for range 100 {
 		formattedTree, parseErr := cst.Parse(filename, formatted)
 		if parseErr != nil {
 			return Result{}, "", fmt.Errorf("formatter convergence check: formatted output does not parse: %w", parseErr)
 		}
-		next, formatErr := renderCandidate(filename, formattedTree, options, module)
+		next, formatErr := renderCandidate(formattedTree, options, module)
 		if formatErr != nil {
 			return Result{}, "", formatErr
 		}
@@ -162,16 +168,12 @@ func (s *Formatter) previewTree(filename string, originalTree *cst.Tree, options
 	return Result{}, "", fmt.Errorf("formatter did not converge for %s", filename)
 }
 
-func renderCandidate(filename string, tree *cst.Tree, options Options, module string) ([]byte, error) {
+func renderCandidate(tree *cst.Tree, options Options, module string) ([]byte, error) {
 	formatted, err := goformat.Source([]byte(renderWithModule(tree, options, module)))
 	if err != nil {
 		return nil, fmt.Errorf("formatter gofmt compatibility: %w", err)
 	}
-	ordered, err := orderTopLevelDeclarations(filename, formatted)
-	if err != nil {
-		return nil, fmt.Errorf("formatter declaration ordering: %w", err)
-	}
-	return ordered, nil
+	return formatted, nil
 }
 
 func normalizeOptions(options Options) Options {

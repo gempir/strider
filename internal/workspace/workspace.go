@@ -154,16 +154,14 @@ func (file *File) CST() (*cst.Tree, error) {
 	}
 	file.treeOnce.Do(
 		func() {
-			contents,
-				err := file.Bytes()
+			contents, err := file.Bytes()
 			if err != nil {
 				file.treeMu.Lock()
 				file.treeErr = err
 				file.treeMu.Unlock()
 				return
 			}
-			tree,
-				parseErr := cst.Parse(file.path, contents)
+			tree, parseErr := cst.Parse(file.path, contents)
 			file.treeMu.Lock()
 			if !file.treeReleased {
 				file.tree = tree

@@ -45,10 +45,10 @@ type FormatterConfig struct {
 }
 
 type ToolConfig struct {
-	Excludes        []string              `toml:"excludes"`
-	Baseline        string                `toml:"baseline"`
-	MinimumSeverity string                `toml:"minimum-severity"`
-	Rules           map[string]RuleConfig `toml:"-"`
+	Excludes        []string               `toml:"excludes"`
+	Baseline        string                 `toml:"baseline"`
+	MinimumSeverity string                 `toml:"minimum-severity"`
+	Rules           map[string]CheckConfig `toml:"-"`
 }
 
 type fileConfig struct {
@@ -59,7 +59,7 @@ type fileConfig struct {
 	Checks    map[string]toml.Primitive `toml:"checks"`
 }
 
-type RuleConfig struct {
+type CheckConfig struct {
 	Severity         string   `toml:"severity"`
 	Excludes         []string `toml:"excludes"`
 	Characters       []string `toml:"characters"`
@@ -72,6 +72,11 @@ type RuleConfig struct {
 	BlockedImports   []string `toml:"blocked-imports"`
 	definedOptions   map[string]bool
 }
+
+// RuleConfig is retained for source compatibility while callers migrate to
+// the product-wide check vocabulary.
+// Deprecated: use CheckConfig.
+type RuleConfig = CheckConfig
 
 func Defaults() Config {
 	return Config{
@@ -87,7 +92,7 @@ func Defaults() Config {
 func defaultToolConfig() ToolConfig {
 	return ToolConfig{
 		MinimumSeverity: string(diagnostic.SeverityWarning),
-		Rules:           make(map[string]RuleConfig),
+		Rules:           make(map[string]CheckConfig),
 	}
 }
 
@@ -193,7 +198,7 @@ func decodeChecks(destination *ToolConfig, values map[string]toml.Primitive, met
 		if metadata.Type("checks", code) != "Hash" {
 			return fmt.Errorf("unknown configuration key(s): checks.%s", code)
 		}
-		rule := RuleConfig{}
+		rule := CheckConfig{}
 		if err := metadata.PrimitiveDecode(value, &rule); err != nil {
 			return err
 		}
@@ -204,7 +209,7 @@ func decodeChecks(destination *ToolConfig, values map[string]toml.Primitive, met
 
 // HasExplicitOption reports whether a behavioral option was present in the
 // decoded TOML, including when its value decoded to the Go zero value.
-func (rule RuleConfig) HasExplicitOption(option string) bool {
+func (rule CheckConfig) HasExplicitOption(option string) bool {
 	return rule.definedOptions[option]
 }
 
@@ -276,13 +281,13 @@ func (configuration Config) Resolve(path string) string {
 
 // EffectiveCheckRule returns one rule setting with the tool-wide exclusions
 // appended.
-func (configuration Config) EffectiveCheckRule(code string) RuleConfig {
+func (configuration Config) EffectiveCheckRule(code string) CheckConfig {
 	rule := cloneRuleConfig(configuration.Checks.Rules[code])
 	rule.Excludes = append(append([]string(nil), configuration.Checks.Excludes...), rule.Excludes...)
 	return rule
 }
 
-func cloneRuleConfig(rule RuleConfig) RuleConfig {
+func cloneRuleConfig(rule CheckConfig) CheckConfig {
 	cloned := rule
 	cloned.Excludes = append([]string(nil), rule.Excludes...)
 	cloned.Characters = append([]string(nil), rule.Characters...)

@@ -190,7 +190,7 @@ func (r *Registry) limits() map[string]int {
 func (r *Registry) activeRules(filename string) []builtinrules.Rule {
 	active := make([]builtinrules.Rule, 0, len(r.rules))
 	for _, rule := range r.rules {
-		if pathfilter.Matches(r.root, filename, r.settings[rule.Meta().Code].excludes) {
+		if pathfilter.Excluded(r.root, filename, r.settings[rule.Meta().Code].excludes) {
 			continue
 		}
 		active = append(active, rule)
@@ -205,7 +205,7 @@ func (r *Registry) Applies(filename string) bool {
 		return false
 	}
 	for _, rule := range r.rules {
-		if !pathfilter.Matches(r.root, filename, r.settings[rule.Meta().Code].excludes) {
+		if !pathfilter.Excluded(r.root, filename, r.settings[rule.Meta().Code].excludes) {
 			return true
 		}
 	}

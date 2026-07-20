@@ -719,7 +719,7 @@ func TestFormatTreeMatchesSourceFormatting(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	preview, err := session.PreviewTree("tree.go", tree, DefaultOptions())
+	preview, err := session.FormatTreeUnverified("tree.go", tree, DefaultOptions())
 	if err != nil {
 		t.Fatal(err)
 	}

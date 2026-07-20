@@ -156,7 +156,7 @@ func (cache *Cache) Open(paths []string, options Options) (*Workspace, error) {
 	}
 	captured := make([]capturedFile, 0, len(filenames))
 	for _, filename := range filenames {
-		if pathfilter.Matches(options.Root, filename, options.Excludes) {
+		if pathfilter.Excluded(options.Root, filename, options.Excludes) {
 			continue
 		}
 		contents, readErr := os.ReadFile(filename)

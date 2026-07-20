@@ -28,7 +28,7 @@ func (interfaceMethodLimitRule) Run(pass *Pass) {
 	interfaceMethodLimitRule{}.run(pass, 0)
 }
 
-func (interfaceMethodLimitRule) RunConfigured(pass *Pass, setting config.RuleConfig) {
+func (interfaceMethodLimitRule) RunConfigured(pass *Pass, setting config.CheckConfig) {
 	interfaceMethodLimitRule{}.run(pass, setting.MaxMethods)
 }
 

@@ -16,16 +16,20 @@ import (
 // Meta describes one built-in semantic check.
 type Meta = core.Meta
 
-// Rule is a package-aware semantic check.
-type Rule interface {
+// Check is a package-aware semantic check.
+type Check interface {
 	core.Check
 	Run(*Pass)
 }
 
+// Rule is retained for source compatibility while callers migrate to Check.
+// Deprecated: use Check.
+type Rule = Check
+
 // configurableRule keeps per-check settings with the check that consumes
 // them instead of widening Pass for a single option.
 type configurableRule interface {
-	RunConfigured(*Pass, config.RuleConfig)
+	RunConfigured(*Pass, config.CheckConfig)
 }
 
 // Pass contains the syntax and type information for one loaded Go package.

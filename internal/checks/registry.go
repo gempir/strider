@@ -383,5 +383,5 @@ func (registry *Registry) needsCST(filename string) bool {
 }
 
 func (registry *Registry) formatApplies(filename string) bool {
-	return registry != nil && registry.format && !pathfilter.Matches(registry.root, filename, registry.settings[formatMeta.Code].excludes)
+	return registry != nil && registry.format && !pathfilter.Excluded(registry.root, filename, registry.settings[formatMeta.Code].excludes)
 }

@@ -339,7 +339,7 @@ func Plan(snapshot Snapshot, diagnostics []diagnostic.Diagnostic, candidates map
 }
 
 func formatExcluded(root, path string, patterns []string) bool {
-	if pathfilter.Matches(root, path, patterns) {
+	if pathfilter.Excluded(root, path, patterns) {
 		return true
 	}
 	resolvedDirectory, err := filepath.EvalSymlinks(filepath.Dir(path))
@@ -347,7 +347,7 @@ func formatExcluded(root, path string, patterns []string) bool {
 		return false
 	}
 	logicalPath := filepath.Join(resolvedDirectory, filepath.Base(path))
-	return logicalPath != path && pathfilter.Matches(root, logicalPath, patterns)
+	return logicalPath != path && pathfilter.Excluded(root, logicalPath, patterns)
 }
 
 func automaticFix(item diagnostic.Diagnostic) (diagnostic.Fix, bool, error) {

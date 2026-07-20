@@ -80,7 +80,7 @@ func appendAnalysis(result *Result, shared *workspace.Workspace, registry *Regis
 		return err
 	}
 	for _, item := range packageDiagnostics {
-		if pathfilter.Matches(options.Root, item.File, options.Excludes) {
+		if pathfilter.Excluded(options.Root, item.File, options.Excludes) {
 			continue
 		}
 		result.Diagnostics = append(result.Diagnostics, item)
@@ -183,7 +183,7 @@ func runConcreteFile(file *workspace.File, registry *Registry, session *formatte
 		if collectCandidate {
 			formatted, formatErr = session.FormatTree(filename, tree, formatOptions)
 		} else {
-			formatted, formatErr = session.PreviewTree(filename, tree, formatOptions)
+			formatted, formatErr = session.FormatTreeUnverified(filename, tree, formatOptions)
 		}
 		if formatErr != nil {
 			result.err = formatErr

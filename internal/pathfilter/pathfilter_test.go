@@ -19,11 +19,11 @@ func TestMatchesPrefixesAndDoublestarGlobs(t *testing.T) {
 			"**/generated/*.go",
 		},
 	} {
-		if !Matches(root, filename, patterns) {
+		if !Excluded(root, filename, patterns) {
 			t.Errorf("%q did not match %q", filename, patterns)
 		}
 	}
-	if Matches(root, filename, []string{
+	if Excluded(root, filename, []string{
 		"cmd/**",
 	}) {
 		t.Fatal("unrelated glob matched")

@@ -8,7 +8,8 @@ import (
 	"github.com/bmatcuk/doublestar/v4"
 )
 
-func Matches(root, filename string, patterns []string) bool {
+// Excluded reports whether filename matches an exclusion pattern.
+func Excluded(root, filename string, patterns []string) bool {
 	if len(patterns) == 0 {
 		return false
 	}

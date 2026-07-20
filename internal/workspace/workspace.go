@@ -60,7 +60,7 @@ func Open(paths []string, options Options) (*Workspace, error) {
 	}
 	files := make([]*File, 0, len(filenames))
 	for _, filename := range filenames {
-		if pathfilter.Matches(options.Root, filename, options.Excludes) {
+		if pathfilter.Excluded(options.Root, filename, options.Excludes) {
 			continue
 		}
 		files = append(files, &File{

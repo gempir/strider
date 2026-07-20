@@ -532,7 +532,7 @@ func formatFiles(files []*workspace.File, options formatter.Options, verify bool
 					if verify {
 						result, err = session.FormatTree(filename, tree, options)
 					} else {
-						result, err = session.PreviewTree(filename, tree, options)
+						result, err = session.FormatTreeUnverified(filename, tree, options)
 					}
 					if err != nil {
 						errorsByFile[index] = err
@@ -1124,7 +1124,7 @@ func applyBaseline(command string, diagnostics []diagnostic.Diagnostic, options 
 func filterFiles(files []string, root string, excludes []string) []string {
 	filtered := make([]string, 0, len(files))
 	for _, filename := range files {
-		if !pathfilter.Matches(root, filename, excludes) {
+		if !pathfilter.Excluded(root, filename, excludes) {
 			filtered = append(filtered, filename)
 		}
 	}
@@ -1134,7 +1134,7 @@ func filterFiles(files []string, root string, excludes []string) []string {
 func filterDiagnostics(diagnostics []diagnostic.Diagnostic, root string, excludes []string) []diagnostic.Diagnostic {
 	filtered := make([]diagnostic.Diagnostic, 0, len(diagnostics))
 	for _, item := range diagnostics {
-		if !pathfilter.Matches(root, item.File, excludes) {
+		if !pathfilter.Excluded(root, item.File, excludes) {
 			filtered = append(filtered, item)
 		}
 	}

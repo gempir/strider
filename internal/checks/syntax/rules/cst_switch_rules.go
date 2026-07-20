@@ -54,7 +54,7 @@ func concreteSwitchCases(node cst.Node) []concreteCase {
 		node,
 		func(child cst.Node) bool {
 			switch clause := child.(type) {
-			case *cst.ExprCaseClause:
+			case *cst.ExprCaseClauseList:
 				item := concreteCase{
 					node: clause,
 					body: clause.StatementList,

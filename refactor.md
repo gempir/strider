@@ -234,7 +234,7 @@ and "analyzer" are used interchangeably:
   `validateConfiguredRules("lint", ...)`, `cstAnalyzer`, error strings
   `"unknown lint rule(s)"` vs `"unknown analysis rule(s)"` → `"unknown
   check(s)"` (matching `checks/registry.go:106`).
-- [ ] CLI: `check --list-checks` with `--list-rules` kept as a hidden alias.
+- [x] CLI: `check --list-checks` with `--list-rules` kept as a hidden alias.
 - [ ] **Rename session-artifact files by content, one check per file:**
   - `semantic/research_style.go` → split into `blank_identifiers.go`,
     `task_comment.go`, `doc_comment_period.go`, etc.
@@ -251,7 +251,7 @@ and "analyzer" are used interchangeably:
   helper prefixes (`checkConcrete*`, `concrete*`, `cst*`) and drop the
   redundant `cst_` file-name prefix inside a package that is entirely about
   the CST.
-- [ ] `pathfilter.Matches` returns true when a path is **excluded**; every
+- [x] `pathfilter.Matches` returns true when a path is **excluded**; every
   call site reads `if !pathfilter.Matches(...)` to keep a file. Rename to
   `pathfilter.Excluded(...)`.
 - [ ] Formatter: rename `concrete_printer.go` identifiers to drop the

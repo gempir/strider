@@ -283,7 +283,7 @@ func (registry *Registry) Severity(code string) diagnostic.Severity {
 }
 
 func (registry *Registry) Excluded(code, filename string) bool {
-	return pathfilter.Matches(registry.root, filename, registry.settings[code].excludes)
+	return pathfilter.Excluded(registry.root, filename, registry.settings[code].excludes)
 }
 
 // Rules returns a copy of the selected rules.

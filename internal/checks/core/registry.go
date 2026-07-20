@@ -15,15 +15,15 @@ import (
 type SelectionOptions[T Check] struct {
 	Checks          []T
 	Only            []string
-	Settings        map[string]config.RuleConfig
+	Settings        map[string]config.CheckConfig
 	MinimumSeverity diagnostic.Severity
-	Validate        func(code string, setting config.RuleConfig) error
+	Validate        func(code string, setting config.CheckConfig) error
 }
 
 // Selection is the normalized result of applying SelectionOptions.
 type Selection[T Check] struct {
 	Checks     []T
-	Settings   map[string]config.RuleConfig
+	Settings   map[string]config.CheckConfig
 	Severities map[string]diagnostic.Severity
 	KnownCodes map[string]bool
 }
@@ -50,7 +50,7 @@ func Select[T Check](options SelectionOptions[T]) (Selection[T], error) {
 		knownCodes[check.Meta().Code] = true
 	}
 
-	settings := make(map[string]config.RuleConfig, len(options.Settings))
+	settings := make(map[string]config.CheckConfig, len(options.Settings))
 	unknown := make([]string, 0)
 	for code, setting := range options.Settings {
 		if setting.Severity != "" && !diagnostic.ValidSeverity(diagnostic.Severity(setting.Severity)) {

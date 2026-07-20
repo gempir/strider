@@ -99,9 +99,6 @@ func (s *Session) FormatTree(filename string, originalTree *cst.Tree, options Op
 	if err := equivalentTrees(originalTree, formattedTree); err != nil {
 		return Result{}, fmt.Errorf("formatter safety check: %w", err)
 	}
-	if _, err := validateConcreteSyntax(filename, formattedTree); err != nil {
-		return Result{}, fmt.Errorf("formatter idempotence check: %w", err)
-	}
 	second, err := renderCandidate(filename, formattedTree, options, module)
 	if err != nil {
 		return Result{}, fmt.Errorf("formatter idempotence check: %w", err)
@@ -112,10 +109,10 @@ func (s *Session) FormatTree(filename string, originalTree *cst.Tree, options Op
 	return preview, nil
 }
 
-// PreviewTree renders a read-only formatting candidate without reparsing it.
+// FormatTreeUnverified renders a read-only formatting candidate without reparsing it.
 // It is intended for drift checks; callers that may expose or write the
 // candidate must use FormatTree and its equivalence/idempotence checks.
-func (s *Session) PreviewTree(filename string, originalTree *cst.Tree, options Options) (Result, error) {
+func (s *Session) FormatTreeUnverified(filename string, originalTree *cst.Tree, options Options) (Result, error) {
 	result, _, err := s.previewTree(filename, originalTree, options)
 	return result, err
 }
@@ -136,10 +133,7 @@ func (s *Session) previewTree(filename string, originalTree *cst.Tree, options O
 			Ignored: true,
 		}, "", nil
 	}
-	hasImports, err := validateConcreteSyntax(filename, originalTree)
-	if err != nil {
-		return Result{}, "", err
-	}
+	hasImports := treeHasImports(originalTree)
 	module := ""
 	if hasImports {
 		module = s.modules.find(filename)
@@ -152,9 +146,6 @@ func (s *Session) previewTree(filename string, originalTree *cst.Tree, options O
 		formattedTree, parseErr := cst.Parse(filename, formatted)
 		if parseErr != nil {
 			return Result{}, "", fmt.Errorf("formatter convergence check: formatted output does not parse: %w", parseErr)
-		}
-		if _, syntaxErr := validateConcreteSyntax(filename, formattedTree); syntaxErr != nil {
-			return Result{}, "", fmt.Errorf("formatter convergence check: %w", syntaxErr)
 		}
 		next, formatErr := renderCandidate(filename, formattedTree, options, module)
 		if formatErr != nil {
@@ -191,12 +182,12 @@ func normalizeOptions(options Options) Options {
 	return options
 }
 
-func validateConcreteSyntax(_ string, tree *cst.Tree) (bool, error) {
+func treeHasImports(tree *cst.Tree) bool {
 	hasImports := false
 	for _, current := range tree.Tokens() {
 		if current.Ch() == token.IMPORT {
 			hasImports = true
 		}
 	}
-	return hasImports, nil
+	return hasImports
 }

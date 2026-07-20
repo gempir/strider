@@ -46,7 +46,7 @@ func (a *cstAnalyzer) checkConcreteBreak(statement *cst.BreakStmt) {
 	for index := len(a.ancestors) - 1; index >= 0; index-- {
 		var list *cst.StatementList
 		switch clause := a.ancestors[index].(type) {
-		case *cst.ExprCaseClause:
+		case *cst.ExprCaseClauseList:
 			list = clause.StatementList
 		case *cst.TypeCaseClause:
 			list = clause.StatementList

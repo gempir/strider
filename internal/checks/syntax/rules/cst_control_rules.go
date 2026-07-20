@@ -149,7 +149,7 @@ func concreteHasSideEffects(node cst.Node) bool {
 		node,
 		func(child cst.Node) bool {
 			if _,
-				ok := child.(*cst.PrimaryExpr); ok && stringsHasArguments(child) {
+				ok := child.(*cst.PrimaryExpr); ok && hasArguments(child) {
 				found = true
 				return false
 			}
@@ -164,9 +164,9 @@ func concreteHasSideEffects(node cst.Node) bool {
 	return found
 }
 
-func stringsHasArguments(node cst.Node) bool {
+func hasArguments(node cst.Node) bool {
 	primary, ok := node.(*cst.PrimaryExpr)
-	return ok && len(cst.Kind(primary.Postfix)) >= len("Arguments") && cst.Kind(primary.Postfix)[:len("Arguments")] == "Arguments"
+	return ok && strings.HasPrefix(cst.Kind(primary.Postfix), "Arguments")
 }
 
 func concreteBooleanBlock(block *cst.Block) (bool, bool) {

@@ -66,6 +66,9 @@ Cheap, mechanical, and shrinks everything that follows.
   `alignment.declarations` (`config.go:245-265`). Delete the knobs; a
   formatter with no choices should have an options struct that reflects
   that (`PrintWidth` is the only real option).
+  **Follow-up audit:** removed the deleted keys from README and documentation
+  examples/tables; strict config tests continue to assert that the old keys
+  are rejected.
 - [x] **Fix the contradictory severity tables** in
   `internal/checks/syntax/rules/catalog.go`: `empty-conditional-block`,
   `ineffective-pointer-copy`, and `inefficient-map-lookup` appear in *both*
@@ -341,36 +344,53 @@ and "analyzer" are used interchangeably:
 `app.go` is 1,160 lines with at least eight responsibilities. After Phase 0
 removes `lint`/`analyze`, split what remains:
 
-- [ ] `app/flags.go` — the flag micro-framework (`boolOption`,
+- [x] `app/flags.go` — the flag micro-framework (`boolOption`,
   `stringOption`, `varOption`, `flagWasSet*`, `parseCommandFlags`,
   `printFlagDefaults`, `stringList`). Consolidate the **three copies** of the
   alias map (`parseGlobalOptions` app.go:209-216, `checkCommandAliases()`
   app.go:382-395, literal in check.go:41-56) into one table. Alternatively,
   adopt a tiny CLI library and delete the framework — but a single
   table-driven layer is enough and keeps zero deps.
-- [ ] `app/format.go` — `runFormat` and stdin/path handling.
-- [ ] Move `formatFiles` (worker pool, app.go:508-574) next to the formatter
+  **Implemented:** global, format, and check option aliases now come from one
+  command-keyed table in `flags.go`; the parsing helpers and repeatable string
+  flag live there as well.
+- [x] `app/format.go` — `runFormat` and stdin/path handling.
+- [x] Move `formatFiles` (worker pool, app.go:508-574) next to the formatter
   or into a small orchestration helper — engine code doesn't belong in
   command handlers.
-- [ ] **Delete `atomicWriteBatch`/`stageFile`** (app.go:601-655) and use
+  **Implemented:** command parsing/reporting lives in `format.go`; concurrent
+  workspace formatting lives in the focused `format_files.go` helper.
+- [x] **Delete `atomicWriteBatch`/`stageFile`** (app.go:601-655) and use
   `internal/filewrite` for `fmt --write`. Today the repo has two atomic-write
   implementations and the weaker one (no stale check, no symlink handling)
   serves `fmt` while the strong one serves `check --fix`.
-- [ ] Replace the pairwise mutual-exclusion wall in `runCheck`
+  **Implemented:** `fmt --write` converts results to `filewrite.Change` values;
+  a regression test verifies a stale source is not overwritten.
+- [x] Replace the pairwise mutual-exclusion wall in `runCheck`
   (check.go:79-107) with a small declarative conflict table, and extract the
   fix/baseline/watch flows out of the 230-line `runCheck` into focused
   functions. The `printCommandError(...); return exitError` pattern appears
   ~14 times in one function — a `run() error` + single error-printing wrapper
   removes all of them.
-- [ ] Fix `fmt --diff`: `printDiff` (app.go:657-668) emits the whole old file
+  **Implemented:** conflicts are data, `runCheck` prints returned errors once,
+  and one-shot execution plus fix/apply/rerun are separate focused functions;
+  the existing watch runner remains isolated.
+- [x] Fix `fmt --diff`: `printDiff` (app.go:657-668) emits the whole old file
   as `-` and the whole new file as `+`. Implement real hunks or drop the flag.
-- [ ] Fix the `--config`/`--no-config` conflict check that only runs in the
+  **Implemented:** Myers line differencing now emits merged unified hunks with
+  three context lines and correct missing-final-newline markers.
+- [x] Fix the `--config`/`--no-config` conflict check that only runs in the
   `default:` parse arm (app.go:224-227).
-- [ ] Unify the excludes semantics: `lint` filtered **files** before running
+  **Implemented:** the conflict is validated at both parser exit paths, with a
+  regression for an argv made entirely of global options.
+- [x] Unify the excludes semantics: `lint` filtered **files** before running
   while `analyze` filtered **diagnostics** after (app.go:817 vs 969). After
   deleting both commands, make sure `check` has one documented behavior for
   package-level checks (filter diagnostics, since excluded files can still
   affect package analysis — but say so).
+  **Implemented:** global check excludes are applied to merged diagnostics and
+  fix candidates, not workspace discovery. Documentation now states that
+  excluded files remain available to package analysis.
 
 ## Phase 4 — Package boundaries and de-duplication
 

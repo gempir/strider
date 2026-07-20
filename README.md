@@ -103,8 +103,8 @@ current syntax boundary.
 
 Strider discovers the nearest `strider.toml` from the current directory upward.
 Version 1 uses `[check]` for command-wide policy and `[checks.<code>]` for
-individual checks. Every check supports `severity` and path `excludes`; the formatter exposes the selected width, blank-line,
-source-break, declaration-alignment, and filesystem policies.
+individual checks. Every check supports `severity` and path `excludes`; the
+formatter exposes only its selected width and filesystem exclusions.
 
 ```toml
 version = 1
@@ -112,9 +112,6 @@ color = "auto"
 
 [formatter]
 print-width = 180
-max-blank-lines = 1
-existing-line-breaks = "structural-only"
-alignment.declarations = true
 excludes = ["internal/generated/**"]
 
 [check]

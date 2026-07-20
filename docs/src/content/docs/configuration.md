@@ -14,9 +14,6 @@ color = "auto"
 
 [formatter]
 print-width = 180
-max-blank-lines = 1
-existing-line-breaks = "structural-only"
-alignment.declarations = true
 excludes = ["internal/generated/**"]
 
 [check]
@@ -145,9 +142,11 @@ excludes = ["testdata/**"]
 excludes = ["cmd/**", "examples/**"]
 ```
 
-`[check].excludes` removes matching files from the entire diagnostic run.
-Per-check exclusions disable only that code. `[formatter].excludes` applies to
-the `fmt` command and to code `format`; it does not apply to formatter stdin,
+`[check].excludes` suppresses diagnostics and fixes for matching files across
+all checks. Those files remain part of workspace discovery and package loading,
+so their declarations can still affect package-level analysis of other files.
+Per-check exclusions suppress only that code. `[formatter].excludes` applies
+to the `fmt` command and to code `format`; it does not apply to formatter stdin,
 which has no discovery pass.
 
 ## Formatter
@@ -157,9 +156,6 @@ Formatter settings live under `[formatter]`.
 | Setting | Type | Default | Accepted values and effect |
 | --- | --- | --- | --- |
 | `print-width` | integer | `180` | Wrap target from `40` through `500` columns. |
-| `max-blank-lines` | integer | `1` | Preserve at most one consecutive empty line. Version 1 requires `1` for gofmt stability. |
-| `existing-line-breaks` | string | `"structural-only"` | Preserve structural blank separators and comment placement while reflowing ordinary source breaks. Version 1 accepts only `"structural-only"`. |
-| `alignment.declarations` | boolean | `true` | Align declaration columns through the required gofmt-compatible final pass. Version 1 requires `true`. |
 | `excludes` | string list | `[]` | Plain paths or globs skipped by filesystem formatting and the `format` check. |
 
 The formatter remains intentionally opinionated. Imports are sorted into
@@ -175,7 +171,7 @@ Tool-wide settings live under `[check]`.
 
 | Setting | Type | Default | Effect |
 | --- | --- | --- | --- |
-| `excludes` | string list | `[]` | Skip matching files for all checks. |
+| `excludes` | string list | `[]` | Suppress diagnostics and fixes in matching files for all checks while retaining them for package analysis. |
 | `baseline` | string | unset | Apply this baseline unless the CLI overrides or ignores it. Relative paths resolve from `strider.toml`. |
 | `minimum-severity` | string | `"warning"` | Run only checks whose effective severity is at least `"none"`, `"note"`, `"warning"`, or `"error"`. |
 All 207 checks are eligible. The default warning floor runs the 191 checks whose

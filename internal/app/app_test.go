@@ -2,13 +2,17 @@ package app
 
 import (
 	"bytes"
+	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/gempir/strider/internal/baseline"
 	"github.com/gempir/strider/internal/checks"
+	"github.com/gempir/strider/internal/filewrite"
+	"github.com/gempir/strider/internal/formatter"
 	"github.com/gempir/strider/internal/ui"
 	"github.com/gempir/strider/internal/workspace"
 )
@@ -138,6 +142,26 @@ func TestLongOptionsRequireTwoDashes(t *testing.T) {
 				}
 			},
 		)
+	}
+}
+
+func TestGlobalConfigFlagsConflictAfterConsumingAllArguments(t *testing.T) {
+	for _, arguments := range [][]string{
+		{
+			"--config",
+			"missing.toml",
+			"--no-config",
+		},
+		{
+			"--no-config",
+			"--config=missing.toml",
+		},
+	} {
+		var stdout, stderr bytes.Buffer
+		code := Run(arguments, strings.NewReader(""), &stdout, &stderr)
+		if code != exitError || !strings.Contains(stderr.String(), "--config and --no-config are mutually exclusive") {
+			t.Fatalf("arguments %q: exit %d, stdout %q, stderr %q", arguments, code, stdout.String(), stderr.String())
+		}
 	}
 }
 
@@ -379,6 +403,122 @@ func TestFormatCheckDiffAndWrite(t *testing.T) {
 	}
 	if info.Mode().Perm() != originalInfo.Mode().Perm() {
 		t.Fatalf("mode changed from %v to %v", originalInfo.Mode().Perm(), info.Mode().Perm())
+	}
+}
+
+func TestFormatDiffPrintsContextHunks(t *testing.T) {
+	before := []byte("line-1\nline-2\nline-3\nline-4\nline-5\nline-6\nline-7\nline-8\nline-9\nline-10\n")
+	after := []byte("line-1\nline-2\nline-3\nline-4\nchanged-5\nline-6\nline-7\nline-8\nline-9\nline-10\n")
+	var output bytes.Buffer
+	printDiff(&output, "sample.go", before, after, ui.NewPalette(&output, ui.ColorNever))
+	text := output.String()
+	for _, wanted := range []string{
+		"@@ -2,7 +2,7 @@",
+		" line-4\n",
+		"-line-5\n",
+		"+changed-5\n",
+	} {
+		if !strings.Contains(text, wanted) {
+			t.Fatalf("diff missing %q:\n%s", wanted, text)
+		}
+	}
+	for _, outsideContext := range []string{
+		" line-1\n",
+		" line-9\n",
+		" line-10\n",
+	} {
+		if strings.Contains(text, outsideContext) {
+			t.Fatalf("diff contains out-of-hunk context %q:\n%s", outsideContext, text)
+		}
+	}
+}
+
+func TestLineDiffReconstructsBothInputs(t *testing.T) {
+	for name, sources := range map[string][2]string{
+		"add at start": {
+			"second\nthird\n",
+			"first\nsecond\nthird\n",
+		},
+		"add at end": {
+			"first\nsecond\n",
+			"first\nsecond\nthird\n",
+		},
+		"delete middle": {
+			"first\nremove\nthird\n",
+			"first\nthird\n",
+		},
+		"replace all": {
+			"old-1\nold-2\n",
+			"new-1\nnew-2\n",
+		},
+		"line endings": {
+			"first\r\nsecond\r\n",
+			"first\nsecond\n",
+		},
+		"final newline": {
+			"same",
+			"same\n",
+		},
+		"empty to content": {
+			"",
+			"first\n",
+		},
+	} {
+		t.Run(
+			name,
+			func(t *testing.T) {
+				before := splitSourceLines([]byte(sources[0]))
+				after := splitSourceLines([]byte(sources[1]))
+				operations := lineDiff(before, after)
+				var reconstructedBefore,
+					reconstructedAfter []sourceLine
+				for _, operation := range operations {
+					if operation.kind != diffAdd {
+						reconstructedBefore = append(reconstructedBefore, operation.line)
+					}
+					if operation.kind != diffRemove {
+						reconstructedAfter = append(reconstructedAfter, operation.line)
+					}
+				}
+				if !slices.Equal(reconstructedBefore, before) || !slices.Equal(reconstructedAfter, after) {
+					t.Fatalf("operations %#v reconstruct before %#v and after %#v", operations, reconstructedBefore, reconstructedAfter)
+				}
+			},
+		)
+	}
+}
+
+func TestFormatWriterRejectsStaleSource(t *testing.T) {
+	filename := filepath.Join(t.TempDir(), "sample.go")
+	original := []byte("package sample\nfunc F( ){return}\n")
+	if err := os.WriteFile(filename, original, 0o640); err != nil {
+		t.Fatal(err)
+	}
+	changed := []byte("package sample\n\nfunc changed() {}\n")
+	if err := os.WriteFile(filename, changed, 0o640); err != nil {
+		t.Fatal(err)
+	}
+	err := writeFormattedFiles(
+		[]formattedFile{
+			{
+				filename: filename,
+				original: original,
+				result: formatter.Result{
+					Source:  []byte("package sample\n\nfunc F() {\n\treturn\n}\n"),
+					Changed: true,
+				},
+			},
+		},
+	)
+	if !errors.Is(err, filewrite.ErrStale) {
+		t.Fatalf("write error = %v, want ErrStale", err)
+	}
+	contents, readErr := os.ReadFile(filename)
+	if readErr != nil {
+		t.Fatal(readErr)
+	}
+	if !bytes.Equal(contents, changed) {
+		t.Fatalf("stale write replaced current contents:\n%s", contents)
 	}
 }
 

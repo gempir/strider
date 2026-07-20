@@ -61,9 +61,10 @@ func Run(shared *workspace.Workspace, registry *Registry, options RunOptions) (R
 	if err != nil {
 		return Result{}, err
 	}
-	if err := appendAnalysis(&result, shared, registry, options, semantic.Run); err != nil {
+	if err := appendAnalysis(&result, shared, registry, semantic.Run); err != nil {
 		return Result{}, err
 	}
+	filterExcludedResults(&result, options.Root, options.Excludes)
 	sortDiagnostics(result.Diagnostics)
 	if result.Diagnostics == nil {
 		result.Diagnostics = []diagnostic.Diagnostic{}
@@ -71,7 +72,7 @@ func Run(shared *workspace.Workspace, registry *Registry, options RunOptions) (R
 	return result, nil
 }
 
-func appendAnalysis(result *Result, shared *workspace.Workspace, registry *Registry, options RunOptions, run analysisRunner) error {
+func appendAnalysis(result *Result, shared *workspace.Workspace, registry *Registry, run analysisRunner) error {
 	if registry.semantic == nil || len(registry.semantic.Checks()) == 0 {
 		return nil
 	}
@@ -80,12 +81,27 @@ func appendAnalysis(result *Result, shared *workspace.Workspace, registry *Regis
 		return err
 	}
 	for _, item := range packageDiagnostics {
-		if pathfilter.Excluded(options.Root, item.File, options.Excludes) {
-			continue
-		}
 		result.Diagnostics = append(result.Diagnostics, item)
 	}
 	return nil
+}
+
+func filterExcludedResults(result *Result, root string, excludes []string) {
+	if len(excludes) == 0 {
+		return
+	}
+	diagnostics := result.Diagnostics[:0]
+	for _, item := range result.Diagnostics {
+		if !pathfilter.Excluded(root, item.File, excludes) {
+			diagnostics = append(diagnostics, item)
+		}
+	}
+	result.Diagnostics = diagnostics
+	for filename := range result.Candidates {
+		if pathfilter.Excluded(root, filename, excludes) {
+			delete(result.Candidates, filename)
+		}
+	}
 }
 
 func runConcreteChecks(files []*workspace.File, registry *Registry, formatOptions formatter.Options, collectCandidates bool) (Result, error) {

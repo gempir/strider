@@ -99,9 +99,10 @@ func (session *Session) Run(shared *workspace.Workspace) (Result, error) {
 		session.concrete = cloneResult(result)
 		session.hasConcrete = true
 	}
-	if err := appendAnalysis(&result, shared, session.registry, session.options, session.analyzer.Run); err != nil {
+	if err := appendAnalysis(&result, shared, session.registry, session.analyzer.Run); err != nil {
 		return Result{}, err
 	}
+	filterExcludedResults(&result, session.options.Root, session.options.Excludes)
 	sortDiagnostics(result.Diagnostics)
 	if result.Diagnostics == nil {
 		result.Diagnostics = []diagnostic.Diagnostic{}

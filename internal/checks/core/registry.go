@@ -61,6 +61,9 @@ func Select[T Check](options SelectionOptions[T]) (Selection[T], error) {
 			unknown = append(unknown, code)
 			continue
 		}
+		if err := ValidateOptions(byCode[normalized].Meta(), setting); err != nil {
+			return Selection[T]{}, err
+		}
 		if options.Validate != nil {
 			if err := options.Validate(byCode[normalized].Meta().Code, setting); err != nil {
 				return Selection[T]{}, err
@@ -106,4 +109,100 @@ func Select[T Check](options SelectionOptions[T]) (Selection[T], error) {
 		selection.Severities[meta.Code] = severity
 	}
 	return selection, nil
+}
+
+// ValidateOptions rejects behavioral settings not declared by meta.
+func ValidateOptions(meta Meta, setting config.CheckConfig) error {
+	configured := []struct {
+		name    string
+		present bool
+	}{
+		{
+			"characters",
+			setting.Characters != nil,
+		},
+		{
+			"max-lines",
+			setting.MaxLines != 0,
+		},
+		{
+			"max-statements",
+			setting.MaxStatements != 0,
+		},
+		{
+			"max-results",
+			setting.MaxResults != 0,
+		},
+		{
+			"max-parameters",
+			setting.MaxParameters != 0,
+		},
+		{
+			"max-public-structs",
+			setting.MaxPublicStructs != 0,
+		},
+		{
+			"max-methods",
+			setting.MaxMethods != 0,
+		},
+		{
+			"blocked-imports",
+			setting.BlockedImports != nil,
+		},
+	}
+	for index := range configured {
+		configured[index].present = configured[index].present || setting.HasExplicitOption(configured[index].name)
+	}
+	for _, option := range configured {
+		if _, supported := meta.Option(option.name); option.present && !supported {
+			return fmt.Errorf("check %q does not support %s", meta.Code, option.name)
+		}
+	}
+	return nil
+}
+
+// IntOption resolves a declared integer option from configuration or metadata.
+func IntOption(meta Meta, setting config.CheckConfig, name string) (int, bool) {
+	option, ok := meta.Option(name)
+	if !ok || option.Kind != OptionInt {
+		return 0, false
+	}
+	value := 0
+	switch name {
+	case "max-lines":
+		value = setting.MaxLines
+	case "max-statements":
+		value = setting.MaxStatements
+	case "max-results":
+		value = setting.MaxResults
+	case "max-parameters":
+		value = setting.MaxParameters
+	case "max-public-structs":
+		value = setting.MaxPublicStructs
+	case "max-methods":
+		value = setting.MaxMethods
+	}
+	if value != 0 || setting.HasExplicitOption(name) {
+		return value, true
+	}
+	return option.DefaultInt, true
+}
+
+// StringsOption resolves a declared string-list option from configuration or metadata.
+func StringsOption(meta Meta, setting config.CheckConfig, name string) ([]string, bool) {
+	option, ok := meta.Option(name)
+	if !ok || option.Kind != OptionStrings {
+		return nil, false
+	}
+	var value []string
+	switch name {
+	case "characters":
+		value = setting.Characters
+	case "blocked-imports":
+		value = setting.BlockedImports
+	}
+	if value != nil || setting.HasExplicitOption(name) {
+		return append([]string(nil), value...), true
+	}
+	return append([]string(nil), option.DefaultStrings...), true
 }

@@ -25,39 +25,39 @@ func (oddPairedArgumentsRule) Meta() Meta {
 
 func (oddPairedArgumentsRule) Run(pass *Pass) {
 	contracts := pairedArgumentContracts(pass)
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				call,
-					ok := node.(*ast.CallExpr)
-				if !ok {
-					return true
-				}
-				function := calledFunction(pass.TypesInfo, call.Fun)
-				if function == nil {
-					return true
-				}
-				parameterIndex,
-					known := contracts[function]
-				if function.Pkg() != nil && function.Pkg().Path() == "strings" && function.Name() == "NewReplacer" {
-					parameterIndex,
-						known = 0,
-						true
-				}
-				if !known {
-					return true
-				}
-				length,
-					argument := pairedCallLength(pass, call, function, parameterIndex)
-				if length < 0 || length%2 == 0 {
-					return true
-				}
-				pass.Report(argument, fmt.Sprintf("paired argument requires an even number of elements, but this call provides %d", length))
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.CallExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			call,
+				ok := node.(*ast.CallExpr)
+			if !ok {
 				return true
-			},
-		)
-	}
+			}
+			function := calledFunction(pass.TypesInfo, call.Fun)
+			if function == nil {
+				return true
+			}
+			parameterIndex,
+				known := contracts[function]
+			if function.Pkg() != nil && function.Pkg().Path() == "strings" && function.Name() == "NewReplacer" {
+				parameterIndex,
+					known = 0,
+					true
+			}
+			if !known {
+				return true
+			}
+			length,
+				argument := pairedCallLength(pass, call, function, parameterIndex)
+			if length < 0 || length%2 == 0 {
+				return true
+			}
+			pass.Report(argument, fmt.Sprintf("paired argument requires an even number of elements, but this call provides %d", length))
+			return true
+		},
+	)
 }
 
 func pairedArgumentContracts(pass *Pass) map[*types.Func]int {
@@ -217,4 +217,10 @@ func knownCompositeLength(pass *Pass, expression ast.Expr) int {
 		}
 	}
 	return len(composite.Elts)
+}
+
+func (oddPairedArgumentsRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

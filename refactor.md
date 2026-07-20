@@ -136,7 +136,7 @@ spread across **five hand-synced tables** (catalog spec, examples map, two
 severity sets, plan flags, plus the check body); adding one rule touches ~7
 files. In semantic it takes 2.
 
-- [ ] Define a syntax-side pass, mirroring semantic:
+- [x] Define a syntax-side pass, mirroring semantic:
 
   ```go
   type SyntaxCheck interface {
@@ -150,29 +150,49 @@ files. In semantic it takes 2.
   builds its dispatch table *from the checks' declared interests* instead of
   the hand-maintained 33-boolean `cstExecutionPlan` (`cst_plan.go:10-44`) —
   which is mostly 1:1 renames of `enabled[code]` anyway.
-- [ ] Merge the five tables into **one declaration per rule**: `Meta`
+  **Implemented:** all 94 syntax declarations attach executable behavior and
+  explicit CST interests. `AnalyzeCST` builds its dispatch table directly
+  from those interests; `cstExecutionPlan` and the central node-type switch
+  are deleted. A catalog invariant test rejects checks without behavior or
+  interests.
+- [x] Merge the five tables into **one declaration per rule**: `Meta`
   (including good/bad examples and default severity) lives on the rule, as
   `coreCatalog` already demonstrates (`catalog.go:11-82`). Delete
   `extendedCatalog`, `extendedExamples`, `extendedWarningSeverities`,
   `extendedErrorSeverities`, and the panic-at-startup examples lookup
   (`catalog.go:670`).
+  **Implemented:** `catalog` now contains all 94 syntax checks with metadata,
+  examples, and severity inline; the auxiliary tables and startup panic are
+  gone.
 - [x] Delete `checkDefaults` (`cst_engine.go:230-257`) — a duplicate
   dispatcher maintained as a fast path for the 7 core rules. One dispatcher.
-- [ ] Remove double gating: check bodies test `a.enabled[code]` and
+- [x] Remove double gating: check bodies test `a.enabled[code]` and
   `report()` re-tests it (`cst_engine.go:444`). With per-check dispatch,
   neither is needed, and a typo'd code can no longer silently drop findings.
-- [ ] Split rule state out of the engine. Per-rule accumulators
+  **Implemented:** the engine no longer owns an `enabled` map. Selection is
+  performed by interest dispatch; shared implementation groups route only the
+  active declaration's findings instead of re-reading registry state.
+- [x] Split rule state out of the engine. Per-rule accumulators
   (`receiverNames`, `marshalKinds`, `repeatedLiterals`, `publicStructs`, ...)
   belong to the rules that use them, not to the shared traversal object.
-- [ ] Move real explanations onto extended rules or accept shorter metadata —
+  **Implemented:** import, naming, receiver/marshal, repeated-literal, and
+  declaration accumulators are typed rule state keyed by check. The shared
+  pass now contains traversal context and immutable configuration only.
+- [x] Move real explanations onto extended rules or accept shorter metadata —
   the current `Explanation = Summary + ". Default: ..."` synthesis
   (`catalog.go:672`) creates two metadata quality tiers.
-- [ ] Behavioral limits (`max-lines`, `max-parameters`, ...) are currently
+  **Decision:** keep compact explanations for low-complexity checks, but store
+  every explanation explicitly beside its examples and severity. The runtime
+  synthesis and its two-tier metadata path are gone.
+- [x] Behavioral limits (`max-lines`, `max-parameters`, ...) are currently
   stated in **three places** (registry switch `syntax.go:201-221`, check-body
   defaults like `a.limit("max-parameters", 8)`, catalog prose). Each check
   should declare its options and defaults once; the registry validation table
   `supportedBehavioralOptions` (`checks/registry.go:15-41`) and the config
   union struct (Phase 4) derive from that single source.
+  **Implemented:** check metadata now declares typed option specs and defaults;
+  both registries validate from those specs, and execution resolves the same
+  declarations. The config representation cleanup remains tracked in Phase 4.
 
 ### 1c. Reduce semantic boilerplate
 
@@ -185,14 +205,20 @@ repeated per rule.
   wrap positions in a fake `ast.Node` today only because `Report` demands one.
   This also removes the main justification for the
   `FactCallArguments`/`FactFirstCallArgument` bitflags (see 1d).
-- [ ] Provide one shared typed-node inspector (à la
+- [x] Provide one shared typed-node inspector (à la
   `x/tools/go/ast/inspector`) so typed rules declare node interests instead
   of each walking every file. This mirrors the syntax-side `Interests()` and
   makes the two APIs feel like one.
-- [ ] Add `isNamedType(t types.Type, pkgPath, name string) bool` and the
+  **Implemented:** each package builds one immutable `ast/inspector` index;
+  typed checks declare concrete node filters through `Pass.Inspect` (or the
+  ancestor-aware `Pass.InspectWithStack`) instead of walking every file.
+- [x] Add `isNamedType(t types.Type, pkgPath, name string) bool` and the
   common receiver-unwrap helper in one place; delete the dozens of local
   re-derivations (`isTimeValue`, `isTestingTType`, `infallibleWriterType`,
   `isSyncWaitGroupMethod`, ...).
+  **Implemented:** exact, pointer, and receiver-unwrapping named-type helpers,
+  plus shared typed-method resolution, now replace the repeated local package,
+  receiver, and method derivations.
 - [x] Deduplicate `inspectFunctionBody` / `inspectFunctionBodyNode` /
   `inspectParallelTestBody` — three byte-identical copies
   (`nil_error_returns.go:141-153`, `:203-215`,
@@ -212,6 +238,10 @@ in four places (`facts.go:57,70`, `registry.go:223,231`).
 - [x] Keep the `Types` vs `SSA` stage split and `SSAFeatureGlobalDebug`.
 - [x] Declare requirements **on the rule** (a method or struct field), not in
   the central catalog, so a rule body and its needs cannot drift.
+  **Implemented after audit:** every semantic check now implements
+  `Requirements()` beside its implementation; registry selection and
+  execution planning read the method directly, and the central requirement
+  constructors/file are gone.
 - [x] Replace panic-based invariants with a single unit test over the static
   catalog.
 - [x] Fold `FactFirstCallArgument` into `FactCallArguments` (the distinction
@@ -227,6 +257,12 @@ settings into two differently-shaped sub-registries, duplicate `Meta`
 fields field-by-field (`registry.go:241-278`), or special-case `format` as a
 pseudo-check quite so manually. Target: `checks` owns *one* catalog (format +
 syntax + semantic), one settings map, one capability computation.
+
+**Implemented:** the top-level registry now builds one capability-enriched
+catalog and runs the shared generic selector once across format, syntax, and
+semantic checks. Engine registries receive the already-selected codes and
+settings; metadata is enriched by assignment rather than copied field by
+field.
 
 ## Phase 2 — Naming consistency
 

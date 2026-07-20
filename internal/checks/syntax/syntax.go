@@ -19,11 +19,6 @@ import (
 	"github.com/gempir/strider/internal/source"
 )
 
-var defaultBannedCharacters = []rune{
-	'ᐸ',
-	'ᐳ',
-}
-
 type Registry struct {
 	rules      []builtinrules.Rule
 	settings   map[string]configuredRule
@@ -115,12 +110,10 @@ func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
 			config:   ruleConfig,
 		}
 		if meta.Code == "banned-characters" {
-			configured.characters = defaultBannedCharacters
-			if ruleConfig.Characters != nil {
-				configured.characters = make([]rune, 0, len(ruleConfig.Characters))
-				for _, character := range ruleConfig.Characters {
-					configured.characters = append(configured.characters, []rune(character)[0])
-				}
+			characters, _ := core.StringsOption(meta, ruleConfig, "characters")
+			configured.characters = make([]rune, 0, len(characters))
+			for _, character := range characters {
+				configured.characters = append(configured.characters, []rune(character)[0])
 			}
 		}
 		registry.settings[meta.Code] = configured
@@ -167,24 +160,34 @@ func (r *Registry) bannedCharacters() []rune {
 
 func (r *Registry) limits() map[string]int {
 	limits := make(map[string]int)
-	for code, setting := range r.settings {
+	for _, check := range r.rules {
+		code := check.Meta().Code
+		setting := r.settings[code]
 		switch code {
 		case "file-length-limit":
-			limits[code] = 500
-			if setting.config.MaxLines != 0 || setting.config.HasExplicitOption("max-lines") {
-				limits[code] = setting.config.MaxLines
-			}
+			limits[code], _ = core.IntOption(check.Meta(), setting.config, "max-lines")
 		case "function-length":
-			limits[code+"-lines"], limits[code+"-statements"] = setting.config.MaxLines, setting.config.MaxStatements
+			limits[code+"-lines"], _ = core.IntOption(check.Meta(), setting.config, "max-lines")
+			limits[code+"-statements"], _ = core.IntOption(check.Meta(), setting.config, "max-statements")
 		case "function-result-limit":
-			limits[code] = setting.config.MaxResults
+			limits[code], _ = core.IntOption(check.Meta(), setting.config, "max-results")
 		case "max-parameters":
-			limits[code] = setting.config.MaxParameters
+			limits[code], _ = core.IntOption(check.Meta(), setting.config, "max-parameters")
 		case "max-public-structs":
-			limits[code] = setting.config.MaxPublicStructs
+			limits[code], _ = core.IntOption(check.Meta(), setting.config, "max-public-structs")
 		}
 	}
 	return limits
+}
+
+func (r *Registry) blockedImports() []string {
+	for _, check := range r.rules {
+		if check.Meta().Code == "imports-blocklist" {
+			paths, _ := core.StringsOption(check.Meta(), r.settings[check.Meta().Code].config, "blocked-imports")
+			return paths
+		}
+	}
+	return nil
 }
 
 func (r *Registry) activeRules(filename string) []builtinrules.Rule {
@@ -342,7 +345,7 @@ func analyzeTree(filename string, concreteTree *cst.Tree, activeRules []builtinr
 			Checks:           activeRules,
 			BannedCharacters: registry.bannedCharacters(),
 			Limits:           registry.limits(),
-			BlockedImports:   registry.settings["imports-blocklist"].config.BlockedImports,
+			BlockedImports:   registry.blockedImports(),
 			Report: func(finding builtinrules.Finding) {
 				context.reportConcrete(concreteTree, finding, registry.Severity(finding.Code))
 			},

@@ -55,37 +55,38 @@ func (deprecatedAPIUsageRule) Meta() Meta {
 
 func (deprecatedAPIUsageRule) Run(pass *Pass) {
 	selectors := make(map[*ast.Ident]bool)
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				selector,
-					ok := node.(*ast.SelectorExpr)
-				if !ok {
-					return true
-				}
-				selectors[selector.Sel] = true
-				reportDeprecatedObject(pass, selector, selector.Sel)
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.SelectorExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			selector,
+				ok := node.(*ast.SelectorExpr)
+			if !ok {
 				return true
-			},
-		)
-	}
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				switch node := node.(type) {
-				case *ast.ImportSpec:
-					reportDeprecatedImport(pass, node)
-				case *ast.Ident:
-					if !selectors[node] {
-						reportDeprecatedObject(pass, node, node)
-					}
+			}
+			selectors[selector.Sel] = true
+			reportDeprecatedObject(pass, selector, selector.Sel)
+			return true
+		},
+	)
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.Ident)(nil),
+			(*ast.ImportSpec)(nil),
+		},
+		func(node ast.Node) bool {
+			switch node := node.(type) {
+			case *ast.ImportSpec:
+				reportDeprecatedImport(pass, node)
+			case *ast.Ident:
+				if !selectors[node] {
+					reportDeprecatedObject(pass, node, node)
 				}
-				return true
-			},
-		)
-	}
+			}
+			return true
+		},
+	)
 }
 
 func reportDeprecatedImport(pass *Pass, spec *ast.ImportSpec) {
@@ -537,4 +538,11 @@ func deprecationMessage(group *ast.CommentGroup) string {
 		}
 	}
 	return ""
+}
+
+func (deprecatedAPIUsageRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+		Facts: FactDeprecations,
+	}
 }

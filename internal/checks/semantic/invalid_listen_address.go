@@ -80,3 +80,13 @@ func validListenPort(port string) bool {
 	}
 	return hasLetter
 }
+
+func (invalidListenAddressRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"net/http",
+		},
+	}
+}

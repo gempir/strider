@@ -21,54 +21,54 @@ func (slogArgumentShapeRule) Meta() Meta {
 }
 
 func (slogArgumentShapeRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				call,
-					ok := node.(*ast.CallExpr)
-				if !ok || call.Ellipsis.IsValid() {
-					return true
-				}
-				function := calledFunction(pass.TypesInfo, call.Fun)
-				start,
-					ok := slogLooseArgumentStart(function)
-				if !ok || start > len(call.Args) {
-					return true
-				}
-				tail := call.Args[start:]
-				if len(tail) == 0 {
-					return true
-				}
-
-				attrs := 0
-				for _, argument := range tail {
-					if isSlogAttr(pass.TypesInfo.TypeOf(argument)) {
-						attrs++
-					}
-				}
-				if attrs != 0 && attrs != len(tail) {
-					pass.Report(call, "do not mix slog.Attr values with loose key/value arguments in one slog call")
-					return true
-				}
-				if attrs == len(tail) {
-					return true
-				}
-				if len(tail)%2 != 0 {
-					pass.Report(tail[len(tail)-1], "slog key/value arguments must contain an even number of elements")
-					return true
-				}
-				for index := 0; index < len(tail); index += 2 {
-					if exactSlogStringKey(pass.TypesInfo.TypeOf(tail[index])) {
-						continue
-					}
-					pass.Report(tail[index], "slog key must have the built-in string type")
-					return true
-				}
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.CallExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			call,
+				ok := node.(*ast.CallExpr)
+			if !ok || call.Ellipsis.IsValid() {
 				return true
-			},
-		)
-	}
+			}
+			function := calledFunction(pass.TypesInfo, call.Fun)
+			start,
+				ok := slogLooseArgumentStart(function)
+			if !ok || start > len(call.Args) {
+				return true
+			}
+			tail := call.Args[start:]
+			if len(tail) == 0 {
+				return true
+			}
+
+			attrs := 0
+			for _, argument := range tail {
+				if isNamedType(pass.TypesInfo.TypeOf(argument), "log/slog", "Attr") {
+					attrs++
+				}
+			}
+			if attrs != 0 && attrs != len(tail) {
+				pass.Report(call, "do not mix slog.Attr values with loose key/value arguments in one slog call")
+				return true
+			}
+			if attrs == len(tail) {
+				return true
+			}
+			if len(tail)%2 != 0 {
+				pass.Report(tail[len(tail)-1], "slog key/value arguments must contain an even number of elements")
+				return true
+			}
+			for index := 0; index < len(tail); index += 2 {
+				if exactSlogStringKey(pass.TypesInfo.TypeOf(tail[index])) {
+					continue
+				}
+				pass.Report(tail[index], "slog key must have the built-in string type")
+				return true
+			}
+			return true
+		},
+	)
 }
 
 func slogLooseArgumentStart(function *types.Func) (int, bool) {
@@ -90,18 +90,16 @@ func slogLooseArgumentStart(function *types.Func) (int, bool) {
 	}
 }
 
-func isSlogAttr(valueType types.Type) bool {
-	if valueType == nil {
-		return false
-	}
-	named, ok := types.Unalias(valueType).(*types.Named)
-	return ok && named.Obj() != nil && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "log/slog" && named.Obj().Name() == "Attr"
-}
-
 func exactSlogStringKey(valueType types.Type) bool {
 	if valueType == nil {
 		return false
 	}
 	basic, ok := types.Unalias(valueType).(*types.Basic)
 	return ok && basic.Info()&types.IsString != 0
+}
+
+func (slogArgumentShapeRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

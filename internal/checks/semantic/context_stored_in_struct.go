@@ -20,23 +20,29 @@ func (contextStoredInStructRule) Meta() Meta {
 }
 
 func (contextStoredInStructRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				structure,
-					ok := node.(*ast.StructType)
-				if !ok || structure.Fields == nil {
-					return true
-				}
-				for _, field := range structure.Fields.List {
-					if !isContextType(pass.TypesInfo.TypeOf(field.Type)) {
-						continue
-					}
-					pass.Report(field, "do not store context.Context in a struct; pass it explicitly to each operation")
-				}
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.StructType)(nil),
+		},
+		func(node ast.Node) bool {
+			structure,
+				ok := node.(*ast.StructType)
+			if !ok || structure.Fields == nil {
 				return true
-			},
-		)
+			}
+			for _, field := range structure.Fields.List {
+				if !isNamedType(pass.TypesInfo.TypeOf(field.Type), "context", "Context") {
+					continue
+				}
+				pass.Report(field, "do not store context.Context in a struct; pass it explicitly to each operation")
+			}
+			return true
+		},
+	)
+}
+
+func (contextStoredInStructRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
 	}
 }

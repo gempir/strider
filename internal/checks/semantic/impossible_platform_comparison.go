@@ -75,39 +75,46 @@ func (impossiblePlatformComparisonRule) Meta() Meta {
 }
 
 func (impossiblePlatformComparisonRule) Run(pass *Pass) {
+	constraints := make(map[*ast.File]constraint.Expr)
 	for _, file := range pass.Files {
 		buildConstraint, ok := parsedFileConstraint(file)
-		if !ok {
-			continue
+		if ok {
+			constraints[file] = buildConstraint
 		}
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				binary,
-					ok := node.(*ast.BinaryExpr)
-				if !ok || binary.Op != token.EQL && binary.Op != token.NEQ {
-					return true
-				}
+	}
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.BinaryExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			buildConstraint := constraints[pass.File(node.Pos())]
+			if buildConstraint == nil {
+				return true
+			}
+			binary,
+				ok := node.(*ast.BinaryExpr)
+			if !ok || binary.Op != token.EQL && binary.Op != token.NEQ {
+				return true
+			}
+			kind,
+				target,
+				ok := platformComparison(pass, binary.X, binary.Y)
+			if !ok {
 				kind,
 					target,
-					ok := platformComparison(pass, binary.X, binary.Y)
-				if !ok {
-					kind,
-						target,
-						ok = platformComparison(pass, binary.Y, binary.X)
-				}
-				if !ok || !knownPlatformTarget(kind, target) {
-					return true
-				}
-				possible,
-					checked := platformConstraintPossible(buildConstraint, kind, target)
-				if checked && !possible {
-					pass.Report(binary, fmt.Sprintf("runtime.%s can never equal %q under this file's build constraints", kind, target))
-				}
+					ok = platformComparison(pass, binary.Y, binary.X)
+			}
+			if !ok || !knownPlatformTarget(kind, target) {
 				return true
-			},
-		)
-	}
+			}
+			possible,
+				checked := platformConstraintPossible(buildConstraint, kind, target)
+			if checked && !possible {
+				pass.Report(binary, fmt.Sprintf("runtime.%s can never equal %q under this file's build constraints", kind, target))
+			}
+			return true
+		},
+	)
 }
 
 func parsedFileConstraint(file *ast.File) (constraint.Expr, bool) {
@@ -229,4 +236,10 @@ func knownPlatformTarget(kind, target string) bool {
 		return knownOperatingSystems[target]
 	}
 	return knownArchitectures[target]
+}
+
+func (impossiblePlatformComparisonRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

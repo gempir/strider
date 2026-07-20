@@ -180,3 +180,14 @@ func ignoredMarshalField(tag, format string) bool {
 	value := reflect.StructTag(tag).Get(name)
 	return value == "-" || strings.HasPrefix(value, "-,")
 }
+
+func (unsupportedMarshalTypeRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"encoding/json",
+			"encoding/xml",
+		},
+	}
+}

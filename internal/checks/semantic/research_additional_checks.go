@@ -30,31 +30,33 @@ func (discardedErrorResultRule) Meta() Meta {
 }
 
 func (discardedErrorResultRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				switch node := node.(type) {
-				case *ast.ExprStmt:
-					call,
-						ok := ast.Unparen(node.X).(*ast.CallExpr)
-					if !ok || len(discardedErrorResultIndexes(pass, call)) == 0 {
-						return true
-					}
-					reportDiscardedErrorResult(pass, call)
-				case *ast.AssignStmt:
-					reportBlankErrorResults(pass, node.Lhs, node.Rhs)
-				case *ast.ValueSpec:
-					left := make([]ast.Expr, len(node.Names))
-					for index, name := range node.Names {
-						left[index] = name
-					}
-					reportBlankErrorResults(pass, left, node.Values)
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.AssignStmt)(nil),
+			(*ast.ExprStmt)(nil),
+			(*ast.ValueSpec)(nil),
+		},
+		func(node ast.Node) bool {
+			switch node := node.(type) {
+			case *ast.ExprStmt:
+				call,
+					ok := ast.Unparen(node.X).(*ast.CallExpr)
+				if !ok || len(discardedErrorResultIndexes(pass, call)) == 0 {
+					return true
 				}
-				return true
-			},
-		)
-	}
+				reportDiscardedErrorResult(pass, call)
+			case *ast.AssignStmt:
+				reportBlankErrorResults(pass, node.Lhs, node.Rhs)
+			case *ast.ValueSpec:
+				left := make([]ast.Expr, len(node.Names))
+				for index, name := range node.Names {
+					left[index] = name
+				}
+				reportBlankErrorResults(pass, left, node.Values)
+			}
+			return true
+		},
+	)
 }
 
 func reportBlankErrorResults(pass *Pass, left, right []ast.Expr) {
@@ -123,15 +125,8 @@ func discardedErrorResultIsInfallible(pass *Pass, call *ast.CallExpr) bool {
 }
 
 func infallibleWriterType(valueType types.Type) bool {
-	if valueType == nil {
-		return false
-	}
-	valueType = types.Unalias(valueType)
-	if pointer, ok := valueType.(*types.Pointer); ok {
-		valueType = types.Unalias(pointer.Elem())
-	}
-	named, ok := valueType.(*types.Named)
-	if !ok || named.Obj() == nil || named.Obj().Pkg() == nil {
+	named := namedType(valueType)
+	if named == nil || named.Obj().Pkg() == nil {
 		return false
 	}
 	packagePath := named.Obj().Pkg().Path()
@@ -204,31 +199,30 @@ func (testParallelismRule) Run(pass *Pass) {
 			}
 			pass.Report(function.Name, "consider calling t.Parallel() when this test begins")
 		}
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				call,
-					ok := node.(*ast.CallExpr)
-				if !ok || !isTestingMethod(pass, call.Fun, "Run") || len(call.Args) != 2 {
-					return true
-				}
-				literal,
-					ok := ast.Unparen(call.Args[1]).(*ast.FuncLit)
-				if !ok {
-					return true
-				}
-				parameter := testingTParameter(pass, literal.Type)
-				if parameter == nil || literal.Body == nil || hasTestingParallelCall(pass, literal.Body, parameter) || hasUnsafeParallelTestState(
-					pass,
-					literal.Body,
-				) {
-					return true
-				}
-				pass.Report(literal, "consider calling t.Parallel() when this subtest begins")
-				return true
-			},
-		)
 	}
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.CallExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			call := node.(*ast.CallExpr)
+			file := pass.File(call.Pos())
+			if file == nil || !strings.HasSuffix(pass.FileSet.Position(file.Pos()).Filename, "_test.go") || !isTestingMethod(pass, call.Fun, "Run") || len(call.Args) != 2 {
+				return true
+			}
+			literal,
+				ok := ast.Unparen(call.Args[1]).(*ast.FuncLit)
+			if !ok {
+				return true
+			}
+			parameter := testingTParameter(pass, literal.Type)
+			if parameter == nil || literal.Body == nil || hasTestingParallelCall(pass, literal.Body, parameter) || hasUnsafeParallelTestState(pass, literal.Body) {
+				return true
+			}
+			pass.Report(literal, "consider calling t.Parallel() when this subtest begins")
+			return true
+		},
+	)
 }
 
 func testFunctionName(name string) bool {
@@ -244,18 +238,15 @@ func testFunctionName(name string) bool {
 }
 
 func testingTParameter(pass *Pass, function *ast.FuncType) *types.Var {
-	if function == nil || function.Params == nil || len(function.Params.List) != 1 || len(function.Params.List[0].Names) != 1 || !isTestingTType(
+	if function == nil || function.Params == nil || len(function.Params.List) != 1 || len(function.Params.List[0].Names) != 1 || !isNamedReceiverType(
 		pass.TypesInfo.TypeOf(function.Params.List[0].Type),
+		"testing",
+		"T",
 	) {
 		return nil
 	}
 	parameter, _ := pass.TypesInfo.Defs[function.Params.List[0].Names[0]].(*types.Var)
 	return parameter
-}
-
-func isTestingTType(valueType types.Type) bool {
-	named := namedType(valueType)
-	return named != nil && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "testing" && named.Obj().Name() == "T"
 }
 
 func hasTestingParallelCall(pass *Pass, body *ast.BlockStmt, parameter *types.Var) bool {
@@ -314,12 +305,7 @@ func hasUnsafeParallelTestState(pass *Pass, body *ast.BlockStmt) bool {
 }
 
 func isTestingMethod(pass *Pass, expression ast.Expr, name string) bool {
-	function := calledFunction(pass.TypesInfo, expression)
-	if function == nil || function.Name() != name || function.Pkg() == nil || function.Pkg().Path() != "testing" {
-		return false
-	}
-	signature, _ := function.Type().(*types.Signature)
-	return signature != nil && signature.Recv() != nil && isTestingTType(signature.Recv().Type())
+	return isNamedMethod(pass.TypesInfo, expression, "testing", "T", name)
 }
 
 func isUnsafeOSStateCall(pass *Pass, expression ast.Expr) bool {
@@ -412,5 +398,23 @@ func declarationKindRank(declaration ast.Decl) int {
 		return 3
 	default:
 		return -1
+	}
+}
+
+func (discardedErrorResultRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
+}
+
+func (testParallelismRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
+}
+
+func (topLevelDeclarationOrderRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
 	}
 }

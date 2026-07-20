@@ -98,3 +98,13 @@ func binaryWriteDataNode(arguments []ast.Node) ast.Node {
 	}
 	return nil
 }
+
+func (unsupportedBinaryWriteRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"encoding/binary",
+		},
+	}
+}

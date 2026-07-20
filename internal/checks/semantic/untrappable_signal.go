@@ -22,27 +22,27 @@ func (untrappableSignalRule) Meta() Meta {
 }
 
 func (untrappableSignalRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				call,
-					ok := node.(*ast.CallExpr)
-				if !ok || !isSignalRegistration(pass.TypesInfo, call.Fun) {
-					return true
-				}
-				for _, argument := range call.Args {
-					signal := unwrapSignalConversion(pass.TypesInfo, argument)
-					name := untrappableSignalName(pass.TypesInfo, signal)
-					if name == "" {
-						continue
-					}
-					pass.Report(argument, fmt.Sprintf("%s cannot be trapped by a process", name))
-				}
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.CallExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			call,
+				ok := node.(*ast.CallExpr)
+			if !ok || !isSignalRegistration(pass.TypesInfo, call.Fun) {
 				return true
-			},
-		)
-	}
+			}
+			for _, argument := range call.Args {
+				signal := unwrapSignalConversion(pass.TypesInfo, argument)
+				name := untrappableSignalName(pass.TypesInfo, signal)
+				if name == "" {
+					continue
+				}
+				pass.Report(argument, fmt.Sprintf("%s cannot be trapped by a process", name))
+			}
+			return true
+		},
+	)
 }
 
 func isSignalRegistration(info *types.Info, expression ast.Expr) bool {
@@ -101,5 +101,11 @@ func untrappableSignalName(info *types.Info, expression ast.Expr) string {
 		return "syscall.SIGSTOP"
 	default:
 		return ""
+	}
+}
+
+func (untrappableSignalRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
 	}
 }

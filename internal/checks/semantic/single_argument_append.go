@@ -22,52 +22,53 @@ func (singleArgumentAppendRule) Meta() Meta {
 }
 
 func (singleArgumentAppendRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.CallExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			call,
+				ok := node.(*ast.CallExpr)
+			if !ok || len(call.Args) != 1 || call.Ellipsis.IsValid() {
+				return true
+			}
+			identifier,
+				ok := call.Fun.(*ast.Ident)
+			if !ok {
+				return true
+			}
+			builtin,
+				ok := pass.TypesInfo.ObjectOf(identifier).(*types.Builtin)
+			if !ok || builtin.Name() != "append" {
+				return true
+			}
+			message := "append with no elements returns the original slice unchanged"
+			file := pass.File(call.Pos())
+			if file != nil && hasCommentBetween(file.Comments, identifier.End(), call.Lparen) {
+				pass.Report(call, message)
+				return true
+			}
+			start := pass.FileSet.Position(identifier.Pos()).Offset
+			end := pass.FileSet.Position(identifier.End()).Offset
+			pass.ReportFix(
 				call,
-					ok := node.(*ast.CallExpr)
-				if !ok || len(call.Args) != 1 || call.Ellipsis.IsValid() {
-					return true
-				}
-				identifier,
-					ok := call.Fun.(*ast.Ident)
-				if !ok {
-					return true
-				}
-				builtin,
-					ok := pass.TypesInfo.ObjectOf(identifier).(*types.Builtin)
-				if !ok || builtin.Name() != "append" {
-					return true
-				}
-				message := "append with no elements returns the original slice unchanged"
-				if hasCommentBetween(file.Comments, identifier.End(), call.Lparen) {
-					pass.Report(call, message)
-					return true
-				}
-				start := pass.FileSet.Position(identifier.Pos()).Offset
-				end := pass.FileSet.Position(identifier.End()).Offset
-				pass.ReportFix(
-					call,
-					message,
-					diagnostic.Fix{
-						Message:   "replace append with its slice argument",
-						Safety:    diagnostic.Safe,
-						Automatic: true,
-						Edits: []diagnostic.TextEdit{
-							{
-								Start:   start,
-								End:     end,
-								OldText: identifier.Name,
-							},
+				message,
+				diagnostic.Fix{
+					Message:   "replace append with its slice argument",
+					Safety:    diagnostic.Safe,
+					Automatic: true,
+					Edits: []diagnostic.TextEdit{
+						{
+							Start:   start,
+							End:     end,
+							OldText: identifier.Name,
 						},
 					},
-				)
-				return true
-			},
-		)
-	}
+				},
+			)
+			return true
+		},
+	)
 }
 
 func hasCommentBetween(groups []*ast.CommentGroup, start, end token.Pos) bool {
@@ -77,4 +78,10 @@ func hasCommentBetween(groups []*ast.CommentGroup, start, end token.Pos) bool {
 		}
 	}
 	return false
+}
+
+func (singleArgumentAppendRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

@@ -54,3 +54,13 @@ func invalidContextKeyMessage(key ssa.Value) string {
 	}
 	return ""
 }
+
+func (contextKeyTypeRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"context",
+		},
+	}
+}

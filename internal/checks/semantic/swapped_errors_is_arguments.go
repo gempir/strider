@@ -49,3 +49,13 @@ func loadedGlobal(value ssa.Value) *ssa.Global {
 	global, _ := flattenSSAValue(load.X).(*ssa.Global)
 	return global
 }
+
+func (swappedErrorsIsArgumentsRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"errors",
+		},
+	}
+}

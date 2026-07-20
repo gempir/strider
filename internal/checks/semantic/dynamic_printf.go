@@ -21,36 +21,37 @@ func (dynamicPrintfRule) Meta() Meta {
 }
 
 func (dynamicPrintfRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				call,
-					ok := node.(*ast.CallExpr)
-				if !ok {
-					return true
-				}
-				formatIndex,
-					ok := dynamicPrintfFormatIndex(pass, call)
-				if !ok || len(call.Args) != formatIndex+1 {
-					return true
-				}
-				format := call.Args[formatIndex]
-				switch format.(type) {
-				case *ast.CallExpr,
-					*ast.Ident:
-				default:
-					return true
-				}
-				if _,
-					tuple := pass.TypesInfo.TypeOf(format).(*types.Tuple); tuple {
-					return true
-				}
-				pass.Report(call, "printf-style function with dynamic format string and no further arguments should use print-style function instead")
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.CallExpr)(nil),
+			(*ast.Ident)(nil),
+		},
+		func(node ast.Node) bool {
+			call,
+				ok := node.(*ast.CallExpr)
+			if !ok {
 				return true
-			},
-		)
-	}
+			}
+			formatIndex,
+				ok := dynamicPrintfFormatIndex(pass, call)
+			if !ok || len(call.Args) != formatIndex+1 {
+				return true
+			}
+			format := call.Args[formatIndex]
+			switch format.(type) {
+			case *ast.CallExpr,
+				*ast.Ident:
+			default:
+				return true
+			}
+			if _,
+				tuple := pass.TypesInfo.TypeOf(format).(*types.Tuple); tuple {
+				return true
+			}
+			pass.Report(call, "printf-style function with dynamic format string and no further arguments should use print-style function instead")
+			return true
+		},
+	)
 }
 
 func dynamicPrintfFormatIndex(pass *Pass, call *ast.CallExpr) (int, bool) {
@@ -72,4 +73,10 @@ func dynamicPrintfFormatIndex(pass *Pass, call *ast.CallExpr) (int, bool) {
 		return 0, true
 	}
 	return 0, false
+}
+
+func (dynamicPrintfRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

@@ -76,3 +76,14 @@ func boundedRandomFunction(call ssa.CallInstruction) (string, bool) {
 	}
 	return "", false
 }
+
+func (randomBoundOneRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactStaticCalls,
+		staticCallPackages: []string{
+			"math/rand",
+			"math/rand/v2",
+		},
+	}
+}

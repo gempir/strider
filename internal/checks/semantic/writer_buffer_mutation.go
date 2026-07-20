@@ -62,3 +62,9 @@ func modifiesWriterBuffer(instruction ssa.Instruction, buffer ssa.Value) bool {
 		return false
 	}
 }
+
+func (writerBufferMutationRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+	}
+}

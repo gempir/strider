@@ -34,6 +34,37 @@ func isNamedType(valueType types.Type, packagePath, name string) bool {
 	return named != nil && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == packagePath && named.Obj().Name() == name
 }
 
+func isPointerToNamedType(valueType types.Type, packagePath, name string) bool {
+	pointer, _ := types.Unalias(valueType).(*types.Pointer)
+	return pointer != nil && isNamedType(pointer.Elem(), packagePath, name)
+}
+
+func isNamedReceiverType(valueType types.Type, packagePath, name string) bool {
+	named := namedType(valueType)
+	return named != nil && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == packagePath && named.Obj().Name() == name
+}
+
+func calledMethod(info *types.Info, expression ast.Expr) (*types.Func, *types.Named) {
+	selector, _ := ast.Unparen(expression).(*ast.SelectorExpr)
+	if selector == nil {
+		return nil, nil
+	}
+	function, _ := info.ObjectOf(selector.Sel).(*types.Func)
+	if function == nil {
+		return nil, nil
+	}
+	signature, _ := function.Type().(*types.Signature)
+	if signature == nil || signature.Recv() == nil {
+		return nil, nil
+	}
+	return function, namedType(signature.Recv().Type())
+}
+
+func isNamedMethod(info *types.Info, expression ast.Expr, packagePath, receiverName, methodName string) bool {
+	function, receiver := calledMethod(info, expression)
+	return function != nil && function.Pkg() != nil && function.Pkg().Path() == packagePath && function.Name() == methodName && receiver != nil && receiver.Obj().Pkg() != nil && receiver.Obj().Pkg().Path() == packagePath && receiver.Obj().Name() == receiverName
+}
+
 // namedType removes aliases and pointer receiver layers before returning the
 // declared type shared by receiver and argument checks.
 func namedType(valueType types.Type) *types.Named {

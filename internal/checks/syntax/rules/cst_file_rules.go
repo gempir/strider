@@ -29,13 +29,13 @@ func (a *cstAnalyzer) checkFilenameAndPackage() {
 	if strings.HasSuffix(base, "_test.go") && strings.HasSuffix(packageName, "_test") {
 		packageName = strings.TrimSuffix(packageName, "_test")
 	}
-	if a.enabled["filename-format"] && !validFilenamePattern.MatchString(base) {
+	if a.active("filename-format") && !validFilenamePattern.MatchString(base) {
 		a.report("filename-format", nameToken, "filename does not match the supported Go filename format")
 	}
-	if a.enabled["package-naming"] && name != "main" && !validPackagePattern.MatchString(packageName) {
+	if a.active("package-naming") && name != "main" && !validPackagePattern.MatchString(packageName) {
 		a.report("package-naming", nameToken, "package name should be short, lower-case, and contain no separators")
 	}
-	if a.enabled["package-directory-mismatch"] && packageName != "main" && !pathContains(a.filename, "testdata") {
+	if a.active("package-directory-mismatch") && packageName != "main" && !pathContains(a.filename, "testdata") {
 		directory := filepath.Base(filepath.Dir(a.filename))
 		normalized := strings.ReplaceAll(strings.ReplaceAll(directory, "-", ""), "_", "")
 		if normalized != "" && normalized != packageName && !strings.HasPrefix(directory, ".") {
@@ -49,16 +49,17 @@ func (a *cstAnalyzer) checkConcreteImport(spec *cst.ImportSpec) {
 	if err != nil {
 		return
 	}
-	a.importPaths[path] = true
-	if a.enabled["imports-blocklist"] && a.blockedImports[path] {
+	state := a.imports()
+	state.paths[path] = true
+	if a.active("imports-blocklist") && a.blockedImports[path] {
 		a.report("imports-blocklist", spec, fmt.Sprintf("import %s is blocked by configuration", path))
 	}
-	if a.importSeen[path] {
-		if a.enabled["duplicated-imports"] {
+	if state.seen[path] {
+		if a.active("duplicated-imports") {
 			a.report("duplicated-imports", spec, fmt.Sprintf("package %s is imported more than once", path))
 		}
 	} else {
-		a.importSeen[path] = true
+		state.seen[path] = true
 	}
 	alias := ""
 	var aliasNode cst.Node
@@ -73,14 +74,14 @@ func (a *cstAnalyzer) checkConcreteImport(spec *cst.ImportSpec) {
 	case ".":
 		a.report("dot-imports", spec, "dot imports obscure where identifiers come from")
 	case "_":
-		if a.enabled["blank-imports"] && a.packageName != "main" && !strings.HasSuffix(a.filename, "_test.go") && !concreteImportHasComment(a.tree, spec) {
+		if a.active("blank-imports") && a.packageNameToken().Src() != "main" && !strings.HasSuffix(a.filename, "_test.go") && !concreteImportHasComment(a.tree, spec) {
 			a.report("blank-imports", spec, "blank import should be justified by a comment")
 		}
 	default:
-		if a.enabled["import-alias-naming"] && !validPackagePattern.MatchString(alias) {
+		if a.active("import-alias-naming") && !validPackagePattern.MatchString(alias) {
 			a.report("import-alias-naming", aliasNode, "import alias should contain lower-case letters and digits")
 		}
-		if a.enabled["redundant-import-alias"] && alias == filepath.Base(path) {
+		if a.active("redundant-import-alias") && alias == filepath.Base(path) {
 			a.report("redundant-import-alias", aliasNode, "import alias is identical to the package name")
 		}
 	}
@@ -89,7 +90,7 @@ func (a *cstAnalyzer) checkConcreteImport(spec *cst.ImportSpec) {
 		importName = alias
 	}
 	if importName != "." && importName != "_" {
-		a.importNames[importName] = true
+		state.names[importName] = true
 	}
 }
 
@@ -108,10 +109,10 @@ func concreteImportHasComment(tree *cst.Tree, spec *cst.ImportSpec) bool {
 
 func (a *cstAnalyzer) checkLinesAndComments() {
 	lines := bytes.Split(a.content, []byte("\n"))
-	if limit := a.limits["file-length-limit"]; a.enabled["file-length-limit"] && limit > 0 && len(lines) > limit {
+	if limit := a.limits["file-length-limit"]; a.active("file-length-limit") && limit > 0 && len(lines) > limit {
 		a.reportRange("file-length-limit", 0, len(a.content), fmt.Sprintf("file has %d lines; maximum is %d", len(lines), limit))
 	}
-	if a.enabled["bidirectional-control-character"] {
+	if a.active("bidirectional-control-character") {
 		for offset := 0; offset < len(a.content); {
 			character, width := utf8.DecodeRune(a.content[offset:])
 			if width == 0 {
@@ -136,7 +137,7 @@ func (a *cstAnalyzer) checkLinesAndComments() {
 
 func (a *cstAnalyzer) checkCompilerDirectiveSpacing(comments []cst.Comment) {
 	for _, comment := range comments {
-		if !a.enabled["spaced-compiler-directive"] || comment.Column != 1 || !strings.HasPrefix(comment.Text, "//") {
+		if !a.active("spaced-compiler-directive") || comment.Column != 1 || !strings.HasPrefix(comment.Text, "//") {
 			continue
 		}
 		body := comment.Text[2:]
@@ -149,7 +150,7 @@ func (a *cstAnalyzer) checkCompilerDirectiveSpacing(comments []cst.Comment) {
 }
 
 func (a *cstAnalyzer) checkPackageComment(comments []cst.Comment) {
-	if !a.enabled["package-comments"] || strings.HasSuffix(a.filename, "_test.go") {
+	if !a.active("package-comments") || strings.HasSuffix(a.filename, "_test.go") {
 		return
 	}
 	nameToken := a.packageNameToken()
@@ -168,7 +169,7 @@ func (a *cstAnalyzer) checkPackageComment(comments []cst.Comment) {
 }
 
 func (a *cstAnalyzer) checkBuildTags(comments []cst.Comment) {
-	if !a.enabled["redundant-build-tag"] {
+	if !a.active("redundant-build-tag") {
 		return
 	}
 	hasGoBuild := false

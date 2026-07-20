@@ -6,6 +6,7 @@ import (
 	"go/token"
 	"go/types"
 
+	astinspector "golang.org/x/tools/go/ast/inspector"
 	"golang.org/x/tools/go/ssa"
 
 	"github.com/gempir/strider/internal/checks/core"
@@ -19,6 +20,7 @@ type Meta = core.Meta
 // Check is a package-aware semantic check.
 type Check interface {
 	core.Check
+	Requirements() Requirements
 	Run(*Pass)
 }
 
@@ -44,6 +46,7 @@ type Pass struct {
 	SSAProgram  *ssa.Program
 	SSAPackage  *ssa.Package
 	Functions   []*ssa.Function
+	inspector   *astinspector.Inspector
 	facts       *packageFacts
 	report      func(token.Pos, token.Pos, string, []diagnostic.Fix)
 }
@@ -67,8 +70,40 @@ func (pass *Pass) ReportFix(node ast.Node, message string, fixes ...diagnostic.F
 
 // Inspect visits the typed package's syntax once for the supplied callback.
 // Typed checks use this shared entry point instead of each owning file loops.
-func (pass *Pass) Inspect(visit func(ast.Node) bool) {
-	for _, file := range pass.Files {
-		ast.Inspect(file, visit)
+func (pass *Pass) Inspect(nodeFilter []ast.Node, visit func(ast.Node) bool) {
+	inspector := pass.inspector
+	if inspector == nil {
+		inspector = astinspector.New(pass.Files)
 	}
+	inspector.Nodes(nodeFilter, func(node ast.Node, push bool) bool {
+		if !push {
+			return true
+		}
+		return visit(node)
+	})
+}
+
+// InspectWithStack visits only the requested node types and supplies their
+// complete ancestor stack without requiring a rule-owned traversal.
+func (pass *Pass) InspectWithStack(nodeFilter []ast.Node, visit func(ast.Node, []ast.Node) bool) {
+	inspector := pass.inspector
+	if inspector == nil {
+		inspector = astinspector.New(pass.Files)
+	}
+	inspector.WithStack(nodeFilter, func(node ast.Node, push bool, stack []ast.Node) bool {
+		if !push {
+			return true
+		}
+		return visit(node, stack[:len(stack)-1])
+	})
+}
+
+// File returns the package syntax file containing position.
+func (pass *Pass) File(position token.Pos) *ast.File {
+	for _, file := range pass.Files {
+		if file.Pos() <= position && position <= file.End() {
+			return file
+		}
+	}
+	return nil
 }

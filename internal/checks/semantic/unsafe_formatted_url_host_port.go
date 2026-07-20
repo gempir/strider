@@ -22,28 +22,28 @@ func (unsafeFormattedURLHostPortRule) Meta() Meta {
 }
 
 func (unsafeFormattedURLHostPortRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				call,
-					ok := node.(*ast.CallExpr)
-				if !ok {
-					return true
-				}
-				formatted := formattedHostPortCall(pass, call)
-				if formatted == nil {
-					argument := networkAddressArgument(pass, call)
-					formatted = bareFormattedHostPortCall(pass, argument)
-				}
-				if formatted == nil {
-					return true
-				}
-				pass.Report(formatted.Args[0], "formatted host and port may be invalid for IPv6; build the address with net.JoinHostPort")
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.CallExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			call,
+				ok := node.(*ast.CallExpr)
+			if !ok {
 				return true
-			},
-		)
-	}
+			}
+			formatted := formattedHostPortCall(pass, call)
+			if formatted == nil {
+				argument := networkAddressArgument(pass, call)
+				formatted = bareFormattedHostPortCall(pass, argument)
+			}
+			if formatted == nil {
+				return true
+			}
+			pass.Report(formatted.Args[0], "formatted host and port may be invalid for IPv6; build the address with net.JoinHostPort")
+			return true
+		},
+	)
 }
 
 func formattedHostPortCall(pass *Pass, call *ast.CallExpr) *ast.CallExpr {
@@ -121,4 +121,10 @@ func formatsURLHostAndPort(format string) bool {
 	}
 	authority = authority[:end]
 	return strings.Contains(authority, "%s:") || strings.Contains(authority, "%v:")
+}
+
+func (unsafeFormattedURLHostPortRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

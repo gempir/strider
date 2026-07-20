@@ -81,3 +81,9 @@ func ssaBlockInCycle(start *ssa.BasicBlock) bool {
 	}
 	return false
 }
+
+func (regexpMatchInLoopRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+	}
+}

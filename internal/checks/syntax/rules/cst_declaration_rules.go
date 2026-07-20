@@ -3,13 +3,14 @@ package rules
 import (
 	"fmt"
 	"go/token"
+	"strconv"
 	"strings"
 
 	"github.com/gempir/strider/internal/cst"
 )
 
 func (a *cstAnalyzer) finishConcreteRepeatedLiterals() {
-	for literal, nodes := range a.repeatedLiterals {
+	for literal, nodes := range a.repeatedLiteralState().literals {
 		if len(nodes) > 2 {
 			a.report("add-constant", nodes[2], fmt.Sprintf("string literal %s appears more than twice; define a constant", literal))
 		}
@@ -19,16 +20,17 @@ func (a *cstAnalyzer) finishConcreteRepeatedLiterals() {
 func (a *cstAnalyzer) checkConcreteTypeDefinition(definition *cst.TypeDef) {
 	a.checkConcreteExportedDeclaration(definition.IDENT, definition)
 	if _, ok := definition.TypeNode.(*cst.StructType); ok && token.IsExported(definition.IDENT.Src()) {
-		a.publicStructs++
-		limit := a.limit("max-public-structs", 5)
-		if a.publicStructs > limit {
+		state := a.declarationState()
+		state.publicStructs++
+		limit := a.limit("max-public-structs")
+		if state.publicStructs > limit {
 			a.report("max-public-structs", definition.IDENT, fmt.Sprintf("file declares more than %d exported structs", limit))
 		}
 	}
 }
 
 func (a *cstAnalyzer) checkConcreteExportedFunction(name cst.Token, node cst.Node, method bool) {
-	if !token.IsExported(name.Src()) || a.packageName == "main" {
+	if !token.IsExported(name.Src()) || a.packageNameToken().Src() == "main" {
 		return
 	}
 	if strings.HasSuffix(a.filename, "_test.go") && (strings.HasPrefix(name.Src(), "Test") || strings.HasPrefix(name.Src(), "Benchmark") || strings.HasPrefix(
@@ -46,6 +48,24 @@ func (a *cstAnalyzer) checkConcreteExportedFunction(name cst.Token, node cst.Nod
 	if !a.concreteHasDocumentation(name.Src(), node) {
 		a.report("exported-declaration-comment", name, "exported function or method should have a comment beginning with its name")
 	}
+}
+
+func (a *cstAnalyzer) observeRepeatedLiteral(literal *cst.BasicLit, ancestors []cst.Node) {
+	if literal.Ch() != token.STRING {
+		return
+	}
+	for _, ancestor := range ancestors {
+		switch cst.Kind(ancestor) {
+		case "ConstDecl", "VarDecl", "TypeDecl":
+			return
+		}
+	}
+	value, err := strconv.Unquote(literal.Src())
+	if err != nil || value == "" {
+		return
+	}
+	state := a.repeatedLiteralState()
+	state.literals[literal.Src()] = append(state.literals[literal.Src()], literal)
 }
 
 func (a *cstAnalyzer) checkConcreteExportedDeclaration(name cst.Token, node cst.Node) {

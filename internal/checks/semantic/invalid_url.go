@@ -42,3 +42,13 @@ func (invalidURLRule) Run(pass *Pass) {
 		}
 	}
 }
+
+func (invalidURLRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"net/url",
+		},
+	}
+}

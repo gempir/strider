@@ -149,3 +149,9 @@ func pointerCannotBeNil(value ssa.Value) bool {
 		return false
 	}
 }
+
+func (possibleNilDereferenceRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+	}
+}

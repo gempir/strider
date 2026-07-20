@@ -21,26 +21,32 @@ func (deferredReturnFunctionNotCalledRule) Meta() Meta {
 }
 
 func (deferredReturnFunctionNotCalledRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				statement,
-					ok := node.(*ast.DeferStmt)
-				if !ok || statement.Call == nil {
-					return true
-				}
-				result := pass.TypesInfo.TypeOf(statement.Call)
-				if result == nil {
-					return true
-				}
-				if _,
-					ok := result.Underlying().(*types.Signature); !ok {
-					return true
-				}
-				pass.Report(statement, "the deferred call returns a function that is never called; use a second call to defer the returned function")
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.DeferStmt)(nil),
+		},
+		func(node ast.Node) bool {
+			statement,
+				ok := node.(*ast.DeferStmt)
+			if !ok || statement.Call == nil {
 				return true
-			},
-		)
+			}
+			result := pass.TypesInfo.TypeOf(statement.Call)
+			if result == nil {
+				return true
+			}
+			if _,
+				ok := result.Underlying().(*types.Signature); !ok {
+				return true
+			}
+			pass.Report(statement, "the deferred call returns a function that is never called; use a second call to defer the returned function")
+			return true
+		},
+	)
+}
+
+func (deferredReturnFunctionNotCalledRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
 	}
 }

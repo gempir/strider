@@ -27,38 +27,38 @@ func (unreachableTypeSwitchCaseRule) Meta() Meta {
 }
 
 func (unreachableTypeSwitchCaseRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				switchStatement,
-					ok := node.(*ast.TypeSwitchStmt)
-				if !ok {
-					return true
-				}
-				cases := typeSwitchCases(pass, switchStatement)
-				for earlierIndex, earlier := range cases {
-					for _, later := range cases[earlierIndex+1:] {
-						first,
-							hidden,
-							ok := subsumingCaseTypes(earlier.types, later.types)
-						if !ok {
-							continue
-						}
-						pass.Report(
-							later.clause,
-							fmt.Sprintf(
-								"unreachable type-switch case: %s always matches before %s",
-								conciseAnalysisType(pass, first),
-								conciseAnalysisType(pass, hidden),
-							),
-						)
-					}
-				}
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.TypeSwitchStmt)(nil),
+		},
+		func(node ast.Node) bool {
+			switchStatement,
+				ok := node.(*ast.TypeSwitchStmt)
+			if !ok {
 				return true
-			},
-		)
-	}
+			}
+			cases := typeSwitchCases(pass, switchStatement)
+			for earlierIndex, earlier := range cases {
+				for _, later := range cases[earlierIndex+1:] {
+					first,
+						hidden,
+						ok := subsumingCaseTypes(earlier.types, later.types)
+					if !ok {
+						continue
+					}
+					pass.Report(
+						later.clause,
+						fmt.Sprintf(
+							"unreachable type-switch case: %s always matches before %s",
+							conciseAnalysisType(pass, first),
+							conciseAnalysisType(pass, hidden),
+						),
+					)
+				}
+			}
+			return true
+		},
+	)
 }
 
 func conciseAnalysisType(pass *Pass, valueType types.Type) string {
@@ -109,4 +109,10 @@ func subsumingCaseTypes(earlier, later []types.Type) (types.Type, types.Type, bo
 		}
 	}
 	return nil, nil, false
+}
+
+func (unreachableTypeSwitchCaseRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

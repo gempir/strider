@@ -114,3 +114,16 @@ func sameSliceBound(left, right ssa.Value) bool {
 	rightConstant, rightOK := right.(*ssa.Const)
 	return leftOK && rightOK && leftConstant.Value != nil && rightConstant.Value != nil && constant.Compare(leftConstant.Value, token.EQL, rightConstant.Value)
 }
+
+func (overlappingEncodeBuffersRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"encoding/ascii85",
+			"encoding/base32",
+			"encoding/base64",
+			"encoding/hex",
+		},
+	}
+}

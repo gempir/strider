@@ -3,7 +3,6 @@ package semantic
 import (
 	"go/ast"
 	"go/token"
-	"go/types"
 
 	"github.com/gempir/strider/internal/diagnostic"
 )
@@ -22,50 +21,45 @@ func (durationMultipliedByDurationRule) Meta() Meta {
 }
 
 func (durationMultipliedByDurationRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		stack := make([]ast.Node, 0)
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				if node == nil {
-					stack = stack[:len(stack)-1]
+	pass.InspectWithStack(
+		[]ast.Node{
+			(*ast.AssignStmt)(nil),
+			(*ast.BinaryExpr)(nil),
+		},
+		func(node ast.Node, ancestors []ast.Node) bool {
+			var parent ast.Node
+			if len(ancestors) != 0 {
+				parent = ancestors[len(ancestors)-1]
+			}
+			var candidate ast.Expr
+			switch expression := node.(type) {
+			case *ast.BinaryExpr:
+				if expression.Op != token.MUL {
 					return true
 				}
-				var parent ast.Node
-				if len(stack) != 0 {
-					parent = stack[len(stack)-1]
-				}
-				stack = append(stack, node)
-				var candidate ast.Expr
-				switch expression := node.(type) {
-				case *ast.BinaryExpr:
-					if expression.Op != token.MUL {
-						return true
-					}
-					if binaryParent,
-						ok := parent.(*ast.BinaryExpr); ok && binaryParent.Op == token.MUL {
-						return true
-					}
-					candidate = expression
-				case *ast.AssignStmt:
-					if expression.Tok != token.MUL_ASSIGN || len(expression.Lhs) != 1 || len(expression.Rhs) != 1 {
-						return true
-					}
-					candidate = &ast.BinaryExpr{
-						X: expression.Lhs[0],
-						Y: expression.Rhs[0],
-					}
-				default:
+				if binaryParent,
+					ok := parent.(*ast.BinaryExpr); ok && binaryParent.Op == token.MUL {
 					return true
 				}
-				if semanticDurationFactors(pass, candidate) < 2 {
+				candidate = expression
+			case *ast.AssignStmt:
+				if expression.Tok != token.MUL_ASSIGN || len(expression.Lhs) != 1 || len(expression.Rhs) != 1 {
 					return true
 				}
-				pass.Report(node, "multiplying two time.Duration values produces squared time units; multiply a duration by a unitless count")
+				candidate = &ast.BinaryExpr{
+					X: expression.Lhs[0],
+					Y: expression.Rhs[0],
+				}
+			default:
 				return true
-			},
-		)
-	}
+			}
+			if semanticDurationFactors(pass, candidate) < 2 {
+				return true
+			}
+			pass.Report(node, "multiplying two time.Duration values produces squared time units; multiply a duration by a unitless count")
+			return true
+		},
+	)
 }
 
 func semanticDurationFactors(pass *Pass, expression ast.Expr) int {
@@ -87,7 +81,7 @@ func semanticDurationFactors(pass *Pass, expression ast.Expr) int {
 			}
 			return 0
 		default:
-			if left+right != 0 && isTimeDuration(pass.TypesInfo.TypeOf(expression)) {
+			if left+right != 0 && isNamedType(pass.TypesInfo.TypeOf(expression), "time", "Duration") {
 				return 1
 			}
 			return 0
@@ -98,13 +92,13 @@ func semanticDurationFactors(pass *Pass, expression ast.Expr) int {
 		return semanticDurationFactors(pass, expression.X)
 	case *ast.Ident:
 		object := pass.TypesInfo.ObjectOf(expression)
-		if object != nil && isTimeDuration(object.Type()) {
+		if object != nil && isNamedType(object.Type(), "time", "Duration") {
 			return 1
 		}
 		return 0
 	case *ast.SelectorExpr:
 		object := pass.TypesInfo.ObjectOf(expression.Sel)
-		if object != nil && isTimeDuration(object.Type()) {
+		if object != nil && isNamedType(object.Type(), "time", "Duration") {
 			return 1
 		}
 		return 0
@@ -113,7 +107,7 @@ func semanticDurationFactors(pass *Pass, expression ast.Expr) int {
 			return 0
 		}
 	}
-	if isTimeDuration(pass.TypesInfo.TypeOf(expression)) {
+	if isNamedType(pass.TypesInfo.TypeOf(expression), "time", "Duration") {
 		return 1
 	}
 	return 0
@@ -122,19 +116,14 @@ func semanticDurationFactors(pass *Pass, expression ast.Expr) int {
 func isUnitlessDurationConversion(pass *Pass, expression ast.Expr) bool {
 	expression = unparenExpression(expression)
 	call, ok := expression.(*ast.CallExpr)
-	if !ok || len(call.Args) != 1 || !pass.TypesInfo.Types[call.Fun].IsType() || !isTimeDuration(pass.TypesInfo.TypeOf(call)) {
+	if !ok || len(call.Args) != 1 || !pass.TypesInfo.Types[call.Fun].IsType() || !isNamedType(pass.TypesInfo.TypeOf(call), "time", "Duration") {
 		return false
 	}
 	return semanticDurationFactors(pass, call.Args[0]) == 0
 }
 
-func isTimeDuration(valueType types.Type) bool {
-	if valueType == nil {
-		return false
+func (durationMultipliedByDurationRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
 	}
-	named, ok := types.Unalias(valueType).(*types.Named)
-	if !ok || named.Obj() == nil || named.Obj().Pkg() == nil {
-		return false
-	}
-	return named.Obj().Pkg().Path() == "time" && named.Obj().Name() == "Duration"
 }

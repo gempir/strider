@@ -61,3 +61,9 @@ func blockDominatesEveryExit(block *ssa.BasicBlock, exits []*ssa.BasicBlock) boo
 	}
 	return true
 }
+
+func (infiniteRecursionRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+	}
+}

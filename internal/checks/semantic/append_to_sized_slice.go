@@ -108,22 +108,23 @@ func localPositiveLengthMakes(pass *Pass) map[token.Pos]sizedSliceCandidate {
 			},
 		)
 	}
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				switch node := node.(type) {
-				case *ast.FuncDecl:
-					if node.Body != nil {
-						visitBody(node.Body)
-					}
-				case *ast.FuncLit:
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.FuncDecl)(nil),
+			(*ast.FuncLit)(nil),
+		},
+		func(node ast.Node) bool {
+			switch node := node.(type) {
+			case *ast.FuncDecl:
+				if node.Body != nil {
 					visitBody(node.Body)
 				}
-				return true
-			},
-		)
-	}
+			case *ast.FuncLit:
+				visitBody(node.Body)
+			}
+			return true
+		},
+	)
 	return result
 }
 
@@ -236,5 +237,11 @@ func traceSizedSliceOrigin(value ssa.Value, visiting map[ssa.Value]bool) sizedSl
 		return traceSizedSliceOrigin(value.Common().Args[0], visiting)
 	default:
 		return sizedSliceTrace{}
+	}
+}
+
+func (appendToSizedSliceRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
 	}
 }

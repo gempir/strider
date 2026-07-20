@@ -33,41 +33,41 @@ func (invalidPrintfCallRule) Meta() Meta {
 }
 
 func (invalidPrintfCallRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				call,
-					ok := node.(*ast.CallExpr)
-				if !ok || call.Ellipsis.IsValid() {
-					return true
-				}
-				formatIndex,
-					ok := dynamicPrintfFormatIndex(pass, call)
-				if !ok || formatIndex >= len(call.Args) {
-					return true
-				}
-				formatValue := pass.TypesInfo.Types[call.Args[formatIndex]].Value
-				if formatValue == nil || formatValue.Kind() != constant.String {
-					return true
-				}
-				formatText := constant.StringVal(formatValue)
-				uses,
-					indexed,
-					err := parsePrintfUses(formatText)
-				if err != nil {
-					pass.Report(call.Args[formatIndex], err.Error())
-					return true
-				}
-				arguments := call.Args[formatIndex+1:]
-				name := printfCallName(pass, call)
-				if message := validatePrintfUses(pass, name, uses, arguments, indexed); message != "" {
-					pass.Report(call.Args[formatIndex], message)
-				}
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.CallExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			call,
+				ok := node.(*ast.CallExpr)
+			if !ok || call.Ellipsis.IsValid() {
 				return true
-			},
-		)
-	}
+			}
+			formatIndex,
+				ok := dynamicPrintfFormatIndex(pass, call)
+			if !ok || formatIndex >= len(call.Args) {
+				return true
+			}
+			formatValue := pass.TypesInfo.Types[call.Args[formatIndex]].Value
+			if formatValue == nil || formatValue.Kind() != constant.String {
+				return true
+			}
+			formatText := constant.StringVal(formatValue)
+			uses,
+				indexed,
+				err := parsePrintfUses(formatText)
+			if err != nil {
+				pass.Report(call.Args[formatIndex], err.Error())
+				return true
+			}
+			arguments := call.Args[formatIndex+1:]
+			name := printfCallName(pass, call)
+			if message := validatePrintfUses(pass, name, uses, arguments, indexed); message != "" {
+				pass.Report(call.Args[formatIndex], message)
+			}
+			return true
+		},
+	)
 }
 
 func printfCallName(pass *Pass, call *ast.CallExpr) string {
@@ -389,4 +389,10 @@ func implementsError(valueType types.Type) bool {
 	}
 	signature, _ := function.Type().(*types.Signature)
 	return signature != nil && signature.Params().Len() == 0 && signature.Results().Len() == 1 && printfBasicInfo(signature.Results().At(0).Type(), types.IsString)
+}
+
+func (invalidPrintfCallRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

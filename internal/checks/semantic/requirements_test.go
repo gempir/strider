@@ -16,8 +16,8 @@ func TestRuleRequirementsCoverCatalog(t *testing.T) {
 	seen := make(map[string]bool, len(ruleCatalog))
 	typed := 0
 	ssaRules := 0
-	for _, definition := range ruleCatalog {
-		code := definition.rule.Meta().Code
+	for _, rule := range ruleCatalog {
+		code := rule.Meta().Code
 		if seen[code] {
 			t.Fatalf("duplicate rule %q", code)
 		}
@@ -81,7 +81,7 @@ func TestExecutionPlanSelectsNamedFacts(t *testing.T) {
 			test.code,
 			func(t *testing.T) {
 				registry,
-					err := NewRegistry([]string{
+					err := newRegistry([]string{
 					test.code,
 				})
 				if err != nil {
@@ -96,7 +96,7 @@ func TestExecutionPlanSelectsNamedFacts(t *testing.T) {
 }
 
 func TestExecutionPlanSelectsStaticCallPackages(t *testing.T) {
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"invalid-regexp",
 		"unsupported-marshal-type",
 	})
@@ -149,7 +149,7 @@ func TestTypedOnlyPlanDoesNotBuildSSA(t *testing.T) {
 
 func valid() string { return "ok" }
 `)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"invalid-template",
 	})
 	if err != nil {
@@ -188,7 +188,7 @@ func TestSSADebugMetadataIsCapabilityDriven(t *testing.T) {
 			test.code,
 			func(t *testing.T) {
 				registry,
-					err := NewRegistry([]string{
+					err := newRegistry([]string{
 					test.code,
 				})
 				if err != nil {

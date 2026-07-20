@@ -213,14 +213,6 @@ func runStandaloneAnalysisRule(t *testing.T, root string, rule Rule) []diagnosti
 		rules: []Rule{
 			rule,
 		},
-		definitions: []ruleDefinition{
-			{
-				rule: rule,
-				requirements: Requirements{
-					Stage: AnalysisStageTypes,
-				},
-			},
-		},
 		settings: map[string]configuredRule{
 			meta.Code: {
 				severity: meta.DefaultSeverity,

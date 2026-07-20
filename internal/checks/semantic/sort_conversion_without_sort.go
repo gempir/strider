@@ -23,48 +23,48 @@ func (sortConversionWithoutSortRule) Meta() Meta {
 }
 
 func (sortConversionWithoutSortRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				assignment,
-					ok := node.(*ast.AssignStmt)
-				if !ok || assignment.Tok != token.ASSIGN || len(assignment.Lhs) != 1 || len(assignment.Rhs) != 1 {
-					return true
-				}
-				target,
-					ok := assignment.Lhs[0].(*ast.Ident)
-				if !ok {
-					return true
-				}
-				if _,
-					plainSlice := types.Unalias(pass.TypesInfo.TypeOf(target)).(*types.Slice); !plainSlice {
-					return true
-				}
-				conversion,
-					ok := ast.Unparen(assignment.Rhs[0]).(*ast.CallExpr)
-				if !ok || len(conversion.Args) != 1 {
-					return true
-				}
-				argument,
-					ok := ast.Unparen(conversion.Args[0]).(*ast.Ident)
-				if !ok || pass.TypesInfo.ObjectOf(argument) != pass.TypesInfo.ObjectOf(target) {
-					return true
-				}
-				typeName := sortSliceTypeName(pass, conversion.Fun)
-				if typeName == "" {
-					return true
-				}
-				helper := map[string]string{
-					"Float64Slice": "Float64s",
-					"IntSlice":     "Ints",
-					"StringSlice":  "Strings",
-				}[typeName]
-				pass.Report(assignment, fmt.Sprintf("sort.%s is only a type conversion and does not sort; use sort.%s", typeName, helper))
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.AssignStmt)(nil),
+		},
+		func(node ast.Node) bool {
+			assignment,
+				ok := node.(*ast.AssignStmt)
+			if !ok || assignment.Tok != token.ASSIGN || len(assignment.Lhs) != 1 || len(assignment.Rhs) != 1 {
 				return true
-			},
-		)
-	}
+			}
+			target,
+				ok := assignment.Lhs[0].(*ast.Ident)
+			if !ok {
+				return true
+			}
+			if _,
+				plainSlice := types.Unalias(pass.TypesInfo.TypeOf(target)).(*types.Slice); !plainSlice {
+				return true
+			}
+			conversion,
+				ok := ast.Unparen(assignment.Rhs[0]).(*ast.CallExpr)
+			if !ok || len(conversion.Args) != 1 {
+				return true
+			}
+			argument,
+				ok := ast.Unparen(conversion.Args[0]).(*ast.Ident)
+			if !ok || pass.TypesInfo.ObjectOf(argument) != pass.TypesInfo.ObjectOf(target) {
+				return true
+			}
+			typeName := sortSliceTypeName(pass, conversion.Fun)
+			if typeName == "" {
+				return true
+			}
+			helper := map[string]string{
+				"Float64Slice": "Float64s",
+				"IntSlice":     "Ints",
+				"StringSlice":  "Strings",
+			}[typeName]
+			pass.Report(assignment, fmt.Sprintf("sort.%s is only a type conversion and does not sort; use sort.%s", typeName, helper))
+			return true
+		},
+	)
 }
 
 func sortSliceTypeName(pass *Pass, expression ast.Expr) string {
@@ -81,5 +81,11 @@ func sortSliceTypeName(pass *Pass, expression ast.Expr) string {
 		return typeName.Name()
 	default:
 		return ""
+	}
+}
+
+func (sortConversionWithoutSortRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
 	}
 }

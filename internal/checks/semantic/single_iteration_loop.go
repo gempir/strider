@@ -179,3 +179,9 @@ func loopHasEscape(pass *Pass, loop ast.Stmt, body *ast.BlockStmt, labels map[ty
 	)
 	return hasEscape
 }
+
+func (singleIterationLoopRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
+}

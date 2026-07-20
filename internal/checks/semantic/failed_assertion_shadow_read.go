@@ -23,25 +23,25 @@ func (failedAssertionShadowReadRule) Meta() Meta {
 }
 
 func (failedAssertionShadowReadRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				statement,
-					ok := node.(*ast.IfStmt)
-				if !ok || statement.Else == nil {
-					return true
-				}
-				shadow,
-					ok := failedAssertionShadow(pass, statement)
-				if !ok {
-					return true
-				}
-				scanFailedAssertionStatement(pass, statement.Else, shadow, true)
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.IfStmt)(nil),
+		},
+		func(node ast.Node) bool {
+			statement,
+				ok := node.(*ast.IfStmt)
+			if !ok || statement.Else == nil {
 				return true
-			},
-		)
-	}
+			}
+			shadow,
+				ok := failedAssertionShadow(pass, statement)
+			if !ok {
+				return true
+			}
+			scanFailedAssertionStatement(pass, statement.Else, shadow, true)
+			return true
+		},
+	)
 }
 
 func failedAssertionShadow(pass *Pass, statement *ast.IfStmt) (types.Object, bool) {
@@ -241,4 +241,10 @@ func assignsObject(pass *Pass, expressions []ast.Expr, object types.Object) bool
 func expressionIsObject(expression ast.Expr, object types.Object, pass *Pass) bool {
 	identifier, ok := unparenExpression(expression).(*ast.Ident)
 	return ok && pass.TypesInfo.ObjectOf(identifier) == object
+}
+
+func (failedAssertionShadowReadRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

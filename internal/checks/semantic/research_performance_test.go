@@ -270,7 +270,7 @@ func check(db *sql.DB, client *http.Client, request *http.Request, ids []int) {
 			func(t *testing.T) {
 				root := analysisModule(t, test.source)
 				registry,
-					err := NewRegistry([]string{
+					err := newRegistry([]string{
 					test.code,
 				})
 				if err != nil {

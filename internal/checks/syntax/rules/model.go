@@ -6,6 +6,11 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
+const (
+	fileNodeKind   NodeKind = "<file>"
+	finishNodeKind NodeKind = "<finish>"
+)
+
 // Meta describes one built-in syntax check.
 type Meta = core.Meta
 
@@ -27,8 +32,13 @@ type SyntaxCheck interface {
 type Rule = SyntaxCheck
 
 type definition struct {
-	meta      Meta
+	meta     Meta
+	behavior syntaxBehavior
+}
+
+type syntaxBehavior struct {
 	interests []NodeKind
+	inspect   func(*Pass, cst.Node)
 }
 
 // Pass is the shared lossless traversal context supplied to syntax checks.
@@ -64,7 +74,11 @@ func (rule definition) Meta() Meta {
 }
 
 func (rule definition) Interests() []NodeKind {
-	return append([]NodeKind(nil), rule.interests...)
+	return append([]NodeKind(nil), rule.behavior.interests...)
 }
 
-func (definition) Inspect(*Pass, cst.Node) {}
+func (rule definition) Inspect(pass *Pass, node cst.Node) {
+	if rule.behavior.inspect != nil {
+		rule.behavior.inspect(pass, node)
+	}
+}

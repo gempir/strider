@@ -105,37 +105,38 @@ func ambiguousNilPayloadType(valueType types.Type) bool {
 }
 
 func forEachAnalysisFunction(pass *Pass, visit func(*ast.BlockStmt, *types.Signature)) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				switch function := node.(type) {
-				case *ast.FuncDecl:
-					object,
-						_ := pass.TypesInfo.Defs[function.Name].(*types.Func)
-					if object == nil {
-						return true
-					}
-					signature,
-						_ := object.Type().(*types.Signature)
-					if signature != nil {
-						visit(function.Body, signature)
-					}
-				case *ast.FuncLit:
-					signature,
-						_ := pass.TypesInfo.TypeOf(function.Type).(*types.Signature)
-					if signature == nil {
-						signature,
-							_ = pass.TypesInfo.TypeOf(function).(*types.Signature)
-					}
-					if signature != nil {
-						visit(function.Body, signature)
-					}
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.FuncDecl)(nil),
+			(*ast.FuncLit)(nil),
+		},
+		func(node ast.Node) bool {
+			switch function := node.(type) {
+			case *ast.FuncDecl:
+				object,
+					_ := pass.TypesInfo.Defs[function.Name].(*types.Func)
+				if object == nil {
+					return true
 				}
-				return true
-			},
-		)
-	}
+				signature,
+					_ := object.Type().(*types.Signature)
+				if signature != nil {
+					visit(function.Body, signature)
+				}
+			case *ast.FuncLit:
+				signature,
+					_ := pass.TypesInfo.TypeOf(function.Type).(*types.Signature)
+				if signature == nil {
+					signature,
+						_ = pass.TypesInfo.TypeOf(function).(*types.Signature)
+				}
+				if signature != nil {
+					visit(function.Body, signature)
+				}
+			}
+			return true
+		},
+	)
 }
 
 // inspectFunctionBody visits a function body without descending into nested
@@ -294,5 +295,17 @@ func isNilableType(valueType types.Type) bool {
 		return true
 	default:
 		return false
+	}
+}
+
+func (nilErrorReturnRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
+}
+
+func (nilValueWithNilErrorRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
 	}
 }

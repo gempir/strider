@@ -21,25 +21,25 @@ func (swappedSeekArgumentsRule) Meta() Meta {
 }
 
 func (swappedSeekArgumentsRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				call,
-					ok := node.(*ast.CallExpr)
-				if !ok || len(call.Args) != 2 || !isIOSeekConstant(pass, call.Args[0]) {
-					return true
-				}
-				selector,
-					ok := call.Fun.(*ast.SelectorExpr)
-				if !ok || selector.Sel.Name != "Seek" || !hasSeekerSignature(pass, selector) {
-					return true
-				}
-				pass.Report(call, "the first argument of io.Seeker is the offset, but an io.Seek* constant is being used instead")
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.CallExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			call,
+				ok := node.(*ast.CallExpr)
+			if !ok || len(call.Args) != 2 || !isIOSeekConstant(pass, call.Args[0]) {
 				return true
-			},
-		)
-	}
+			}
+			selector,
+				ok := call.Fun.(*ast.SelectorExpr)
+			if !ok || selector.Sel.Name != "Seek" || !hasSeekerSignature(pass, selector) {
+				return true
+			}
+			pass.Report(call, "the first argument of io.Seeker is the offset, but an io.Seek* constant is being used instead")
+			return true
+		},
+	)
 }
 
 func isIOSeekConstant(pass *Pass, expression ast.Expr) bool {
@@ -72,4 +72,10 @@ func hasSeekerSignature(pass *Pass, selector *ast.SelectorExpr) bool {
 		signature.Results().At(0).Type(),
 		types.Typ[types.Int64],
 	) && types.Identical(signature.Results().At(1).Type(), types.Universe.Lookup("error").Type())
+}
+
+func (swappedSeekArgumentsRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

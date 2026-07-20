@@ -5,11 +5,10 @@ import (
 	"go/ast"
 	"go/types"
 
+	"github.com/gempir/strider/internal/checks/core"
 	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/diagnostic"
 )
-
-const interfaceMethodLimit = 10
 
 type interfaceMethodLimitRule struct{}
 
@@ -21,22 +20,30 @@ func (interfaceMethodLimitRule) Meta() Meta {
 		GoodExample:     "type Reader interface { Read([]byte) (int, error) }",
 		BadExample:      "type Service interface { Start(); Stop(); Pause(); Resume(); Reload(); Status(); Health(); Metrics(); Configure(); Validate(); Reset() }",
 		DefaultSeverity: diagnostic.SeverityWarning,
+		Options: []core.Option{
+			{
+				Name:       "max-methods",
+				Kind:       core.OptionInt,
+				DefaultInt: 10,
+			},
+		},
 	}
 }
 
 func (interfaceMethodLimitRule) Run(pass *Pass) {
-	interfaceMethodLimitRule{}.run(pass, 0)
+	interfaceMethodLimitRule{}.RunConfigured(pass, config.CheckConfig{})
 }
 
 func (interfaceMethodLimitRule) RunConfigured(pass *Pass, setting config.CheckConfig) {
-	interfaceMethodLimitRule{}.run(pass, setting.MaxMethods)
+	limit, _ := core.IntOption(interfaceMethodLimitRule{}.Meta(), setting, "max-methods")
+	interfaceMethodLimitRule{}.run(pass, limit)
 }
 
 func (interfaceMethodLimitRule) run(pass *Pass, limit int) {
-	if limit == 0 {
-		limit = interfaceMethodLimit
-	}
 	pass.Inspect(
+		[]ast.Node{
+			(*ast.InterfaceType)(nil),
+		},
 		func(node ast.Node) bool {
 			declaration,
 				ok := node.(*ast.InterfaceType)
@@ -61,4 +68,10 @@ func (interfaceMethodLimitRule) run(pass *Pass, limit int) {
 			return true
 		},
 	)
+}
+
+func (interfaceMethodLimitRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

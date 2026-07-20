@@ -9,288 +9,73 @@ import (
 )
 
 type cstAnalyzer struct {
-	filename          string
-	tree              *cst.Tree
-	content           []byte
-	enabled           map[string]bool
-	plan              cstExecutionPlan
-	reporter          func(Finding)
-	ancestors         []cst.Node
-	current           cst.Node
-	receiverNames     map[string]string
-	marshalKinds      map[string]string
-	importNames       map[string]bool
-	importPaths       map[string]bool
-	importSeen        map[string]bool
-	packageName       string
-	repeatedLiterals  map[string][]*cst.BasicLit
-	functions         []*cstFunctionFacts
-	activeFunction    *cstFunctionFacts
-	functionDepth     int
-	functionBodyDepth int
-	foldedNames       map[string]map[string]string
-	bannedCharacters  map[rune]bool
-	limits            map[string]int
-	blockedImports    map[string]bool
-	publicStructs     int
-	checks            []SyntaxCheck
+	filename         string
+	tree             *cst.Tree
+	content          []byte
+	reporter         func(Finding)
+	ancestors        []cst.Node
+	current          cst.Node
+	activeCode       string
+	bannedCharacters map[rune]bool
+	limits           map[string]int
+	blockedImports   map[string]bool
+	ruleState        map[ruleStateKey]any
 }
 
 // AnalyzeCST runs selected native CST rules over one lossless source tree.
 func AnalyzeCST(input CSTInput) {
-	enabled := make(map[string]bool, len(input.Checks))
-	for _, check := range input.Checks {
-		enabled[check.Meta().Code] = true
-	}
-	if len(enabled) == 0 || input.Tree == nil {
+	if len(input.Checks) == 0 || input.Tree == nil {
 		return
 	}
-	plan := compileCSTExecutionPlan(input.Checks)
 	analyzer := &cstAnalyzer{
-		filename: input.Filename,
-		tree:     input.Tree,
-		content:  input.Tree.Bytes(),
-		enabled:  enabled,
-		plan:     plan,
-		reporter: input.Report,
-		limits:   input.Limits,
-		checks:   append([]SyntaxCheck(nil), input.Checks...),
+		filename:         input.Filename,
+		tree:             input.Tree,
+		content:          input.Tree.Bytes(),
+		reporter:         input.Report,
+		limits:           input.Limits,
+		bannedCharacters: make(map[rune]bool, len(input.BannedCharacters)),
+		blockedImports:   make(map[string]bool, len(input.BlockedImports)),
+		ruleState:        make(map[ruleStateKey]any),
 	}
-	if enabled["imports-blocklist"] {
-		analyzer.blockedImports = make(map[string]bool, len(input.BlockedImports))
-		for _, path := range input.BlockedImports {
-			analyzer.blockedImports[path] = true
+	for _, path := range input.BlockedImports {
+		analyzer.blockedImports[path] = true
+	}
+	for _, character := range input.BannedCharacters {
+		analyzer.bannedCharacters[character] = true
+	}
+	dispatch := make(map[NodeKind][]SyntaxCheck)
+	for _, check := range input.Checks {
+		for _, interest := range check.Interests() {
+			dispatch[interest] = append(dispatch[interest], check)
 		}
 	}
-	if enabled["banned-characters"] {
-		analyzer.bannedCharacters = make(map[rune]bool, len(input.BannedCharacters))
-		for _, character := range input.BannedCharacters {
-			analyzer.bannedCharacters[character] = true
-		}
-	}
-	if enabled["receiver-naming"] {
-		analyzer.receiverNames = make(map[string]string)
-	}
-	if enabled["marshal-receiver"] {
-		analyzer.marshalKinds = make(map[string]string)
-	}
-	if plan.imports {
-		analyzer.importNames = make(map[string]bool)
-		analyzer.importPaths = make(map[string]bool)
-		analyzer.importSeen = make(map[string]bool)
-	}
-	if plan.repeatedLiterals {
-		analyzer.repeatedLiterals = make(map[string][]*cst.BasicLit)
-	}
-	if plan.identifiers {
-		analyzer.foldedNames = make(map[string]map[string]string)
-	}
-	if plan.imports || enabled["exported-declaration-comment"] {
-		analyzer.packageName = analyzer.packageNameToken().Src()
-	}
-	analyzer.checkFile()
+	analyzer.dispatch(dispatch[fileNodeKind], nil)
 	cst.WalkProductionsWithAncestors(
 		input.Tree.Root(),
 		func(node cst.Node, ancestors []cst.Node) bool {
 			analyzer.ancestors = ancestors
 			analyzer.current = node
-			analyzer.observe(node, ancestors)
-			for _, check := range analyzer.checks {
-				check.Inspect(analyzer, node)
-			}
-			analyzer.check(node)
+			analyzer.dispatch(dispatch[NodeKind(cst.Kind(node))], node)
 			return true
 		},
 	)
-	analyzer.finishTraversal()
+	analyzer.dispatch(dispatch[finishNodeKind], nil)
 }
 
-func (a *cstAnalyzer) check(node cst.Node) {
-	switch current := node.(type) {
-	case *cst.FunctionDecl:
-		if current.FunctionName == nil {
-			return
-		}
-		name := current.FunctionName.IDENT
-		if a.enabled["no-init"] && name.Src() == "init" {
-			a.report("no-init", name, "replace init with explicit initialization")
-		}
-		if a.plan.identifiers {
-			a.checkConcreteFoldedName("_", name)
-		}
-	case *cst.MethodDecl:
-		if a.plan.identifiers {
-			a.checkConcreteMethodName(current)
-		}
-	case *cst.ReturnStmt:
-		if a.plan.returns {
-			a.checkNakedReturn(current)
-		}
-	case *cst.DeferStmt:
-		if a.plan.defers {
-			a.checkDefer(current)
-		}
-	case *cst.IfElseStmt:
-		if a.enabled["no-else-after-return"] {
-			a.checkElseAfterReturn(current)
-		}
-		if a.plan.controlNesting {
-			a.checkConcreteControlNesting(current)
-		}
-		if a.plan.conditionals {
-			a.checkConcreteIfElse(current)
-		}
-	case *cst.IfStmt:
-		if a.plan.controlNesting {
-			a.checkConcreteControlNesting(current)
-		}
-		if a.plan.conditionals {
-			a.checkConcreteIf(current)
-		}
-	case *cst.VarDecl:
-		if a.plan.packageVars {
-			a.checkPackageVar(current)
-		}
-	case *cst.BinaryExpression:
-		if a.plan.binaryExpressions {
-			a.checkBinaryExpression(current)
-		}
-	case *cst.UnaryExpr:
-		if a.plan.unaryExpressions {
-			a.checkUnaryExpression(current)
-		}
-	case *cst.InterfaceType:
-		if a.plan.interfaces {
-			a.checkInterfaceType(current)
-		}
-	case *cst.Assignment:
-		if a.plan.incrementAssignments {
-			a.checkIncrementAssignment(current)
-		}
-		if a.plan.assignmentPolicies {
-			a.checkConcreteAssignmentPolicy(current)
-		}
-	case *cst.ShortVarDecl:
-		if a.plan.incrementAssignments {
-			a.checkIncrementShortDeclaration(current)
-		}
-		if a.plan.assignmentPolicies {
-			a.checkConcreteShortDeclarationPolicy(current)
-		}
-		if a.plan.identifiers {
-			a.checkConcreteIdentifierList(current.IdentifierList)
-		}
-	case *cst.PrimaryExpr:
-		if a.plan.calls {
-			a.checkConcreteCall(current)
-		}
-	case *cst.StructType:
-		if a.plan.structs {
-			a.checkConcreteStruct(current)
-		}
-	case *cst.FieldDecl:
-		if a.plan.fields {
-			a.checkConcreteStructField(current)
-		}
-		if a.plan.identifiers {
-			a.checkConcreteFieldNames(current)
-		}
-	case *cst.BasicLit:
-		if a.plan.stringLiterals {
-			a.checkConcreteStringLiteral(current)
-		}
-	case *cst.Block:
-		if a.plan.blocks {
-			a.checkConcreteBlock(current)
-		}
-	case *cst.ForStmt:
-		if a.plan.controlNesting {
-			a.checkConcreteControlNesting(current)
-		}
-		if a.plan.loops {
-			a.checkConcreteFor(current)
-		}
-	case *cst.SelectStmt:
-		if a.plan.controlNesting {
-			a.checkConcreteControlNesting(current)
-		}
-	case *cst.TypeSwitchStmt:
-		if a.plan.controlNesting {
-			a.checkConcreteControlNesting(current)
-		}
-		if a.plan.switches {
-			a.checkConcreteSwitch(current)
-		}
-	case *cst.ExprSwitchStmt:
-		if a.plan.controlNesting {
-			a.checkConcreteControlNesting(current)
-		}
-		if a.plan.switches {
-			a.checkConcreteSwitch(current)
-		}
-	case *cst.TypeAssertion:
-		if a.plan.typeAssertions {
-			a.checkConcreteTypeAssertion(current)
-		}
-	case *cst.ParameterDecl:
-		if a.plan.identifiers {
-			a.checkConcreteIdentifierList(current.IdentifierList)
-		}
-	case *cst.VarSpec:
-		if a.plan.identifiers {
-			a.checkConcreteIdentifier(current.IDENT)
-		}
-		if a.plan.varSpecs {
-			a.checkConcreteVarSpec(current.IDENT, current.TypeNode, current.ExpressionList)
-		}
-	case *cst.VarSpec2:
-		if a.plan.identifiers {
-			a.checkConcreteIdentifierList(current.IdentifierList)
-		}
-		if a.plan.varSpecs {
-			a.checkConcreteVarSpecList(current.IdentifierList, current.TypeNode, current.ExpressionList)
-		}
-	case *cst.ConstSpec:
-		if a.plan.identifiers {
-			a.checkConcreteIdentifier(current.IDENT)
-		}
-		if a.plan.constSpecs {
-			a.checkConcreteExportedDeclaration(current.IDENT, current)
-		}
-	case *cst.ConstSpec2:
-		if a.plan.identifiers {
-			a.checkConcreteIdentifierList(current.IdentifierList)
-		}
-		if a.plan.constSpecs {
-			a.checkConcreteExportedList(current.IdentifierList, current)
-		}
-	case *cst.TypeDef:
-		if a.plan.identifiers {
-			a.checkConcreteIdentifier(current.IDENT)
-		}
-		if a.plan.typeDefinitions {
-			a.checkConcreteTypeDefinition(current)
-		}
-	case *cst.AliasDecl:
-		if a.plan.identifiers {
-			a.checkConcreteIdentifier(current.IDENT)
-		}
-		if a.plan.constSpecs {
-			a.checkConcreteExportedDeclaration(current.IDENT, current)
-		}
-	case *cst.ImportSpec:
-		if a.plan.imports {
-			a.checkConcreteImport(current)
-		}
-	case *cst.BreakStmt:
-		if a.plan.breaks {
-			a.checkConcreteBreak(current)
-		}
+func (a *cstAnalyzer) dispatch(checks []SyntaxCheck, node cst.Node) {
+	for _, check := range checks {
+		a.activeCode = check.Meta().Code
+		check.Inspect(a, node)
 	}
+	a.activeCode = ""
+}
+
+func (a *cstAnalyzer) active(code string) bool {
+	return a.activeCode == code
 }
 
 func (a *cstAnalyzer) report(code string, node cst.Node, message string) {
-	if !a.enabled[code] || node == nil || a.reporter == nil {
+	if code != a.activeCode || node == nil || a.reporter == nil {
 		return
 	}
 	a.reporter(Finding{
@@ -301,7 +86,7 @@ func (a *cstAnalyzer) report(code string, node cst.Node, message string) {
 }
 
 func (a *cstAnalyzer) reportFix(code string, node cst.Node, message string, fix diagnostic.Fix) {
-	if !a.enabled[code] || node == nil || a.reporter == nil {
+	if code != a.activeCode || node == nil || a.reporter == nil {
 		return
 	}
 	a.reporter(Finding{
@@ -315,7 +100,7 @@ func (a *cstAnalyzer) reportFix(code string, node cst.Node, message string, fix 
 }
 
 func (a *cstAnalyzer) reportRange(code string, start, end int, message string) {
-	if !a.enabled[code] || a.reporter == nil {
+	if code != a.activeCode || a.reporter == nil {
 		return
 	}
 	a.reporter(Finding{
@@ -325,15 +110,6 @@ func (a *cstAnalyzer) reportRange(code string, start, end int, message string) {
 		Code:             code,
 		Message:          message,
 	})
-}
-
-func (a *cstAnalyzer) checkFile() {
-	if a.plan.filename {
-		a.checkFilenameAndPackage()
-	}
-	if a.plan.comments {
-		a.checkLinesAndComments()
-	}
 }
 
 func (a *cstAnalyzer) packageNameToken() cst.Token {
@@ -346,68 +122,45 @@ func (a *cstAnalyzer) packageNameToken() cst.Token {
 	return cst.Token{}
 }
 
-func (a *cstAnalyzer) finishTraversal() {
-	if a.plan.repeatedLiterals {
-		a.finishConcreteRepeatedLiterals()
-	}
-	for _, facts := range a.functions {
-		switch function := facts.node.(type) {
-		case *cst.FunctionDecl:
-			a.checkFunction(function, facts)
-		case *cst.MethodDecl:
-			a.checkMethod(function, facts)
-		}
-	}
-}
-
 func (a *cstAnalyzer) checkFunction(function *cst.FunctionDecl, facts *cstFunctionFacts) {
 	if function.FunctionName == nil || function.Signature == nil {
 		return
 	}
 	name := function.FunctionName.IDENT
-	if a.enabled["exported-declaration-comment"] {
-		a.checkConcreteExportedFunction(name, function, false)
-	}
 	a.checkSignature(name, function.Signature.Parameters, facts.complexity)
 	a.checkConcreteFunctionRules(name, function.Signature, function.FunctionBody, nil, facts)
-	if a.enabled["modifies-parameter"] {
+	if a.active("modifies-parameter") {
 		a.checkConcreteFunctionMutation(function.Signature.Parameters, nil, function.FunctionBody)
 	}
 }
 
 func (a *cstAnalyzer) checkMethod(method *cst.MethodDecl, facts *cstFunctionFacts) {
 	if method.Signature != nil {
-		if a.enabled["exported-declaration-comment"] {
-			a.checkConcreteExportedFunction(method.MethodName, method, true)
-		}
 		a.checkSignature(method.MethodName, method.Signature.Parameters, facts.complexity)
 		a.checkConcreteFunctionRules(method.MethodName, method.Signature, method.FunctionBody, method.Receiver, facts)
-		if a.enabled["modifies-parameter"] || a.enabled["modifies-value-receiver"] {
+		if a.active("modifies-parameter") || a.active("modifies-value-receiver") {
 			a.checkConcreteFunctionMutation(method.Signature.Parameters, method.Receiver, method.FunctionBody)
 		}
 	}
 }
 
 func (a *cstAnalyzer) checkSignature(name cst.Token, parameters *cst.Parameters, complexity int) {
-	if a.enabled["max-parameters"] {
+	if a.active("max-parameters") {
 		count := parameterCount(parameters)
-		limit := a.limit("max-parameters", 8)
+		limit := a.limit("max-parameters")
 		if count > limit {
 			a.report("max-parameters", name, fmt.Sprintf("function has %d parameters; maximum is %d", count, limit))
 		}
 	}
-	if a.enabled["cyclomatic-complexity"] {
+	if a.active("cyclomatic-complexity") {
 		if complexity > 10 {
 			a.report("cyclomatic-complexity", name, fmt.Sprintf("function complexity is %d; maximum is 10", complexity))
 		}
 	}
 }
 
-func (a *cstAnalyzer) limit(code string, fallback int) int {
-	if configured := a.limits[code]; configured > 0 {
-		return configured
-	}
-	return fallback
+func (a *cstAnalyzer) limit(code string) int {
+	return a.limits[code]
 }
 
 func parameterCount(parameters *cst.Parameters) int {
@@ -479,17 +232,17 @@ func (a *cstAnalyzer) checkDefer(statement *cst.DeferStmt) {
 	if insideLoop {
 		a.report("no-defer-in-loop", statement, "defer inside a loop runs at function exit, not iteration exit")
 	}
-	if !a.enabled["deferred-recover-call"] && !a.enabled["discarded-deferred-result"] {
+	if !a.active("deferred-recover-call") && !a.active("discarded-deferred-result") {
 		return
 	}
 	call, ok := statement.Expression.(*cst.PrimaryExpr)
 	if !ok {
 		return
 	}
-	if a.enabled["deferred-recover-call"] && concreteCallName(call) == "recover" {
+	if a.active("deferred-recover-call") && concreteCallName(call) == "recover" {
 		a.report("deferred-recover-call", statement, "defer recover() evaluates recover immediately")
 	}
-	if !a.enabled["discarded-deferred-result"] {
+	if !a.active("discarded-deferred-result") {
 		return
 	}
 	cst.Walk(

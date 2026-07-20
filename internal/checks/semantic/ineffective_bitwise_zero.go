@@ -25,72 +25,72 @@ func (ineffectiveBitwiseZeroRule) Meta() Meta {
 
 func (ineffectiveBitwiseZeroRule) Run(pass *Pass) {
 	iotaConstants := directIotaConstants(pass)
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				binary,
-					ok := node.(*ast.BinaryExpr)
-				if !ok || !allIntegerTypes(pass.TypesInfo.TypeOf(binary)) {
-					return true
-				}
-				switch binary.Op {
-				case token.AND,
-					token.OR,
-					token.XOR:
-				default:
-					return true
-				}
-				zero,
-					iotaName := bitwiseZeroOperand(pass, binary.Y, iotaConstants)
-				if !zero {
-					return true
-				}
-				expression := renderAnalysisExpression(pass, binary)
-				left := renderAnalysisExpression(pass, binary.X)
-				var message string
-				switch binary.Op {
-				case token.AND:
-					message = fmt.Sprintf("%s always equals zero", expression)
-				case token.OR,
-					token.XOR:
-					message = fmt.Sprintf("%s always equals %s", expression, left)
-				}
-				if iotaName != "" {
-					message += fmt.Sprintf("; %s is zero because it is declared with iota—did you mean 1 << iota?", iotaName)
-				}
-				pass.Report(binary, message)
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.BinaryExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			binary,
+				ok := node.(*ast.BinaryExpr)
+			if !ok || !allIntegerTypes(pass.TypesInfo.TypeOf(binary)) {
 				return true
-			},
-		)
-	}
+			}
+			switch binary.Op {
+			case token.AND,
+				token.OR,
+				token.XOR:
+			default:
+				return true
+			}
+			zero,
+				iotaName := bitwiseZeroOperand(pass, binary.Y, iotaConstants)
+			if !zero {
+				return true
+			}
+			expression := renderAnalysisExpression(pass, binary)
+			left := renderAnalysisExpression(pass, binary.X)
+			var message string
+			switch binary.Op {
+			case token.AND:
+				message = fmt.Sprintf("%s always equals zero", expression)
+			case token.OR,
+				token.XOR:
+				message = fmt.Sprintf("%s always equals %s", expression, left)
+			}
+			if iotaName != "" {
+				message += fmt.Sprintf("; %s is zero because it is declared with iota—did you mean 1 << iota?", iotaName)
+			}
+			pass.Report(binary, message)
+			return true
+		},
+	)
 }
 
 func directIotaConstants(pass *Pass) map[*types.Const]bool {
 	constants := make(map[*types.Const]bool)
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				specification,
-					ok := node.(*ast.ValueSpec)
-				if !ok || len(specification.Names) != 1 || len(specification.Values) != 1 {
-					return true
-				}
-				identifier,
-					ok := ast.Unparen(specification.Values[0]).(*ast.Ident)
-				if !ok || !isUniverseIota(pass.TypesInfo.ObjectOf(identifier)) {
-					return true
-				}
-				object,
-					ok := pass.TypesInfo.Defs[specification.Names[0]].(*types.Const)
-				if ok {
-					constants[object] = true
-				}
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.ValueSpec)(nil),
+		},
+		func(node ast.Node) bool {
+			specification,
+				ok := node.(*ast.ValueSpec)
+			if !ok || len(specification.Names) != 1 || len(specification.Values) != 1 {
 				return true
-			},
-		)
-	}
+			}
+			identifier,
+				ok := ast.Unparen(specification.Values[0]).(*ast.Ident)
+			if !ok || !isUniverseIota(pass.TypesInfo.ObjectOf(identifier)) {
+				return true
+			}
+			object,
+				ok := pass.TypesInfo.Defs[specification.Names[0]].(*types.Const)
+			if ok {
+				constants[object] = true
+			}
+			return true
+		},
+	)
 	return constants
 }
 
@@ -117,4 +117,10 @@ func bitwiseZeroOperand(pass *Pass, expression ast.Expr, iotaConstants map[*type
 		return false, ""
 	}
 	return true, identifier.Name
+}
+
+func (ineffectiveBitwiseZeroRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

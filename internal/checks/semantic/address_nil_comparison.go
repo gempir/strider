@@ -22,27 +22,27 @@ func (addressNilComparisonRule) Meta() Meta {
 }
 
 func (addressNilComparisonRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				binary,
-					ok := node.(*ast.BinaryExpr)
-				if !ok || binary.Op != token.EQL && binary.Op != token.NEQ {
-					return true
-				}
-				if !addressComparedWithNil(pass, binary.X, binary.Y) && !addressComparedWithNil(pass, binary.Y, binary.X) {
-					return true
-				}
-				result := "false"
-				if binary.Op == token.NEQ {
-					result = "true"
-				}
-				pass.Report(binary, "address cannot be nil; this comparison is always "+result)
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.BinaryExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			binary,
+				ok := node.(*ast.BinaryExpr)
+			if !ok || binary.Op != token.EQL && binary.Op != token.NEQ {
 				return true
-			},
-		)
-	}
+			}
+			if !addressComparedWithNil(pass, binary.X, binary.Y) && !addressComparedWithNil(pass, binary.Y, binary.X) {
+				return true
+			}
+			result := "false"
+			if binary.Op == token.NEQ {
+				result = "true"
+			}
+			pass.Report(binary, "address cannot be nil; this comparison is always "+result)
+			return true
+		},
+	)
 }
 
 func addressComparedWithNil(pass *Pass, addressExpression, nilExpression ast.Expr) bool {
@@ -59,4 +59,10 @@ func addressComparedWithNil(pass *Pass, addressExpression, nilExpression ast.Exp
 	}
 	_, isNil := pass.TypesInfo.ObjectOf(identifier).(*types.Nil)
 	return isNil
+}
+
+func (addressNilComparisonRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

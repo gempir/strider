@@ -46,30 +46,30 @@ func (excessiveBlankIdentifiersRule) Meta() Meta {
 }
 
 func (excessiveBlankIdentifiersRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				assignment,
-					ok := node.(*ast.AssignStmt)
-				if !ok {
-					return true
-				}
-				blanks := 0
-				for _, expression := range assignment.Lhs {
-					identifier,
-						_ := expression.(*ast.Ident)
-					if identifier != nil && identifier.Name == "_" {
-						blanks++
-					}
-				}
-				if blanks >= 3 {
-					pass.Report(assignment, "assignment discards three or more results; name meaningful results or simplify the return contract")
-				}
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.AssignStmt)(nil),
+		},
+		func(node ast.Node) bool {
+			assignment,
+				ok := node.(*ast.AssignStmt)
+			if !ok {
 				return true
-			},
-		)
-	}
+			}
+			blanks := 0
+			for _, expression := range assignment.Lhs {
+				identifier,
+					_ := expression.(*ast.Ident)
+				if identifier != nil && identifier.Name == "_" {
+					blanks++
+				}
+			}
+			if blanks >= 3 {
+				pass.Report(assignment, "assignment discards three or more results; name meaningful results or simplify the return contract")
+			}
+			return true
+		},
+	)
 }
 
 func (taskCommentRule) Meta() Meta {
@@ -187,30 +187,30 @@ func (errorTypeNamingRule) Meta() Meta {
 }
 
 func (errorTypeNamingRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				spec,
-					ok := node.(*ast.TypeSpec)
-				if !ok || spec.Assign.IsValid() || strings.HasSuffix(spec.Name.Name, "Error") {
-					return true
-				}
-				object,
-					_ := pass.TypesInfo.Defs[spec.Name].(*types.TypeName)
-				if object == nil {
-					return true
-				}
-				valueType := object.Type()
-				errorInterface,
-					_ := types.Universe.Lookup("error").Type().Underlying().(*types.Interface)
-				if types.Implements(valueType, errorInterface) || types.Implements(types.NewPointer(valueType), errorInterface) {
-					pass.Report(spec.Name, "error implementation type should have an Error suffix")
-				}
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.TypeSpec)(nil),
+		},
+		func(node ast.Node) bool {
+			spec,
+				ok := node.(*ast.TypeSpec)
+			if !ok || spec.Assign.IsValid() || strings.HasSuffix(spec.Name.Name, "Error") {
 				return true
-			},
-		)
-	}
+			}
+			object,
+				_ := pass.TypesInfo.Defs[spec.Name].(*types.TypeName)
+			if object == nil {
+				return true
+			}
+			valueType := object.Type()
+			errorInterface,
+				_ := types.Universe.Lookup("error").Type().Underlying().(*types.Interface)
+			if types.Implements(valueType, errorInterface) || types.Implements(types.NewPointer(valueType), errorInterface) {
+				pass.Report(spec.Name, "error implementation type should have an Error suffix")
+			}
+			return true
+		},
+	)
 }
 
 func (standardHTTPMethodConstantRule) Meta() Meta {
@@ -225,45 +225,45 @@ func (standardHTTPMethodConstantRule) Meta() Meta {
 }
 
 func (standardHTTPMethodConstantRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				call,
-					ok := node.(*ast.CallExpr)
-				if !ok {
-					return true
-				}
-				function := calledFunction(pass.TypesInfo, call.Fun)
-				if function == nil || function.Pkg() == nil || function.Pkg().Path() != "net/http" {
-					return true
-				}
-				argument := -1
-				switch function.Name() {
-				case "NewRequest":
-					argument = 0
-				case "NewRequestWithContext":
-					argument = 1
-				}
-				if argument < 0 || argument >= len(call.Args) {
-					return true
-				}
-				if standardHTTPMethodObject(pass, call.Args[argument]) {
-					return true
-				}
-				value := pass.TypesInfo.Types[call.Args[argument]].Value
-				if value == nil || value.Kind() != constant.String {
-					return true
-				}
-				method := constant.StringVal(value)
-				name := standardHTTPMethods[method]
-				if name != "" {
-					pass.Report(call.Args[argument], "replace the HTTP method literal with http."+name)
-				}
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.CallExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			call,
+				ok := node.(*ast.CallExpr)
+			if !ok {
 				return true
-			},
-		)
-	}
+			}
+			function := calledFunction(pass.TypesInfo, call.Fun)
+			if function == nil || function.Pkg() == nil || function.Pkg().Path() != "net/http" {
+				return true
+			}
+			argument := -1
+			switch function.Name() {
+			case "NewRequest":
+				argument = 0
+			case "NewRequestWithContext":
+				argument = 1
+			}
+			if argument < 0 || argument >= len(call.Args) {
+				return true
+			}
+			if standardHTTPMethodObject(pass, call.Args[argument]) {
+				return true
+			}
+			value := pass.TypesInfo.Types[call.Args[argument]].Value
+			if value == nil || value.Kind() != constant.String {
+				return true
+			}
+			method := constant.StringVal(value)
+			name := standardHTTPMethods[method]
+			if name != "" {
+				pass.Report(call.Args[argument], "replace the HTTP method literal with http."+name)
+			}
+			return true
+		},
+	)
 }
 
 func standardHTTPMethodObject(pass *Pass, expression ast.Expr) bool {
@@ -290,28 +290,64 @@ func (weakCryptographyRule) Meta() Meta {
 }
 
 func (weakCryptographyRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				call,
-					ok := node.(*ast.CallExpr)
-				if !ok {
-					return true
-				}
-				function := calledFunction(pass.TypesInfo, call.Fun)
-				if function == nil || function.Pkg() == nil {
-					return true
-				}
-				switch function.Pkg().Path() {
-				case "crypto/md5",
-					"crypto/sha1",
-					"crypto/des",
-					"crypto/rc4":
-					pass.Report(call, "deprecated cryptographic primitive "+function.Pkg().Path()+"."+function.Name()+" should not protect new data")
-				}
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.CallExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			call,
+				ok := node.(*ast.CallExpr)
+			if !ok {
 				return true
-			},
-		)
+			}
+			function := calledFunction(pass.TypesInfo, call.Fun)
+			if function == nil || function.Pkg() == nil {
+				return true
+			}
+			switch function.Pkg().Path() {
+			case "crypto/md5",
+				"crypto/sha1",
+				"crypto/des",
+				"crypto/rc4":
+				pass.Report(call, "deprecated cryptographic primitive "+function.Pkg().Path()+"."+function.Name()+" should not protect new data")
+			}
+			return true
+		},
+	)
+}
+
+func (docCommentPeriodRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
+}
+
+func (errorTypeNamingRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
+}
+
+func (excessiveBlankIdentifiersRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
+}
+
+func (standardHTTPMethodConstantRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
+}
+
+func (taskCommentRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
+}
+
+func (weakCryptographyRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
 	}
 }

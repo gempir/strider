@@ -37,7 +37,7 @@ func results() (int, int, int, int) { return 0, 0, 0, 0 }
 		"standard-http-method-constant",
 		"weak-cryptography",
 	}
-	registry, err := NewRegistry(codes)
+	registry, err := newRegistry(codes)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,7 +98,7 @@ func use(...int) {}
 		"standard-http-method-constant",
 		"weak-cryptography",
 	}
-	registry, err := NewRegistry(codes)
+	registry, err := newRegistry(codes)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -123,7 +123,7 @@ const (
 	Second = 2
 )
 `)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"doc-comment-period",
 	})
 	if err != nil {

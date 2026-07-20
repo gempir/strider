@@ -26,34 +26,34 @@ func (emptyCriticalSectionRule) Run(pass *Pass) {
 	if pass.PackagePath == "sync_test" {
 		return
 	}
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				block,
-					ok := node.(*ast.BlockStmt)
-				if !ok || len(block.List) < 2 {
-					return true
-				}
-				for index := 0; index+1 < len(block.List); index++ {
-					firstReceiver,
-						firstMethod,
-						firstOK := lockStatement(pass, block.List[index])
-					secondReceiver,
-						secondMethod,
-						secondOK := lockStatement(pass, block.List[index+1])
-					if !firstOK || !secondOK || !matchingLockMethods(firstMethod, secondMethod) || renderAnalysisExpression(pass, firstReceiver) != renderAnalysisExpression(
-						pass,
-						secondReceiver,
-					) {
-						continue
-					}
-					pass.Report(block.List[index+1], "empty critical section; did you mean to defer the unlock?")
-				}
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.BlockStmt)(nil),
+		},
+		func(node ast.Node) bool {
+			block,
+				ok := node.(*ast.BlockStmt)
+			if !ok || len(block.List) < 2 {
 				return true
-			},
-		)
-	}
+			}
+			for index := 0; index+1 < len(block.List); index++ {
+				firstReceiver,
+					firstMethod,
+					firstOK := lockStatement(pass, block.List[index])
+				secondReceiver,
+					secondMethod,
+					secondOK := lockStatement(pass, block.List[index+1])
+				if !firstOK || !secondOK || !matchingLockMethods(firstMethod, secondMethod) || renderAnalysisExpression(pass, firstReceiver) != renderAnalysisExpression(
+					pass,
+					secondReceiver,
+				) {
+					continue
+				}
+				pass.Report(block.List[index+1], "empty critical section; did you mean to defer the unlock?")
+			}
+			return true
+		},
+	)
 }
 
 func lockStatement(pass *Pass, statement ast.Stmt) (ast.Expr, string, bool) {
@@ -90,4 +90,10 @@ func renderAnalysisExpression(pass *Pass, expression ast.Expr) string {
 		return ""
 	}
 	return output.String()
+}
+
+func (emptyCriticalSectionRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

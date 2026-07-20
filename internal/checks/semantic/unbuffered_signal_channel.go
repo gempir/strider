@@ -53,3 +53,13 @@ func isUnbufferedChannel(value ssa.Value) bool {
 		}
 	}
 }
+
+func (unbufferedSignalChannelRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"os/signal",
+		},
+	}
+}

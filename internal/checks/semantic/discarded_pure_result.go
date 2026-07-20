@@ -147,12 +147,7 @@ func benchmarkHelper(function *ssa.Function) bool {
 	}
 	parameters := function.Signature.Params()
 	for index := range parameters.Len() {
-		pointer, ok := types.Unalias(parameters.At(index).Type()).(*types.Pointer)
-		if !ok {
-			continue
-		}
-		named, ok := types.Unalias(pointer.Elem()).(*types.Named)
-		if ok && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "testing" && named.Obj().Name() == "B" {
+		if isPointerToNamedType(parameters.At(index).Type(), "testing", "B") {
 			return true
 		}
 	}
@@ -290,4 +285,10 @@ func stackAddress(value ssa.Value) bool {
 
 func knownPureFunction(function *types.Func) bool {
 	return pureStandardFunctions[function.FullName()]
+}
+
+func (discardedPureResultRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+	}
 }

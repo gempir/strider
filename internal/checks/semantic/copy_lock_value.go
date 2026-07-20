@@ -23,37 +23,44 @@ func (copyLockValueRule) Meta() Meta {
 }
 
 func (copyLockValueRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				switch node := node.(type) {
-				case *ast.FuncDecl:
-					reportLockParameters(pass, node.Recv, "method receiver")
-					reportLockParameters(pass, node.Type.Params, "function parameter")
-				case *ast.FuncLit:
-					reportLockParameters(pass, node.Type.Params, "function parameter")
-				case *ast.AssignStmt:
-					reportLockAssignments(pass, node.Lhs, node.Rhs, node)
-				case *ast.ValueSpec:
-					left := make([]ast.Expr, 0, len(node.Names))
-					for _, name := range node.Names {
-						left = append(left, name)
-					}
-					reportLockAssignments(pass, left, node.Values, node)
-				case *ast.RangeStmt:
-					reportLockRange(pass, node)
-				case *ast.CallExpr:
-					reportLockCall(pass, node)
-				case *ast.CompositeLit:
-					reportLockComposite(pass, node)
-				case *ast.SendStmt:
-					reportLockCopyExpression(pass, node.Value, node, "channel send")
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.AssignStmt)(nil),
+			(*ast.CallExpr)(nil),
+			(*ast.CompositeLit)(nil),
+			(*ast.FuncDecl)(nil),
+			(*ast.FuncLit)(nil),
+			(*ast.RangeStmt)(nil),
+			(*ast.SendStmt)(nil),
+			(*ast.ValueSpec)(nil),
+		},
+		func(node ast.Node) bool {
+			switch node := node.(type) {
+			case *ast.FuncDecl:
+				reportLockParameters(pass, node.Recv, "method receiver")
+				reportLockParameters(pass, node.Type.Params, "function parameter")
+			case *ast.FuncLit:
+				reportLockParameters(pass, node.Type.Params, "function parameter")
+			case *ast.AssignStmt:
+				reportLockAssignments(pass, node.Lhs, node.Rhs, node)
+			case *ast.ValueSpec:
+				left := make([]ast.Expr, 0, len(node.Names))
+				for _, name := range node.Names {
+					left = append(left, name)
 				}
-				return true
-			},
-		)
-	}
+				reportLockAssignments(pass, left, node.Values, node)
+			case *ast.RangeStmt:
+				reportLockRange(pass, node)
+			case *ast.CallExpr:
+				reportLockCall(pass, node)
+			case *ast.CompositeLit:
+				reportLockComposite(pass, node)
+			case *ast.SendStmt:
+				reportLockCopyExpression(pass, node.Value, node, "channel send")
+			}
+			return true
+		},
+	)
 	forEachAnalysisFunction(
 		pass,
 		func(body *ast.BlockStmt, signature *types.Signature) {
@@ -313,4 +320,10 @@ func analysisTypeName(valueType types.Type) string {
 		}
 		return pkg.Name()
 	})
+}
+
+func (copyLockValueRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

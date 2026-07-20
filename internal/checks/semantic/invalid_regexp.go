@@ -75,3 +75,13 @@ func ssaConstant(value ssa.Value) *ssa.Const {
 		return nil
 	}
 }
+
+func (invalidRegexpRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"regexp",
+		},
+	}
+}

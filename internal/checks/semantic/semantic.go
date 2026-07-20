@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 
+	astinspector "golang.org/x/tools/go/ast/inspector"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/go/ssa"
 	"golang.org/x/tools/go/ssa/ssautil"
@@ -134,6 +135,7 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnos
 				SSAProgram:  ssaProgram,
 				SSAPackage:  ssaPackage,
 				Functions:   functionsByPackage[ssaPackage],
+				inspector:   astinspector.New(pkg.Syntax),
 				facts:       facts,
 			},
 		)

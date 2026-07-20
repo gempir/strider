@@ -30,27 +30,23 @@ func (timeValueEqualityRule) Meta() Meta {
 }
 
 func (timeValueEqualityRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				binary,
-					ok := node.(*ast.BinaryExpr)
-				if !ok || (binary.Op != token.EQL && binary.Op != token.NEQ) {
-					return true
-				}
-				if !isTimeValue(pass.TypesInfo.TypeOf(binary.X)) || !isTimeValue(pass.TypesInfo.TypeOf(binary.Y)) {
-					return true
-				}
-				pass.Report(binary, "compare time.Time values with Time.Equal instead of == or !=")
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.BinaryExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			binary,
+				ok := node.(*ast.BinaryExpr)
+			if !ok || (binary.Op != token.EQL && binary.Op != token.NEQ) {
 				return true
-			},
-		)
-	}
-}
-
-func isTimeValue(valueType types.Type) bool {
-	return isNamedType(valueType, "time", "Time")
+			}
+			if !isNamedType(pass.TypesInfo.TypeOf(binary.X), "time", "Time") || !isNamedType(pass.TypesInfo.TypeOf(binary.Y), "time", "Time") {
+				return true
+			}
+			pass.Report(binary, "compare time.Time values with Time.Equal instead of == or !=")
+			return true
+		},
+	)
 }
 
 func (waitGroupGoForbiddenCallRule) Meta() Meta {
@@ -65,68 +61,43 @@ func (waitGroupGoForbiddenCallRule) Meta() Meta {
 }
 
 func (waitGroupGoForbiddenCallRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				call,
-					ok := node.(*ast.CallExpr)
-				if !ok || !isSyncWaitGroupMethod(pass, call.Fun, "Go") || len(call.Args) == 0 {
-					return true
-				}
-				closure,
-					ok := ast.Unparen(call.Args[len(call.Args)-1]).(*ast.FuncLit)
-				if !ok || closure.Body == nil {
-					return true
-				}
-				inspectFunctionBody(
-					closure.Body,
-					func(nested ast.Node) bool {
-						forbidden,
-							ok := nested.(*ast.CallExpr)
-						if !ok {
-							return true
-						}
-						switch {
-						case isBuiltinCall(pass.TypesInfo, forbidden, "panic"):
-							pass.Report(forbidden, "panic must not be called inside sync.WaitGroup.Go")
-						case isBuiltinCall(pass.TypesInfo, forbidden, "recover"):
-							pass.Report(forbidden, "recover must not be called inside sync.WaitGroup.Go")
-						case isSyncWaitGroupMethod(pass, forbidden.Fun, "Done"):
-							pass.Report(forbidden, "sync.WaitGroup.Go calls Done automatically; remove the manual Done call")
-						}
-						return true
-					},
-				)
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.CallExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			call,
+				ok := node.(*ast.CallExpr)
+			if !ok || !isNamedMethod(pass.TypesInfo, call.Fun, "sync", "WaitGroup", "Go") || len(call.Args) == 0 {
 				return true
-			},
-		)
-	}
-}
-
-func isSyncWaitGroupMethod(pass *Pass, expression ast.Expr, name string) bool {
-	selector, ok := ast.Unparen(expression).(*ast.SelectorExpr)
-	if !ok {
-		return false
-	}
-	selection := pass.TypesInfo.Selections[selector]
-	if selection == nil {
-		return false
-	}
-	method, ok := selection.Obj().(*types.Func)
-	if !ok || method.Pkg() == nil || method.Pkg().Path() != "sync" || method.Name() != name {
-		return false
-	}
-	signature, ok := method.Type().(*types.Signature)
-	if !ok || signature.Recv() == nil {
-		return false
-	}
-	receiver := types.Unalias(signature.Recv().Type())
-	if pointer, ok := receiver.(*types.Pointer); ok {
-		receiver = types.Unalias(pointer.Elem())
-	}
-	named, ok := receiver.(*types.Named)
-	return ok && named.Obj() != nil && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "sync" && named.Obj().Name() == "WaitGroup"
+			}
+			closure,
+				ok := ast.Unparen(call.Args[len(call.Args)-1]).(*ast.FuncLit)
+			if !ok || closure.Body == nil {
+				return true
+			}
+			inspectFunctionBody(
+				closure.Body,
+				func(nested ast.Node) bool {
+					forbidden,
+						ok := nested.(*ast.CallExpr)
+					if !ok {
+						return true
+					}
+					switch {
+					case isBuiltinCall(pass.TypesInfo, forbidden, "panic"):
+						pass.Report(forbidden, "panic must not be called inside sync.WaitGroup.Go")
+					case isBuiltinCall(pass.TypesInfo, forbidden, "recover"):
+						pass.Report(forbidden, "recover must not be called inside sync.WaitGroup.Go")
+					case isNamedMethod(pass.TypesInfo, forbidden.Fun, "sync", "WaitGroup", "Done"):
+						pass.Report(forbidden, "sync.WaitGroup.Go calls Done automatically; remove the manual Done call")
+					}
+					return true
+				},
+			)
+			return true
+		},
+	)
 }
 
 func isBuiltinCall(info *types.Info, call *ast.CallExpr, name string) bool {
@@ -152,48 +123,44 @@ func (rangeValueCaptureRule) Meta() Meta {
 func (rangeValueCaptureRule) Run(pass *Pass) {
 	modernRangeVariables := pass.GoVersion != "" && version.Compare(normalizeGoVersion(pass.GoVersion), "go1.22") >= 0
 	parents := pass.analysisParents()
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				loop,
-					ok := node.(*ast.RangeStmt)
-				if !ok || loop.Body == nil || (loop.Tok == token.DEFINE && modernRangeVariables) {
-					return true
-				}
-				variables := rangeVariableObjects(pass, loop)
-				if len(variables) == 0 {
-					return true
-				}
-				ast.Inspect(
-					loop.Body,
-					func(candidate ast.Node) bool {
-						closure,
-							ok := candidate.(*ast.FuncLit)
-						if !ok {
-							return true
-						}
-						if immediatelyInvokedClosure(closure, parents) {
-							return true
-						}
-						captured := directlyCapturedRangeVariables(pass, closure, variables)
-						if len(captured) != 0 {
-							pass.Report(
-								closure,
-								fmt.Sprintf(
-									"closure captures reused range variable%s %s",
-									pluralSuffix(len(captured)),
-									strings.Join(captured, ", "),
-								),
-							)
-						}
-						return true
-					},
-				)
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.RangeStmt)(nil),
+		},
+		func(node ast.Node) bool {
+			loop,
+				ok := node.(*ast.RangeStmt)
+			if !ok || loop.Body == nil || (loop.Tok == token.DEFINE && modernRangeVariables) {
 				return true
-			},
-		)
-	}
+			}
+			variables := rangeVariableObjects(pass, loop)
+			if len(variables) == 0 {
+				return true
+			}
+			ast.Inspect(
+				loop.Body,
+				func(candidate ast.Node) bool {
+					closure,
+						ok := candidate.(*ast.FuncLit)
+					if !ok {
+						return true
+					}
+					if immediatelyInvokedClosure(closure, parents) {
+						return true
+					}
+					captured := directlyCapturedRangeVariables(pass, closure, variables)
+					if len(captured) != 0 {
+						pass.Report(
+							closure,
+							fmt.Sprintf("closure captures reused range variable%s %s", pluralSuffix(len(captured)), strings.Join(captured, ", ")),
+						)
+					}
+					return true
+				},
+			)
+			return true
+		},
+	)
 }
 
 func rangeVariableObjects(pass *Pass, loop *ast.RangeStmt) map[types.Object]string {
@@ -266,4 +233,23 @@ func pluralSuffix(count int) string {
 		return ""
 	}
 	return "s"
+}
+
+func (rangeValueCaptureRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+		Facts: FactParents,
+	}
+}
+
+func (timeValueEqualityRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
+}
+
+func (waitGroupGoForbiddenCallRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

@@ -549,12 +549,11 @@ func knownResourceAcquisition(pass *Pass, call *ast.CallExpr, kind acquiredResou
 }
 
 func acquiredResourceKindForType(valueType types.Type) acquiredResourceKind {
-	pointer, ok := types.Unalias(valueType).(*types.Pointer)
-	if !ok {
+	if _, ok := types.Unalias(valueType).(*types.Pointer); !ok {
 		return 0
 	}
-	named, ok := types.Unalias(pointer.Elem()).(*types.Named)
-	if !ok || named.Obj() == nil || named.Obj().Pkg() == nil {
+	named := namedType(valueType)
+	if named == nil || named.Obj().Pkg() == nil {
 		return 0
 	}
 	switch named.Obj().Pkg().Path() + "." + named.Obj().Name() {
@@ -909,4 +908,16 @@ func transferredResourceObject(pass *Pass, expression ast.Expr, assignments []re
 		return nil, 0
 	}
 	return pass.TypesInfo.ObjectOf(identifier), httpResponseResource
+}
+
+func (unclosedHTTPResponseBodyRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
+}
+
+func (unclosedSQLResourceRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

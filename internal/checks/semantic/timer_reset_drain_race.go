@@ -54,12 +54,7 @@ func isTimerResetCall(call *ssa.Call) bool {
 	if signature == nil || signature.Recv() == nil {
 		return false
 	}
-	pointer, ok := types.Unalias(signature.Recv().Type()).(*types.Pointer)
-	if !ok {
-		return false
-	}
-	named, ok := types.Unalias(pointer.Elem()).(*types.Named)
-	return ok && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "time" && named.Obj().Name() == "Timer"
+	return isPointerToNamedType(signature.Recv().Type(), "time", "Timer")
 }
 
 func conditionalUses(value ssa.Value) []*ssa.If {
@@ -123,6 +118,11 @@ func isTimeChannel(valueType types.Type) bool {
 	if !ok {
 		return false
 	}
-	named, ok := types.Unalias(channel.Elem()).(*types.Named)
-	return ok && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "time" && named.Obj().Name() == "Time"
+	return isNamedType(channel.Elem(), "time", "Time")
+}
+
+func (timerResetDrainRaceRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+	}
 }

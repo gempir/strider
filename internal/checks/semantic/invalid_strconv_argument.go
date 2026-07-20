@@ -183,3 +183,13 @@ func validateFloatFormat(value int64) string {
 		return fmt.Sprintf("unknown floating-point format %q", rune(value))
 	}
 }
+
+func (invalidStrconvArgumentRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"strconv",
+		},
+	}
+}

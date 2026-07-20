@@ -3,7 +3,6 @@ package semantic
 import (
 	"go/ast"
 	"go/token"
-	"go/types"
 
 	"github.com/gempir/strider/internal/diagnostic"
 )
@@ -22,35 +21,31 @@ func (benchmarkIterationMutationRule) Meta() Meta {
 }
 
 func (benchmarkIterationMutationRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				assignment,
-					ok := node.(*ast.AssignStmt)
-				if !ok || assignment.Tok != token.ASSIGN {
-					return true
-				}
-				for _, left := range assignment.Lhs {
-					selector,
-						ok := left.(*ast.SelectorExpr)
-					if !ok || selector.Sel.Name != "N" || !isTestingB(pass, selector.X) {
-						continue
-					}
-					pass.Report(selector, "do not assign to testing.B.N; the benchmark runner controls it")
-				}
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.AssignStmt)(nil),
+		},
+		func(node ast.Node) bool {
+			assignment,
+				ok := node.(*ast.AssignStmt)
+			if !ok || assignment.Tok != token.ASSIGN {
 				return true
-			},
-		)
-	}
+			}
+			for _, left := range assignment.Lhs {
+				selector,
+					ok := left.(*ast.SelectorExpr)
+				if !ok || selector.Sel.Name != "N" || !isPointerToNamedType(pass.TypesInfo.TypeOf(selector.X), "testing", "B") {
+					continue
+				}
+				pass.Report(selector, "do not assign to testing.B.N; the benchmark runner controls it")
+			}
+			return true
+		},
+	)
 }
 
-func isTestingB(pass *Pass, expression ast.Expr) bool {
-	valueType := types.Unalias(pass.TypesInfo.TypeOf(expression))
-	pointer, ok := valueType.(*types.Pointer)
-	if !ok {
-		return false
+func (benchmarkIterationMutationRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
 	}
-	named, ok := types.Unalias(pointer.Elem()).(*types.Named)
-	return ok && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "testing" && named.Obj().Name() == "B"
 }

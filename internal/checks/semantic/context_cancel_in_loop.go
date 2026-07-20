@@ -41,20 +41,21 @@ func (contextCancelInLoopRule) Meta() Meta {
 }
 
 func (contextCancelInLoopRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				switch loop := node.(type) {
-				case *ast.ForStmt:
-					reportLoopContextCancellations(pass, loop.Body)
-				case *ast.RangeStmt:
-					reportLoopContextCancellations(pass, loop.Body)
-				}
-				return true
-			},
-		)
-	}
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.ForStmt)(nil),
+			(*ast.RangeStmt)(nil),
+		},
+		func(node ast.Node) bool {
+			switch loop := node.(type) {
+			case *ast.ForStmt:
+				reportLoopContextCancellations(pass, loop.Body)
+			case *ast.RangeStmt:
+				reportLoopContextCancellations(pass, loop.Body)
+			}
+			return true
+		},
+	)
 }
 
 func reportLoopContextCancellations(pass *Pass, body *ast.BlockStmt) {
@@ -258,4 +259,10 @@ func calledCancelObject(pass *Pass, expression ast.Expr) types.Object {
 		return nil
 	}
 	return object
+}
+
+func (contextCancelInLoopRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

@@ -39,7 +39,7 @@ func check(pattern string) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"invalid-regexp",
 	})
 	if err != nil {
@@ -74,7 +74,7 @@ func check(pattern string) {
 	regexp.Compile(pattern)
 }
 `)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"invalid-regexp",
 	})
 	if err != nil {
@@ -113,7 +113,7 @@ func check() {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"invalid-template",
 	})
 	if err != nil {
@@ -154,7 +154,7 @@ func check(value string) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"invalid-time-layout",
 	})
 	if err != nil {
@@ -209,7 +209,7 @@ func check() {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"unsupported-binary-write",
 	})
 	if err != nil {
@@ -250,7 +250,7 @@ func check() {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"suspicious-sleep",
 	})
 	if err != nil {
@@ -288,7 +288,7 @@ func check(dynamic string) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"invalid-exec-command",
 	})
 	if err != nil {
@@ -323,7 +323,7 @@ func check(message string) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"dynamic-printf",
 	})
 	if err != nil {
@@ -356,7 +356,7 @@ func check(dynamic string) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"invalid-url",
 	})
 	if err != nil {
@@ -401,7 +401,7 @@ func check() {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"non-canonical-header",
 	})
 	if err != nil {
@@ -434,7 +434,7 @@ func check(expression *regexp.Regexp, input string, dynamic int) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"regexp-find-all-zero",
 	})
 	if err != nil {
@@ -467,7 +467,7 @@ func check(dynamic string) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"invalid-utf8",
 	})
 	if err != nil {
@@ -504,7 +504,7 @@ func check() {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"nil-context",
 	})
 	if err != nil {
@@ -542,7 +542,7 @@ func check(seeker io.Seeker, file *os.File, custom wrongSignature) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"swapped-seek-arguments",
 	})
 	if err != nil {
@@ -581,7 +581,7 @@ func check(dynamic any) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"non-pointer-unmarshal",
 	})
 	if err != nil {
@@ -615,7 +615,7 @@ func endless() {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"leaky-time-tick",
 	})
 	if err != nil {
@@ -641,7 +641,7 @@ func returning() <-chan time.Time {
 	return time.Tick(time.Second)
 }
 `)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"leaky-time-tick",
 	})
 	if err != nil {
@@ -685,7 +685,7 @@ func configure(ch chan<- os.Signal) {
 			stopArgument,
 		),
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"untrappable-signal",
 	})
 	if err != nil {
@@ -720,7 +720,7 @@ func configure() {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"unbuffered-signal-channel",
 	})
 	if err != nil {
@@ -756,7 +756,7 @@ func replace(value string, raw []byte) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"zero-replacement-limit",
 	})
 	if err != nil {
@@ -809,7 +809,7 @@ type Value struct {
 	); err != nil {
 		t.Fatal(err)
 	}
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"deprecated-api-usage",
 	})
 	if err != nil {
@@ -861,7 +861,7 @@ type Contract interface {
 	); err != nil {
 		t.Fatal(err)
 	}
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"deprecated-api-usage",
 	})
 	if err != nil {
@@ -904,7 +904,7 @@ type Generic[T any] struct {
 	); err != nil {
 		t.Fatal(err)
 	}
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"deprecated-api-usage",
 	})
 	if err != nil {
@@ -942,7 +942,7 @@ func Old() {}
 `), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"deprecated-api-usage",
 	})
 	if err != nil {
@@ -968,7 +968,7 @@ func read() {
 	_, _ = ioutil.ReadAll(nil)
 }
 `)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"deprecated-api-usage",
 	})
 	if err != nil {
@@ -1000,7 +1000,7 @@ func serve(handler http.Handler, dynamic string) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"invalid-listen-address",
 	})
 	if err != nil {
@@ -1050,7 +1050,7 @@ func equal(left, right net.IP, raw []byte) bool {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"ip-byte-comparison",
 	})
 	if err != nil {
@@ -1085,7 +1085,7 @@ func (*writer) Other(buffer []byte) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"writer-buffer-mutation",
 	})
 	if err != nil {
@@ -1118,7 +1118,7 @@ func trim(value, dynamic string) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"duplicate-trim-cutset",
 	})
 	if err != nil {
@@ -1150,7 +1150,7 @@ func reset(timer *time.Timer, delay time.Duration) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"timer-reset-drain-race",
 	})
 	if err != nil {
@@ -1193,7 +1193,7 @@ func encode(value payload, allowed custom) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"unsupported-marshal-type",
 	})
 	if err != nil {
@@ -1229,7 +1229,7 @@ func add(value *counters) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"misaligned-atomic-64",
 	})
 	if err != nil {
@@ -1262,7 +1262,7 @@ func order(array [3]int, slice []int, dynamic any) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"sort-non-slice",
 	})
 	if err != nil {
@@ -1297,7 +1297,7 @@ func values(ctx context.Context) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"context-key-type",
 	})
 	if err != nil {
@@ -1330,7 +1330,7 @@ func parse(value string, dynamic int) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"invalid-strconv-argument",
 	})
 	if err != nil {
@@ -1365,7 +1365,7 @@ func encode(buffer, other []byte) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"overlapping-encode-buffers",
 	})
 	if err != nil {
@@ -1400,7 +1400,7 @@ func match(err error) bool {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"swapped-errors-is-arguments",
 	})
 	if err != nil {
@@ -1434,7 +1434,7 @@ func start(group *sync.WaitGroup) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"waitgroup-add-inside-goroutine",
 	})
 	if err != nil {
@@ -1469,7 +1469,7 @@ func lock(mutex *sync.RWMutex) {
 func use() {}
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"empty-critical-section",
 	})
 	if err != nil {
@@ -1496,7 +1496,7 @@ func TestWork(t *testing.T) {
 	t.Log("running")
 }
 `)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"testing-fatal-in-goroutine",
 	})
 	if err != nil {
@@ -1528,7 +1528,7 @@ func lock(mutex *sync.Mutex, rw *sync.RWMutex) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"deferred-lock-after-lock",
 	})
 	if err != nil {
@@ -1554,7 +1554,7 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 `)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"test-main-missing-exit",
 	})
 	if err != nil {
@@ -1580,7 +1580,7 @@ func BenchmarkWork(b *testing.B) {
 	b.N = 1000
 }
 `)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"benchmark-iteration-mutation",
 	})
 	if err != nil {
@@ -1609,7 +1609,7 @@ func compare(value int, floating float64) bool {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"identical-binary-operands",
 	})
 	if err != nil {
@@ -1634,7 +1634,7 @@ func compare(value int) bool { return value == value }
 	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/analysis.test\n\ngo 1.26\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"identical-binary-operands",
 	})
 	if err != nil {
@@ -1664,7 +1664,7 @@ func compare(value uint8) bool {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"impossible-integer-comparison",
 	})
 	if err != nil {
@@ -1699,7 +1699,7 @@ func first(values []int) int {
 func use(int) {}
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"single-iteration-loop",
 	})
 	if err != nil {
@@ -1739,7 +1739,7 @@ func (value *item) renameInPlace(name string) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"ineffective-value-receiver-assignment",
 	})
 	if err != nil {
@@ -1767,7 +1767,7 @@ func result() int {
 	return value
 }
 `)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"overwritten-before-use",
 	})
 	if err != nil {
@@ -1796,7 +1796,7 @@ func loop(limit int) {
 	}
 }
 `)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"unchanged-loop-condition",
 	})
 	if err != nil {
@@ -1832,7 +1832,7 @@ func observed(value string) string {
 func use(string) {}
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"argument-overwritten-before-use",
 	})
 	if err != nil {
@@ -1866,7 +1866,7 @@ func appendAndReturn() []int {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"unused-append-result",
 	})
 	if err != nil {
@@ -1899,7 +1899,7 @@ func isMissingCorrectly(value float64) bool {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"nan-comparison",
 	})
 	if err != nil {
@@ -1932,7 +1932,7 @@ func roundedMeasurement(value float64) float64 {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"pointless-integer-math",
 	})
 	if err != nil {
@@ -1960,7 +1960,7 @@ func bits(value uint) uint {
 	return left | right
 }
 `)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"ineffective-bitwise-zero",
 	})
 	if err != nil {
@@ -1990,7 +1990,7 @@ func observed() int {
 	return square(2)
 }
 `)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"discarded-pure-result",
 	})
 	if err != nil {
@@ -2015,7 +2015,7 @@ func assign(value int, values []int, next func() int) {
 	values[next()] = values[next()]
 }
 `)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"self-assignment",
 	})
 	if err != nil {
@@ -2051,7 +2051,7 @@ func classify(value any) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"unreachable-type-switch-case",
 	})
 	if err != nil {
@@ -2075,7 +2075,7 @@ func unchanged(source []int) []int {
 	return append(source)
 }
 `)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"single-argument-append",
 	})
 	if err != nil {
@@ -2110,7 +2110,7 @@ func unchanged(source []int) []int {
 	return append /* keep */ (source)
 }
 `)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"single-argument-append",
 	})
 	if err != nil {
@@ -2136,7 +2136,7 @@ func impossible(value int, pointer *int) bool {
 	return bad || allowed
 }
 `)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"address-nil-comparison",
 	})
 	if err != nil {
@@ -2171,7 +2171,7 @@ func impossible() bool {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"impossible-interface-nil-comparison",
 	})
 	if err != nil {
@@ -2195,7 +2195,7 @@ func impossible(values []int) bool {
 	return len(values) < 0 || 0 > cap(values)
 }
 `)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"negative-length-capacity-comparison",
 	})
 	if err != nil {
@@ -2219,7 +2219,7 @@ var direct = -0.0
 var converted = -float64(0)
 var convertedAfter = float32(-0)
 `)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"constant-negative-zero",
 	})
 	if err != nil {
@@ -2245,7 +2245,7 @@ func update(address *url.URL) {
 	address.Query().Set("mode", "fast")
 }
 `)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"url-query-copy-mutation",
 	})
 	if err != nil {
@@ -2271,7 +2271,7 @@ func order(values []int) {
 	values = sort.IntSlice(values)
 }
 `)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"sort-conversion-without-sort",
 	})
 	if err != nil {
@@ -2297,7 +2297,7 @@ func choice() int {
 	return rand.Intn(1)
 }
 `)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"random-bound-one",
 	})
 	if err != nil {
@@ -2333,7 +2333,7 @@ func possible() bool {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"never-nil-comparison",
 	})
 	if err != nil {
@@ -2365,7 +2365,7 @@ func impossible() bool {
 	return runtime.GOOS == %q
 }
 `, runtime.GOOS, excluded))
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"impossible-platform-comparison",
 	})
 	if err != nil {
@@ -2390,7 +2390,7 @@ func write() {
 	values["answer"] = 42
 }
 `)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"nil-map-assignment",
 	})
 	if err != nil {
@@ -2426,7 +2426,7 @@ func use() error {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"defer-close-before-error-check",
 	})
 	if err != nil {
@@ -2461,7 +2461,7 @@ func disabled() {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"spinning-empty-loop",
 	})
 	if err != nil {
@@ -2502,7 +2502,7 @@ func clean() {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"finalizer-captures-object",
 	})
 	if err != nil {
@@ -2540,7 +2540,7 @@ func spawned() {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"infinite-recursion",
 	})
 	if err != nil {
@@ -2579,7 +2579,7 @@ func clean() {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"invalid-printf-call",
 	})
 	if err != nil {
@@ -2612,7 +2612,7 @@ func inspect(value source) {
 
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"contradictory-interface-assertion",
 	})
 	if err != nil {
@@ -2656,7 +2656,7 @@ func terminating(value *int) int {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"possible-nil-dereference",
 	})
 	if err != nil {
@@ -2694,7 +2694,7 @@ func calls() {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"odd-paired-arguments",
 	})
 	if err != nil {
@@ -2727,7 +2727,7 @@ func repeated(values []string, dynamic string) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"regexp-match-in-loop",
 	})
 	if err != nil {
@@ -2765,7 +2765,7 @@ func escaped(items map[string]int, bytes []byte) string {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"separate-byte-string-map-key",
 	})
 	if err != nil {
@@ -2798,7 +2798,7 @@ func store(pool *sync.Pool) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"non-pointer-sync-pool-value",
 	})
 	if err != nil {
@@ -2835,7 +2835,7 @@ func efficient(left, right string) bool {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"case-insensitive-string-comparison",
 	})
 	if err != nil {
@@ -2865,7 +2865,7 @@ func write(bytes []byte) {
 	os.Stdout.Write(bytes)
 }
 `)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"byte-string-write",
 	})
 	if err != nil {
@@ -2896,7 +2896,7 @@ func write(path string, data []byte) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"decimal-file-mode",
 	})
 	if err != nil {
@@ -2937,7 +2937,7 @@ const (
 )
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"partially-typed-constant-group",
 	})
 	if err != nil {
@@ -2977,7 +2977,7 @@ func encode() {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"unexported-serialization-fields",
 	})
 	if err != nil {
@@ -3008,7 +3008,7 @@ func shifts(value uint8, machine uint) uint8 {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"oversized-fixed-width-shift",
 	})
 	if err != nil {
@@ -3044,7 +3044,7 @@ func remove() {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"dangerous-directory-removal",
 	})
 	if err != nil {
@@ -3083,7 +3083,7 @@ func inspect(value any) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"failed-assertion-shadow-read",
 	})
 	if err != nil {
@@ -3110,7 +3110,7 @@ func run() {
 	defer setup()()
 }
 `)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"deferred-return-function-not-called",
 	})
 	if err != nil {
@@ -3144,7 +3144,7 @@ func scale(duration time.Duration, count int) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"duration-multiplied-by-duration",
 	})
 	if err != nil {
@@ -3179,7 +3179,7 @@ type explicit struct {
 func (explicit) Run(ctx context.Context) { _ = ctx }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"context-stored-in-struct",
 	})
 	if err != nil {
@@ -3216,7 +3216,7 @@ func urls(host string, port int) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"unsafe-formatted-url-host-port",
 	})
 	if err != nil {
@@ -3250,7 +3250,7 @@ func good(rows *sql.Rows) error {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"unchecked-rows-error",
 	})
 	if err != nil {
@@ -3268,7 +3268,7 @@ func good(rows *sql.Rows) error {
 }
 
 func TestRegistryRejectsUnknownRule(t *testing.T) {
-	if _, err := NewRegistry([]string{
+	if _, err := newRegistry([]string{
 		"missing-analyzer",
 	}); err == nil || !strings.Contains(err.Error(), "missing-analyzer") {
 		t.Fatalf("unexpected error: %v", err)

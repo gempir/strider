@@ -29,16 +29,20 @@ func (slicePreallocationRule) Meta() Meta {
 }
 
 func (slicePreallocationRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(file, func(node ast.Node) bool {
-			block, ok := node.(*ast.BlockStmt)
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.BlockStmt)(nil),
+		},
+		func(node ast.Node) bool {
+			block,
+				ok := node.(*ast.BlockStmt)
 			if !ok {
 				return true
 			}
 			checkPreallocationBlock(pass, block)
 			return true
-		})
-	}
+		},
+	)
 }
 
 func checkPreallocationBlock(pass *Pass, block *ast.BlockStmt) {
@@ -297,4 +301,10 @@ func statementMutatesSlice(pass *Pass, statement ast.Stmt, variable *types.Var) 
 		},
 	)
 	return mutated
+}
+
+func (slicePreallocationRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

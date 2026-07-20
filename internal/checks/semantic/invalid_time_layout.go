@@ -54,3 +54,13 @@ func isStaticFunction(call ssa.CallInstruction, packagePath, name string) bool {
 	function := callee.Object()
 	return function != nil && function.Pkg() != nil && function.Pkg().Path() == packagePath && function.Name() == name
 }
+
+func (invalidTimeParseRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"time",
+		},
+	}
+}

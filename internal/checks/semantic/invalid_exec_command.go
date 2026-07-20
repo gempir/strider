@@ -22,26 +22,32 @@ func (invalidExecCommandRule) Meta() Meta {
 }
 
 func (invalidExecCommandRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				call,
-					ok := node.(*ast.CallExpr)
-				if !ok || len(call.Args) == 0 || !isPackageFunction(pass.TypesInfo, call.Fun, "os/exec", "Command") {
-					return true
-				}
-				value := pass.TypesInfo.Types[call.Args[0]].Value
-				if value == nil || value.Kind() != constant.String {
-					return true
-				}
-				program := constant.StringVal(value)
-				if !strings.Contains(program, " ") || strings.Contains(program, `\`) || strings.Contains(program, "/") {
-					return true
-				}
-				pass.Report(call.Args[0], "first argument to exec.Command looks like a shell command, but a program name or path are expected")
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.CallExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			call,
+				ok := node.(*ast.CallExpr)
+			if !ok || len(call.Args) == 0 || !isPackageFunction(pass.TypesInfo, call.Fun, "os/exec", "Command") {
 				return true
-			},
-		)
+			}
+			value := pass.TypesInfo.Types[call.Args[0]].Value
+			if value == nil || value.Kind() != constant.String {
+				return true
+			}
+			program := constant.StringVal(value)
+			if !strings.Contains(program, " ") || strings.Contains(program, `\`) || strings.Contains(program, "/") {
+				return true
+			}
+			pass.Report(call.Args[0], "first argument to exec.Command looks like a shell command, but a program name or path are expected")
+			return true
+		},
+	)
+}
+
+func (invalidExecCommandRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
 	}
 }

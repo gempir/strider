@@ -113,3 +113,9 @@ func receivesClosedTimeTick(condition ssa.Value) bool {
 	call, ok := receive.X.(*ssa.Call)
 	return ok && isStaticFunction(call, "time", "Tick")
 }
+
+func (leakyTimeTickRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+	}
+}

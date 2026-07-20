@@ -32,3 +32,9 @@ func (nilMapAssignmentRule) Run(pass *Pass) {
 		}
 	}
 }
+
+func (nilMapAssignmentRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+	}
+}

@@ -71,3 +71,9 @@ func knownExternalLoopCall(call *ssa.CallCommon) string {
 	}
 	return ""
 }
+
+func (externalCallInLoopRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+	}
+}

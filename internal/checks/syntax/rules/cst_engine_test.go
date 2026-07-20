@@ -84,24 +84,23 @@ func (item) method() {}
 	if err != nil {
 		t.Fatal(err)
 	}
-	analyzer := &cstAnalyzer{
-		plan: cstExecutionPlan{
-			functions:          true,
-			functionTraversal:  true,
-			functionComplexity: true,
-			functionCognitive:  true,
-			functionStatements: true,
-			functionFinal:      true,
+	analyzer := &cstAnalyzer{}
+	functions := []*cstFunctionFacts{}
+	cst.WalkProductionsWithAncestors(
+		tree.Root(),
+		func(node cst.Node, _ []cst.Node) bool {
+			switch node.(type) {
+			case *cst.FunctionDecl,
+				*cst.MethodDecl:
+				functions = append(functions, analyzer.functionFacts(node))
+			}
+			return true
 		},
+	)
+	if len(functions) != 2 {
+		t.Fatalf("collected %d functions, want 2", len(functions))
 	}
-	cst.WalkProductionsWithAncestors(tree.Root(), func(node cst.Node, ancestors []cst.Node) bool {
-		analyzer.observe(node, ancestors)
-		return true
-	})
-	if len(analyzer.functions) != 2 {
-		t.Fatalf("collected %d functions, want 2", len(analyzer.functions))
-	}
-	for _, facts := range analyzer.functions {
+	for _, facts := range functions {
 		name := facts.name.Src()
 		if got, want := facts.complexity, referenceCyclomaticComplexity(facts.body); got != want {
 			t.Errorf("%s cyclomatic complexity = %d, want %d", name, got, want)
@@ -114,6 +113,18 @@ func (item) method() {}
 		}
 		if got, want := facts.finalStatement, referenceFinalStatement(facts.body); got != want {
 			t.Errorf("%s final statement = %T, want %T", name, got, want)
+		}
+	}
+}
+
+func TestSyntaxCatalogDeclaresExecutableInterests(t *testing.T) {
+	for _, check := range catalog {
+		code := check.Meta().Code
+		if check.behavior.inspect == nil {
+			t.Errorf("%s has no inspect behavior", code)
+		}
+		if len(check.Interests()) == 0 {
+			t.Errorf("%s has no CST interests", code)
 		}
 	}
 }

@@ -2,7 +2,6 @@ package semantic
 
 import (
 	"go/ast"
-	"go/types"
 	"go/version"
 
 	"github.com/gempir/strider/internal/diagnostic"
@@ -68,11 +67,11 @@ func isTestMainFunction(pass *Pass, function *ast.FuncDecl) bool {
 	if function.Name.Name != "TestMain" || function.Recv != nil || function.Type.Params == nil || len(function.Type.Params.List) != 1 || len(function.Type.Params.List[0].Names) != 1 {
 		return false
 	}
-	parameterType := pass.TypesInfo.TypeOf(function.Type.Params.List[0].Type)
-	pointer, ok := types.Unalias(parameterType).(*types.Pointer)
-	if !ok {
-		return false
+	return isPointerToNamedType(pass.TypesInfo.TypeOf(function.Type.Params.List[0].Type), "testing", "M")
+}
+
+func (testMainMissingExitRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
 	}
-	named, ok := types.Unalias(pointer.Elem()).(*types.Named)
-	return ok && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "testing" && named.Obj().Name() == "M"
 }

@@ -66,3 +66,9 @@ func constantLiteral(expression ast.Expr) bool {
 		return false
 	}
 }
+
+func (partiallyTypedConstantGroupRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
+}

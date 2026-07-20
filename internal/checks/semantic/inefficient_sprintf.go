@@ -23,28 +23,28 @@ func (inefficientSprintfRule) Meta() Meta {
 }
 
 func (inefficientSprintfRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				call,
-					ok := node.(*ast.CallExpr)
-				if !ok || call.Ellipsis.IsValid() || len(call.Args) != 2 || !isPackageFunction(pass.TypesInfo, call.Fun, "fmt", "Sprintf") {
-					return true
-				}
-				formatValue := pass.TypesInfo.Types[call.Args[0]].Value
-				if formatValue == nil || formatValue.Kind() != constant.String {
-					return true
-				}
-				replacement := simpleSprintfReplacement(constant.StringVal(formatValue), pass.TypesInfo.TypeOf(call.Args[1]))
-				if replacement == "" {
-					return true
-				}
-				pass.Report(call, fmt.Sprintf("fmt.Sprintf is unnecessary for this conversion; use %s", replacement))
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.CallExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			call,
+				ok := node.(*ast.CallExpr)
+			if !ok || call.Ellipsis.IsValid() || len(call.Args) != 2 || !isPackageFunction(pass.TypesInfo, call.Fun, "fmt", "Sprintf") {
 				return true
-			},
-		)
-	}
+			}
+			formatValue := pass.TypesInfo.Types[call.Args[0]].Value
+			if formatValue == nil || formatValue.Kind() != constant.String {
+				return true
+			}
+			replacement := simpleSprintfReplacement(constant.StringVal(formatValue), pass.TypesInfo.TypeOf(call.Args[1]))
+			if replacement == "" {
+				return true
+			}
+			pass.Report(call, fmt.Sprintf("fmt.Sprintf is unnecessary for this conversion; use %s", replacement))
+			return true
+		},
+	)
 }
 
 func simpleSprintfReplacement(format string, valueType types.Type) string {
@@ -92,4 +92,10 @@ func simpleSprintfReplacement(format string, valueType types.Type) string {
 		}
 	}
 	return ""
+}
+
+func (inefficientSprintfRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

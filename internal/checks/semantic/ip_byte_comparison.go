@@ -1,8 +1,6 @@
 package semantic
 
 import (
-	"go/types"
-
 	"golang.org/x/tools/go/ssa"
 
 	"github.com/gempir/strider/internal/diagnostic"
@@ -41,6 +39,15 @@ func convertedFromNamedType(value ssa.Value, packagePath, name string) bool {
 	if !ok {
 		return false
 	}
-	named, ok := types.Unalias(change.X.Type()).(*types.Named)
-	return ok && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == packagePath && named.Obj().Name() == name
+	return isNamedType(change.X.Type(), packagePath, name)
+}
+
+func (ipByteComparisonRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"bytes",
+		},
+	}
 }

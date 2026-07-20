@@ -26,7 +26,7 @@ func compare(left, right time.Time, alias TimeAlias, localLeft, localRight local
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"time-value-equality",
 	})
 	if err != nil {
@@ -85,7 +85,7 @@ func check(group *sync.WaitGroup, fake fakeGroup) {
 }
 `,
 	)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"waitgroup-go-forbidden-call",
 	})
 	if err != nil {
@@ -195,7 +195,7 @@ func capture(values []int) {
 			func(t *testing.T) {
 				root := analysisModuleVersion(t, test.goVersion, test.source)
 				registry,
-					err := NewRegistry([]string{
+					err := newRegistry([]string{
 					"range-value-capture",
 				})
 				if err != nil {

@@ -71,3 +71,9 @@ func terminatingTestMethod(function *ssa.Function) string {
 	}
 	return ""
 }
+
+func (testingFatalInGoroutineRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+	}
+}

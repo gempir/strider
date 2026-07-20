@@ -77,3 +77,9 @@ func flattenEquivalentPhi(value ssa.Value) ssa.Value {
 	}
 	return result
 }
+
+func (nanComparisonRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+	}
+}

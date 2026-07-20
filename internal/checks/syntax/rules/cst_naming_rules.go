@@ -33,7 +33,7 @@ func (a *cstAnalyzer) checkConcreteIdentifier(name cst.Token) {
 	if builtinIdentifiers[value] {
 		a.report("redefines-builtin-id", name, fmt.Sprintf("identifier %s shadows a predeclared identifier", value))
 	}
-	if a.importNames[value] {
+	if a.imports().names[value] {
 		a.report("import-shadowing", name, fmt.Sprintf("identifier %s shadows an imported package", value))
 	}
 }
@@ -68,13 +68,14 @@ func (a *cstAnalyzer) checkConcreteFoldedName(owner string, name cst.Token) {
 	if !name.IsValid() {
 		return
 	}
-	if a.foldedNames[owner] == nil {
-		a.foldedNames[owner] = map[string]string{}
+	state := a.namingState()
+	if state.foldedNames[owner] == nil {
+		state.foldedNames[owner] = map[string]string{}
 	}
 	key := strings.ToLower(name.Src())
-	if first := a.foldedNames[owner][key]; first != "" && first != name.Src() {
+	if first := state.foldedNames[owner][key]; first != "" && first != name.Src() {
 		a.report("confusing-naming", name, fmt.Sprintf("name %s differs from %s only by capitalization", name.Src(), first))
 	} else {
-		a.foldedNames[owner][key] = name.Src()
+		state.foldedNames[owner][key] = name.Src()
 	}
 }

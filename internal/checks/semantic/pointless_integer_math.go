@@ -90,3 +90,9 @@ func allIntegerTypes(valueType types.Type) bool {
 		return false
 	}
 }
+
+func (pointlessIntegerMathRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+	}
+}

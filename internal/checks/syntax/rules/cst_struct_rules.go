@@ -96,7 +96,7 @@ func (a *cstAnalyzer) checkConcreteStructTag(literal cst.Token) {
 }
 
 func (a *cstAnalyzer) concreteImportsPath(wanted string) bool {
-	return a.importPaths[wanted]
+	return a.imports().paths[wanted]
 }
 
 func (a *cstAnalyzer) checkConcreteJSONTagOptions(literal cst.Token, tag string) {

@@ -428,7 +428,7 @@ import "time"
 
 func check() { time.Sleep(1) }
 `)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"suspicious-sleep",
 	})
 	if err != nil {
@@ -495,7 +495,7 @@ func TestSessionRecursiveTargetDetectsNewSiblingPackage(t *testing.T) {
 	t.Cleanup(func() {
 		restoreSemanticWorkingDirectory(t, previousDirectory)
 	})
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"suspicious-sleep",
 	})
 	if err != nil {
@@ -638,7 +638,7 @@ func nestedModuleBoundaryFixture(t *testing.T, withBoundary bool) (string, strin
 	t.Cleanup(func() {
 		restoreSemanticWorkingDirectory(t, previousDirectory)
 	})
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"suspicious-sleep",
 	})
 	if err != nil {
@@ -916,7 +916,7 @@ func BenchmarkSessionWatchIteration(benchmark *testing.B) {
 	benchmark.Cleanup(func() {
 		restoreSemanticWorkingDirectory(benchmark, previousDirectory)
 	})
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"possible-nil-dereference",
 	})
 	if err != nil {

@@ -73,3 +73,13 @@ func explicitCallArgument(arguments []ast.Node, index int, _ token.Pos) ast.Node
 	}
 	return nil
 }
+
+func (regexpFindAllZeroRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"regexp",
+		},
+	}
+}

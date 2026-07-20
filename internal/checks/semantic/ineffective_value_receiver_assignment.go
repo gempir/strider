@@ -190,3 +190,9 @@ func receiverTypeName(valueType types.Type) string {
 	}
 	return named.Obj().Name()
 }
+
+func (ineffectiveValueReceiverAssignmentRule) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+	}
+}

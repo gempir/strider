@@ -40,15 +40,8 @@ type Config struct {
 }
 
 type FormatterConfig struct {
-	PrintWidth         int                      `toml:"print-width"`
-	MaxBlankLines      int                      `toml:"max-blank-lines"`
-	ExistingLineBreaks string                   `toml:"existing-line-breaks"`
-	Alignment          FormatterAlignmentConfig `toml:"alignment"`
-	Excludes           []string                 `toml:"excludes"`
-}
-
-type FormatterAlignmentConfig struct {
-	Declarations bool `toml:"declarations"`
+	PrintWidth int      `toml:"print-width"`
+	Excludes   []string `toml:"excludes"`
 }
 
 type ToolConfig struct {
@@ -85,12 +78,7 @@ func Defaults() Config {
 		Version: 1,
 		Color:   string(ui.ColorAuto),
 		Formatter: FormatterConfig{
-			PrintWidth:         180,
-			MaxBlankLines:      1,
-			ExistingLineBreaks: "structural-only",
-			Alignment: FormatterAlignmentConfig{
-				Declarations: true,
-			},
+			PrintWidth: 180,
 		},
 		Checks: defaultToolConfig(),
 	}
@@ -251,15 +239,6 @@ func (configuration Config) validate() error {
 	}
 	if configuration.Formatter.PrintWidth < 40 || configuration.Formatter.PrintWidth > 500 {
 		return fmt.Errorf("formatter.print-width must be between 40 and 500")
-	}
-	if configuration.Formatter.MaxBlankLines != 1 {
-		return fmt.Errorf("formatter.max-blank-lines must be 1 while gofmt stability is required")
-	}
-	if configuration.Formatter.ExistingLineBreaks != "structural-only" {
-		return fmt.Errorf("formatter.existing-line-breaks must be \"structural-only\"")
-	}
-	if !configuration.Formatter.Alignment.Declarations {
-		return fmt.Errorf("formatter.alignment.declarations must be true while gofmt stability is required")
 	}
 	return validateTool("check", configuration.Checks)
 }

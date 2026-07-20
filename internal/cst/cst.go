@@ -162,14 +162,6 @@ func (t *Tree) Root() Node {
 	return t.root.SourceFile
 }
 
-// Source returns an independent copy of the original bytes.
-func (t *Tree) Source() []byte {
-	if t == nil {
-		return nil
-	}
-	return append([]byte(nil), t.source...)
-}
-
 // Bytes returns the original source without copying it. The returned slice is
 // owned by the tree and must be treated as read-only.
 func (t *Tree) Bytes() []byte {

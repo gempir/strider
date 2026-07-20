@@ -71,7 +71,7 @@ func renderConcreteWithModule(tree *cst.Tree, options Options, module string) st
 	layout := newConcreteLayout(tree, module)
 	writer := concreteWriter{
 		lineStart:     true,
-		maxEmptyLines: options.MaxBlankLines,
+		maxEmptyLines: 1,
 	}
 	source := tree.Bytes()
 	writer.output.Grow(len(source))

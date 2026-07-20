@@ -29,39 +29,39 @@ Run `make check && make test` after every step; run `make corpus-check` and
 
 Cheap, mechanical, and shrinks everything that follows.
 
-- [ ] **Delete `UsesCST` + `cstRuleCodes`** in
+- [x] **Delete `UsesCST` + `cstRuleCodes`** in
   `internal/checks/syntax/rules/cst_engine.go:11-149`. `UsesCST` has zero
   callers; `cstRuleCodes` is a 96-line hand-maintained copy of the catalog
   that exists only to support it. Migration scaffolding.
-- [ ] **Delete `UnsupportedError` / `ErrUnsupported`** in
+- [x] **Delete `UnsupportedError` / `ErrUnsupported`** in
   `internal/formatter/formatter.go:21-68`. Never constructed, never returned,
   never tested.
-- [ ] **Delete or hide the `lint` and `analyze` commands**
+- [x] **Delete or hide the `lint` and `analyze` commands**
   (`internal/app/app.go:692-758`, `848-912`, plus their list/explain helpers).
   They are ~450 lines that duplicate `check --only ...`, are absent from
   `usage()` and the README, and triple every rendering function
   (`listLintRules`/`listAnalyzeRules`/`listChecksInRegistry`,
   `explainLintRule`/`explainAnalyzeRule`/`explainCheck`). One product command
   (`check`) is simpler to explain, test, and maintain.
-- [ ] **Remove `formatter.html` (125 KB) from the repo root.** Nothing
+- [x] **Remove `formatter.html` (125 KB) from the repo root.** Nothing
   references it; it is a pasted design document. Move the content into
   `docs/` if it still has value, otherwise delete.
-- [ ] **Delete unused exported API:** `baseline.Apply` and
+- [x] **Delete unused exported API:** `baseline.Apply` and
   `baseline.ApplySelected` (only `ApplyCatalogSelection` is used,
   `internal/app/app.go:1121`), `ui.Palette.Enabled()`,
   `workspace.Workspace.Generation()` (test-only), `cst.Tree.Source()`
   (test-only). Unexport or remove.
-- [ ] **Collapse `diagnostic.Safety` to two levels or make three meaningful.**
+- [x] **Collapse `diagnostic.Safety` to two levels or make three meaningful.**
   `fix.allowed` (`internal/fix/fix.go:372-374`) treats `PotentiallyUnsafe`
   and `Unsafe` identically — the distinction is dead granularity.
-- [ ] **Remove fake configuration.** `formatter.Options.MaxBlankLines` and
+- [x] **Remove fake configuration.** `formatter.Options.MaxBlankLines` and
   `ExistingLineBreaks` accept exactly one legal value each
   (`formatter.go:162-166`); `config.validate()` likewise requires fixed
   values for `max-blank-lines`, `existing-line-breaks`, and
   `alignment.declarations` (`config.go:245-265`). Delete the knobs; a
   formatter with no choices should have an options struct that reflects
   that (`PrintWidth` is the only real option).
-- [ ] **Fix the contradictory severity tables** in
+- [x] **Fix the contradictory severity tables** in
   `internal/checks/syntax/rules/catalog.go`: `empty-conditional-block`,
   `ineffective-pointer-copy`, and `inefficient-map-lookup` appear in *both*
   the warning and error sets (`catalog.go:538/602`, `550/603`, `554/604`);

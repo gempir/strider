@@ -23,9 +23,8 @@ type Options struct {
 // Workspace is an immutable set of input paths and source files. File contents
 // and CSTs are loaded lazily and are safe to request concurrently.
 type Workspace struct {
-	inputs     []string
-	files      []*File
-	generation uint64
+	inputs []string
+	files  []*File
 }
 
 // File owns the cached source and CST for one Go file.
@@ -90,15 +89,6 @@ func (workspace *Workspace) Files() []*File {
 		return nil
 	}
 	return append([]*File(nil), workspace.files...)
-}
-
-// Generation returns the cache generation that owns this immutable view. A
-// workspace opened through Open is a one-shot generation and returns zero.
-func (workspace *Workspace) Generation() uint64 {
-	if workspace == nil {
-		return 0
-	}
-	return workspace.generation
 }
 
 // Path returns the absolute source filename.

@@ -112,22 +112,6 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		}
 		colorMode = configuredColor(configuration, globals)
 		return runFormat(args[1:], configuration, colorMode, stdin, stdout, stderr)
-	case "lint":
-		configuration, err := config.Load(globals.configPath, globals.noConfig)
-		if err != nil {
-			printError(stderr, colorMode, "strider", err)
-			return exitError
-		}
-		colorMode = configuredColor(configuration, globals)
-		return runLint(args[1:], configuration, colorMode, stdout, stderr)
-	case "analyze":
-		configuration, err := config.Load(globals.configPath, globals.noConfig)
-		if err != nil {
-			printError(stderr, colorMode, "strider", err)
-			return exitError
-		}
-		colorMode = configuredColor(configuration, globals)
-		return runAnalyze(args[1:], configuration, colorMode, stdout, stderr)
 	case "help", "-h", "--help":
 		usage(stdout, colorMode)
 		return exitSuccess
@@ -265,9 +249,7 @@ func runFormat(args []string, configuration config.Config, colorMode ui.ColorMod
 		return exitError
 	}
 	options.formatter = formatter.Options{
-		PrintWidth:         configuration.Formatter.PrintWidth,
-		MaxBlankLines:      configuration.Formatter.MaxBlankLines,
-		ExistingLineBreaks: configuration.Formatter.ExistingLineBreaks,
+		PrintWidth: configuration.Formatter.PrintWidth,
 	}
 	options.root = configuration.Root
 	options.excludes = configuration.Formatter.Excludes

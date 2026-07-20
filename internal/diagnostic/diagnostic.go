@@ -12,9 +12,8 @@ const (
 )
 
 const (
-	Safe              Safety = "safe"
-	PotentiallyUnsafe Safety = "potentially-unsafe"
-	Unsafe            Safety = "unsafe"
+	Safe   Safety = "safe"
+	Unsafe Safety = "unsafe"
 )
 
 type Severity string
@@ -91,7 +90,7 @@ func severityRank(severity Severity) uint8 {
 // fix levels.
 func ValidSafety(safety Safety) bool {
 	switch safety {
-	case Safe, PotentiallyUnsafe, Unsafe:
+	case Safe, Unsafe:
 		return true
 	default:
 		return false

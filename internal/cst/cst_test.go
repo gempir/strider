@@ -24,8 +24,8 @@ func TestParseIsLossless(t *testing.T) {
 	if rebuilt.String() != string(source) {
 		t.Fatalf("rebuilt source:\n%q\nwant:\n%q", rebuilt.String(), source)
 	}
-	if string(tree.Source()) != string(source) {
-		t.Fatal("Tree.Source did not preserve the input")
+	if string(tree.Bytes()) != string(source) {
+		t.Fatal("Tree.Bytes did not preserve the input")
 	}
 }
 

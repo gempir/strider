@@ -14,25 +14,8 @@ import (
 
 const PrintWidth = 180
 
-const MaxBlankLines = 1
-
-const ExistingLineBreaks = "structural-only"
-
-const ErrUnsupported unsupportedErrorValue = "unsupported Go syntax"
-
 type Options struct {
-	PrintWidth         int
-	MaxBlankLines      int
-	ExistingLineBreaks string
-}
-
-type unsupportedErrorValue string
-
-type UnsupportedError struct {
-	Filename string
-	Line     int
-	Column   int
-	Feature  string
+	PrintWidth int
 }
 
 type Result struct {
@@ -49,22 +32,8 @@ type Session struct {
 
 func DefaultOptions() Options {
 	return Options{
-		PrintWidth:         PrintWidth,
-		MaxBlankLines:      MaxBlankLines,
-		ExistingLineBreaks: ExistingLineBreaks,
+		PrintWidth: PrintWidth,
 	}
-}
-
-func (value unsupportedErrorValue) Error() string {
-	return string(value)
-}
-
-func (e *UnsupportedError) Error() string {
-	return fmt.Sprintf("%s:%d:%d: %v: %s", e.Filename, e.Line, e.Column, ErrUnsupported, e.Feature)
-}
-
-func (e *UnsupportedError) Unwrap() error {
-	return ErrUnsupported
 }
 
 func NewSession() *Session {
@@ -159,12 +128,6 @@ func (s *Session) previewTree(filename string, originalTree *cst.Tree, options O
 	if options.PrintWidth < 40 || options.PrintWidth > 500 {
 		return Result{}, "", fmt.Errorf("format %s: print width must be between 40 and 500", filename)
 	}
-	if options.MaxBlankLines != MaxBlankLines {
-		return Result{}, "", fmt.Errorf("format %s: max blank lines must be %d", filename, MaxBlankLines)
-	}
-	if options.ExistingLineBreaks != ExistingLineBreaks {
-		return Result{}, "", fmt.Errorf("format %s: existing line breaks must be %q", filename, ExistingLineBreaks)
-	}
 	source := originalTree.Bytes()
 	if IsIgnored(source) {
 		copyOfSource := append([]byte(nil), source...)
@@ -222,11 +185,8 @@ func renderCandidate(filename string, tree *cst.Tree, options Options, module st
 
 func normalizeOptions(options Options) Options {
 	defaults := DefaultOptions()
-	if options.MaxBlankLines == 0 {
-		options.MaxBlankLines = defaults.MaxBlankLines
-	}
-	if options.ExistingLineBreaks == "" {
-		options.ExistingLineBreaks = defaults.ExistingLineBreaks
+	if options.PrintWidth == 0 {
+		options.PrintWidth = defaults.PrintWidth
 	}
 	return options
 }

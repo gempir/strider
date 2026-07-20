@@ -19,9 +19,19 @@ func TestStrictBaselineTracksExactLineRangesAndStaleEntries(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	result, err := Apply(path, baseline, []diagnostic.Diagnostic{
-		item(filepath.Join(root, "main.go"), "invalid-regexp", "changed", 5, 6),
-	})
+	result, err := ApplyCatalogSelection(
+		path,
+		baseline,
+		[]diagnostic.Diagnostic{
+			item(filepath.Join(root, "main.go"), "invalid-regexp", "changed", 5, 6),
+		},
+		map[string]bool{
+			"invalid-regexp": true,
+		},
+		map[string]bool{
+			"invalid-regexp": true,
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -43,13 +53,17 @@ func TestApplySelectedPreservesUnselectedEntriesWithoutMarkingThemStale(t *testi
 	if err != nil {
 		t.Fatal(err)
 	}
-	result, err := ApplySelected(
+	result, err := ApplyCatalogSelection(
 		path,
 		generated,
 		[]diagnostic.Diagnostic{
 			item(filepath.Join(root, "main.go"), "critical", "old error", 3, 3),
 		},
 		map[string]bool{
+			"critical": true,
+		},
+		map[string]bool{
+			"advisory": true,
 			"critical": true,
 		},
 	)

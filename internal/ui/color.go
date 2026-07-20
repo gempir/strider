@@ -34,11 +34,6 @@ func NewPalette(writer io.Writer, mode ColorMode) Palette {
 	}
 }
 
-// Enabled reports whether this palette emits ANSI escape sequences.
-func (palette Palette) Enabled() bool {
-	return palette.enabled
-}
-
 func colorsEnabled(writer io.Writer, mode ColorMode) bool {
 	if value, ok := os.LookupEnv("FORCE_COLOR"); ok && value != "" {
 		return value != "0"

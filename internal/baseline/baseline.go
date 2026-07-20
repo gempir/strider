@@ -90,20 +90,6 @@ func Load(path string) (File, error) {
 	return baseline, nil
 }
 
-// Apply suppresses diagnostics consumed by a baseline and reports unmatched
-// baseline entries as stale. Matched contains only entries still present.
-func Apply(path string, baseline File, diagnostics []diagnostic.Diagnostic) (Result, error) {
-	return ApplySelected(path, baseline, diagnostics, nil)
-}
-
-// ApplySelected applies active check entries while preserving entries for
-// checks that were not selected for this run. An omitted check was not
-// evaluated, so its baseline debt is neither matched nor stale and must survive
-// pruning unchanged. A nil selectedCodes map means every code is active.
-func ApplySelected(path string, baseline File, diagnostics []diagnostic.Diagnostic, selectedCodes map[string]bool) (Result, error) {
-	return applySelection(path, baseline, diagnostics, selectedCodes, nil)
-}
-
 // ApplyCatalogSelection preserves known checks that were inactive for this
 // run while treating codes outside the current catalog as stale. This keeps a
 // severity-filtered baseline intact without retaining entries for rules that

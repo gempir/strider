@@ -212,9 +212,8 @@ func (cache *Cache) Open(paths []string, options Options) (*Workspace, error) {
 	}
 	cache.evictLocked()
 	return &Workspace{
-		inputs:     inputs,
-		files:      files,
-		generation: cache.generation,
+		inputs: inputs,
+		files:  files,
 	}, nil
 }
 

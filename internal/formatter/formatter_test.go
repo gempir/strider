@@ -137,7 +137,7 @@ func TestFormatUsesCanonicalEmptyLines(t *testing.T) {
 	if got := DefaultOptions().PrintWidth; got != 180 {
 		t.Fatalf("default print width = %d, want 180", got)
 	}
-	if defaults := DefaultOptions(); defaults.MaxBlankLines != 1 || defaults.ExistingLineBreaks != "structural-only" {
+	if defaults := DefaultOptions(); defaults.PrintWidth != PrintWidth {
 		t.Fatalf("unexpected formatter defaults: %#v", defaults)
 	}
 	input := []byte("package p\n\n\n\nfunc F() {\n\tfirst()\n\n\n\n\tsecond()\n}\n")
@@ -307,7 +307,6 @@ func TestFormatIgnoreMustAppearBeforePackageClause(t *testing.T) {
 
 func TestFormatRejectsOutOfRangePrintWidthAtAPI(t *testing.T) {
 	for _, width := range []int{
-		0,
 		39,
 		501,
 	} {
@@ -655,14 +654,12 @@ var firstValue = 1
 	}
 }
 
-func TestFormatRejectsNonCanonicalMaximumBlankLines(t *testing.T) {
-	_, err := FormatWithOptions("blank_lines.go", []byte("package p\n"), Options{
-		PrintWidth:         180,
-		MaxBlankLines:      2,
-		ExistingLineBreaks: "structural-only",
+func TestFormatUsesBuiltInBlankLinePolicy(t *testing.T) {
+	result, err := FormatWithOptions("blank_lines.go", []byte("package p\n\n\n\nvar value = 1\n"), Options{
+		PrintWidth: 180,
 	})
-	if err == nil || !strings.Contains(err.Error(), "max blank lines must be 1") {
-		t.Fatalf("got %v, want max blank lines error", err)
+	if err != nil || strings.Contains(string(result.Source), "\n\n\n") {
+		t.Fatalf("result = %q, err = %v", result.Source, err)
 	}
 }
 

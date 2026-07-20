@@ -154,9 +154,7 @@ func runCheck(args []string, configuration config.Config, colorMode ui.ColorMode
 	}
 	runOptions := checkengine.RunOptions{
 		Formatter: formatter.Options{
-			PrintWidth:         configuration.Formatter.PrintWidth,
-			MaxBlankLines:      configuration.Formatter.MaxBlankLines,
-			ExistingLineBreaks: configuration.Formatter.ExistingLineBreaks,
+			PrintWidth: configuration.Formatter.PrintWidth,
 		},
 		Root:              configuration.Root,
 		Excludes:          checkConfig.Excludes,

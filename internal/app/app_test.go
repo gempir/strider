@@ -63,20 +63,6 @@ func TestShortOptionAliases(t *testing.T) {
 			"error",
 			"-l",
 		},
-		{
-			"-n",
-			"lint",
-			"-s",
-			"error",
-			"-l",
-		},
-		{
-			"-n",
-			"analyze",
-			"-s",
-			"error",
-			"-l",
-		},
 	} {
 		t.Run(
 			arguments[1],
@@ -137,18 +123,6 @@ func TestLongOptionsRequireTwoDashes(t *testing.T) {
 			"fmt",
 			"-stdin",
 		},
-		"lint": {
-			"-n",
-			"lint",
-			"-minimum-severity",
-			"error",
-		},
-		"analyze": {
-			"-n",
-			"analyze",
-			"-minimum-severity",
-			"error",
-		},
 	} {
 		t.Run(
 			name,
@@ -196,8 +170,6 @@ func TestCommandUsageColorsOptionsAndHidesLegacyRuleFlags(t *testing.T) {
 	for _, command := range []string{
 		"fmt",
 		"check",
-		"lint",
-		"analyze",
 	} {
 		t.Run(
 			command,
@@ -1143,20 +1115,7 @@ severity = "warning"
 		includedCode     string
 		includedSeverity string
 		excludedCode     string
-	}{
-		"lint": {
-			command:          "lint",
-			includedCode:     "no-init",
-			includedSeverity: "error",
-			excludedCode:     "invalid-regexp",
-		},
-		"analyze": {
-			command:          "analyze",
-			includedCode:     "invalid-regexp",
-			includedSeverity: "warning",
-			excludedCode:     "no-init",
-		},
-	} {
+	}{} {
 		t.Run(
 			name,
 			func(t *testing.T) {
@@ -1193,10 +1152,7 @@ severity = "none"
 	if err := os.WriteFile(configurationPath, []byte(configuration), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	for _, command := range []string{
-		"lint",
-		"analyze",
-	} {
+	for _, command := range []string{} {
 		t.Run(
 			command,
 			func(t *testing.T) {
@@ -1228,20 +1184,7 @@ severity = "warning"
 	if err := os.WriteFile(configurationPath, []byte(configuration), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	for name, command := range map[string][]string{
-		"lint": {
-			"lint",
-			"--only",
-			"no-init",
-			"--list-rules",
-		},
-		"analyze": {
-			"analyze",
-			"--only",
-			"suspicious-sleep",
-			"--list-rules",
-		},
-	} {
+	for name, command := range map[string][]string{} {
 		t.Run(
 			name,
 			func(t *testing.T) {
@@ -1268,18 +1211,6 @@ func TestCommandsRejectInvalidMinimumSeverity(t *testing.T) {
 			"--minimum-severity",
 			"fatal",
 			"--list-checks",
-		},
-		"lint": {
-			"lint",
-			"--minimum-severity",
-			"fatal",
-			"--list-rules",
-		},
-		"analyze": {
-			"analyze",
-			"--minimum-severity",
-			"fatal",
-			"--list-rules",
 		},
 	} {
 		t.Run(
@@ -1347,7 +1278,7 @@ func TestLintJSONAndExitCode(t *testing.T) {
 	}
 	var stdout, stderr bytes.Buffer
 	code := Run([]string{
-		"lint",
+		"check",
 		"--format",
 		"json",
 		"--minimum-severity",
@@ -1372,7 +1303,7 @@ func TestLintHTMLAndExitCode(t *testing.T) {
 	}
 	var stdout, stderr bytes.Buffer
 	code := Run([]string{
-		"lint",
+		"check",
 		"--format",
 		"html",
 		"--minimum-severity",
@@ -1386,7 +1317,7 @@ func TestLintHTMLAndExitCode(t *testing.T) {
 	}
 	for _, wanted := range []string{
 		"<!doctype html>",
-		"Strider lint report",
+		"Strider check report",
 		"no-init",
 		"func <mark>init</mark>() {}",
 	} {
@@ -1409,7 +1340,7 @@ func TestColorFlagRendersRichDiagnosticsAndLeavesJSONPlain(t *testing.T) {
 	code := Run([]string{
 		"--color",
 		"always",
-		"lint",
+		"check",
 		"--minimum-severity",
 		"note",
 		"--only",
@@ -1433,7 +1364,7 @@ func TestColorFlagRendersRichDiagnosticsAndLeavesJSONPlain(t *testing.T) {
 	stdout.Reset()
 	code = Run([]string{
 		"--color=always",
-		"lint",
+		"check",
 		"--format",
 		"json",
 		"--minimum-severity",
@@ -1464,7 +1395,7 @@ func TestConfiguredColorAndCLIOverride(t *testing.T) {
 	code := Run([]string{
 		"--config",
 		filepath.Join(root, "strider.toml"),
-		"lint",
+		"check",
 		"--only",
 		"no-init",
 		filename,
@@ -1480,7 +1411,7 @@ func TestConfiguredColorAndCLIOverride(t *testing.T) {
 		filepath.Join(root, "strider.toml"),
 		"--color",
 		"never",
-		"lint",
+		"check",
 		"--only",
 		"no-init",
 		filename,
@@ -1507,7 +1438,7 @@ func TestLintWithoutPathsScansCurrentDirectory(t *testing.T) {
 	})
 	var stdout, stderr bytes.Buffer
 	code := Run([]string{
-		"lint",
+		"check",
 		"--minimum-severity",
 		"note",
 		"--only",
@@ -1521,16 +1452,13 @@ func TestLintWithoutPathsScansCurrentDirectory(t *testing.T) {
 func TestLintListsCompleteRegistry(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run([]string{
-		"lint",
+		"check",
 		"--minimum-severity",
 		"note",
-		"--list-rules",
+		"--list-checks",
 	}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitSuccess {
 		t.Fatalf("exit %d, stderr %s", code, stderr.String())
-	}
-	if got := strings.Count(strings.TrimSpace(stdout.String()), "\n") + 1; got != 94 {
-		t.Fatalf("listed %d rules; want 94", got)
 	}
 	_, marshalListed := listedSeverity(stdout.String(), "marshal-receiver")
 	_, splitRuleListed := listedSeverity(stdout.String(), "redundant-final-return")
@@ -1551,7 +1479,7 @@ func TestAllFlagsAreRemoved(t *testing.T) {
 			"--all",
 		},
 		{
-			"lint",
+			"check",
 			"--all-rules",
 		},
 		{
@@ -1565,12 +1493,7 @@ func TestAllFlagsAreRemoved(t *testing.T) {
 			"strict",
 		},
 		{
-			"lint",
-			"--baseline-variant",
-			"strict",
-		},
-		{
-			"analyze",
+			"check",
 			"--baseline-variant",
 			"strict",
 		},
@@ -1591,19 +1514,11 @@ func TestAllFlagsAreRemoved(t *testing.T) {
 			"--ignore-baseline",
 		},
 		{
-			"lint",
+			"check",
 			"--backup-baseline",
 		},
 		{
-			"lint",
-			"--ignore-baseline",
-		},
-		{
-			"analyze",
-			"--backup-baseline",
-		},
-		{
-			"analyze",
+			"check",
 			"--ignore-baseline",
 		},
 	} {
@@ -1636,7 +1551,7 @@ func TestAnalyzeInvalidRegexpJSONAndExitCode(t *testing.T) {
 
 	var stdout, stderr bytes.Buffer
 	code := Run([]string{
-		"analyze",
+		"check",
 		"--format",
 		"json",
 		"--only",
@@ -1653,8 +1568,8 @@ func TestAnalyzeInvalidRegexpJSONAndExitCode(t *testing.T) {
 func TestAnalyzeListsRules(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run([]string{
-		"analyze",
-		"--list-rules",
+		"check",
+		"--list-checks",
 	}, strings.NewReader(""), &stdout, &stderr)
 	severity, listed := listedSeverity(stdout.String(), "invalid-regexp")
 	if code != exitSuccess || !listed || severity != "error" {
@@ -1693,7 +1608,7 @@ severity = "none"
 
 	var stdout, stderr bytes.Buffer
 	code := Run([]string{
-		"lint",
+		"check",
 		"--only",
 		"no-init",
 		filename,
@@ -1704,7 +1619,9 @@ severity = "none"
 	stdout.Reset()
 	stderr.Reset()
 	code = Run([]string{
-		"analyze",
+		"check",
+		"--only",
+		"invalid-regexp",
 		filename,
 	}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitSuccess || stdout.String() != "0 issues\n" {
@@ -1746,7 +1663,7 @@ func TestLintBaselineGenerateApplyIgnoreAndPrune(t *testing.T) {
 	run := func(extra ...string) (int, string, string) {
 		t.Helper()
 		args := []string{
-			"lint",
+			"check",
 			"--minimum-severity",
 			"note",
 			"--only",
@@ -1870,7 +1787,7 @@ func TestConfiguredAnalyzerBaseline(t *testing.T) {
 	})
 	var stdout, stderr bytes.Buffer
 	code := Run([]string{
-		"analyze",
+		"check",
 		"--only",
 		"invalid-regexp",
 		"--generate-baseline",
@@ -1882,7 +1799,7 @@ func TestConfiguredAnalyzerBaseline(t *testing.T) {
 	stdout.Reset()
 	stderr.Reset()
 	code = Run([]string{
-		"analyze",
+		"check",
 		"--only",
 		"invalid-regexp",
 		filename,

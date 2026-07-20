@@ -32,7 +32,7 @@ contain. Each entry must contain exactly one character. The configured list
 replaces the defaults.
 
 ```toml
-[checks.rules.banned-characters]
+[checks.banned-characters]
 characters = ["ᐸ", "ᐳ", "_"]
 ```
 

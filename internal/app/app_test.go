@@ -987,11 +987,11 @@ func TestVersionOneCheckConfigurationControlsUnifiedRegistry(t *testing.T) {
 	root := t.TempDir()
 	configurationPath := filepath.Join(root, "strider.toml")
 	configuration := `version = 1
-[checks.rules.format]
+[checks.format]
 severity = "none"
-[checks.rules.no-init]
+[checks.no-init]
 severity = "error"
-[checks.rules.invalid-regexp]
+[checks.invalid-regexp]
 severity = "none"
 `
 	if err := os.WriteFile(configurationPath, []byte(configuration), 0o600); err != nil {
@@ -1037,9 +1037,9 @@ func TestVersionOneCheckMinimumSeverityUsesEffectiveOverrides(t *testing.T) {
 	configuration := `version = 1
 [checks]
 minimum-severity = "error"
-[checks.rules.no-init]
+[checks.no-init]
 severity = "error"
-[checks.rules.suspicious-sleep]
+[checks.suspicious-sleep]
 severity = "warning"
 `
 	if err := os.WriteFile(configurationPath, []byte(configuration), 0o600); err != nil {
@@ -1089,7 +1089,7 @@ severity = "warning"
 func TestMinimumSeverityNoneExecutesSuppressedCheck(t *testing.T) {
 	root := t.TempDir()
 	configurationPath := filepath.Join(root, "strider.toml")
-	if err := os.WriteFile(configurationPath, []byte("version = 1\n[checks.rules.no-init]\nseverity = \"none\"\n"), 0o600); err != nil {
+	if err := os.WriteFile(configurationPath, []byte("version = 1\n[checks.no-init]\nseverity = \"none\"\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	filename := filepath.Join(root, "main.go")
@@ -1128,11 +1128,11 @@ func TestCategoryCommandsFilterUnifiedRuleSettings(t *testing.T) {
 	root := t.TempDir()
 	configurationPath := filepath.Join(root, "strider.toml")
 	configuration := `version = 1
-[checks.rules.format]
+[checks.format]
 severity = "none"
-[checks.rules.no-init]
+[checks.no-init]
 severity = "error"
-[checks.rules.invalid-regexp]
+[checks.invalid-regexp]
 severity = "warning"
 `
 	if err := os.WriteFile(configurationPath, []byte(configuration), 0o600); err != nil {
@@ -1187,7 +1187,7 @@ func TestCategoryCommandsRejectUnknownUnifiedRules(t *testing.T) {
 	root := t.TempDir()
 	configurationPath := filepath.Join(root, "strider.toml")
 	configuration := `version = 1
-[checks.rules.removed-check]
+[checks.removed-check]
 severity = "none"
 `
 	if err := os.WriteFile(configurationPath, []byte(configuration), 0o600); err != nil {
@@ -1220,9 +1220,9 @@ func TestMinimumSeverityFlagAppliesToCategoryCommands(t *testing.T) {
 	root := t.TempDir()
 	configurationPath := filepath.Join(root, "strider.toml")
 	configuration := `version = 1
-[checks.rules.no-init]
+[checks.no-init]
 severity = "warning"
-[checks.rules.suspicious-sleep]
+[checks.suspicious-sleep]
 severity = "warning"
 `
 	if err := os.WriteFile(configurationPath, []byte(configuration), 0o600); err != nil {
@@ -1665,9 +1665,9 @@ func TestAnalyzeListsRules(t *testing.T) {
 func TestProjectConfigurationControlsFormatterLintAndAnalyzer(t *testing.T) {
 	root := t.TempDir()
 	configuration := `version = 1
-[checks.rules.no-init]
+[checks.no-init]
 severity = "error"
-[checks.rules.invalid-regexp]
+[checks.invalid-regexp]
 severity = "none"
 `
 	if err := os.WriteFile(filepath.Join(root, "strider.toml"), []byte(configuration), 0o600); err != nil {

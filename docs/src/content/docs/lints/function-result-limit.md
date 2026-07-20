@@ -28,7 +28,7 @@ func Parse() (Value, error)
 The default maximum is three results.
 
 ```toml
-[checks.rules.function-result-limit]
+[checks.function-result-limit]
 max-results = 4
 ```
 

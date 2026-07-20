@@ -337,7 +337,7 @@ func TestUnifiedRegistryRejectsBehavioralOptionOnWrongCheck(t *testing.T) {
 
 func TestUnifiedRegistryRejectsExplicitZeroOptionOnWrongCheck(t *testing.T) {
 	path := filepath.Join(t.TempDir(), config.Filename)
-	contents := "version = 1\n[checks.rules.no-init]\nmax-lines = 0\n"
+	contents := "version = 1\n[checks.no-init]\nmax-lines = 0\n"
 	if err := os.WriteFile(path, []byte(contents), 0o600); err != nil {
 		t.Fatal(err)
 	}

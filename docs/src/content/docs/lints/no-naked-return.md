@@ -37,7 +37,7 @@ statement to name the values being returned.
 ## Configuration
 
 ```toml
-[checks.rules.no-naked-return]
+[checks.no-naked-return]
 severity = "warning"
 excludes = ["generated/**"]
 ```

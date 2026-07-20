@@ -23,18 +23,18 @@ excludes = ["testdata/**"]
 baseline = "strider-baseline.toml"
 minimum-severity = "warning"
 
-[checks.rules.format]
+[checks.format]
 severity = "warning"
 
-[checks.rules.no-init]
+[checks.no-init]
 severity = "none"
 
-[checks.rules.file-length-limit]
+[checks.file-length-limit]
 severity = "error"
 max-lines = 800
 excludes = ["cmd/migrations/**"]
 
-[checks.rules.possible-nil-dereference]
+[checks.possible-nil-dereference]
 severity = "error"
 ```
 
@@ -140,7 +140,7 @@ excludes = ["vendor-tools", "**/*.generated.go"]
 [checks]
 excludes = ["testdata/**"]
 
-[checks.rules.package-comments]
+[checks.package-comments]
 excludes = ["cmd/**", "examples/**"]
 ```
 
@@ -192,15 +192,15 @@ Every code accepts the same two common options:
 | `excludes` | string list | `[]` | Skip only this check on matching paths. |
 
 ```toml
-[checks.rules.format]
+[checks.format]
 severity = "warning"
 
-[checks.rules.file-length-limit]
+[checks.file-length-limit]
 severity = "warning"
 max-lines = 800
 excludes = ["testdata/golden/**"]
 
-[checks.rules.invalid-regexp]
+[checks.invalid-regexp]
 severity = "none"
 ```
 

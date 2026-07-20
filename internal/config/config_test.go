@@ -40,10 +40,10 @@ excludes = ["internal/generated/**"]
 excludes = ["generated/**"]
 baseline = "strider-baseline.toml"
 minimum-severity = "warning"
-[checks.rules.no-init]
+[checks.no-init]
 severity = "none"
 excludes = ["legacy/**"]
-[checks.rules.banned-characters]
+[checks.banned-characters]
 characters = ["ᐸ", "ᐳ"]
 `
 	if err := os.WriteFile(filepath.Join(root, Filename), []byte(contents), 0o600); err != nil {
@@ -131,7 +131,7 @@ func TestLoadRejectsUnknownAndInvalidSettings(t *testing.T) {
 			"alignment.declarations",
 		},
 		"severity": {
-			"version = 1\n[checks.rules.no-init]\nseverity = \"fatal\"\n",
+			"version = 1\n[checks.no-init]\nseverity = \"fatal\"\n",
 			"severity",
 		},
 		"minimum-severity": {
@@ -142,12 +142,16 @@ func TestLoadRejectsUnknownAndInvalidSettings(t *testing.T) {
 			"version = 1\n[checks]\nunknown = true\n",
 			"unknown configuration key",
 		},
+		"legacy-rules-namespace": {
+			"version = 1\n[checks.rules.no-init]\nseverity = \"none\"\n",
+			"checks.rules",
+		},
 		"baseline-variant": {
 			"version = 1\n[checks]\nbaseline-variant = \"strict\"\n",
 			"unknown configuration key",
 		},
 		"enabled": {
-			"version = 1\n[checks.rules.no-init]\nenabled = false\n",
+			"version = 1\n[checks.no-init]\nenabled = false\n",
 			"unknown configuration key",
 		},
 		"legacy-linter": {
@@ -182,7 +186,7 @@ func TestLoadRejectsUnknownAndInvalidSettings(t *testing.T) {
 
 func TestLoadTracksExplicitZeroValuedRuleOptions(t *testing.T) {
 	path := filepath.Join(t.TempDir(), Filename)
-	contents := "version = 1\n[checks.rules.no-init]\nmax-lines = 0\n"
+	contents := "version = 1\n[checks.no-init]\nmax-lines = 0\n"
 	if err := os.WriteFile(path, []byte(contents), 0o600); err != nil {
 		t.Fatal(err)
 	}

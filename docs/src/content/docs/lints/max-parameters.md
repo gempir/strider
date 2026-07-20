@@ -50,7 +50,7 @@ into a struct purely to bypass the rule.
 The default maximum is eight.
 
 ```toml
-[checks.rules.max-parameters]
+[checks.max-parameters]
 max-parameters = 10
 ```
 

@@ -66,7 +66,7 @@ The maximum cyclomatic-complexity score is fixed at `10`. Configure the rule's
 severity and path exclusions in `strider.toml`:
 
 ```toml
-[checks.rules.cyclomatic-complexity]
+[checks.cyclomatic-complexity]
 severity = "error"
 excludes = ["generated/**"]
 ```

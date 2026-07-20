@@ -59,11 +59,11 @@ print-width = 180
 [checks]
 minimum-severity = "warning"
 
-[checks.rules.file-length-limit]
+[checks.file-length-limit]
 severity = "warning"
 max-lines = 800
 
-[checks.rules.possible-nil-dereference]
+[checks.possible-nil-dereference]
 severity = "error"
 ```
 

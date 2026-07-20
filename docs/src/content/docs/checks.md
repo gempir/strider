@@ -139,8 +139,8 @@ grouped by purpose in the documentation sidebar.
 
 ## Configure checks
 
-Every check code accepts `severity` and path `excludes` under the
-version-1 `[checks.rules]` namespace:
+Every check code accepts `severity` and path `excludes` directly under the
+version-1 `[checks]` namespace:
 
 ```toml
 version = 1
@@ -148,18 +148,18 @@ version = 1
 [checks]
 minimum-severity = "warning"
 
-[checks.rules.format]
+[checks.format]
 severity = "note"
 
-[checks.rules.file-length-limit]
+[checks.file-length-limit]
 severity = "error"
 max-lines = 800
 excludes = ["testdata/golden/**"]
 
-[checks.rules.possible-nil-dereference]
+[checks.possible-nil-dereference]
 severity = "error"
 
-[checks.rules.no-init]
+[checks.no-init]
 severity = "none"
 ```
 

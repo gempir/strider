@@ -48,7 +48,7 @@ The maximum cognitive-complexity score is fixed at `7`. Configure the rule's
 severity and path exclusions in `strider.toml`:
 
 ```toml
-[checks.rules.cognitive-complexity]
+[checks.cognitive-complexity]
 severity = "error"
 excludes = ["generated/**"]
 ```

@@ -38,7 +38,7 @@ const third = 3
 ## Configuration
 
 ```toml
-[checks.rules.file-length-limit]
+[checks.file-length-limit]
 max-lines = 800
 ```
 

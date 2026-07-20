@@ -41,7 +41,7 @@ func run() {
 The defaults are 50 statements and 75 lines.
 
 ```toml
-[checks.rules.function-length]
+[checks.function-length]
 max-statements = 60
 max-lines = 100
 ```

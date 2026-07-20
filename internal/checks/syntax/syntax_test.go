@@ -932,7 +932,7 @@ func TestFileLengthLimitDefaultsTo500AndExplicitZeroDisables(t *testing.T) {
 	}
 
 	configurationPath := filepath.Join(t.TempDir(), config.Filename)
-	contents := "version = 1\n[checks.rules.file-length-limit]\nmax-lines = 0\n"
+	contents := "version = 1\n[checks.file-length-limit]\nmax-lines = 0\n"
 	if err := os.WriteFile(configurationPath, []byte(contents), 0o600); err != nil {
 		t.Fatal(err)
 	}

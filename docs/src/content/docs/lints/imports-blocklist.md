@@ -28,7 +28,7 @@ import "log/slog"
 No imports are blocked by default. Paths match exactly.
 
 ```toml
-[checks.rules.imports-blocklist]
+[checks.imports-blocklist]
 blocked-imports = ["log", "io/ioutil"]
 ```
 

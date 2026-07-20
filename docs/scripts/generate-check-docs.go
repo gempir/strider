@@ -173,7 +173,7 @@ contain. Each entry must contain exactly one character. The configured list
 replaces the defaults.
 
 ` + "```toml" + `
-[checks.rules.banned-characters]
+[checks.banned-characters]
 characters = ["ᐸ", "ᐳ", "_"]
 ` + "```" + `
 
@@ -378,7 +378,7 @@ func validateBehaviorConfiguration(docsDirectory string, registry *checks.Regist
 		page := string(contents)
 		for _, wanted := range append([]string{
 			"## Configuration",
-			"[checks.rules." + code + "]",
+			"[checks." + code + "]",
 		}, options...) {
 			if !strings.Contains(page, wanted) {
 				fatal(fmt.Errorf("check %s documentation is missing configuration token %q", code, wanted))

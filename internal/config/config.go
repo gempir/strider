@@ -55,7 +55,14 @@ type ToolConfig struct {
 	Excludes        []string              `toml:"excludes"`
 	Baseline        string                `toml:"baseline"`
 	MinimumSeverity string                `toml:"minimum-severity"`
-	Rules           map[string]RuleConfig `toml:"rules"`
+	Rules           map[string]RuleConfig `toml:"-"`
+}
+
+type fileConfig struct {
+	Version   int                       `toml:"version"`
+	Color     string                    `toml:"color"`
+	Formatter FormatterConfig           `toml:"formatter"`
+	Checks    map[string]toml.Primitive `toml:"checks"`
 }
 
 type RuleConfig struct {
@@ -120,8 +127,19 @@ func Load(explicitPath string, disabled bool) (Config, error) {
 	if canonical, canonicalErr := filepath.EvalSymlinks(absolute); canonicalErr == nil {
 		absolute = canonical
 	}
-	metadata, err := toml.DecodeFile(absolute, &configuration)
+	decoded := fileConfig{
+		Version:   configuration.Version,
+		Color:     configuration.Color,
+		Formatter: configuration.Formatter,
+	}
+	metadata, err := toml.DecodeFile(absolute, &decoded)
 	if err != nil {
+		return Config{}, fmt.Errorf("read %s: %w", absolute, err)
+	}
+	configuration.Version = decoded.Version
+	configuration.Color = decoded.Color
+	configuration.Formatter = decoded.Formatter
+	if err := decodeChecks(&configuration.Checks, decoded.Checks, metadata); err != nil {
 		return Config{}, fmt.Errorf("read %s: %w", absolute, err)
 	}
 	if undecoded := metadata.Undecoded(); len(undecoded) != 0 {
@@ -144,7 +162,7 @@ func Load(explicitPath string, disabled bool) (Config, error) {
 func recordDefinedRuleOptions(configuration *Config, metadata toml.MetaData) {
 	for code, rule := range configuration.Checks.Rules {
 		for _, option := range behavioralRuleOptions {
-			if !metadata.IsDefined("checks", "rules", code, option) {
+			if !metadata.IsDefined("checks", code, option) {
 				continue
 			}
 			if rule.definedOptions == nil {
@@ -154,6 +172,37 @@ func recordDefinedRuleOptions(configuration *Config, metadata toml.MetaData) {
 		}
 		configuration.Checks.Rules[code] = rule
 	}
+}
+
+func decodeChecks(destination *ToolConfig, values map[string]toml.Primitive, metadata toml.MetaData) error {
+	for name, value := range values {
+		switch name {
+		case "excludes":
+			if err := metadata.PrimitiveDecode(value, &destination.Excludes); err != nil {
+				return err
+			}
+		case "baseline":
+			if err := metadata.PrimitiveDecode(value, &destination.Baseline); err != nil {
+				return err
+			}
+		case "minimum-severity":
+			if err := metadata.PrimitiveDecode(value, &destination.MinimumSeverity); err != nil {
+				return err
+			}
+		case "rules":
+			return fmt.Errorf("unknown configuration key(s): checks.rules")
+		default:
+			if metadata.Type("checks", name) != "Hash" {
+				return fmt.Errorf("unknown configuration key(s): checks.%s", name)
+			}
+			rule := RuleConfig{}
+			if err := metadata.PrimitiveDecode(value, &rule); err != nil {
+				return err
+			}
+			destination.Rules[name] = rule
+		}
+	}
+	return nil
 }
 
 // HasExplicitOption reports whether a behavioral option was present in the
@@ -212,7 +261,7 @@ func validateTool(name string, tool ToolConfig) error {
 	}
 	for code, rule := range tool.Rules {
 		if rule.Severity != "" && !diagnostic.ValidSeverity(diagnostic.Severity(rule.Severity)) {
-			return fmt.Errorf("%s.rules.%s.severity must be none, note, warning, or error", name, code)
+			return fmt.Errorf("%s.%s.severity must be none, note, warning, or error", name, code)
 		}
 		for option, value := range map[string]int{
 			"max-lines":          rule.MaxLines,
@@ -223,7 +272,7 @@ func validateTool(name string, tool ToolConfig) error {
 			"max-methods":        rule.MaxMethods,
 		} {
 			if value < 0 {
-				return fmt.Errorf("%s.rules.%s.%s must not be negative", name, code, option)
+				return fmt.Errorf("%s.%s.%s must not be negative", name, code, option)
 			}
 		}
 	}

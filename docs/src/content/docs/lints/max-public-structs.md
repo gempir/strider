@@ -34,7 +34,7 @@ type Response struct{}
 The default maximum is five exported structs per file.
 
 ```toml
-[checks.rules.max-public-structs]
+[checks.max-public-structs]
 max-public-structs = 8
 ```
 

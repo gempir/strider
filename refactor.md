@@ -107,7 +107,7 @@ syntax package should adopt it.
   }
   ```
 
-- [ ] Extract the duplicated registry plumbing (code normalization,
+- [x] Extract the duplicated registry plumbing (code normalization,
   unknown-code errors, severity resolution, `Only` filtering, excludes,
   minimum-severity gating) into one generic helper in `internal/checks`.
   `syntax.Registry` and `semantic.Registry` become thin wrappers, or ideally

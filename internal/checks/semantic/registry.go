@@ -1,10 +1,9 @@
 package semantic
 
 import (
-	"fmt"
-	"sort"
 	"strings"
 
+	"github.com/gempir/strider/internal/checks/core"
 	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/diagnostic"
 	"github.com/gempir/strider/internal/pathfilter"
@@ -270,70 +269,25 @@ func NewRegistryConfigured(only []string, settings map[string]config.RuleConfig,
 // NewRegistryWithOptions applies project settings and a minimum effective
 // severity. Explicit selection never bypasses the severity threshold.
 func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
-	minimumSeverity := options.MinimumSeverity
-	if minimumSeverity == "" {
-		minimumSeverity = diagnostic.SeverityNote
-	}
-	if !diagnostic.ValidSeverity(minimumSeverity) {
-		return nil, fmt.Errorf("minimum severity must be none, note, warning, or error")
-	}
 	all := allRules()
-	byCode := make(map[string]Rule, len(all))
-	for _, rule := range all {
-		byCode[strings.ToUpper(rule.Meta().Code)] = rule
-	}
-
-	wanted := make(map[string]bool, len(options.Only))
-	original := make(map[string]string, len(options.Only))
-	for _, code := range options.Only {
-		normalized := strings.ToUpper(code)
-		wanted[normalized] = true
-		original[normalized] = code
-	}
-	unknown := make([]string, 0)
-	for code := range wanted {
-		if byCode[code] == nil {
-			unknown = append(unknown, original[code])
-		}
-	}
-	for code, setting := range options.Settings {
-		normalized := strings.ToUpper(code)
-		if byCode[normalized] == nil {
-			unknown = append(unknown, code)
-		}
-		if setting.Severity != "" && !diagnostic.ValidSeverity(diagnostic.Severity(setting.Severity)) {
-			return nil, fmt.Errorf("analysis rule %q severity must be none, note, warning, or error", code)
-		}
-	}
-	if len(unknown) != 0 {
-		sort.Strings(unknown)
-		return nil, fmt.Errorf("unknown analysis rule(s): %s", strings.Join(unknown, ", "))
-	}
-
-	configured := make(map[string]config.RuleConfig, len(options.Settings))
-	for code, setting := range options.Settings {
-		configured[strings.ToUpper(code)] = setting
+	selection, err := core.Select(core.SelectionOptions[Rule]{
+		Checks:          all,
+		Only:            options.Only,
+		Settings:        options.Settings,
+		MinimumSeverity: options.MinimumSeverity,
+	})
+	if err != nil {
+		return nil, err
 	}
 	registry := &Registry{
 		settings:   make(map[string]configuredRule, len(all)),
-		knownCodes: make(map[string]bool, len(all)),
+		knownCodes: selection.KnownCodes,
 		root:       options.Root,
 	}
-	for _, rule := range all {
+	for _, rule := range selection.Checks {
 		meta := rule.Meta()
-		registry.knownCodes[meta.Code] = true
-		normalized := strings.ToUpper(meta.Code)
-		setting := configured[normalized]
-		if len(wanted) != 0 && !wanted[normalized] {
-			continue
-		}
-		severity := meta.DefaultSeverity
-		if setting.Severity != "" {
-			severity = diagnostic.Severity(setting.Severity)
-		}
-		if !severity.AtLeast(minimumSeverity) {
-			continue
-		}
+		setting := selection.Settings[strings.ToLower(meta.Code)]
+		severity := selection.Severities[meta.Code]
 		registry.rules = append(registry.rules, rule)
 		registry.settings[meta.Code] = configuredRule{
 			severity: severity,

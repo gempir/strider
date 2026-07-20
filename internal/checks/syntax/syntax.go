@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/gempir/strider/internal/checks/core"
 	builtinrules "github.com/gempir/strider/internal/checks/syntax/rules"
 	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/cst"
@@ -82,53 +83,31 @@ func NewRegistryConfigured(only []string, settings map[string]config.RuleConfig,
 // NewRegistryWithOptions applies project settings and a minimum effective
 // severity. Explicit selection never bypasses the severity threshold.
 func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
-	minimumSeverity := options.MinimumSeverity
-	if minimumSeverity == "" {
-		minimumSeverity = diagnostic.SeverityNote
-	}
-	if !diagnostic.ValidSeverity(minimumSeverity) {
-		return nil, fmt.Errorf("minimum severity must be none, note, warning, or error")
-	}
 	all, err := builtinrules.Select(nil)
 	if err != nil {
 		return nil, err
 	}
-	byCode := make(map[string]builtinrules.Rule, len(all))
-	for _, rule := range all {
-		byCode[strings.ToLower(rule.Meta().Code)] = rule
-	}
-	settings := normalizedSettings(options.Settings)
-	if err := validateConfiguredRules("check", settings, byCode); err != nil {
+	selection, err := core.Select(
+		core.SelectionOptions[builtinrules.Rule]{
+			Checks:          all,
+			Only:            options.Only,
+			Settings:        options.Settings,
+			MinimumSeverity: options.MinimumSeverity,
+			Validate:        validateConfiguredRule,
+		},
+	)
+	if err != nil {
 		return nil, err
-	}
-	if len(options.Only) != 0 {
-		if _, err := builtinrules.Select(options.Only); err != nil {
-			return nil, err
-		}
-	}
-	wanted := make(map[string]bool, len(options.Only))
-	for _, code := range options.Only {
-		wanted[strings.ToLower(code)] = true
 	}
 	registry := &Registry{
 		settings:   make(map[string]configuredRule, len(all)),
-		knownCodes: make(map[string]bool, len(all)),
+		knownCodes: selection.KnownCodes,
 		root:       options.Root,
 	}
-	for _, rule := range all {
+	for _, rule := range selection.Checks {
 		meta := rule.Meta()
-		registry.knownCodes[meta.Code] = true
-		ruleConfig := settings[meta.Code]
-		if len(options.Only) != 0 && !wanted[strings.ToLower(meta.Code)] {
-			continue
-		}
-		severity := meta.DefaultSeverity
-		if ruleConfig.Severity != "" {
-			severity = diagnostic.Severity(ruleConfig.Severity)
-		}
-		if !severity.AtLeast(minimumSeverity) {
-			continue
-		}
+		ruleConfig := selection.Settings[strings.ToLower(meta.Code)]
+		severity := selection.Severities[meta.Code]
 		registry.rules = append(registry.rules, rule)
 		configured := configuredRule{
 			severity: severity,
@@ -149,37 +128,16 @@ func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
 	return registry, nil
 }
 
-func validateConfiguredRules(tool string, settings map[string]config.RuleConfig, available map[string]builtinrules.Rule) error {
-	unknown := make([]string, 0)
-	for code, setting := range settings {
-		if available[strings.ToLower(code)] == nil {
-			unknown = append(unknown, code)
-		}
-		if setting.Severity != "" && !diagnostic.ValidSeverity(diagnostic.Severity(setting.Severity)) {
-			return fmt.Errorf("%s rule %q severity must be none, note, warning, or error", tool, code)
-		}
-		if setting.Characters != nil && code != "banned-characters" {
-			return fmt.Errorf("%s rule %q does not support characters", tool, code)
-		}
-		for _, character := range setting.Characters {
-			if len([]rune(character)) != 1 {
-				return fmt.Errorf("%s rule %q characters must contain exactly one Unicode character each", tool, code)
-			}
+func validateConfiguredRule(code string, setting config.RuleConfig) error {
+	if setting.Characters != nil && code != "banned-characters" {
+		return fmt.Errorf("check %q does not support characters", code)
+	}
+	for _, character := range setting.Characters {
+		if len([]rune(character)) != 1 {
+			return fmt.Errorf("check %q characters must contain exactly one Unicode character each", code)
 		}
 	}
-	if len(unknown) == 0 {
-		return nil
-	}
-	sort.Strings(unknown)
-	return fmt.Errorf("unknown %s rule(s) in configuration: %s", tool, strings.Join(unknown, ", "))
-}
-
-func normalizedSettings(settings map[string]config.RuleConfig) map[string]config.RuleConfig {
-	result := make(map[string]config.RuleConfig, len(settings))
-	for code, setting := range settings {
-		result[strings.ToLower(code)] = setting
-	}
-	return result
+	return nil
 }
 
 func (r *Registry) Rules() []builtinrules.Rule {

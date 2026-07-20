@@ -267,7 +267,7 @@ func isTestingTType(valueType types.Type) bool {
 
 func hasTestingParallelCall(pass *Pass, body *ast.BlockStmt, parameter *types.Var) bool {
 	found := false
-	inspectParallelTestBody(
+	inspectFunctionBody(
 		body,
 		func(node ast.Node) bool {
 			call,
@@ -289,20 +289,6 @@ func hasTestingParallelCall(pass *Pass, body *ast.BlockStmt, parameter *types.Va
 		},
 	)
 	return found
-}
-
-func inspectParallelTestBody(body *ast.BlockStmt, visit func(ast.Node) bool) {
-	first := true
-	ast.Inspect(body, func(node ast.Node) bool {
-		if node == nil {
-			return true
-		}
-		if _, nested := node.(*ast.FuncLit); nested && !first {
-			return false
-		}
-		first = false
-		return visit(node)
-	})
 }
 
 func hasUnsafeParallelTestState(pass *Pass, body *ast.BlockStmt) bool {

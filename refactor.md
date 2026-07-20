@@ -188,7 +188,7 @@ repeated per rule.
   common receiver-unwrap helper in one place; delete the dozens of local
   re-derivations (`isTimeValue`, `isTestingTType`, `infallibleWriterType`,
   `isSyncWaitGroupMethod`, ...).
-- [ ] Deduplicate `inspectFunctionBody` / `inspectFunctionBodyNode` /
+- [x] Deduplicate `inspectFunctionBody` / `inspectFunctionBodyNode` /
   `inspectParallelTestBody` — three byte-identical copies
   (`nil_error_returns.go:141-153`, `:203-215`,
   `research_additional_checks.go:294-306`).

@@ -138,9 +138,11 @@ func forEachAnalysisFunction(pass *Pass, visit func(*ast.BlockStmt, *types.Signa
 	}
 }
 
-func inspectFunctionBody(body *ast.BlockStmt, visit func(ast.Node) bool) {
+// inspectFunctionBody visits a function body without descending into nested
+// function literals. A nested literal has its own control-flow scope.
+func inspectFunctionBody(root ast.Node, visit func(ast.Node) bool) {
 	first := true
-	ast.Inspect(body, func(node ast.Node) bool {
+	ast.Inspect(root, func(node ast.Node) bool {
 		if node == nil {
 			return true
 		}
@@ -177,7 +179,7 @@ func reportNilErrorsInProvenBranch(pass *Pass, branch ast.Node, signature *types
 	if branch == nil {
 		return
 	}
-	inspectFunctionBodyNode(
+	inspectFunctionBody(
 		branch,
 		func(node ast.Node) bool {
 			statement,
@@ -198,20 +200,6 @@ func reportNilErrorsInProvenBranch(pass *Pass, branch ast.Node, signature *types
 			return true
 		},
 	)
-}
-
-func inspectFunctionBodyNode(root ast.Node, visit func(ast.Node) bool) {
-	first := true
-	ast.Inspect(root, func(node ast.Node) bool {
-		if node == nil {
-			return true
-		}
-		if _, nested := node.(*ast.FuncLit); nested && !first {
-			return false
-		}
-		first = false
-		return visit(node)
-	})
 }
 
 func branchAssignsObjectBeforeReturn(pass *Pass, branch ast.Node, object types.Object, returning *ast.ReturnStmt) bool {

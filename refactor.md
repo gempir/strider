@@ -567,33 +567,55 @@ every file's bytes per tick.
 
 We don't have to solve every problem. Candidates to demote or delete:
 
-- [ ] **Style checks living in the semantic (type-checked) engine** pay full
+- [x] **Style checks living in the semantic (type-checked) engine** pay full
   `packages.Load` cost for no reason: `task-comment`, `doc-comment-period`,
   `top-level-declaration-order`, `excessive-blank-identifiers`. Move to the
   syntax pass or drop.
-- [ ] **`test-parallelism`** — 100+ lines of escape-analysis heuristics to
+  **Implemented:** all four codes and severities are preserved in the CST
+  catalog. Their behavior and focused tests moved to the syntax engine, so
+  selecting only these checks no longer triggers package loading.
+- [x] **`test-parallelism`** — 100+ lines of escape-analysis heuristics to
   emit an advisory "consider t.Parallel()". High false-positive surface,
   note severity. Recommend deletion.
-- [ ] **`external-call-in-loop`** — external calls in loops are usually
+  **Deleted:** the advisory heuristic, tests, catalog entry, and documentation
+  are removed.
+- [x] **`external-call-in-loop`** — external calls in loops are usually
   intentional; warning severity invites noise. Recommend deletion or note
   severity.
-- [ ] **`optimize-operands-order`** (syntax) — the cost heuristic flags
+  **Deleted:** intentional repeated I/O and database calls no longer generate
+  a generic loop warning; their domain-specific checks remain available.
+- [x] **`optimize-operands-order`** (syntax) — the cost heuristic flags
   intentional short-circuit ordering. Recommend deletion.
-- [ ] **`discarded-pure-result`'s purity table** misclassifies `time.Now` /
+  **Deleted:** operand order remains a programmer decision; the cost walker,
+  configuration override, and documentation are removed.
+- [x] **`discarded-pure-result`'s purity table** misclassifies `time.Now` /
   `time.Parse` as pure (discarded_pure_result.go:45-47) and carries an
   interprocedural SSA purity checker. Shrink the table to unambiguous cases
   or drop the interprocedural part.
-- [ ] The `go-flags` third-party whitelist inside a generic struct-tag check
+  **Implemented:** only an explicit allowlist of side-effect-free standard
+  functions is trusted. All `time` entries and the interprocedural purity
+  inference are gone; self-assignment likewise treats unknown local calls as
+  effectful.
+- [x] The `go-flags` third-party whitelist inside a generic struct-tag check
   (cst_struct_rules.go:66) — remove the special case.
-- [ ] `unclosed_resources.go` (912 lines) is a hand-rolled path-sensitive
+  **Implemented:** duplicate tag keys are reported consistently regardless of
+  imports; the package-specific helper and documentation exception are gone.
+- [x] `unclosed_resources.go` (912 lines) is a hand-rolled path-sensitive
   dataflow engine for two checks. Either promote the engine to a named,
   documented internal package or simplify the checks to a cheaper
   approximation. A mini abstract interpreter hidden in one rule file is a
   maintenance trap.
-- [ ] `deprecated_api_usage.go` (540 lines) embeds a whole-program
+  **Implemented:** replaced with a 375-line direct-owner approximation. It
+  recognizes acquisition, direct close/transfer, replacement, and named
+  result transfer; aliases are treated as escapes instead of attempting
+  path-sensitive ownership. Focused tests state that boundary explicitly.
+- [x] `deprecated_api_usage.go` (540 lines) embeds a whole-program
   deprecation harvester (re-parsing GOROOT sources) inside a check file;
   the engine calls into it (semantic.go:88-92). If the check stays, the
   harvester is engine infrastructure and should live beside the engine.
+  **Implemented:** the user-facing check is 143 lines; deprecation indexing,
+  source reparsing, and GOROOT expansion now live in `deprecation.go` beside
+  the semantic engine.
 
 ## Phase 8 — Tests
 

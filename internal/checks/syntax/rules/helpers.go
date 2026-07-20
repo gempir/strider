@@ -194,10 +194,6 @@ func consumeQuoted(value string) (string, string, bool) {
 	return "", value, false
 }
 
-func goFlagsRepeatedTag(key string) bool {
-	return key == "choice" || key == "optional-value" || key == "default"
-}
-
 func validJSONTagOption(option string) bool {
 	switch option {
 	case "omitempty", "omitzero", "string", "inline", "unknown", "embed":

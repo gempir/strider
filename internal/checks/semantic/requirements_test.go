@@ -41,8 +41,8 @@ func TestCheckRequirementsCoverCatalog(t *testing.T) {
 			t.Fatalf("check %q has inconsistent static-call requirements", code)
 		}
 	}
-	if typed != 68 || ssaChecks != 44 {
-		t.Fatalf("got %d typed and %d SSA checks, want 68 and 44", typed, ssaChecks)
+	if typed != 63 || ssaChecks != 43 {
+		t.Fatalf("got %d typed and %d SSA checks, want 63 and 43", typed, ssaChecks)
 	}
 }
 

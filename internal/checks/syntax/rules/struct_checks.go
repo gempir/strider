@@ -63,9 +63,8 @@ func (a *Pass) checkStructTag(literal cst.Token) {
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
-	importsGoFlags := a.importsPath("github.com/jessevdk/go-flags")
 	for _, key := range keys {
-		if len(tags[key]) > 1 && !(importsGoFlags && goFlagsRepeatedTag(key)) {
+		if len(tags[key]) > 1 {
 			a.report("invalid-struct-tag", literal, fmt.Sprintf("duplicate struct tag %q", key))
 		}
 	}
@@ -93,10 +92,6 @@ func (a *Pass) checkStructTag(literal cst.Token) {
 			a.checkXMLTagOptions(literal, raw)
 		}
 	}
-}
-
-func (a *Pass) importsPath(wanted string) bool {
-	return a.imports().paths[wanted]
 }
 
 func (a *Pass) checkJSONTagOptions(literal cst.Token, tag string) {

@@ -27,9 +27,6 @@ func (a *Pass) checkBinaryExpression(binary *cst.BinaryExpression) {
 				a.report("constant-logical-expr", binary, "logical expression always has the same value")
 			}
 		}
-		if expressionCost(binary.LHS) > expressionCost(binary.RHS) {
-			a.report("optimize-operands-order", binary, "place the cheaper logical operand first to improve short-circuiting")
-		}
 	}
 }
 
@@ -42,25 +39,6 @@ func staticBool(node cst.Node) (bool, bool) {
 		return false, true
 	}
 	return false, false
-}
-
-func expressionCost(node cst.Node) int {
-	cost := 0
-	cst.Walk(
-		node,
-		func(child cst.Node) bool {
-			switch {
-			case cst.IsArguments(child):
-				cost += 10
-			case cst.Kind(child) == "Index" || cst.Kind(child) == "Selector":
-				cost += 2
-			case cst.Kind(child) == "BinaryExpression":
-				cost++
-			}
-			return true
-		},
-	)
-	return cost
 }
 
 func moduloOne(binary *cst.BinaryExpression) bool {

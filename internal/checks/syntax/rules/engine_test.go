@@ -128,6 +128,107 @@ func TestSyntaxCatalogDeclaresExecutableInterests(t *testing.T) {
 	}
 }
 
+func TestMigratedStyleChecksRunOnCST(t *testing.T) {
+	tests := []struct {
+		code   string
+		source string
+	}{
+		{
+			code: "task-comment",
+			source: `package sample
+
+// TODO: replace this placeholder.
+func work() {}
+`,
+		},
+		{
+			code: "excessive-blank-identifiers",
+			source: `package sample
+
+func work() { _, _, _, value := results(); _ = value }
+func results() (int, int, int, int) { return 0, 0, 0, 0 }
+`,
+		},
+	}
+	for _, test := range tests {
+		t.Run(
+			test.code,
+			func(t *testing.T) {
+				tree, err := cst.Parse("sample.go", []byte(test.source))
+				if err != nil {
+					t.Fatal(err)
+				}
+				checks, err := Select([]string{
+					test.code,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				findings := analyzeCSTFindings("sample.go", tree, checks)
+				if len(findings) != 1 || findings[0].Code != test.code {
+					t.Fatalf("findings = %#v", findings)
+				}
+			},
+		)
+	}
+}
+
+func TestCSTDocumentationPeriodDeduplicatesGroupedDeclarationDocs(t *testing.T) {
+	tree, err := cst.Parse(
+		"sample.go",
+		[]byte(`// Package sample demonstrates grouped declarations.
+package sample
+
+// Values are exported constants
+const (
+	First = 1
+	Second = 2
+)
+`),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	checks, err := Select([]string{
+		"doc-comment-period",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	findings := analyzeCSTFindings("sample.go", tree, checks)
+	if len(findings) != 1 || findings[0].Code != "doc-comment-period" {
+		t.Fatalf("findings = %#v", findings)
+	}
+}
+
+func TestCSTTopLevelDeclarationOrderReportsOneRegression(t *testing.T) {
+	tree, err := cst.Parse(
+		"sample.go",
+		[]byte(`package sample
+
+const first = 1
+var current item
+type item struct{}
+func use() item { return current }
+type later struct{}
+const late = 2
+`),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	checks, err := Select([]string{
+		"top-level-declaration-order",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	findings := analyzeCSTFindings("sample.go", tree, checks)
+	if len(findings) != 1 || findings[0].Code != "top-level-declaration-order" {
+		t.Fatalf("findings = %#v", findings)
+	}
+}
+
 func TestAnalyzeCSTSingleCheckParity(t *testing.T) {
 	tree, err := cst.Parse(
 		"bad_file.go",

@@ -20,7 +20,7 @@ func TestUnifiedRegistryHasGloballyUniqueCodes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := len(registry.Checks()), 207; got != want {
+	if got, want := len(registry.Checks()), 204; got != want {
 		t.Fatalf("all check count = %d, want %d", got, want)
 	}
 	descriptiveCode := regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)+$`)
@@ -55,7 +55,7 @@ func TestUnifiedRegistrySelectsEveryCheckByDefault(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := len(registry.Checks()), 207; got != want {
+	if got, want := len(registry.Checks()), 204; got != want {
 		t.Fatalf("check count = %d, want %d", got, want)
 	}
 }
@@ -78,7 +78,7 @@ func TestUnifiedRegistryNoneSeverityDisablesUnlessRequested(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := len(registry.Checks()), 204; got != want {
+	if got, want := len(registry.Checks()), 201; got != want {
 		t.Fatalf("check count with none settings = %d, want %d", got, want)
 	}
 	registry, err = NewRegistry(RegistryOptions{
@@ -88,7 +88,7 @@ func TestUnifiedRegistryNoneSeverityDisablesUnlessRequested(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := len(registry.Checks()), 207; got != want {
+	if got, want := len(registry.Checks()), 204; got != want {
 		t.Fatalf("none-threshold check count = %d, want %d", got, want)
 	}
 	for code := range settings {

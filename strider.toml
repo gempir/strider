@@ -40,9 +40,6 @@ severity = "note"
 [checks.max-control-nesting]
 severity = "note"
 
-[checks.optimize-operands-order]
-severity = "note"
-
 [checks.range-value-address]
 severity = "note"
 

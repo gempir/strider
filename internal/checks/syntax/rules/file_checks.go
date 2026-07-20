@@ -50,7 +50,6 @@ func (a *Pass) checkImport(spec *cst.ImportSpec) {
 		return
 	}
 	state := a.imports()
-	state.paths[path] = true
 	if a.active("imports-blocklist") && a.blockedImports[path] {
 		a.report("imports-blocklist", spec, fmt.Sprintf("import %s is blocked by configuration", path))
 	}
@@ -130,6 +129,9 @@ func (a *Pass) checkLinesAndComments() {
 		}
 	}
 	comments := a.tree.Comments()
+	if a.active("task-comment") {
+		a.checkTaskComments()
+	}
 	a.checkCompilerDirectiveSpacing(comments)
 	a.checkPackageComment(comments)
 	a.checkBuildTags(comments)

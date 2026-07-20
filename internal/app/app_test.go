@@ -875,8 +875,8 @@ func TestCheckListsOneUnifiedCatalog(t *testing.T) {
 	if code != exitSuccess || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
-	if got := strings.Count(strings.TrimSpace(stdout.String()), "\n") + 1; got != 207 {
-		t.Fatalf("listed %d checks; want 207", got)
+	if got := strings.Count(strings.TrimSpace(stdout.String()), "\n") + 1; got != 204 {
+		t.Fatalf("listed %d checks; want 204", got)
 	}
 	for _, wanted := range []string{
 		"format",

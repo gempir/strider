@@ -968,8 +968,8 @@ func TestFileLengthLimitDefaultsTo500AndExplicitZeroDisables(t *testing.T) {
 }
 
 func TestCatalogIsCompleteDocumentedAndRunnable(t *testing.T) {
-	const expectedCount = 94
-	const expectedNamesSHA256 = "c23bdd56de93f17571337662e63f3111ff55cd681bea229d45890c3cd8ca6dbd"
+	const expectedCount = 97
+	const expectedNamesSHA256 = "b47a5f601a71a8d0e6f97b408203e0d638ace7de23422f3f0edeb465bb29d085"
 	all, err := NewRegistry(nil)
 	if err != nil {
 		t.Fatal(err)

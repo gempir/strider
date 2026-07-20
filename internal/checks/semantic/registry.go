@@ -118,9 +118,6 @@ var checkCatalog = []Check{
 	contextStoredInStructCheck{},
 	unsafeFormattedURLHostPortCheck{},
 	uncheckedRowsErrorCheck{},
-	excessiveBlankIdentifiersCheck{},
-	taskCommentCheck{},
-	docCommentPeriodCheck{},
 	errorTypeNamingCheck{},
 	standardHTTPMethodConstantCheck{},
 	weakCryptographyCheck{},
@@ -131,7 +128,6 @@ var checkCatalog = []Check{
 	interfaceMethodLimitCheck{},
 	constructorInterfaceReturnCheck{},
 	slogArgumentShapeCheck{},
-	externalCallInLoopCheck{},
 	nilErrorReturnCheck{},
 	nilValueWithNilErrorCheck{},
 	unclosedHTTPResponseBodyCheck{},
@@ -139,8 +135,6 @@ var checkCatalog = []Check{
 	contextCancelInLoopCheck{},
 	copyLockValueCheck{},
 	discardedErrorResultCheck{},
-	testParallelismCheck{},
-	topLevelDeclarationOrderCheck{},
 }
 
 // Registry is an immutable selection of analysis checks.

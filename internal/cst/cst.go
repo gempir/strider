@@ -38,6 +38,7 @@ type (
 	CommCase           = gc.CommCaseNode
 	CommClause         = gc.CommClauseNode
 	CommClauseList     = gc.CommClauseListNode
+	ConstDecl          = gc.ConstDeclNode
 	ConstSpec          = gc.ConstSpecNode
 	ConstSpec2         = gc.ConstSpec2Node
 	DeferStmt          = gc.DeferStmtNode
@@ -73,9 +74,11 @@ type (
 	ShortVarDecl       = gc.ShortVarDeclNode
 	Signature          = gc.SignatureNode
 	StatementList      = gc.StatementListNode
+	SourceFile         = gc.SourceFileNode
 	StructType         = gc.StructTypeNode
 	Tag                = gc.TagNode
 	TypeDef            = gc.TypeDefNode
+	TypeDecl           = gc.TypeDeclNode
 	TypeElemList       = gc.TypeElemListNode
 	TypeParamDecl      = gc.TypeParamDeclNode
 	TypeSwitchCase     = gc.TypeSwitchCaseNode

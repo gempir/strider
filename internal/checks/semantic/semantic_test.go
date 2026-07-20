@@ -1977,17 +1977,17 @@ func bits(value uint) uint {
 	}
 }
 
-func TestDiscardedPureResultReportsIgnoredCall(t *testing.T) {
+func TestDiscardedPureResultUsesOnlyKnownStandardFunctions(t *testing.T) {
 	root := analysisModule(t, `package sample
 
-func square(value int) int { return value * value }
+import (
+	"strings"
+	"time"
+)
 
-func ignored() {
-	square(2)
-}
-
-func observed() int {
-	return square(2)
+func ignored(value string) {
+	strings.TrimSpace(value)
+	time.Now()
 }
 `)
 	registry, err := newRegistry([]string{

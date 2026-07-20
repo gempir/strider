@@ -13,6 +13,33 @@ var (
 	}, func(pass *Pass, _ cst.Node) {
 		pass.checkLinesAndComments()
 	})
+	documentationPeriodBehavior = behavior(
+		[]NodeKind{
+			fileNodeKind,
+			"FunctionDecl",
+			"MethodDecl",
+			"VarSpec",
+			"VarSpec2",
+			"ConstSpec",
+			"ConstSpec2",
+			"TypeDef",
+			"AliasDecl",
+		},
+		func(pass *Pass, node cst.Node) {
+			pass.checkDocumentationPeriod(node)
+		},
+	)
+	topLevelDeclarationOrderBehavior = behavior([]NodeKind{
+		"SourceFile",
+	}, func(pass *Pass, node cst.Node) {
+		pass.checkTopLevelDeclarationOrder(node.(*cst.SourceFile))
+	})
+	excessiveBlankIdentifiersBehavior = behavior([]NodeKind{
+		"Assignment",
+		"ShortVarDecl",
+	}, func(pass *Pass, node cst.Node) {
+		pass.checkExcessiveBlankIdentifiers(node)
+	})
 	noInitBehavior = behavior(
 		[]NodeKind{
 			"FunctionDecl",

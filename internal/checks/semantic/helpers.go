@@ -2,6 +2,7 @@ package semantic
 
 import (
 	"go/ast"
+	"go/token"
 	"go/types"
 )
 
@@ -94,6 +95,10 @@ func inspectFunctionBody(root ast.Node, visit func(ast.Node) bool) {
 		first = false
 		return visit(node)
 	})
+}
+
+func nodeContainsPosition(node ast.Node, position token.Pos) bool {
+	return node != nil && position.IsValid() && node.Pos() <= position && position <= node.End()
 }
 
 func normalizeGoVersion(value string) string {

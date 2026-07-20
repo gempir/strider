@@ -13,7 +13,6 @@ type checkStateKey struct {
 
 type importCheckState struct {
 	names map[string]bool
-	paths map[string]bool
 	seen  map[string]bool
 }
 
@@ -51,7 +50,6 @@ func (a *Pass) imports() *importCheckState {
 	return checkState(a, func() *importCheckState {
 		return &importCheckState{
 			names: make(map[string]bool),
-			paths: make(map[string]bool),
 			seen:  make(map[string]bool),
 		}
 	})

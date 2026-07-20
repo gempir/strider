@@ -164,6 +164,50 @@ var catalog = []definition{
 		},
 	},
 	{
+		behavior: documentationPeriodBehavior,
+		meta: Meta{
+			Code:            "doc-comment-period",
+			Summary:         "require declaration documentation to end with punctuation",
+			Explanation:     "Complete documentation sentences are easier to read in generated API references. Default: package and exported-declaration documentation must end in ., !, ?, or :.",
+			GoodExample:     "// Client sends requests.",
+			BadExample:      "// Client sends requests",
+			DefaultSeverity: diagnostic.SeverityNote,
+		},
+	},
+	{
+		behavior: excessiveBlankIdentifiersBehavior,
+		meta: Meta{
+			Code:            "excessive-blank-identifiers",
+			Summary:         "detect assignments that discard too many results",
+			Explanation:     "Discarding several adjacent results hides the contract of the called function and makes it easy to overlook an important value. Default: report assignments with at least three blank identifiers.",
+			GoodExample:     "value, metadata, err := load(); _ = metadata",
+			BadExample:      "value, _, _, _, err := load()",
+			DefaultSeverity: diagnostic.SeverityWarning,
+		},
+	},
+	{
+		behavior: commentBehavior,
+		meta: Meta{
+			Code:            "task-comment",
+			Summary:         "surface TODO, FIXME, and BUG comments",
+			Explanation:     "Task markers in source are easy to forget and invisible to normal issue tracking. Default: report TODO, FIXME, and BUG markers.",
+			GoodExample:     "// Retry only errors classified as transient.",
+			BadExample:      "// TODO: decide which errors should be retried.",
+			DefaultSeverity: diagnostic.SeverityNote,
+		},
+	},
+	{
+		behavior: topLevelDeclarationOrderBehavior,
+		meta: Meta{
+			Code:            "top-level-declaration-order",
+			Summary:         "keep top-level declarations in const, var, type, and func order",
+			Explanation:     "A consistent top-level declaration order makes files easier to scan. Default: constants, variables, types, then functions; imports are ignored.",
+			GoodExample:     "const timeout = 1; var defaultClient Client; type Client struct{}; func New() Client { return Client{} }",
+			BadExample:      "var defaultClient Client; type Client struct{}",
+			DefaultSeverity: diagnostic.SeverityWarning,
+		},
+	},
+	{
 		behavior: binaryBehavior,
 		meta: Meta{
 			Code:            "boolean-literal-comparison",
@@ -706,17 +750,6 @@ var catalog = []definition{
 			GoodExample:     "type Address struct { City string }\ntype User struct { Address Address }",
 			BadExample:      "type User struct { Address struct { City string } }",
 			DefaultSeverity: diagnostic.SeverityNote,
-		},
-	},
-	{
-		behavior: binaryBehavior,
-		meta: Meta{
-			Code:            "optimize-operands-order",
-			Summary:         "put cheap logical operands first",
-			Explanation:     "put cheap logical operands first. Default: enabled.",
-			GoodExample:     "if ready && expensiveCheck() { start() }",
-			BadExample:      "if expensiveCheck() && ready { start() }",
-			DefaultSeverity: diagnostic.SeverityWarning,
 		},
 	},
 	{

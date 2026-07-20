@@ -8,22 +8,16 @@ import (
 
 	"golang.org/x/tools/go/ssa"
 
+	"github.com/gempir/strider/internal/checks/core"
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
 // Meta describes one built-in semantic check.
-type Meta struct {
-	Code            string              `json:"code"`
-	Summary         string              `json:"summary"`
-	Explanation     string              `json:"explanation"`
-	GoodExample     string              `json:"good_example"`
-	BadExample      string              `json:"bad_example"`
-	DefaultSeverity diagnostic.Severity `json:"default_severity"`
-}
+type Meta = core.Meta
 
 // Rule is a package-aware semantic check.
 type Rule interface {
-	Meta() Meta
+	core.Check
 	Run(*Pass)
 }
 

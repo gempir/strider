@@ -631,10 +631,10 @@ func Select(only []string) ([]Rule, error) {
 	all := allRules()
 	wanted := make(map[string]bool, len(only))
 	for _, code := range only {
-		wanted[code] = true
+		wanted[strings.ToLower(code)] = true
 	}
 	for _, rule := range all {
-		delete(wanted, rule.Meta().Code)
+		delete(wanted, strings.ToLower(rule.Meta().Code))
 	}
 	if len(wanted) != 0 {
 		unknown := make([]string, 0, len(wanted))
@@ -648,7 +648,7 @@ func Select(only []string) ([]Rule, error) {
 	selected := make([]Rule, 0, len(all))
 	for _, rule := range all {
 		meta := rule.Meta()
-		if len(only) != 0 && !contains(only, meta.Code) {
+		if len(only) != 0 && !wantedCode(only, meta.Code) {
 			continue
 		}
 		selected = append(selected, rule)
@@ -684,9 +684,9 @@ func allRules() []Rule {
 	return rules
 }
 
-func contains(values []string, wanted string) bool {
+func wantedCode(values []string, wanted string) bool {
 	for _, value := range values {
-		if value == wanted {
+		if strings.EqualFold(value, wanted) {
 			return true
 		}
 	}

@@ -93,7 +93,7 @@ syntax package should adopt it.
 
 ### 1a. Shared foundation
 
-- [ ] Create a single `checks.Meta` (already exists in
+- [x] Create a single `checks.Meta` (already exists in
   `internal/checks/model.go:30`) and make `syntax` and `semantic` use it
   instead of their private copies. Same for the `Rule` base interface:
 
@@ -113,7 +113,7 @@ syntax package should adopt it.
   `syntax.Registry` and `semantic.Registry` become thin wrappers, or ideally
   disappear into a single `checks.Registry` that owns all selection while the
   sub-packages only export their catalogs.
-- [ ] Normalize codes **case-insensitively everywhere** — semantic does
+- [x] Normalize codes **case-insensitively everywhere** — semantic does
   (`registry.go:283-291`), syntax matches exactly (`catalog.go:635-641`), and
   `explainLintRule` was case-sensitive while its siblings were not.
 - [ ] Collapse the three registry constructors in semantic

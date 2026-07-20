@@ -1,24 +1,18 @@
 package rules
 
 import (
+	"github.com/gempir/strider/internal/checks/core"
 	"github.com/gempir/strider/internal/cst"
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
 // Meta describes one built-in syntax check.
-type Meta struct {
-	Code            string              `json:"code"`
-	Summary         string              `json:"summary"`
-	Explanation     string              `json:"explanation"`
-	GoodExample     string              `json:"good_example"`
-	BadExample      string              `json:"bad_example"`
-	DefaultSeverity diagnostic.Severity `json:"default_severity"`
-}
+type Meta = core.Meta
 
 // Rule is the common contract used to select, list, explain, and run every
 // built-in syntax check.
 type Rule interface {
-	Meta() Meta
+	core.Check
 }
 
 type definition struct {

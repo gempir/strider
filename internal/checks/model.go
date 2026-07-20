@@ -1,7 +1,10 @@
 // Package checks implements Strider's unified diagnostic pipeline.
 package checks
 
-import "github.com/gempir/strider/internal/diagnostic"
+import (
+	"github.com/gempir/strider/internal/checks/core"
+	"github.com/gempir/strider/internal/diagnostic"
+)
 
 const (
 	CapabilitySource Capability = 1 << iota
@@ -24,18 +27,14 @@ var formatMeta = Meta{
 
 // Capability describes the most expensive program representation required by
 // a check. Capabilities are internal scheduling details, not CLI categories.
-type Capability uint8
+type Capability = uint8
 
-// Meta describes one user-facing check.
-type Meta struct {
-	Code            string              `json:"code"`
-	Summary         string              `json:"summary"`
-	Explanation     string              `json:"explanation"`
-	GoodExample     string              `json:"good_example"`
-	BadExample      string              `json:"bad_example"`
-	DefaultSeverity diagnostic.Severity `json:"default_severity"`
-	Capabilities    Capability          `json:"capabilities"`
-}
+// Meta describes one user-facing check. It aliases the shared engine contract;
+// capabilities belong to registry scheduling rather than check metadata.
+type Meta = core.Meta
+
+// Check is the shared metadata contract implemented by every check.
+type Check = core.Check
 
 // Rule is a selected check and its metadata.
 type Rule struct {

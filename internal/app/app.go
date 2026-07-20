@@ -758,7 +758,7 @@ func explainLintRule(registry *syntax.Registry, code string, colorMode ui.ColorM
 	palette := ui.NewPalette(stdout, colorMode)
 	for _, rule := range registry.Rules() {
 		meta := rule.Meta()
-		if meta.Code != code {
+		if !strings.EqualFold(meta.Code, code) {
 			continue
 		}
 		fmt.Fprintf(

@@ -95,9 +95,10 @@ func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
 	}
 	byCode := make(map[string]builtinrules.Rule, len(all))
 	for _, rule := range all {
-		byCode[rule.Meta().Code] = rule
+		byCode[strings.ToLower(rule.Meta().Code)] = rule
 	}
-	if err := validateConfiguredRules("lint", options.Settings, byCode); err != nil {
+	settings := normalizedSettings(options.Settings)
+	if err := validateConfiguredRules("check", settings, byCode); err != nil {
 		return nil, err
 	}
 	if len(options.Only) != 0 {
@@ -107,7 +108,7 @@ func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
 	}
 	wanted := make(map[string]bool, len(options.Only))
 	for _, code := range options.Only {
-		wanted[code] = true
+		wanted[strings.ToLower(code)] = true
 	}
 	registry := &Registry{
 		settings:   make(map[string]configuredRule, len(all)),
@@ -117,8 +118,8 @@ func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
 	for _, rule := range all {
 		meta := rule.Meta()
 		registry.knownCodes[meta.Code] = true
-		ruleConfig := options.Settings[meta.Code]
-		if len(options.Only) != 0 && !wanted[meta.Code] {
+		ruleConfig := settings[meta.Code]
+		if len(options.Only) != 0 && !wanted[strings.ToLower(meta.Code)] {
 			continue
 		}
 		severity := meta.DefaultSeverity
@@ -151,7 +152,7 @@ func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
 func validateConfiguredRules(tool string, settings map[string]config.RuleConfig, available map[string]builtinrules.Rule) error {
 	unknown := make([]string, 0)
 	for code, setting := range settings {
-		if available[code] == nil {
+		if available[strings.ToLower(code)] == nil {
 			unknown = append(unknown, code)
 		}
 		if setting.Severity != "" && !diagnostic.ValidSeverity(diagnostic.Severity(setting.Severity)) {
@@ -171,6 +172,14 @@ func validateConfiguredRules(tool string, settings map[string]config.RuleConfig,
 	}
 	sort.Strings(unknown)
 	return fmt.Errorf("unknown %s rule(s) in configuration: %s", tool, strings.Join(unknown, ", "))
+}
+
+func normalizedSettings(settings map[string]config.RuleConfig) map[string]config.RuleConfig {
+	result := make(map[string]config.RuleConfig, len(settings))
+	for code, setting := range settings {
+		result[strings.ToLower(code)] = setting
+	}
+	return result
 }
 
 func (r *Registry) Rules() []builtinrules.Rule {

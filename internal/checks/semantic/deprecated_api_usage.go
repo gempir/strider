@@ -100,7 +100,7 @@ func reportDeprecatedImport(pass *Pass, spec *ast.ImportSpec) {
 	if imported == nil || relatedPackage(pass.PackagePath, imported.Path()) {
 		return
 	}
-	message := pass.deprecatedPackages[imported]
+	message := pass.facts.deprecatedPackages[imported]
 	if message == "" || suppressStandardLibraryDeprecation(pass, imported.Path()) {
 		return
 	}
@@ -116,7 +116,7 @@ func reportDeprecatedObject(pass *Pass, node ast.Node, identifier *ast.Ident) {
 	if object == nil || object.Pkg() == nil || relatedPackage(pass.PackagePath, object.Pkg().Path()) {
 		return
 	}
-	message := deprecatedObjectMessage(pass.deprecatedObjects, object)
+	message := deprecatedObjectMessage(pass.facts.deprecatedObjects, object)
 	if message == "" || suppressStandardLibraryDeprecation(pass, object.Pkg().Path()) {
 		return
 	}

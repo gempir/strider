@@ -3,6 +3,7 @@ package semantic
 import (
 	"go/ast"
 	"go/token"
+	"go/types"
 	"sync"
 
 	"golang.org/x/tools/go/ssa"
@@ -35,6 +36,8 @@ type packageFacts struct {
 	ssaBuilder         packageSSAFactBuilder
 	data               packageFactData
 	ssaData            packageSSAFactData
+	deprecatedObjects  map[types.Object]string
+	deprecatedPackages map[*types.Package]string
 }
 
 func newPackageFacts(required FactSet, staticCallPackages ...map[string]bool) *packageFacts {

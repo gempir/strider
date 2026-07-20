@@ -192,7 +192,7 @@ repeated per rule.
   `inspectParallelTestBody` — three byte-identical copies
   (`nil_error_returns.go:141-153`, `:203-215`,
   `research_additional_checks.go:294-306`).
-- [ ] Move rule-specific state off `Pass`: `maxMethods` exists for exactly
+- [x] Move rule-specific state off `Pass`: `maxMethods` exists for exactly
   one rule (`model.go:43`), `deprecatedObjects`/`deprecatedPackages` for one
   more. Per-check options should flow through the check's own configuration,
   not widen the shared pass for everyone (ISP).
@@ -204,15 +204,15 @@ compiler is sound in concept — skipping SSA when no SSA rule is selected is a
 real win — but over-built for its 7 consumers and enforced by runtime panics
 in four places (`facts.go:57,70`, `registry.go:223,231`).
 
-- [ ] Keep the `Types` vs `SSA` stage split and `SSAFeatureGlobalDebug`.
-- [ ] Declare requirements **on the rule** (a method or struct field), not in
+- [x] Keep the `Types` vs `SSA` stage split and `SSAFeatureGlobalDebug`.
+- [x] Declare requirements **on the rule** (a method or struct field), not in
   the central catalog, so a rule body and its needs cannot drift.
-- [ ] Replace panic-based invariants with a single unit test over the static
+- [x] Replace panic-based invariants with a single unit test over the static
   catalog.
-- [ ] Fold `FactFirstCallArgument` into `FactCallArguments` (the distinction
+- [x] Fold `FactFirstCallArgument` into `FactCallArguments` (the distinction
   saves one slice allocation) and re-evaluate whether the fact system
   survives `ReportPos` at all.
-- [ ] Fix the case-convention split inside `registry.go`
+- [x] Fix the case-convention split inside `registry.go`
   (`requirementsByCode` lowercase vs uppercase normalization).
 
 ### 1e. Simplify the top-level `checks` wrapper

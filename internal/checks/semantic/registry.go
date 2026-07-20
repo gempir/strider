@@ -234,9 +234,9 @@ func (registry *Registry) executionPlan() executionPlan {
 }
 
 // NewRegistry applies project settings and a minimum effective severity.
-// Explicit selection never bypasses the severity threshold. Rule codes are
-// case-insensitive. Passing a []string remains supported for callers that
-// only select checks; new callers should pass RegistryOptions.
+// Explicit selection never bypasses the severity threshold. The []string
+// input remains as a narrow compatibility shim for callers that only select
+// checks; new callers use RegistryOptions.
 func NewRegistry(input any) (*Registry, error) {
 	var options RegistryOptions
 	switch value := input.(type) {

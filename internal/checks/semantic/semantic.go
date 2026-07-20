@@ -111,6 +111,16 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnos
 		if pkg.Module != nil {
 			goVersion = pkg.Module.GoVersion
 		}
+		facts := newPackageFacts(plan.requirements.Facts, plan.staticCallPackages)
+		if facts != nil {
+			facts.deprecatedObjects = deprecatedObjects
+			facts.deprecatedPackages = deprecatedPackages
+		} else {
+			facts = &packageFacts{
+				deprecatedObjects:  deprecatedObjects,
+				deprecatedPackages: deprecatedPackages,
+			}
+		}
 		passes = append(
 			passes,
 			&Pass{
@@ -124,10 +134,7 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnos
 				SSAProgram:  ssaProgram,
 				SSAPackage:  ssaPackage,
 				Functions:   functionsByPackage[ssaPackage],
-				facts:       newPackageFacts(plan.requirements.Facts, plan.staticCallPackages),
-
-				deprecatedObjects:  deprecatedObjects,
-				deprecatedPackages: deprecatedPackages,
+				facts:       facts,
 			},
 		)
 	}

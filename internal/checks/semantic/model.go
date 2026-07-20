@@ -30,21 +30,18 @@ type configurableRule interface {
 
 // Pass contains the syntax and type information for one loaded Go package.
 type Pass struct {
-	PackagePath        string
-	GoVersion          string
-	Files              []*ast.File
-	FileSet            *token.FileSet
-	Types              *types.Package
-	TypesSizes         types.Sizes
-	TypesInfo          *types.Info
-	SSAProgram         *ssa.Program
-	SSAPackage         *ssa.Package
-	Functions          []*ssa.Function
-	facts              *packageFacts
-	deprecatedObjects  map[types.Object]string
-	deprecatedPackages map[*types.Package]string
-
-	report func(token.Pos, token.Pos, string, []diagnostic.Fix)
+	PackagePath string
+	GoVersion   string
+	Files       []*ast.File
+	FileSet     *token.FileSet
+	Types       *types.Package
+	TypesSizes  types.Sizes
+	TypesInfo   *types.Info
+	SSAProgram  *ssa.Program
+	SSAPackage  *ssa.Package
+	Functions   []*ssa.Function
+	facts       *packageFacts
+	report      func(token.Pos, token.Pos, string, []diagnostic.Fix)
 }
 
 // Report emits a diagnostic for the rule currently running.

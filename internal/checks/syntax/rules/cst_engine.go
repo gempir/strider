@@ -33,6 +33,7 @@ type cstAnalyzer struct {
 	limits            map[string]int
 	blockedImports    map[string]bool
 	publicStructs     int
+	checks            []SyntaxCheck
 }
 
 // AnalyzeCST runs selected native CST rules over one lossless source tree.
@@ -53,6 +54,7 @@ func AnalyzeCST(input CSTInput) {
 		plan:     plan,
 		reporter: input.Report,
 		limits:   input.Limits,
+		checks:   append([]SyntaxCheck(nil), input.Checks...),
 	}
 	if enabled["imports-blocklist"] {
 		analyzer.blockedImports = make(map[string]bool, len(input.BlockedImports))
@@ -93,6 +95,9 @@ func AnalyzeCST(input CSTInput) {
 			analyzer.ancestors = ancestors
 			analyzer.current = node
 			analyzer.observe(node, ancestors)
+			for _, check := range analyzer.checks {
+				check.Inspect(analyzer, node)
+			}
 			analyzer.check(node)
 			return true
 		},

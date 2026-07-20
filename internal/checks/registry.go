@@ -228,7 +228,7 @@ func availableRules() (map[string]Meta, map[string]bool, map[string]bool, error)
 	}
 	syntaxCodes := make(map[string]bool)
 	semanticCodes := make(map[string]bool)
-	syntaxRegistry, err := syntax.NewRegistry(nil)
+	syntaxRegistry, err := syntax.NewRegistryWithOptions(syntax.RegistryOptions{})
 	if err != nil {
 		return nil, nil, nil, err
 	}

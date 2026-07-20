@@ -39,16 +39,22 @@ type Pass struct {
 	deprecatedObjects  map[types.Object]string
 	deprecatedPackages map[*types.Package]string
 
-	report func(ast.Node, string, []diagnostic.Fix)
+	report func(token.Pos, token.Pos, string, []diagnostic.Fix)
 }
 
 // Report emits a diagnostic for the rule currently running.
 func (pass *Pass) Report(node ast.Node, message string) {
-	pass.report(node, message, nil)
+	pass.ReportPos(node.Pos(), message)
+}
+
+// ReportPos emits a diagnostic at pos. It is intended for SSA checks, which
+// have source positions but do not always have an AST node to report.
+func (pass *Pass) ReportPos(pos token.Pos, message string) {
+	pass.report(pos, pos, message, nil)
 }
 
 // ReportFix emits a diagnostic with one or more suggested fixes. Edits use
 // byte offsets in the diagnostic's source file.
 func (pass *Pass) ReportFix(node ast.Node, message string, fixes ...diagnostic.Fix) {
-	pass.report(node, message, fixes)
+	pass.report(node.Pos(), node.End(), message, fixes)
 }

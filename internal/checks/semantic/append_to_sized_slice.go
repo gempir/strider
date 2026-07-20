@@ -54,10 +54,8 @@ func (appendToSizedSliceRule) Run(pass *Pass) {
 					continue
 				}
 				reported[origin.Pos()] = true
-				pass.Report(
-					positionNode{
-						position: call.Pos(),
-					},
+				pass.ReportPos(
+					call.Pos(),
 					fmt.Sprintf("%s already has a positive length; use make with length zero and capacity, or reslice to zero before append", candidate.name),
 				)
 			}

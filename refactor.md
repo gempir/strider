@@ -175,7 +175,7 @@ files. In semantic it takes 2.
 hand-rolled `ast.Inspect` full-file walks and a triple-nested SSA loop
 repeated per rule.
 
-- [ ] Add `Pass.ReportPos(token.Pos, string)` and delete the `positionNode`
+- [x] Add `Pass.ReportPos(token.Pos, string)` and delete the `positionNode`
   hack (defined in `invalid_regexp.go:15`, used by 7 SSA rules) — SSA rules
   wrap positions in a fake `ast.Node` today only because `Report` demands one.
   This also removes the main justification for the

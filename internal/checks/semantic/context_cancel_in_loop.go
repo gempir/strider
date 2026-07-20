@@ -132,12 +132,7 @@ func reportLoopContextCancellations(pass *Pass, body *ast.BlockStmt) {
 			continue
 		}
 		if deferred != nil {
-			pass.Report(
-				positionNode{
-					position: deferred.position,
-				},
-				"cancellation deferred inside a loop runs only when the surrounding function returns; cancel before the iteration ends",
-			)
+			pass.ReportPos(deferred.position, "cancellation deferred inside a loop runs only when the surrounding function returns; cancel before the iteration ends")
 			continue
 		}
 		pass.Report(acquisition.call, acquisition.name+" is created in a loop but its cancellation function is not called during the iteration")

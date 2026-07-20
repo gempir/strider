@@ -30,9 +30,7 @@ func (writerBufferMutationRule) Run(pass *Pass) {
 		for _, block := range function.Blocks {
 			for _, instruction := range block.Instrs {
 				if modifiesWriterBuffer(instruction, buffer) {
-					pass.Report(positionNode{
-						position: instruction.Pos(),
-					}, "io.Writer.Write must not modify the provided buffer, even temporarily")
+					pass.ReportPos(instruction.Pos(), "io.Writer.Write must not modify the provided buffer, even temporarily")
 				}
 			}
 		}

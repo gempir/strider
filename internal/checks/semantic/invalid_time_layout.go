@@ -37,13 +37,11 @@ func (invalidTimeParseRule) Run(pass *Pass) {
 		layout = strings.ReplaceAll(layout, "_", " ")
 		layout = strings.ReplaceAll(layout, "Z", "-")
 		if _, err := time.Parse(layout, layout); err != nil {
-			node := calls[call.Pos()]
-			if node == nil {
-				node = positionNode{
-					position: call.Pos(),
-				}
+			if node := calls[call.Pos()]; node != nil {
+				pass.Report(node, err.Error())
+			} else {
+				pass.ReportPos(call.Pos(), err.Error())
 			}
-			pass.Report(node, err.Error())
 		}
 	}
 }

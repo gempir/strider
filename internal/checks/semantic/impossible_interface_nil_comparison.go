@@ -66,9 +66,7 @@ func (impossibleInterfaceNilComparisonRule) Run(pass *Pass) {
 				if binary.Op == token.NEQ {
 					truth = "always"
 				}
-				pass.Report(positionNode{
-					position: binary.Pos(),
-				}, "interface has a concrete dynamic type; this comparison is "+truth+" true")
+				pass.ReportPos(binary.Pos(), "interface has a concrete dynamic type; this comparison is "+truth+" true")
 			}
 		}
 	}

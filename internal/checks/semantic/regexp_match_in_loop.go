@@ -37,12 +37,7 @@ func (regexpMatchInLoopRule) Run(pass *Pass) {
 				if name == "" || !ssaStringConstant(call.Common().Args[0]) {
 					continue
 				}
-				pass.Report(
-					positionNode{
-						position: call.Pos(),
-					},
-					fmt.Sprintf("regexp.%s recompiles a constant pattern on every loop iteration; compile it once before the loop", name),
-				)
+				pass.ReportPos(call.Pos(), fmt.Sprintf("regexp.%s recompiles a constant pattern on every loop iteration; compile it once before the loop", name))
 			}
 		}
 	}

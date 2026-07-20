@@ -58,12 +58,7 @@ func (possibleNilDereferenceRule) Run(pass *Pass) {
 					}
 				}
 				if matched && !protected {
-					pass.Report(
-						positionNode{
-							position: instruction.Pos(),
-						},
-						"pointer is dereferenced on a path where its nil check does not prove it is non-nil",
-					)
+					pass.ReportPos(instruction.Pos(), "pointer is dereferenced on a path where its nil check does not prove it is non-nil")
 				}
 			}
 		}

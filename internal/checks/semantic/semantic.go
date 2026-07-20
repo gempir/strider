@@ -2,7 +2,7 @@ package semantic
 
 import (
 	"fmt"
-	"go/ast"
+	"go/token"
 	"go/types"
 	"os"
 	"path/filepath"
@@ -270,26 +270,26 @@ func runAnalysisTask(task analysisTask, registry *Registry, fileInfoFor func(str
 	pass := *task.pass
 	pass.maxMethods = registry.settings[meta.Code].config.MaxMethods
 	findings := []analysisFinding{}
-	pass.report = func(node ast.Node, message string, fixes []diagnostic.Fix) {
-		position := pass.FileSet.Position(node.Pos())
+	pass.report = func(start, end token.Pos, message string, fixes []diagnostic.Fix) {
+		position := pass.FileSet.Position(start)
 		info := fileInfoFor(position.Filename)
 		if !info.eligible || registry.Excluded(meta.Code, info.filename) {
 			return
 		}
-		end := pass.FileSet.Position(node.End())
+		endPosition := pass.FileSet.Position(end)
 		position.Filename = info.display
-		end.Filename = info.display
+		endPosition.Filename = info.display
 		findings = append(
 			findings,
 			analysisFinding{
-				key: fmt.Sprintf("%s:%d:%d:%s:%s", info.filename, position.Offset, end.Offset, meta.Code, message),
+				key: fmt.Sprintf("%s:%d:%d:%s:%s", info.filename, position.Offset, endPosition.Offset, meta.Code, message),
 				diagnostic: diagnostic.Diagnostic{
 					Code:     meta.Code,
 					Message:  message,
 					Severity: severity,
 					File:     info.display,
 					Start:    position,
-					End:      end,
+					End:      endPosition,
 					Fixes:    fixes,
 				},
 			},

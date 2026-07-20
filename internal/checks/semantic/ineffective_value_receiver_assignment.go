@@ -42,10 +42,8 @@ func (ineffectiveValueReceiverAssignmentRule) Run(pass *Pass) {
 				if anyReadReachableAfter(store, reads[field]) {
 					continue
 				}
-				pass.Report(
-					positionNode{
-						position: store.Pos(),
-					},
+				pass.ReportPos(
+					store.Pos(),
 					fmt.Sprintf(
 						"assignment to value receiver field %s.%s has no observable effect",
 						receiverTypeName(receiver.Type()),

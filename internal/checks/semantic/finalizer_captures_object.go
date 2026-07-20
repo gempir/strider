@@ -31,12 +31,7 @@ func (finalizerCapturesObjectRule) Run(pass *Pass) {
 		if !ok || !closureCapturesFinalizerObject(closure, object) {
 			continue
 		}
-		pass.Report(
-			positionNode{
-				position: call.Pos(),
-			},
-			"finalizer captures the finalized object and prevents it from being collected; use the finalizer parameter instead",
-		)
+		pass.ReportPos(call.Pos(), "finalizer captures the finalized object and prevents it from being collected; use the finalizer parameter instead")
 	}
 }
 

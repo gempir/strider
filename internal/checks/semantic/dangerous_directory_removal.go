@@ -30,12 +30,7 @@ func (dangerousDirectoryRemovalRule) Run(pass *Pass) {
 		if helper == "" {
 			continue
 		}
-		pass.Report(
-			positionNode{
-				position: call.Pos(),
-			},
-			fmt.Sprintf("os.RemoveAll receives the entire %s directory from os.%s; remove only an application-owned subdirectory", kind, helper),
-		)
+		pass.ReportPos(call.Pos(), fmt.Sprintf("os.RemoveAll receives the entire %s directory from os.%s; remove only an application-owned subdirectory", kind, helper))
 	}
 }
 

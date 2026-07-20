@@ -32,12 +32,7 @@ func (timerResetDrainRaceRule) Run(pass *Pass) {
 				}
 				for _, conditional := range conditionalUses(call) {
 					if conditionBranchesReceiveTime(conditional) {
-						pass.Report(
-							positionNode{
-								position: call.Pos(),
-							},
-							"do not use Timer.Reset's return value to decide whether to drain the timer channel",
-						)
+						pass.ReportPos(call.Pos(), "do not use Timer.Reset's return value to decide whether to drain the timer channel")
 						break
 					}
 				}

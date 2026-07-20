@@ -41,9 +41,7 @@ func (randomBoundOneRule) Run(pass *Pass) {
 			if bound == nil || bound.Value == nil || bound.Value.Kind() != constant.Int || !constant.Compare(bound.Value, token.EQL, constant.MakeInt64(1)) {
 				continue
 			}
-			pass.Report(positionNode{
-				position: call.Pos(),
-			}, fmt.Sprintf("%s with an upper bound of one always returns zero", name))
+			pass.ReportPos(call.Pos(), fmt.Sprintf("%s with an upper bound of one always returns zero", name))
 		}
 	}
 }

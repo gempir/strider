@@ -126,9 +126,7 @@ func (discardedPureResultRule) Run(pass *Pass) {
 				if callee == nil || callee.Object() == nil || !purity.pure(callee) {
 					continue
 				}
-				pass.Report(positionNode{
-					position: call.Pos(),
-				}, fmt.Sprintf("%s has no side effects and its return value is ignored", callee.Object().Name()))
+				pass.ReportPos(call.Pos(), fmt.Sprintf("%s has no side effects and its return value is ignored", callee.Object().Name()))
 			}
 		}
 	}

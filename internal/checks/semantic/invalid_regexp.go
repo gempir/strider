@@ -2,7 +2,6 @@ package semantic
 
 import (
 	"go/constant"
-	"go/token"
 	"regexp"
 
 	"golang.org/x/tools/go/ssa"
@@ -11,10 +10,6 @@ import (
 )
 
 type invalidRegexpRule struct{}
-
-type positionNode struct {
-	position token.Pos
-}
 
 func (invalidRegexpRule) Meta() Meta {
 	return Meta{
@@ -38,13 +33,11 @@ func (invalidRegexpRule) Run(pass *Pass) {
 			continue
 		}
 		if _, err := regexp.Compile(constant.StringVal(value.Value)); err != nil {
-			node := calls[call.Pos()]
-			if node == nil {
-				node = positionNode{
-					position: call.Pos(),
-				}
+			if node := calls[call.Pos()]; node != nil {
+				pass.Report(node, err.Error())
+			} else {
+				pass.ReportPos(call.Pos(), err.Error())
 			}
-			pass.Report(node, err.Error())
 		}
 	}
 }
@@ -81,12 +74,4 @@ func ssaConstant(value ssa.Value) *ssa.Const {
 	default:
 		return nil
 	}
-}
-
-func (node positionNode) Pos() token.Pos {
-	return node.position
-}
-
-func (node positionNode) End() token.Pos {
-	return node.position
 }

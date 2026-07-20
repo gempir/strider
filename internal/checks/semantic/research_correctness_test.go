@@ -627,9 +627,9 @@ func runResearchCorrectnessRule(t *testing.T, rule Rule, source string) []resear
 			ssaPackage,
 		})[ssaPackage],
 	}
-	pass.report = func(node ast.Node, message string, _ []diagnostic.Fix) {
+	pass.report = func(start, _ token.Pos, message string, _ []diagnostic.Fix) {
 		reports = append(reports, researchCorrectnessReport{
-			position: fileSet.Position(node.Pos()),
+			position: fileSet.Position(start),
 			message:  message,
 		})
 	}

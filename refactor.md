@@ -29,6 +29,11 @@ Run `make check && make test` after every step; run `make corpus-check` and
 
 Cheap, mechanical, and shrinks everything that follows.
 
+> Audit (2026-07-20): verified every checked Phase 0 deletion against the
+> current tree. The original command cleanup only removed `lint`/`analyze`
+> from dispatch; the follow-up audit also deleted their unreachable handlers,
+> duplicate list/explain/report paths, and now-unused capability-routing glue.
+
 - [x] **Delete `UsesCST` + `cstRuleCodes`** in
   `internal/checks/syntax/rules/cst_engine.go:11-149`. `UsesCST` has zero
   callers; `cstRuleCodes` is a 96-line hand-maintained copy of the catalog

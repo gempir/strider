@@ -97,7 +97,7 @@ func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
 	registry := &Registry{
 		settings:   make(map[string]configuredCheck, len(all)),
 		knownCodes: selection.KnownCodes,
-		root:       options.Root,
+		root:       source.ResolveRoot(options.Root),
 	}
 	for _, check := range selection.Checks {
 		meta := check.Meta()
@@ -334,7 +334,7 @@ func analyzeTree(filename string, concreteTree *cst.Tree, activeChecks []builtin
 	concreteIgnores, concreteNodes := concreteSuppressions(concreteTree)
 	context := &Context{
 		filename:        filename,
-		displayFilename: source.DisplayPath(filename),
+		displayFilename: source.DiagnosticPath(registry.root, filename),
 		concreteIgnores: concreteIgnores,
 		concreteNodes:   concreteNodes,
 	}

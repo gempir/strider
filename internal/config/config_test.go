@@ -190,11 +190,11 @@ func TestLoadTracksExplicitZeroValuedCheckOptions(t *testing.T) {
 		t.Fatal(err)
 	}
 	check := configuration.Checks.Settings["no-init"]
-	if !check.HasExplicitOption("max-lines") {
-		t.Fatal("explicit max-lines = 0 was not retained for check-specific validation")
+	if check.MaxLines == nil || *check.MaxLines != 0 {
+		t.Fatalf("max-lines = %v, want explicit zero", check.MaxLines)
 	}
-	if check.HasExplicitOption("max-methods") {
-		t.Fatal("omitted option was marked explicit")
+	if check.MaxMethods != nil {
+		t.Fatalf("max-methods = %v, want unset", check.MaxMethods)
 	}
 }
 

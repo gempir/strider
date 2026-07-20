@@ -11,6 +11,7 @@ import (
 	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/diagnostic"
 	"github.com/gempir/strider/internal/pathfilter"
+	"github.com/gempir/strider/internal/source"
 )
 
 // RegistryOptions selects and configures checks.
@@ -41,6 +42,7 @@ type configuredCheck struct {
 // NewRegistry builds one namespace across formatting, CST, AST, type, and SSA
 // checks. Codes are case-insensitive and globally unique.
 func NewRegistry(options RegistryOptions) (*Registry, error) {
+	options.Root = source.ResolveRoot(options.Root)
 	available, syntaxCodes, semanticCodes, err := availableChecks()
 	if err != nil {
 		return nil, err

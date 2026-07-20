@@ -151,28 +151,24 @@ func planFiles(changes []Change, guards []Guard) ([]plannedFile, error) {
 	sort.Slice(raw, func(left, right int) bool {
 		return raw[left].paths[0] < raw[right].paths[0]
 	})
-	infos := make([]os.FileInfo, len(raw))
+	resolvedFiles := make([]ResolvedFile, len(raw))
 	identities := make(map[[sha256.Size]byte][]int)
 	for index := range raw {
-		target, err := filepath.EvalSymlinks(raw[index].paths[0])
+		resolved, err := ResolveExisting(raw[index].paths[0])
 		if err != nil {
-			return nil, fmt.Errorf("resolve %s: %w", raw[index].paths[0], err)
+			return nil, err
 		}
-		raw[index].target = filepath.Clean(target)
+		raw[index].target = resolved.Target
 		if raw[index].expectedTarget != "" && raw[index].expectedTarget != raw[index].target {
 			return nil, staleError(raw[index].paths[0], "resolved target differs from analyzed target")
 		}
-		info, err := os.Stat(raw[index].target)
-		if err != nil {
-			return nil, fmt.Errorf("stat %s: %w", raw[index].target, err)
-		}
 		digest := sha256.Sum256(raw[index].before)
 		for _, previous := range identities[digest] {
-			if raw[previous].target != raw[index].target && os.SameFile(infos[previous], info) {
+			if raw[previous].target != raw[index].target && resolvedFiles[previous].Same(resolved) {
 				return nil, fmt.Errorf("filewrite: %s and %s identify the same filesystem file", raw[previous].paths[0], raw[index].paths[0])
 			}
 		}
-		infos[index] = info
+		resolvedFiles[index] = resolved
 		identities[digest] = append(identities[digest], index)
 	}
 	sort.Slice(

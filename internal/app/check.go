@@ -11,10 +11,12 @@ import (
 	"time"
 
 	"github.com/gempir/strider/internal/checks"
+	"github.com/gempir/strider/internal/checks/semantic"
 	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/diagnostic"
 	"github.com/gempir/strider/internal/fix"
 	"github.com/gempir/strider/internal/formatter"
+	"github.com/gempir/strider/internal/report"
 	"github.com/gempir/strider/internal/ui"
 	"github.com/gempir/strider/internal/workspace"
 )
@@ -238,7 +240,7 @@ func runCheckOnce(execution checkExecution) (int, error) {
 	}
 	var snapshot fix.Snapshot
 	if execution.fix {
-		snapshot, err = fix.Capture(shared)
+		snapshot, err = fix.Capture(shared, execution.configuration.Root)
 		if err != nil {
 			return exitError, err
 		}
@@ -293,6 +295,7 @@ func applyCheckFixes(execution checkExecution, snapshot fix.Snapshot, diagnostic
 			Formatter:      execution.runOptions.Formatter,
 			Root:           execution.configuration.Root,
 			FormatExcludes: formatExcludes,
+			Validate:       semantic.ValidateOverlay,
 		},
 	)
 	if err != nil {
@@ -416,15 +419,17 @@ func prepareCheckDiagnostics(diagnostics []diagnostic.Diagnostic, baselineConfig
 
 func reportCheckDiagnostics(stdout io.Writer, diagnostics []diagnostic.Diagnostic, reportFormat string, summaryOnly bool, colorMode ui.ColorMode) error {
 	if reportFormat == "json" {
-		return checks.ReportJSON(stdout, diagnostics)
+		return report.JSON(stdout, diagnostics)
 	}
 	if reportFormat == "html" {
-		return checks.ReportHTML(stdout, diagnostics)
+		return report.HTML(stdout, "Strider check report", diagnostics)
 	}
 	if summaryOnly {
-		return checks.ReportSummary(stdout, diagnostics, colorMode)
+		return report.TextWithOptions(stdout, diagnostics, colorMode, report.TextOptions{
+			SummaryOnly: true,
+		})
 	}
-	return checks.ReportText(stdout, diagnostics, colorMode)
+	return report.Text(stdout, diagnostics, colorMode)
 }
 
 func listChecksInRegistry(registry *checks.Registry, colorMode ui.ColorMode, stdout io.Writer) int {
@@ -452,7 +457,7 @@ func explainCheck(registry *checks.Registry, code string, colorMode ui.ColorMode
 		fmt.Fprintf(
 			stdout,
 			"%s (%s)\n\n%s\n\n%s\n%s\n\n%s\n%s\n",
-			colorSeverityText(registry.Severity(meta.Code), meta.Code, palette),
+			report.StyleSeverity(registry.Severity(meta.Code), meta.Code, palette),
 			colorSeverity(registry.Severity(meta.Code), palette),
 			meta.Explanation,
 			palette.Success("Good:"),

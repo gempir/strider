@@ -4,7 +4,6 @@ package report
 import (
 	"fmt"
 	"io"
-	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -42,8 +41,7 @@ func Text(writer io.Writer, diagnostics []diagnostic.Diagnostic, colorMode ui.Co
 // TextWithOptions writes diagnostics according to options.
 func TextWithOptions(writer io.Writer, diagnostics []diagnostic.Diagnostic, colorMode ui.ColorMode, options TextOptions) error {
 	palette := ui.NewPalette(writer, colorMode)
-	sources := make(map[string][]string)
-	missing := make(map[string]bool)
+	sources := newSourceLineCache("")
 	counts := make(map[diagnostic.Severity]int)
 	fixCounts := make(map[fixability]int)
 	for _, item := range diagnostics {
@@ -66,7 +64,7 @@ func TextWithOptions(writer io.Writer, diagnostics []diagnostic.Diagnostic, colo
 				return err
 			}
 		}
-		if err := writeDiagnostic(writer, item, palette, sources, missing); err != nil {
+		if err := writeDiagnostic(writer, item, palette, sources); err != nil {
 			return err
 		}
 	}
@@ -116,8 +114,8 @@ func writeCheckCounts(writer io.Writer, diagnostics []diagnostic.Diagnostic, pal
 	for _, entry := range entries {
 		marker := fixabilityMarker(entry.fixability, palette)
 		padding := codeWidth - utf8.RuneCountInString(entry.code) - fixabilityWidth(entry.fixability)
-		code := styledSeverity(entry.severity, entry.code, palette) + marker + strings.Repeat(" ", padding)
-		count := styledSeverity(entry.severity, strconv.Itoa(entry.count), palette)
+		code := StyleSeverity(entry.severity, entry.code, palette) + marker + strings.Repeat(" ", padding)
+		count := StyleSeverity(entry.severity, strconv.Itoa(entry.count), palette)
 		if _, err := fmt.Fprintf(writer, "%s  %s\n", code, count); err != nil {
 			return err
 		}
@@ -125,12 +123,12 @@ func writeCheckCounts(writer io.Writer, diagnostics []diagnostic.Diagnostic, pal
 	return nil
 }
 
-func writeDiagnostic(writer io.Writer, item diagnostic.Diagnostic, palette ui.Palette, sources map[string][]string, missing map[string]bool) error {
-	code := styledSeverity(item.Severity, item.Code, palette) + fixabilityMarker(diagnosticFixability(item), palette)
+func writeDiagnostic(writer io.Writer, item diagnostic.Diagnostic, palette ui.Palette, sources *sourceLineCache) error {
+	code := StyleSeverity(item.Severity, item.Code, palette) + fixabilityMarker(diagnosticFixability(item), palette)
 	if _, err := fmt.Fprintf(writer, "%s: %s\n", code, palette.Bold(item.Message)); err != nil {
 		return err
 	}
-	lines := sourceLines(item.File, sources, missing)
+	lines := sources.read(item.File)
 	contextStart, contextEnd := sourceContext(item.Start.Line, len(lines))
 	widthLine := max(item.Start.Line, 1)
 	if contextEnd > 0 {
@@ -205,23 +203,6 @@ func sourceContext(line, lineCount int) (int, int) {
 	return max(line-1, 1), min(line+1, lineCount)
 }
 
-func sourceLines(filename string, cache map[string][]string, missing map[string]bool) []string {
-	if lines, ok := cache[filename]; ok {
-		return lines
-	}
-	if missing[filename] {
-		return nil
-	}
-	contents, err := os.ReadFile(filename)
-	if err != nil {
-		missing[filename] = true
-		return nil
-	}
-	lines := strings.Split(strings.ReplaceAll(string(contents), "\r\n", "\n"), "\n")
-	cache[filename] = lines
-	return lines
-}
-
 func sourceSpan(item diagnostic.Diagnostic, line string) (int, int) {
 	start := min(max(item.Start.Column-1, 0), len(line))
 	if item.End.Line == item.Start.Line && item.End.Column > item.Start.Column {
@@ -236,10 +217,11 @@ func styledSourceSpan(item diagnostic.Diagnostic, line string, palette ui.Palett
 	if start == end {
 		return line
 	}
-	return line[:start] + styledSeverity(item.Severity, line[start:end], palette) + line[end:]
+	return line[:start] + StyleSeverity(item.Severity, line[start:end], palette) + line[end:]
 }
 
-func styledSeverity(severity diagnostic.Severity, text string, palette ui.Palette) string {
+// StyleSeverity applies the shared terminal style for a diagnostic severity.
+func StyleSeverity(severity diagnostic.Severity, text string, palette ui.Palette) string {
 	switch severity {
 	case diagnostic.SeverityError:
 		return palette.Error(text)
@@ -270,7 +252,7 @@ func summary(diagnostics []diagnostic.Diagnostic, counts map[diagnostic.Severity
 	} {
 		if count := counts[severity]; count != 0 {
 			part := fmt.Sprintf("%d %s", count, plural(string(severity), count))
-			parts = append(parts, styledSeverity(severity, part, palette))
+			parts = append(parts, StyleSeverity(severity, part, palette))
 		}
 	}
 	if count := fixCounts[safelyFixable]; count != 0 {

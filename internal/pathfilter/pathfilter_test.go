@@ -29,3 +29,12 @@ func TestMatchesPrefixesAndDoublestarGlobs(t *testing.T) {
 		t.Fatal("unrelated glob matched")
 	}
 }
+
+func TestExcludedResolvesDiagnosticPathsFromRoot(t *testing.T) {
+	root := t.TempDir()
+	if !Excluded(root, "internal/generated.go", []string{
+		"internal/**",
+	}) {
+		t.Fatal("root-relative diagnostic path did not match")
+	}
+}

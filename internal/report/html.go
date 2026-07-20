@@ -3,11 +3,8 @@ package report
 import (
 	"html/template"
 	"io"
-	"os"
-	"path/filepath"
 	"sort"
 	"strconv"
-	"strings"
 	"unicode/utf8"
 
 	"github.com/gempir/strider/internal/diagnostic"
@@ -280,8 +277,7 @@ func HTMLWithOptions(writer io.Writer, options HTMLOptions, diagnostics []diagno
 	displayed := limitedDiagnostics(diagnostics, options.MaxDiagnostics)
 	data.Shown = len(displayed)
 	data.Omitted = len(diagnostics) - len(displayed)
-	sources := make(map[string][]string)
-	missing := make(map[string]bool)
+	sources := newSourceLineCache(options.SourceRoot)
 	for _, item := range displayed {
 		entry := htmlDiagnostic{
 			Code:     item.Code,
@@ -290,7 +286,7 @@ func HTMLWithOptions(writer io.Writer, options HTMLOptions, diagnostics []diagno
 			File:     item.File,
 			Location: htmlLocation(item),
 			Where:    htmlWhere(item),
-			Source:   htmlSourceContext(item, options.SourceRoot, sources, missing),
+			Source:   htmlSourceContext(item, sources),
 			Notes:    item.Notes,
 			Fixes:    item.Fixes,
 		}
@@ -389,24 +385,11 @@ func htmlWhere(item diagnostic.Diagnostic) string {
 	return where
 }
 
-func htmlSourceContext(item diagnostic.Diagnostic, root string, cache map[string][]string, missing map[string]bool) []htmlSourceLine {
+func htmlSourceContext(item diagnostic.Diagnostic, sources *sourceLineCache) []htmlSourceLine {
 	if item.Start.Line <= 0 {
 		return nil
 	}
-	filename := item.File
-	if root != "" && !filepath.IsAbs(filename) {
-		filename = filepath.Join(root, filepath.FromSlash(filename))
-	}
-	lines, ok := cache[filename]
-	if !ok && !missing[filename] {
-		contents, err := os.ReadFile(filename)
-		if err != nil {
-			missing[filename] = true
-		} else {
-			lines = strings.Split(strings.ReplaceAll(string(contents), "\r\n", "\n"), "\n")
-			cache[filename] = lines
-		}
-	}
+	lines := sources.read(item.File)
 	if item.Start.Line > len(lines) {
 		return nil
 	}

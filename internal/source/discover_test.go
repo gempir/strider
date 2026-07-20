@@ -73,3 +73,17 @@ func TestDiscoverAllowsExplicitHiddenDirectory(t *testing.T) {
 		t.Fatalf("got %v, want explicit hidden source %s", files, absolute)
 	}
 }
+
+func TestDiagnosticPathIsRootRelativeAndSlashSeparated(t *testing.T) {
+	root := t.TempDir()
+	filename := filepath.Join(root, "internal", "sample.go")
+	if err := os.MkdirAll(filepath.Dir(filename), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filename, []byte("package sample\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if got := DiagnosticPath(root, filename); got != "internal/sample.go" {
+		t.Fatalf("diagnostic path = %q", got)
+	}
+}

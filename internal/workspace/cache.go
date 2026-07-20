@@ -1,7 +1,6 @@
 package workspace
 
 import (
-	"bufio"
 	"bytes"
 	"crypto/sha256"
 	"fmt"
@@ -163,7 +162,7 @@ func (cache *Cache) Open(paths []string, options Options) (*Workspace, error) {
 		if readErr != nil {
 			return nil, fmt.Errorf("read workspace file %s: %w", filename, readErr)
 		}
-		if options.SkipGenerated && generatedSource(contents) {
+		if options.SkipGenerated && source.IsGeneratedSource(contents) {
 			continue
 		}
 		captured = append(captured, capturedFile{
@@ -300,19 +299,4 @@ func estimatedCSTBytes(source []byte) int64 {
 		return cstEstimateFloor
 	}
 	return estimate
-}
-
-func generatedSource(contents []byte) bool {
-	limited := contents
-	if len(limited) > 4096 {
-		limited = limited[:4096]
-	}
-	scanner := bufio.NewScanner(bytes.NewReader(limited))
-	for scanner.Scan() {
-		line := bytes.TrimSpace(scanner.Bytes())
-		if bytes.HasPrefix(line, []byte("// Code generated ")) && bytes.HasSuffix(line, []byte(" DO NOT EDIT.")) {
-			return true
-		}
-	}
-	return false
 }

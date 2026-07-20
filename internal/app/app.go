@@ -12,6 +12,7 @@ import (
 	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/diagnostic"
 	"github.com/gempir/strider/internal/pathfilter"
+	"github.com/gempir/strider/internal/report"
 	"github.com/gempir/strider/internal/ui"
 )
 
@@ -25,6 +26,7 @@ var version = "dev"
 
 type baselineOptions struct {
 	path          string
+	root          string
 	generate      bool
 	prune         bool
 	selectedCodes map[string]bool
@@ -111,20 +113,7 @@ func printCommandError(writer io.Writer, colorMode ui.ColorMode, command, format
 }
 
 func colorSeverity(severity diagnostic.Severity, palette ui.Palette) string {
-	return colorSeverityText(severity, string(severity), palette)
-}
-
-func colorSeverityText(severity diagnostic.Severity, text string, palette ui.Palette) string {
-	switch severity {
-	case diagnostic.SeverityError:
-		return palette.Error(text)
-	case diagnostic.SeverityNote:
-		return palette.Note(text)
-	case diagnostic.SeverityNone:
-		return palette.Muted(text)
-	default:
-		return palette.Warning(text)
-	}
+	return report.StyleSeverity(severity, string(severity), palette)
 }
 
 func writeCheckList(writer io.Writer, palette ui.Palette, entries []checkListEntry) {
@@ -138,7 +127,7 @@ func writeCheckList(writer io.Writer, palette ui.Palette, entries []checkListEnt
 	for _, entry := range entries {
 		code := fmt.Sprintf("%-*s", codeWidth, entry.code)
 		severity := fmt.Sprintf("%-7s", entry.severity)
-		fmt.Fprintf(writer, "%s  %s  %s\n", colorSeverityText(entry.severity, code, palette), colorSeverityText(entry.severity, severity, palette), entry.summary)
+		fmt.Fprintf(writer, "%s  %s  %s\n", report.StyleSeverity(entry.severity, code, palette), report.StyleSeverity(entry.severity, severity, palette), entry.summary)
 	}
 }
 
@@ -187,6 +176,7 @@ func resolveBaselineOptions(
 	}
 	return baselineOptions{
 		path:     path,
+		root:     configuration.Root,
 		generate: generate,
 		prune:    prune,
 	}, true
@@ -197,7 +187,7 @@ func applyBaseline(command string, diagnostics []diagnostic.Diagnostic, options 
 		return diagnostics, false, nil
 	}
 	if options.generate {
-		generated, err := baseline.Generate(options.path, diagnostics)
+		generated, err := baseline.Generate(options.path, options.root, diagnostics)
 		if err != nil {
 			return nil, false, err
 		}
@@ -210,7 +200,7 @@ func applyBaseline(command string, diagnostics []diagnostic.Diagnostic, options 
 	if err != nil {
 		return nil, false, fmt.Errorf("load baseline %s: %w", options.path, err)
 	}
-	result, err := baseline.ApplyCatalogSelection(options.path, loaded, diagnostics, options.selectedCodes, options.knownCodes)
+	result, err := baseline.Apply(options.path, options.root, loaded, diagnostics, options.selectedCodes, options.knownCodes)
 	if err != nil {
 		return nil, false, err
 	}

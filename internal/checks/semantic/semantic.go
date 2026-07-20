@@ -158,7 +158,7 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnos
 					if generatedErr == nil && !generated {
 						entry.info = analysisFileInfo{
 							filename: canonical,
-							display:  source.DisplayPath(canonical),
+							display:  source.DiagnosticPath(registry.root, canonical),
 							eligible: true,
 						}
 					}

@@ -8,11 +8,18 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gempir/strider/internal/checks/semantic"
 	"github.com/gempir/strider/internal/diagnostic"
 	"github.com/gempir/strider/internal/filewrite"
 	"github.com/gempir/strider/internal/formatter"
+	"github.com/gempir/strider/internal/source"
 	"github.com/gempir/strider/internal/workspace"
 )
+
+func planForTest(snapshot Snapshot, diagnostics []diagnostic.Diagnostic, candidates map[string]formatter.Result, options Options) (Result, error) {
+	options.Validate = semantic.ValidateOverlay
+	return Plan(snapshot, diagnostics, candidates, options)
+}
 
 func TestPlanComposesGranularEditsBeforeFormatting(t *testing.T) {
 	filename, before, snapshot := fixFixture(t, "package sample\nfunc ready(value bool)bool{return !!value}\n")
@@ -35,7 +42,7 @@ func TestPlanComposesGranularEditsBeforeFormatting(t *testing.T) {
 		}),
 	}
 
-	result, err := Plan(snapshot, diagnostics, map[string]formatter.Result{
+	result, err := planForTest(snapshot, diagnostics, map[string]formatter.Result{
 		filename: candidate,
 	}, Options{
 		Mode: SafeOnly,
@@ -77,7 +84,7 @@ func TestPlanSafeOnlyAndIncludeUnsafe(t *testing.T) {
 		),
 	}
 
-	safe, err := Plan(snapshot, diagnostics, nil, Options{
+	safe, err := planForTest(snapshot, diagnostics, nil, Options{
 		Mode: SafeOnly,
 	})
 	if err != nil {
@@ -90,7 +97,7 @@ func TestPlanSafeOnlyAndIncludeUnsafe(t *testing.T) {
 		t.Fatalf("safe plan = %#v, source:\n%s", safe, safe.Changes[0].After)
 	}
 
-	all, err := Plan(snapshot, diagnostics, nil, Options{
+	all, err := planForTest(snapshot, diagnostics, nil, Options{
 		Mode: IncludeUnsafe,
 	})
 	if err != nil {
@@ -98,6 +105,30 @@ func TestPlanSafeOnlyAndIncludeUnsafe(t *testing.T) {
 	}
 	if all.Applied != 2 || len(all.Changes) != 1 || !bytes.Contains(all.Changes[0].After, []byte("fixedSafe")) || !bytes.Contains(all.Changes[0].After, []byte("fixedUnsafe")) {
 		t.Fatalf("unsafe plan = %#v, source:\n%s", all, all.Changes[0].After)
+	}
+}
+
+func TestPlanRequiresInjectedValidationForSafeFixes(t *testing.T) {
+	filename, before, snapshot := fixFixture(t, "package sample\n\nvar value = 1\n")
+	start := bytes.Index(before, []byte("value"))
+	_, err := Plan(
+		snapshot,
+		[]diagnostic.Diagnostic{
+			automaticDiagnostic(filename, "rename", diagnostic.Safe, []diagnostic.TextEdit{
+				{
+					Start:   start,
+					End:     start + len("value"),
+					NewText: "other",
+				},
+			}),
+		},
+		nil,
+		Options{
+			Mode: SafeOnly,
+		},
+	)
+	if err == nil || !strings.Contains(err.Error(), "validator is required") {
+		t.Fatalf("Plan error = %v, want missing validator", err)
 	}
 }
 
@@ -121,7 +152,7 @@ func TestPlanSkipsEveryNonIdenticalOverlappingFix(t *testing.T) {
 		}),
 	}
 
-	result, err := Plan(snapshot, diagnostics, nil, Options{
+	result, err := planForTest(snapshot, diagnostics, nil, Options{
 		Mode: IncludeUnsafe,
 	})
 	if err != nil {
@@ -147,7 +178,7 @@ func TestPlanCoalescesOnlyIdenticalAtomicFixes(t *testing.T) {
 		automaticDiagnostic(filename, "second", diagnostic.Unsafe, edits),
 	}
 
-	result, err := Plan(snapshot, diagnostics, nil, Options{
+	result, err := planForTest(snapshot, diagnostics, nil, Options{
 		Mode: IncludeUnsafe,
 	})
 	if err != nil {
@@ -185,7 +216,7 @@ func TestPlanKeepsPartiallySharedFixesAtomic(t *testing.T) {
 		}),
 	}
 
-	result, err := Plan(snapshot, diagnostics, nil, Options{
+	result, err := planForTest(snapshot, diagnostics, nil, Options{
 		Mode: IncludeUnsafe,
 	})
 	if err != nil {
@@ -207,7 +238,7 @@ func TestPlanUsesByteOffsetsWithUTF8AndCRLF(t *testing.T) {
 		},
 	})
 
-	result, err := Plan(snapshot, []diagnostic.Diagnostic{
+	result, err := planForTest(snapshot, []diagnostic.Diagnostic{
 		item,
 	}, nil, Options{
 		Mode: IncludeUnsafe,
@@ -228,7 +259,7 @@ func TestPlanRejectsInvalidRangesAndAutomaticAlternatives(t *testing.T) {
 			End:   len(before) + 1,
 		},
 	})
-	if _, err := Plan(snapshot, []diagnostic.Diagnostic{
+	if _, err := planForTest(snapshot, []diagnostic.Diagnostic{
 		invalid,
 	}, nil, Options{
 		Mode: IncludeUnsafe,
@@ -238,7 +269,7 @@ func TestPlanRejectsInvalidRangesAndAutomaticAlternatives(t *testing.T) {
 
 	alternatives := invalid
 	alternatives.Fixes = append(alternatives.Fixes, alternatives.Fixes[0])
-	if _, err := Plan(snapshot, []diagnostic.Diagnostic{
+	if _, err := planForTest(snapshot, []diagnostic.Diagnostic{
 		alternatives,
 	}, nil, Options{
 		Mode: IncludeUnsafe,
@@ -253,7 +284,7 @@ func TestPlanRejectsInvalidRangesAndAutomaticAlternatives(t *testing.T) {
 			OldText: "missing",
 		},
 	})
-	if _, err := Plan(snapshot, []diagnostic.Diagnostic{
+	if _, err := planForTest(snapshot, []diagnostic.Diagnostic{
 		staleEdit,
 	}, nil, Options{
 		Mode: IncludeUnsafe,
@@ -272,7 +303,7 @@ func TestPlanRejectsSafeFixThatDoesNotTypeCheck(t *testing.T) {
 			NewText: "missing",
 		},
 	})
-	if _, err := Plan(snapshot, []diagnostic.Diagnostic{
+	if _, err := planForTest(snapshot, []diagnostic.Diagnostic{
 		item,
 	}, nil, Options{
 		Mode: SafeOnly,
@@ -291,7 +322,7 @@ func TestApplyRejectsStaleSource(t *testing.T) {
 			NewText: "other",
 		},
 	})
-	result, err := Plan(snapshot, []diagnostic.Diagnostic{
+	result, err := planForTest(snapshot, []diagnostic.Diagnostic{
 		item,
 	}, nil, Options{
 		Mode: IncludeUnsafe,
@@ -336,7 +367,7 @@ func TestApplyGuardsUnchangedAnalyzedFiles(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	snapshot, err := Capture(shared)
+	snapshot, err := Capture(shared, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -348,7 +379,7 @@ func TestApplyGuardsUnchangedAnalyzedFiles(t *testing.T) {
 			NewText: "otherValue",
 		},
 	})
-	result, err := Plan(snapshot, []diagnostic.Diagnostic{
+	result, err := planForTest(snapshot, []diagnostic.Diagnostic{
 		item,
 	}, nil, Options{
 		Mode: IncludeUnsafe,
@@ -398,7 +429,7 @@ func TestApplyRejectsRetargetedSourceSymlink(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	snapshot, err := Capture(shared)
+	snapshot, err := Capture(shared, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -410,7 +441,7 @@ func TestApplyRejectsRetargetedSourceSymlink(t *testing.T) {
 			NewText: "other",
 		},
 	})
-	result, err := Plan(snapshot, []diagnostic.Diagnostic{
+	result, err := planForTest(snapshot, []diagnostic.Diagnostic{
 		item,
 	}, nil, Options{
 		Mode: IncludeUnsafe,
@@ -461,7 +492,7 @@ func TestCaptureRejectsDuplicateFilesystemIdentity(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Capture(shared); err == nil || !strings.Contains(err.Error(), "same source") {
+	if _, err := Capture(shared, ""); err == nil || !strings.Contains(err.Error(), "same source") {
 		t.Fatalf("Capture error = %v, want duplicate filesystem identity error", err)
 	}
 }
@@ -486,7 +517,7 @@ func TestPlanMatchesFormatterExclusionsAgainstSourceSymlinkPath(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	snapshot, err := Capture(shared)
+	snapshot, err := Capture(shared, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -502,7 +533,7 @@ func TestPlanMatchesFormatterExclusionsAgainstSourceSymlinkPath(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	result, err := Plan(snapshot, []diagnostic.Diagnostic{
+	result, err := planForTest(snapshot, []diagnostic.Diagnostic{
 		item,
 	}, nil, Options{
 		Mode: IncludeUnsafe,
@@ -521,7 +552,7 @@ func TestPlanMatchesFormatterExclusionsAgainstSourceSymlinkPath(t *testing.T) {
 
 func automaticDiagnostic(filename, code string, safety diagnostic.Safety, edits []diagnostic.TextEdit) diagnostic.Diagnostic {
 	return diagnostic.Diagnostic{
-		File: filename,
+		File: source.DiagnosticPath("", filename),
 		Code: code,
 		Fixes: []diagnostic.Fix{
 			{
@@ -551,7 +582,7 @@ func fixFixture(t *testing.T, contents string) (string, []byte, Snapshot) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	snapshot, err := Capture(shared)
+	snapshot, err := Capture(shared, "")
 	if err != nil {
 		t.Fatal(err)
 	}

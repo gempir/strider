@@ -17,17 +17,6 @@ import (
 
 const Filename = "strider.toml"
 
-var behavioralCheckOptions = []string{
-	"characters",
-	"max-lines",
-	"max-statements",
-	"max-results",
-	"max-parameters",
-	"max-public-structs",
-	"max-methods",
-	"blocked-imports",
-}
-
 // Config is the complete project configuration document.
 type Config struct {
 	Version   int             `toml:"version"`
@@ -63,14 +52,13 @@ type CheckConfig struct {
 	Severity         string   `toml:"severity"`
 	Excludes         []string `toml:"excludes"`
 	Characters       []string `toml:"characters"`
-	MaxLines         int      `toml:"max-lines"`
-	MaxStatements    int      `toml:"max-statements"`
-	MaxResults       int      `toml:"max-results"`
-	MaxParameters    int      `toml:"max-parameters"`
-	MaxPublicStructs int      `toml:"max-public-structs"`
-	MaxMethods       int      `toml:"max-methods"`
+	MaxLines         *int     `toml:"max-lines"`
+	MaxStatements    *int     `toml:"max-statements"`
+	MaxResults       *int     `toml:"max-results"`
+	MaxParameters    *int     `toml:"max-parameters"`
+	MaxPublicStructs *int     `toml:"max-public-structs"`
+	MaxMethods       *int     `toml:"max-methods"`
 	BlockedImports   []string `toml:"blocked-imports"`
-	definedOptions   map[string]bool
 }
 
 func Defaults() Config {
@@ -142,28 +130,12 @@ func Load(explicitPath string, disabled bool) (Config, error) {
 		sort.Strings(keys)
 		return Config{}, fmt.Errorf("%s: unknown configuration key(s): %s", absolute, strings.Join(keys, ", "))
 	}
-	recordDefinedCheckOptions(&configuration, metadata)
 	configuration.Path = absolute
 	configuration.Root = filepath.Dir(absolute)
 	if err := configuration.validate(); err != nil {
 		return Config{}, fmt.Errorf("%s: %w", absolute, err)
 	}
 	return configuration, nil
-}
-
-func recordDefinedCheckOptions(configuration *Config, metadata toml.MetaData) {
-	for code, check := range configuration.Checks.Settings {
-		for _, option := range behavioralCheckOptions {
-			if !metadata.IsDefined("checks", code, option) {
-				continue
-			}
-			if check.definedOptions == nil {
-				check.definedOptions = make(map[string]bool)
-			}
-			check.definedOptions[option] = true
-		}
-		configuration.Checks.Settings[code] = check
-	}
 }
 
 func decodeCheck(destination *ToolConfig, values map[string]toml.Primitive, metadata toml.MetaData) error {
@@ -202,10 +174,52 @@ func decodeChecks(destination *ToolConfig, values map[string]toml.Primitive, met
 	return nil
 }
 
-// HasExplicitOption reports whether a behavioral option was present in the
-// decoded TOML, including when its value decoded to the Go zero value.
-func (check CheckConfig) HasExplicitOption(option string) bool {
-	return check.definedOptions[option]
+// ConfiguredOptions returns behavioral option names explicitly present in the
+// decoded configuration.
+func (check CheckConfig) ConfiguredOptions() []string {
+	configured := make([]string, 0, 8)
+	for _, option := range []struct {
+		name    string
+		present bool
+	}{
+		{
+			name:    "characters",
+			present: check.Characters != nil,
+		},
+		{
+			name:    "max-lines",
+			present: check.MaxLines != nil,
+		},
+		{
+			name:    "max-statements",
+			present: check.MaxStatements != nil,
+		},
+		{
+			name:    "max-results",
+			present: check.MaxResults != nil,
+		},
+		{
+			name:    "max-parameters",
+			present: check.MaxParameters != nil,
+		},
+		{
+			name:    "max-public-structs",
+			present: check.MaxPublicStructs != nil,
+		},
+		{
+			name:    "max-methods",
+			present: check.MaxMethods != nil,
+		},
+		{
+			name:    "blocked-imports",
+			present: check.BlockedImports != nil,
+		},
+	} {
+		if option.present {
+			configured = append(configured, option.name)
+		}
+	}
+	return configured
 }
 
 func discover() (string, error) {
@@ -251,7 +265,7 @@ func validateTool(name string, tool ToolConfig) error {
 		if check.Severity != "" && !diagnostic.ValidSeverity(diagnostic.Severity(check.Severity)) {
 			return fmt.Errorf("%s.%s.severity must be none, note, warning, or error", name, code)
 		}
-		for option, value := range map[string]int{
+		for option, value := range map[string]*int{
 			"max-lines":          check.MaxLines,
 			"max-statements":     check.MaxStatements,
 			"max-results":        check.MaxResults,
@@ -259,7 +273,7 @@ func validateTool(name string, tool ToolConfig) error {
 			"max-public-structs": check.MaxPublicStructs,
 			"max-methods":        check.MaxMethods,
 		} {
-			if value < 0 {
+			if value != nil && *value < 0 {
 				return fmt.Errorf("%s.%s.%s must not be negative", name, code, option)
 			}
 		}
@@ -287,11 +301,19 @@ func cloneCheckConfig(check CheckConfig) CheckConfig {
 	cloned.Excludes = append([]string(nil), check.Excludes...)
 	cloned.Characters = append([]string(nil), check.Characters...)
 	cloned.BlockedImports = append([]string(nil), check.BlockedImports...)
-	if check.definedOptions != nil {
-		cloned.definedOptions = make(map[string]bool, len(check.definedOptions))
-		for option := range check.definedOptions {
-			cloned.definedOptions[option] = true
-		}
-	}
+	cloned.MaxLines = cloneInt(check.MaxLines)
+	cloned.MaxStatements = cloneInt(check.MaxStatements)
+	cloned.MaxResults = cloneInt(check.MaxResults)
+	cloned.MaxParameters = cloneInt(check.MaxParameters)
+	cloned.MaxPublicStructs = cloneInt(check.MaxPublicStructs)
+	cloned.MaxMethods = cloneInt(check.MaxMethods)
 	return cloned
+}
+
+func cloneInt(value *int) *int {
+	if value == nil {
+		return nil
+	}
+	cloned := *value
+	return &cloned
 }

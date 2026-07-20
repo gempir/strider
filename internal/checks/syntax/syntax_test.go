@@ -18,6 +18,10 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
+func intPointer(value int) *int {
+	return &value
+}
+
 func TestInitialChecks(t *testing.T) {
 	source := `package p
 var global = 1
@@ -919,7 +923,7 @@ func TestFileLengthLimitDefaultsTo500AndExplicitZeroDisables(t *testing.T) {
 			},
 			Settings: map[string]config.CheckConfig{
 				"file-length-limit": {
-					MaxLines: 12,
+					MaxLines: intPointer(12),
 				},
 			},
 		},

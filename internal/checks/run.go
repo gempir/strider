@@ -206,7 +206,7 @@ func runConcreteFile(file *workspace.File, registry *Registry, session *formatte
 			return result
 		}
 		if formatted.Changed && !formatted.Ignored {
-			result.diagnostics = append(result.diagnostics, formatDiagnostic(filename, registry.Severity(formatMeta.Code)))
+			result.diagnostics = append(result.diagnostics, formatDiagnostic(registry.root, filename, registry.Severity(formatMeta.Code)))
 			if collectCandidate {
 				result.candidate = &formatted
 			}
@@ -218,8 +218,8 @@ func runConcreteFile(file *workspace.File, registry *Registry, session *formatte
 	return result
 }
 
-func formatDiagnostic(filename string, severity diagnostic.Severity) diagnostic.Diagnostic {
-	display := source.DisplayPath(filename)
+func formatDiagnostic(root, filename string, severity diagnostic.Severity) diagnostic.Diagnostic {
+	display := source.DiagnosticPath(root, filename)
 	position := token.Position{
 		Filename: display,
 		Offset:   0,

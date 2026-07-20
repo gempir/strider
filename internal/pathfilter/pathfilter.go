@@ -13,7 +13,11 @@ func Excluded(root, filename string, patterns []string) bool {
 	if len(patterns) == 0 {
 		return false
 	}
-	absolute, err := filepath.Abs(filename)
+	path := filepath.FromSlash(filename)
+	if root != "" && !filepath.IsAbs(path) {
+		path = filepath.Join(root, path)
+	}
+	absolute, err := filepath.Abs(path)
 	if err != nil {
 		return false
 	}

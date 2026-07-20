@@ -7,6 +7,7 @@ import (
 	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/diagnostic"
 	"github.com/gempir/strider/internal/pathfilter"
+	"github.com/gempir/strider/internal/source"
 )
 
 const (
@@ -242,7 +243,7 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 	registry := &Registry{
 		settings:   make(map[string]configuredCheck, len(all)),
 		knownCodes: selection.KnownCodes,
-		root:       options.Root,
+		root:       source.ResolveRoot(options.Root),
 	}
 	for _, check := range selection.Checks {
 		meta := check.Meta()

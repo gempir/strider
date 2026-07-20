@@ -28,6 +28,7 @@ func TestRunSharesCSTBetweenFormattingAndSyntaxChecks(t *testing.T) {
 			"format",
 			"no-init",
 		},
+		Root: directory,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -75,6 +76,7 @@ func TestRunExcludesFilterDiagnosticsAndCandidates(t *testing.T) {
 			"format",
 			"no-init",
 		},
+		Root: directory,
 	})
 	if err != nil {
 		t.Fatal(err)

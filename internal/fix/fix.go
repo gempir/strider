@@ -6,11 +6,9 @@ import (
 	"fmt"
 	"go/parser"
 	"go/token"
-	"os"
 	"path/filepath"
 	"sort"
 
-	checksemantic "github.com/gempir/strider/internal/checks/semantic"
 	"github.com/gempir/strider/internal/diagnostic"
 	"github.com/gempir/strider/internal/filewrite"
 	"github.com/gempir/strider/internal/formatter"
@@ -38,12 +36,12 @@ type FileSnapshot struct {
 }
 
 // Snapshot captures every discovered source before checks release their
-// workspace caches. aliases is deliberately private: diagnostics may only
-// resolve to files that were part of this workspace.
+// workspace caches. The private diagnostic-path index admits only the single
+// root-relative spelling produced by source.DiagnosticPath.
 type Snapshot struct {
-	Inputs  []string
-	Files   map[string]FileSnapshot
-	aliases map[string]string
+	Inputs                []string
+	Files                 map[string]FileSnapshot
+	filesByDiagnosticPath map[string]string
 }
 
 // Options configures fix selection and post-edit formatting.
@@ -52,6 +50,7 @@ type Options struct {
 	Formatter      formatter.Options
 	Root           string
 	FormatExcludes []string
+	Validate       func(paths []string, sources map[string][]byte) error
 }
 
 // Change is one fully composed and validated file replacement.
@@ -86,37 +85,27 @@ type proposal struct {
 }
 
 // Capture retains the exact source generation that checks will analyze.
-func Capture(shared *workspace.Workspace) (Snapshot, error) {
+func Capture(shared *workspace.Workspace, root string) (Snapshot, error) {
 	if shared == nil {
 		return Snapshot{}, fmt.Errorf("capture fixes: nil workspace")
 	}
 	snapshot := Snapshot{
-		Inputs:  shared.Inputs(),
-		Files:   make(map[string]FileSnapshot),
-		aliases: make(map[string]string),
+		Inputs:                shared.Inputs(),
+		Files:                 make(map[string]FileSnapshot),
+		filesByDiagnosticPath: make(map[string]string),
 	}
 	targets := make(map[string]string)
 	type capturedTarget struct {
 		path     string
-		resolved string
-		info     os.FileInfo
+		resolved filewrite.ResolvedFile
 	}
 	identities := make(map[workspace.ContentIdentity][]capturedTarget)
 	for _, file := range shared.Files() {
-		path, err := filepath.Abs(file.Path())
+		resolved, err := filewrite.ResolveExisting(file.Path())
 		if err != nil {
 			return Snapshot{}, fmt.Errorf("capture fixes for %s: %w", source.DisplayPath(file.Path()), err)
 		}
-		path = filepath.Clean(path)
-		resolved, err := filepath.EvalSymlinks(path)
-		if err != nil {
-			return Snapshot{}, fmt.Errorf("capture fixes for %s: %w", source.DisplayPath(path), err)
-		}
-		resolved = filepath.Clean(resolved)
-		resolved, err = filepath.Abs(resolved)
-		if err != nil {
-			return Snapshot{}, fmt.Errorf("capture fixes for %s: %w", source.DisplayPath(path), err)
-		}
+		path := resolved.Path
 		contents, err := file.Bytes()
 		if err != nil {
 			return Snapshot{}, fmt.Errorf("capture fixes for %s: %w", source.DisplayPath(path), err)
@@ -125,67 +114,36 @@ func Capture(shared *workspace.Workspace) (Snapshot, error) {
 		if err != nil {
 			return Snapshot{}, fmt.Errorf("capture fixes for %s: %w", source.DisplayPath(path), err)
 		}
-		if previous, exists := targets[resolved]; exists && previous != path {
+		if previous, exists := targets[resolved.Target]; exists && previous != path {
 			return Snapshot{}, fmt.Errorf("capture fixes: %s and %s resolve to the same source", source.DisplayPath(previous), source.DisplayPath(path))
 		}
-		info, err := os.Stat(resolved)
-		if err != nil {
-			return Snapshot{}, fmt.Errorf("capture fixes for %s: %w", source.DisplayPath(path), err)
-		}
 		for _, previous := range identities[identity] {
-			if previous.resolved != resolved && os.SameFile(previous.info, info) {
+			if previous.resolved.Target != resolved.Target && previous.resolved.Same(resolved) {
 				return Snapshot{}, fmt.Errorf("capture fixes: %s and %s identify the same source", source.DisplayPath(previous.path), source.DisplayPath(path))
 			}
 		}
-		targets[resolved] = path
+		targets[resolved.Target] = path
 		identities[identity] = append(identities[identity], capturedTarget{
 			path:     path,
 			resolved: resolved,
-			info:     info,
 		})
 		snapshot.Files[path] = FileSnapshot{
 			Path:         path,
-			ResolvedPath: resolved,
+			ResolvedPath: resolved.Target,
 			Before:       append([]byte(nil), contents...),
 			Identity:     identity,
 		}
-		for _, alias := range []string{
-			path,
-			resolved,
-			filepath.ToSlash(path),
-			filepath.ToSlash(resolved),
-			source.DisplayPath(path),
-			source.DisplayPath(resolved),
-		} {
-			if err := snapshot.addAlias(alias, path); err != nil {
-				return Snapshot{}, err
-			}
+		diagnosticPath := source.DiagnosticPath(root, path)
+		if previous, exists := snapshot.filesByDiagnosticPath[diagnosticPath]; exists && previous != path {
+			return Snapshot{}, fmt.Errorf("capture fixes: ambiguous diagnostic path %q", diagnosticPath)
 		}
+		snapshot.filesByDiagnosticPath[diagnosticPath] = path
 	}
 	return snapshot, nil
 }
 
-func (snapshot *Snapshot) addAlias(alias, path string) error {
-	if alias == "" {
-		return nil
-	}
-	if existing, ok := snapshot.aliases[alias]; ok && existing != path {
-		return fmt.Errorf("capture fixes: ambiguous source path %q", alias)
-	}
-	snapshot.aliases[alias] = path
-	cleaned := filepath.Clean(filepath.FromSlash(alias))
-	if existing, ok := snapshot.aliases[cleaned]; ok && existing != path {
-		return fmt.Errorf("capture fixes: ambiguous source path %q", alias)
-	}
-	snapshot.aliases[cleaned] = path
-	return nil
-}
-
 func (snapshot Snapshot) resolve(path string) (FileSnapshot, bool) {
-	resolved, ok := snapshot.aliases[path]
-	if !ok {
-		resolved, ok = snapshot.aliases[filepath.Clean(filepath.FromSlash(path))]
-	}
+	resolved, ok := snapshot.filesByDiagnosticPath[path]
 	if !ok {
 		return FileSnapshot{}, false
 	}
@@ -327,11 +285,14 @@ func Plan(snapshot Snapshot, diagnostics []diagnostic.Diagnostic, candidates map
 	}
 
 	if validateTypes && len(result.Changes) != 0 {
+		if options.Validate == nil {
+			return Result{}, fmt.Errorf("plan fixes: validator is required for safe fixes")
+		}
 		changedPaths := make([]string, 0, len(result.Changes))
 		for _, change := range result.Changes {
 			changedPaths = append(changedPaths, snapshot.Files[change.Path].ResolvedPath)
 		}
-		if err := checksemantic.ValidateOverlay(changedPaths, finalSources); err != nil {
+		if err := options.Validate(changedPaths, finalSources); err != nil {
 			return Result{}, err
 		}
 	}
@@ -514,11 +475,12 @@ func applyEdits(before []byte, proposals []proposal) []byte {
 }
 
 func formatterCandidate(snapshot Snapshot, candidates map[string]formatter.Result, path string) (formatter.Result, bool) {
-	for candidatePath, candidate := range candidates {
-		file, ok := snapshot.resolve(candidatePath)
-		if ok && file.Path == path && candidate.Changed && !candidate.Ignored {
-			return candidate, true
-		}
+	if _, ok := snapshot.Files[path]; !ok {
+		return formatter.Result{}, false
+	}
+	candidate, ok := candidates[path]
+	if ok && candidate.Changed && !candidate.Ignored {
+		return candidate, true
 	}
 	return formatter.Result{}, false
 }

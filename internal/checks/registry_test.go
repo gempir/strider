@@ -11,6 +11,10 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
+func intPointer(value int) *int {
+	return &value
+}
+
 func TestUnifiedRegistryHasGloballyUniqueCodes(t *testing.T) {
 	registry, err := NewRegistry(RegistryOptions{})
 	if err != nil {
@@ -256,14 +260,14 @@ func TestUnifiedRegistryAcceptsOnlySupportedBehavioralOptions(t *testing.T) {
 			},
 		},
 		"file-length-limit": {
-			MaxLines: 500,
+			MaxLines: intPointer(500),
 		},
 		"function-length": {
-			MaxLines:      100,
-			MaxStatements: 60,
+			MaxLines:      intPointer(100),
+			MaxStatements: intPointer(60),
 		},
 		"function-result-limit": {
-			MaxResults: 4,
+			MaxResults: intPointer(4),
 		},
 		"imports-blocklist": {
 			BlockedImports: []string{
@@ -271,13 +275,13 @@ func TestUnifiedRegistryAcceptsOnlySupportedBehavioralOptions(t *testing.T) {
 			},
 		},
 		"interface-method-limit": {
-			MaxMethods: 12,
+			MaxMethods: intPointer(12),
 		},
 		"max-parameters": {
-			MaxParameters: 10,
+			MaxParameters: intPointer(10),
 		},
 		"max-public-structs": {
-			MaxPublicStructs: 8,
+			MaxPublicStructs: intPointer(8),
 		},
 	}
 	for code, setting := range tests {
@@ -300,10 +304,10 @@ func TestUnifiedRegistryAcceptsOnlySupportedBehavioralOptions(t *testing.T) {
 func TestUnifiedRegistryRejectsBehavioralOptionOnWrongCheck(t *testing.T) {
 	tests := map[string]config.CheckConfig{
 		"no-init": {
-			MaxLines: 10,
+			MaxLines: intPointer(10),
 		},
 		"invalid-regexp": {
-			MaxMethods: 3,
+			MaxMethods: intPointer(3),
 		},
 		"format": {
 			BlockedImports: []string{},
@@ -314,7 +318,7 @@ func TestUnifiedRegistryRejectsBehavioralOptionOnWrongCheck(t *testing.T) {
 			},
 		},
 		"interface-method-limit": {
-			MaxParameters: 4,
+			MaxParameters: intPointer(4),
 		},
 	}
 	for code, setting := range tests {

@@ -113,49 +113,9 @@ func Select[T Check](options SelectionOptions[T]) (Selection[T], error) {
 
 // ValidateOptions rejects behavioral settings not declared by meta.
 func ValidateOptions(meta Meta, setting config.CheckConfig) error {
-	configured := []struct {
-		name    string
-		present bool
-	}{
-		{
-			"characters",
-			setting.Characters != nil,
-		},
-		{
-			"max-lines",
-			setting.MaxLines != 0,
-		},
-		{
-			"max-statements",
-			setting.MaxStatements != 0,
-		},
-		{
-			"max-results",
-			setting.MaxResults != 0,
-		},
-		{
-			"max-parameters",
-			setting.MaxParameters != 0,
-		},
-		{
-			"max-public-structs",
-			setting.MaxPublicStructs != 0,
-		},
-		{
-			"max-methods",
-			setting.MaxMethods != 0,
-		},
-		{
-			"blocked-imports",
-			setting.BlockedImports != nil,
-		},
-	}
-	for index := range configured {
-		configured[index].present = configured[index].present || setting.HasExplicitOption(configured[index].name)
-	}
-	for _, option := range configured {
-		if _, supported := meta.Option(option.name); option.present && !supported {
-			return fmt.Errorf("check %q does not support %s", meta.Code, option.name)
+	for _, name := range setting.ConfiguredOptions() {
+		if _, supported := meta.Option(name); !supported {
+			return fmt.Errorf("check %q does not support %s", meta.Code, name)
 		}
 	}
 	return nil
@@ -167,7 +127,7 @@ func IntOption(meta Meta, setting config.CheckConfig, name string) (int, bool) {
 	if !ok || option.Kind != OptionInt {
 		return 0, false
 	}
-	value := 0
+	var value *int
 	switch name {
 	case "max-lines":
 		value = setting.MaxLines
@@ -182,8 +142,8 @@ func IntOption(meta Meta, setting config.CheckConfig, name string) (int, bool) {
 	case "max-methods":
 		value = setting.MaxMethods
 	}
-	if value != 0 || setting.HasExplicitOption(name) {
-		return value, true
+	if value != nil {
+		return *value, true
 	}
 	return option.DefaultInt, true
 }
@@ -201,7 +161,7 @@ func StringsOption(meta Meta, setting config.CheckConfig, name string) ([]string
 	case "blocked-imports":
 		value = setting.BlockedImports
 	}
-	if value != nil || setting.HasExplicitOption(name) {
+	if value != nil {
 		return append([]string(nil), value...), true
 	}
 	return append([]string(nil), option.DefaultStrings...), true

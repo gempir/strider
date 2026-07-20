@@ -56,6 +56,8 @@ Cheap, mechanical, and shrinks everything that follows.
   `internal/app/app.go:1121`), `ui.Palette.Enabled()`,
   `workspace.Workspace.Generation()` (test-only), `cst.Tree.Source()`
   (test-only). Unexport or remove.
+  **Later cleanup:** Phase 4 renamed the sole selection-aware baseline
+  operation back to the concise `Apply` after the obsolete overloads were gone.
 - [x] **Collapse `diagnostic.Safety` to two levels or make three meaningful.**
   `fix.allowed` (`internal/fix/fix.go:372-374`) treats `PotentiallyUnsafe`
   and `Unsafe` identically — the distinction is dead granularity.
@@ -394,35 +396,53 @@ removes `lint`/`analyze`, split what remains:
 
 ## Phase 4 — Package boundaries and de-duplication
 
-- [ ] **One "is generated" implementation.** `source.IsGenerated`
+- [x] **One "is generated" implementation.** `source.IsGenerated`
   (discover.go:123-141) and `workspace.generatedSource` (cache.go:306-319)
   are logic-duplicates on different input types. Put one `[]byte`-based
   function in `source` and use it from both open paths; also fixes the drift
   where `workspace.Open` and `workspace.Cache.Open` apply generated-skipping
   differently.
-- [ ] **One severity→style mapping.** `app.colorSeverityText`
+  **Implemented:** `source.IsGeneratedSource` owns byte-based detection;
+  filename discovery delegates to it and cached workspace opening uses the
+  same function. A parity regression covers both open paths.
+- [x] **One severity→style mapping.** `app.colorSeverityText`
   (app.go:999-1010) ≡ `report.styledSeverity` (text.go:242-253). Let
   `report` (or `ui`) own it.
-- [ ] **One source-line cache.** `report/text.go:208-223` and
+  **Implemented:** exported `report.StyleSeverity` is used by both report
+  rendering and CLI check listings/explanations.
+- [x] **One source-line cache.** `report/text.go:208-223` and
   `report/html.go:400-409` re-implement the same read-file-split-lines cache.
-- [ ] **Collapse the report wrappers.** `checks/report.go`,
+  **Implemented:** text and HTML rendering share `sourceLineCache`, including
+  source-root resolution and missing-file memoization.
+- [x] **Collapse the report wrappers.** `checks/report.go`,
   `syntax/report.go`, `semantic/report.go` are three ~30-line files
   delegating to `internal/report`, differing only in an HTML title. Export
   `report.JSON(w, diags)` and delete all three — presentation code doesn't
   belong in analysis packages.
-- [ ] **Fix the `fix` package layering inversion.** `internal/fix` imports
+  **Implemented:** `internal/report` owns text, JSON, and HTML; the three
+  analysis-package wrapper files are deleted and `app` renders directly.
+- [x] **Fix the `fix` package layering inversion.** `internal/fix` imports
   `internal/checks/semantic` for overlay type-checking (fix.go:13, 334).
   Inject a `Validate func(paths, sources) error` instead — an "apply edits"
   package must not depend on a specific analysis engine.
-- [ ] **Address the path-aliasing symptom.** `fix.Capture` registers six
+  **Implemented:** `fix.Options.Validate` is mandatory for safe changes; the
+  CLI injects `semantic.ValidateOverlay`, and a regression rejects missing
+  validation.
+- [x] **Address the path-aliasing symptom.** `fix.Capture` registers six
   alias strings per file (fix.go:152-180) because diagnostics carry free-form
   path strings. Standardize: diagnostics carry root-relative slash paths,
   produced by one function, consumed everywhere. Then `fix` and `filewrite`
   can share one "resolve + identity-check" primitive instead of duplicating
   symlink/`os.SameFile` logic (fix.go:106-145 vs filewrite.go:154-177).
-- [ ] `source.DisplayPath` calls `os.Getwd()` per invocation and is used in
+  **Implemented:** all engines emit canonical root-relative slash paths via
+  `source.DiagnosticPath`; `fix.Snapshot` keeps one exact diagnostic-path
+  index instead of aliases. `filewrite.ResolveExisting` now supplies shared
+  symlink resolution and filesystem identity checks to both packages.
+- [x] `source.DisplayPath` calls `os.Getwd()` per invocation and is used in
   per-file loops — resolve the working directory once.
-- [ ] `config`: replace the `definedOptions` / `HasExplicitOption` ceremony
+  **Implemented:** the process working directory is captured once; configured
+  diagnostic paths use their explicit project root.
+- [x] `config`: replace the `definedOptions` / `HasExplicitOption` ceremony
   (config.go:80, 166-179) with pointer fields (`*int`) on `RuleConfig` so
   "unset" is representable; derive the per-check allowed-options validation
   from the single source created in Phase 1b instead of the parallel
@@ -430,9 +450,18 @@ removes `lint`/`analyze`, split what remains:
   renaming the `[check]` tool table to `[tool]` or nesting per-rule settings
   as `[check.rules.<code>]` — the singular/plural `check`/`checks` pair is a
   one-character trap.
-- [ ] `baseline`: keep the feature (it earns its keep for adoption), but
+  **Implemented:** integer options are pointers, so explicit zero needs no
+  metadata side map. Config reports its present behavioral options once and
+  the shared check metadata decides which are allowed. The version-1
+  `[check]`/`[checks]` schema stays unchanged to avoid a gratuitous config
+  migration.
+- [x] `baseline`: keep the feature (it earns its keep for adoption), but
   export one entry point, replace `\x00`-joined string keys with a comparable
   struct (baseline.go:220-222), and remove the one-value `Variant` type.
+  **Implemented:** the surviving selection-aware operation is now `Apply`,
+  matching uses a comparable identity struct, and `variant` is a plain string
+  constrained to `"strict"`. Root-relative diagnostics are resolved explicitly
+  before portable baseline paths are written.
 
 ## Phase 5 — Formatter and CST cleanups
 

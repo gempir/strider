@@ -91,6 +91,22 @@ func TestWorkspaceFiltersGeneratedAndExcludedFiles(t *testing.T) {
 	if len(files) != 1 || filepath.Base(files[0].Path()) != "keep.go" {
 		t.Fatalf("unexpected files: %#v", files)
 	}
+	cached, err := NewCache(CacheOptions{}).Open([]string{
+		root,
+	}, Options{
+		SkipGenerated: true,
+		Root:          root,
+		Excludes: []string{
+			"skip.go",
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cachedFiles := cached.Files()
+	if len(cachedFiles) != 1 || filepath.Base(cachedFiles[0].Path()) != "keep.go" {
+		t.Fatalf("cached open applied different filters: %#v", cachedFiles)
+	}
 }
 
 func TestReleaseCSTDropsImmutableGenerationCache(t *testing.T) {

@@ -151,7 +151,7 @@ files. In semantic it takes 2.
   `extendedCatalog`, `extendedExamples`, `extendedWarningSeverities`,
   `extendedErrorSeverities`, and the panic-at-startup examples lookup
   (`catalog.go:670`).
-- [ ] Delete `checkDefaults` (`cst_engine.go:230-257`) — a duplicate
+- [x] Delete `checkDefaults` (`cst_engine.go:230-257`) — a duplicate
   dispatcher maintained as a fast path for the 7 core rules. One dispatcher.
 - [ ] Remove double gating: check bodies test `a.enabled[code]` and
   `report()` re-tests it (`cst_engine.go:444`). With per-check dispatch,

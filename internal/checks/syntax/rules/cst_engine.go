@@ -8,22 +8,11 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-var defaultCSTCodes = map[string]bool{
-	"cyclomatic-complexity": true,
-	"max-parameters":        true,
-	"no-naked-return":       true,
-	"no-init":               true,
-	"no-package-var":        true,
-	"no-defer-in-loop":      true,
-	"no-else-after-return":  true,
-}
-
 type cstAnalyzer struct {
 	filename          string
 	tree              *cst.Tree
 	content           []byte
 	enabled           map[string]bool
-	extended          bool
 	plan              cstExecutionPlan
 	reporter          func(Finding)
 	ancestors         []cst.Node
@@ -55,20 +44,12 @@ func AnalyzeCST(input CSTInput) {
 	if len(enabled) == 0 || input.Tree == nil {
 		return
 	}
-	extended := false
-	for code := range enabled {
-		if !defaultCSTCodes[code] {
-			extended = true
-			break
-		}
-	}
 	plan := compileCSTExecutionPlan(enabled)
 	analyzer := &cstAnalyzer{
 		filename: input.Filename,
 		tree:     input.Tree,
 		content:  input.Tree.Bytes(),
 		enabled:  enabled,
-		extended: extended,
 		plan:     plan,
 		reporter: input.Report,
 		limits:   input.Limits,
@@ -105,53 +86,18 @@ func AnalyzeCST(input CSTInput) {
 	if plan.imports || enabled["exported-declaration-comment"] {
 		analyzer.packageName = analyzer.packageNameToken().Src()
 	}
-	if analyzer.extended {
-		analyzer.checkFile()
-	}
+	analyzer.checkFile()
 	cst.WalkProductionsWithAncestors(
 		input.Tree.Root(),
 		func(node cst.Node, ancestors []cst.Node) bool {
 			analyzer.ancestors = ancestors
 			analyzer.current = node
 			analyzer.observe(node, ancestors)
-			if analyzer.extended {
-				analyzer.check(node)
-			} else {
-				analyzer.checkDefaults(node)
-			}
+			analyzer.check(node)
 			return true
 		},
 	)
 	analyzer.finishTraversal()
-}
-
-func (a *cstAnalyzer) checkDefaults(node cst.Node) {
-	switch current := node.(type) {
-	case *cst.FunctionDecl:
-		if current.FunctionName == nil {
-			return
-		}
-		name := current.FunctionName.IDENT
-		if a.enabled["no-init"] && name.Src() == "init" {
-			a.report("no-init", name, "replace init with explicit initialization")
-		}
-	case *cst.ReturnStmt:
-		if a.enabled["no-naked-return"] {
-			a.checkNakedReturn(current)
-		}
-	case *cst.DeferStmt:
-		if a.enabled["no-defer-in-loop"] {
-			a.checkDefer(current)
-		}
-	case *cst.IfElseStmt:
-		if a.enabled["no-else-after-return"] {
-			a.checkElseAfterReturn(current)
-		}
-	case *cst.VarDecl:
-		if a.enabled["no-package-var"] {
-			a.checkPackageVar(current)
-		}
-	}
 }
 
 func (a *cstAnalyzer) check(node cst.Node) {
@@ -418,11 +364,9 @@ func (a *cstAnalyzer) checkFunction(function *cst.FunctionDecl, facts *cstFuncti
 		a.checkConcreteExportedFunction(name, function, false)
 	}
 	a.checkSignature(name, function.Signature.Parameters, facts.complexity)
-	if a.extended {
-		a.checkConcreteFunctionRules(name, function.Signature, function.FunctionBody, nil, facts)
-		if a.enabled["modifies-parameter"] {
-			a.checkConcreteFunctionMutation(function.Signature.Parameters, nil, function.FunctionBody)
-		}
+	a.checkConcreteFunctionRules(name, function.Signature, function.FunctionBody, nil, facts)
+	if a.enabled["modifies-parameter"] {
+		a.checkConcreteFunctionMutation(function.Signature.Parameters, nil, function.FunctionBody)
 	}
 }
 
@@ -432,11 +376,9 @@ func (a *cstAnalyzer) checkMethod(method *cst.MethodDecl, facts *cstFunctionFact
 			a.checkConcreteExportedFunction(method.MethodName, method, true)
 		}
 		a.checkSignature(method.MethodName, method.Signature.Parameters, facts.complexity)
-		if a.extended {
-			a.checkConcreteFunctionRules(method.MethodName, method.Signature, method.FunctionBody, method.Receiver, facts)
-			if a.enabled["modifies-parameter"] || a.enabled["modifies-value-receiver"] {
-				a.checkConcreteFunctionMutation(method.Signature.Parameters, method.Receiver, method.FunctionBody)
-			}
+		a.checkConcreteFunctionRules(method.MethodName, method.Signature, method.FunctionBody, method.Receiver, facts)
+		if a.enabled["modifies-parameter"] || a.enabled["modifies-value-receiver"] {
+			a.checkConcreteFunctionMutation(method.Signature.Parameters, method.Receiver, method.FunctionBody)
 		}
 	}
 }

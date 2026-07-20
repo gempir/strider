@@ -544,15 +544,24 @@ cache capped at **8 entries** whose hit path can still run two full metadata
 loads. `check --watch` (check.go:271-351) polls every second and re-reads
 every file's bytes per tick.
 
-- [ ] Decide what watch mode is for. If it stays: replace 1s full-rehash
+- [x] Decide what watch mode is for. ~~If it stays: replace 1s full-rehash
   polling with fsnotify, and simplify the fingerprint to file
   (path, size, mtime) + config + go.mod/go.work hashes. That removes most of
   `session_probe.go` and the ~80%-duplicated graph-hashing between
-  `session.go:391-466` and `session_probe.go:149-225`.
-- [ ] If watch mode is not a priority, delete the semantic `Session` cache
+  `session.go:391-466` and `session_probe.go:149-225`.~~
+  **Decision:** watch remains a convenience mode rather than a high-priority
+  incremental build system. Avoid adding fsnotify and its recursive-directory
+  edge cases; take the simpler alternative below.
+- [x] If watch mode is not a priority, delete the semantic `Session` cache
   entirely and let watch mode re-run analysis — simplicity over a
   correct-but-disproportionate 1,000-line cache. (Keep the cheap concrete
   cache in `checks/session.go`, which is small and proportionate.)
+  **Implemented:** `semantic/session.go`, `session_probe.go`, and their
+  cache-only tests are deleted. Each watch iteration runs package analysis
+  fresh, retains the one-generation concrete/CST cache, and suppresses an
+  unchanged report by comparing owned diagnostics. A dependency-change test
+  proves fresh semantic analysis can change findings while the concrete
+  generation is reused.
 
 ## Phase 7 — Question the check inventory
 

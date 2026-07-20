@@ -28,7 +28,7 @@ func TestSessionReusesAndInvalidatesConcreteGeneration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	session, err := NewSession(registry, RunOptions{}, SessionOptions{})
+	session, err := NewSession(registry, RunOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +83,7 @@ func TestSessionOwnsFormattingCandidates(t *testing.T) {
 	session, err := NewSession(registry, RunOptions{
 		Formatter:         formatter.DefaultOptions(),
 		CollectCandidates: true,
-	}, SessionOptions{})
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -122,7 +122,7 @@ func TestSessionInvalidatesFormattingWhenModulePathChanges(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	session, err := NewSession(registry, RunOptions{}, SessionOptions{})
+	session, err := NewSession(registry, RunOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -144,6 +144,55 @@ func TestSessionInvalidatesFormattingWhenModulePathChanges(t *testing.T) {
 	_ = runCachedSession(t, cache, session, filename)
 	if stats := session.Stats(); stats.ConcreteHits != 1 || stats.ConcreteMisses != 2 {
 		t.Fatalf("changed module stats = %#v", stats)
+	}
+}
+
+func TestSessionRunsPackageChecksFreshWhenDependencyChanges(t *testing.T) {
+	directory := t.TempDir()
+	dependencyDirectory := filepath.Join(directory, "dep")
+	if err := os.Mkdir(dependencyDirectory, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(directory, "go.mod"), []byte("module example.com/session\n\ngo 1.24\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Chdir(directory)
+	dependency := filepath.Join(dependencyDirectory, "dep.go")
+	if err := os.WriteFile(dependency, []byte("package dep\ntype Value struct{}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	target := filepath.Join(directory, "target.go")
+	if err := os.WriteFile(target, []byte("package target\nimport \"example.com/session/dep\"\nfunc Use(value dep.Value) {}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	registry, err := NewRegistry(RegistryOptions{
+		Only: []string{
+			"copy-lock-value",
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	session, err := NewSession(registry, RunOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cache := workspace.NewCache(workspace.CacheOptions{})
+	first := runCachedSession(t, cache, session, target)
+	if len(first.Diagnostics) != 0 {
+		t.Fatalf("initial diagnostics = %#v", first.Diagnostics)
+	}
+
+	changed := "package dep\nimport \"sync\"\ntype Value struct { Mutex sync.Mutex }\n"
+	if err := os.WriteFile(dependency, []byte(changed), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	second := runCachedSession(t, cache, session, target)
+	if len(second.Diagnostics) == 0 || second.Diagnostics[0].Code != "copy-lock-value" {
+		t.Fatalf("dependency-change diagnostics = %#v", second.Diagnostics)
+	}
+	if stats := session.Stats(); stats.ConcreteHits != 1 || stats.ConcreteMisses != 1 {
+		t.Fatalf("dependency-change concrete stats = %#v", stats)
 	}
 }
 
@@ -176,7 +225,7 @@ func BenchmarkSessionUnchangedConcreteGeneration(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	session, err := NewSession(registry, RunOptions{}, SessionOptions{})
+	session, err := NewSession(registry, RunOptions{})
 	if err != nil {
 		b.Fatal(err)
 	}

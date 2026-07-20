@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"reflect"
 	"strings"
 	"time"
 
@@ -67,7 +68,9 @@ type checkWatcher struct {
 	stdout           io.Writer
 	stderr           io.Writer
 
-	iteration uint64
+	iteration       uint64
+	hasDiagnostics  bool
+	lastDiagnostics []diagnostic.Diagnostic
 }
 
 type checkExecution struct {
@@ -339,7 +342,7 @@ func runCheckWatch(
 	stdout,
 	stderr io.Writer,
 ) error {
-	session, err := checks.NewSession(registry, runOptions, checks.SessionOptions{})
+	session, err := checks.NewSession(registry, runOptions)
 	if err != nil {
 		return err
 	}
@@ -388,10 +391,6 @@ func (watcher *checkWatcher) run() error {
 	}
 	after := watcher.session.Stats()
 	concreteChanged := after.ConcreteMisses > before.ConcreteMisses
-	packageChanged := after.Analysis.Generation > before.Analysis.Generation
-	if watcher.iteration != 0 && !concreteChanged && !packageChanged {
-		return nil
-	}
 	diagnostics, handled, err := prepareCheckDiagnostics(result.Diagnostics, watcher.baseline, watcher.colorMode, watcher.stderr)
 	if err != nil {
 		return err
@@ -399,6 +398,12 @@ func (watcher *checkWatcher) run() error {
 	if handled {
 		return fmt.Errorf("watch mode cannot update a baseline")
 	}
+	diagnosticsChanged := !watcher.hasDiagnostics || !reflect.DeepEqual(watcher.lastDiagnostics, diagnostics)
+	if watcher.iteration != 0 && !concreteChanged && !diagnosticsChanged {
+		return nil
+	}
+	watcher.lastDiagnostics = diagnostics
+	watcher.hasDiagnostics = true
 	watcher.iteration++
 	fmt.Fprintf(watcher.stdout, "== strider check #%d ==\n", watcher.iteration)
 	if err := reportCheckDiagnostics(watcher.stdout, diagnostics, "text", watcher.summaryOnly, watcher.colorMode); err != nil {

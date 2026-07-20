@@ -1040,7 +1040,7 @@ func TestCheckWatcherReportsOnlyChangedGenerations(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	session, err := checks.NewSession(registry, checks.RunOptions{}, checks.SessionOptions{})
+	session, err := checks.NewSession(registry, checks.RunOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}

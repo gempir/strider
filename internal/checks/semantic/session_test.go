@@ -297,20 +297,22 @@ import "time"
 func check() { time.Sleep(1) }
 `)
 	filename := filepath.Join(root, "main.go")
-	registry, err := NewRegistryConfigured(
-		[]string{
-			"suspicious-sleep",
-		},
-		map[string]config.RuleConfig{
-			"suspicious-sleep": {
-				Severity: "warning",
-				Excludes: []string{
-					"second.go",
-					"first.go",
+	registry, err := NewRegistry(
+		RegistryOptions{
+			Only: []string{
+				"suspicious-sleep",
+			},
+			Settings: map[string]config.RuleConfig{
+				"suspicious-sleep": {
+					Severity: "warning",
+					Excludes: []string{
+						"second.go",
+						"first.go",
+					},
 				},
 			},
+			Root: root,
 		},
-		root,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -347,20 +349,22 @@ func check() { time.Sleep(2) }
 		t.Fatal("same-size, same-mtime source mutation did not invalidate fingerprint")
 	}
 
-	reordered, err := NewRegistryConfigured(
-		[]string{
-			"suspicious-sleep",
-		},
-		map[string]config.RuleConfig{
-			"suspicious-sleep": {
-				Severity: "warning",
-				Excludes: []string{
-					"first.go",
-					"second.go",
+	reordered, err := NewRegistry(
+		RegistryOptions{
+			Only: []string{
+				"suspicious-sleep",
+			},
+			Settings: map[string]config.RuleConfig{
+				"suspicious-sleep": {
+					Severity: "warning",
+					Excludes: []string{
+						"first.go",
+						"second.go",
+					},
 				},
 			},
+			Root: root,
 		},
-		root,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -375,20 +379,22 @@ func check() { time.Sleep(2) }
 		t.Fatal("order-independent excludes changed the fingerprint")
 	}
 
-	differentSeverity, err := NewRegistryConfigured(
-		[]string{
-			"suspicious-sleep",
-		},
-		map[string]config.RuleConfig{
-			"suspicious-sleep": {
-				Severity: "error",
-				Excludes: []string{
-					"first.go",
-					"second.go",
+	differentSeverity, err := NewRegistry(
+		RegistryOptions{
+			Only: []string{
+				"suspicious-sleep",
+			},
+			Settings: map[string]config.RuleConfig{
+				"suspicious-sleep": {
+					Severity: "error",
+					Excludes: []string{
+						"first.go",
+						"second.go",
+					},
 				},
 			},
+			Root: root,
 		},
-		root,
 	)
 	if err != nil {
 		t.Fatal(err)

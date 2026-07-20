@@ -116,7 +116,7 @@ syntax package should adopt it.
 - [x] Normalize codes **case-insensitively everywhere** — semantic does
   (`registry.go:283-291`), syntax matches exactly (`catalog.go:635-641`), and
   `explainLintRule` was case-sensitive while its siblings were not.
-- [ ] Collapse the three registry constructors in semantic
+- [x] Collapse the three registry constructors in semantic
   (`NewRegistry` / `NewRegistryConfigured` / `NewRegistryWithOptions`,
   `registry.go:256-272`) to one.
 

@@ -862,7 +862,7 @@ func runAnalyze(args []string, configuration config.Config, colorMode ui.ColorMo
 	if !ok {
 		return exitError
 	}
-	registry, err := semantic.NewRegistryWithOptions(semantic.RegistryOptions{
+	registry, err := semantic.NewRegistry(semantic.RegistryOptions{
 		Only:            only,
 		Settings:        semanticSettings,
 		Root:            configuration.Root,

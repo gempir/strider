@@ -134,7 +134,7 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 		}
 	}
 	if !explicit || len(semanticOnly) != 0 {
-		registry.semantic, err = semantic.NewRegistryWithOptions(
+		registry.semantic, err = semantic.NewRegistry(
 			semantic.RegistryOptions{
 				Only:            semanticOnly,
 				Settings:        semanticSettings,
@@ -249,7 +249,7 @@ func availableRules() (map[string]Meta, map[string]bool, map[string]bool, error)
 		}
 		syntaxCodes[code] = true
 	}
-	semanticRegistry, err := semantic.NewRegistry(nil)
+	semanticRegistry, err := semantic.NewRegistry(semantic.RegistryOptions{})
 	if err != nil {
 		return nil, nil, nil, err
 	}

@@ -1,6 +1,7 @@
 package semantic
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/gempir/strider/internal/checks/core"
@@ -250,25 +251,21 @@ func (registry *Registry) executionPlan() executionPlan {
 	return compileExecutionPlan(registry.rules)
 }
 
-// NewRegistry selects all implemented rules, or only the explicitly named
-// rules when only is non-empty. Rule codes are case-insensitive.
-func NewRegistry(only []string) (*Registry, error) {
-	return NewRegistryConfigured(only, nil, "")
-}
-
-// NewRegistryConfigured applies analyzer rule settings.
-func NewRegistryConfigured(only []string, settings map[string]config.RuleConfig, root string) (*Registry, error) {
-	return NewRegistryWithOptions(RegistryOptions{
-		Only:            only,
-		Settings:        settings,
-		Root:            root,
-		MinimumSeverity: diagnostic.SeverityNote,
-	})
-}
-
-// NewRegistryWithOptions applies project settings and a minimum effective
-// severity. Explicit selection never bypasses the severity threshold.
-func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
+// NewRegistry applies project settings and a minimum effective severity.
+// Explicit selection never bypasses the severity threshold. Rule codes are
+// case-insensitive. Passing a []string remains supported for callers that
+// only select checks; new callers should pass RegistryOptions.
+func NewRegistry(input any) (*Registry, error) {
+	var options RegistryOptions
+	switch value := input.(type) {
+	case nil:
+	case []string:
+		options.Only = value
+	case RegistryOptions:
+		options = value
+	default:
+		return nil, fmt.Errorf("semantic registry options must be RegistryOptions or []string, got %T", input)
+	}
 	all := allRules()
 	selection, err := core.Select(core.SelectionOptions[Rule]{
 		Checks:          all,

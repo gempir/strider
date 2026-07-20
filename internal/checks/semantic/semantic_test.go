@@ -3282,7 +3282,9 @@ func TestEveryAnalyzerAcceptsCommonConfiguration(t *testing.T) {
 			Severity: "note",
 		}
 	}
-	registry, err := NewRegistryConfigured(nil, settings, "")
+	registry, err := NewRegistry(RegistryOptions{
+		Settings: settings,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3297,7 +3299,7 @@ func TestEveryAnalyzerAcceptsCommonConfiguration(t *testing.T) {
 }
 
 func TestAnalyzerRegistryFiltersByEffectiveSeverityBeforePlanning(t *testing.T) {
-	registry, err := NewRegistryWithOptions(
+	registry, err := NewRegistry(
 		RegistryOptions{
 			Only: []string{
 				"regexp-match-in-loop",
@@ -3324,7 +3326,7 @@ func TestAnalyzerRegistryFiltersByEffectiveSeverityBeforePlanning(t *testing.T) 
 		t.Fatal("filtered SSA analyzer still affected the execution plan")
 	}
 
-	registry, err = NewRegistryWithOptions(
+	registry, err = NewRegistry(
 		RegistryOptions{
 			Only: []string{
 				"regexp-match-in-loop",
@@ -3353,13 +3355,13 @@ func TestAnalyzerRegistryFiltersByEffectiveSeverityBeforePlanning(t *testing.T) 
 }
 
 func TestAnalyzerRegistryRejectsInvalidMinimumSeverity(t *testing.T) {
-	_, err := NewRegistryWithOptions(RegistryOptions{
+	_, err := NewRegistry(RegistryOptions{
 		MinimumSeverity: "fatal",
 	})
 	if err == nil || !strings.Contains(err.Error(), "minimum severity") {
 		t.Fatalf("got %v, want minimum severity error", err)
 	}
-	_, err = NewRegistryWithOptions(RegistryOptions{
+	_, err = NewRegistry(RegistryOptions{
 		Settings: map[string]config.RuleConfig{
 			"invalid-template": {
 				Severity: "fatal",
@@ -3372,7 +3374,7 @@ func TestAnalyzerRegistryRejectsInvalidMinimumSeverity(t *testing.T) {
 }
 
 func TestAnalyzerRegistrySkipsLoadingWhenSeverityFilterIsEmpty(t *testing.T) {
-	registry, err := NewRegistryWithOptions(
+	registry, err := NewRegistry(
 		RegistryOptions{
 			Only: []string{
 				"suspicious-sleep",

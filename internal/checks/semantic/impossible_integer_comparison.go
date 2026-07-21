@@ -10,9 +10,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type impossibleIntegerComparisonRule struct{}
+type impossibleIntegerComparisonCheck struct{}
 
-func (impossibleIntegerComparisonRule) Meta() Meta {
+func (impossibleIntegerComparisonCheck) Meta() Meta {
 	return Meta{
 		Code:            "impossible-integer-comparison",
 		Summary:         "detect integer comparisons that are fixed by the type's range",
@@ -23,38 +23,31 @@ func (impossibleIntegerComparisonRule) Meta() Meta {
 	}
 }
 
-func (impossibleIntegerComparisonRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				binary,
-					ok := node.(*ast.BinaryExpr)
-				if !ok || !relationalOperator(binary.Op) {
-					return true
-				}
-				value,
-					bound,
-					operator,
-					ok := integerComparisonParts(pass, binary)
-				if !ok {
-					return true
-				}
-				minimum,
-					maximum,
-					ok := integerTypeBounds(pass.TypesInfo.TypeOf(value), pass.TypesSizes)
-				if !ok {
-					return true
-				}
-				fixed,
-					truth := comparisonFixedByBounds(operator, bound, minimum, maximum)
-				if fixed {
-					pass.Report(binary, fmt.Sprintf("comparison is always %t for type %s", truth, pass.TypesInfo.TypeOf(value)))
-				}
+func (impossibleIntegerComparisonCheck) Run(pass *Pass) {
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.BinaryExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			binary, ok := node.(*ast.BinaryExpr)
+			if !ok || !relationalOperator(binary.Op) {
 				return true
-			},
-		)
-	}
+			}
+			value, bound, operator, ok := integerComparisonParts(pass, binary)
+			if !ok {
+				return true
+			}
+			minimum, maximum, ok := integerTypeBounds(pass.TypesInfo.TypeOf(value), pass.TypesSizes)
+			if !ok {
+				return true
+			}
+			fixed, truth := comparisonFixedByBounds(operator, bound, minimum, maximum)
+			if fixed {
+				pass.Report(binary, fmt.Sprintf("comparison is always %t for type %s", truth, pass.TypesInfo.TypeOf(value)))
+			}
+			return true
+		},
+	)
 }
 
 func relationalOperator(operator token.Token) bool {
@@ -163,4 +156,10 @@ func comparisonFixedByBounds(operator token.Token, bound, minimum, maximum const
 		}
 	}
 	return false, false
+}
+
+func (impossibleIntegerComparisonCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

@@ -9,9 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type timerResetDrainRaceRule struct{}
+type timerResetDrainRaceCheck struct{}
 
-func (timerResetDrainRaceRule) Meta() Meta {
+func (timerResetDrainRaceCheck) Meta() Meta {
 	return Meta{
 		Code:            "timer-reset-drain-race",
 		Summary:         "detect attempts to drain a timer based on Reset's result",
@@ -22,7 +22,7 @@ func (timerResetDrainRaceRule) Meta() Meta {
 	}
 }
 
-func (timerResetDrainRaceRule) Run(pass *Pass) {
+func (timerResetDrainRaceCheck) Run(pass *Pass) {
 	for _, function := range pass.Functions {
 		for _, block := range function.Blocks {
 			for _, instruction := range block.Instrs {
@@ -32,12 +32,7 @@ func (timerResetDrainRaceRule) Run(pass *Pass) {
 				}
 				for _, conditional := range conditionalUses(call) {
 					if conditionBranchesReceiveTime(conditional) {
-						pass.Report(
-							positionNode{
-								position: call.Pos(),
-							},
-							"do not use Timer.Reset's return value to decide whether to drain the timer channel",
-						)
+						pass.ReportPos(call.Pos(), "do not use Timer.Reset's return value to decide whether to drain the timer channel")
 						break
 					}
 				}
@@ -59,12 +54,7 @@ func isTimerResetCall(call *ssa.Call) bool {
 	if signature == nil || signature.Recv() == nil {
 		return false
 	}
-	pointer, ok := types.Unalias(signature.Recv().Type()).(*types.Pointer)
-	if !ok {
-		return false
-	}
-	named, ok := types.Unalias(pointer.Elem()).(*types.Named)
-	return ok && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "time" && named.Obj().Name() == "Timer"
+	return isPointerToNamedType(signature.Recv().Type(), "time", "Timer")
 }
 
 func conditionalUses(value ssa.Value) []*ssa.If {
@@ -128,6 +118,11 @@ func isTimeChannel(valueType types.Type) bool {
 	if !ok {
 		return false
 	}
-	named, ok := types.Unalias(channel.Elem()).(*types.Named)
-	return ok && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "time" && named.Obj().Name() == "Time"
+	return isNamedType(channel.Elem(), "time", "Time")
+}
+
+func (timerResetDrainRaceCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+	}
 }

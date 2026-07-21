@@ -9,9 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type regexpMatchInLoopRule struct{}
+type regexpMatchInLoopCheck struct{}
 
-func (regexpMatchInLoopRule) Meta() Meta {
+func (regexpMatchInLoopCheck) Meta() Meta {
 	return Meta{
 		Code:            "regexp-match-in-loop",
 		Summary:         "detect repeated regexp compilation inside loops",
@@ -22,7 +22,7 @@ func (regexpMatchInLoopRule) Meta() Meta {
 	}
 }
 
-func (regexpMatchInLoopRule) Run(pass *Pass) {
+func (regexpMatchInLoopCheck) Run(pass *Pass) {
 	for _, function := range pass.Functions {
 		for _, block := range function.Blocks {
 			if !ssaBlockInCycle(block) {
@@ -37,12 +37,7 @@ func (regexpMatchInLoopRule) Run(pass *Pass) {
 				if name == "" || !ssaStringConstant(call.Common().Args[0]) {
 					continue
 				}
-				pass.Report(
-					positionNode{
-						position: call.Pos(),
-					},
-					fmt.Sprintf("regexp.%s recompiles a constant pattern on every loop iteration; compile it once before the loop", name),
-				)
+				pass.ReportPos(call.Pos(), fmt.Sprintf("regexp.%s recompiles a constant pattern on every loop iteration; compile it once before the loop", name))
 			}
 		}
 	}
@@ -85,4 +80,10 @@ func ssaBlockInCycle(start *ssa.BasicBlock) bool {
 		stack = append(stack, block.Succs...)
 	}
 	return false
+}
+
+func (regexpMatchInLoopCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+	}
 }

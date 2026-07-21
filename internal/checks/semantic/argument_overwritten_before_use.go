@@ -10,9 +10,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type argumentOverwrittenBeforeUseRule struct{}
+type argumentOverwrittenBeforeUseCheck struct{}
 
-func (argumentOverwrittenBeforeUseRule) Meta() Meta {
+func (argumentOverwrittenBeforeUseCheck) Meta() Meta {
 	return Meta{
 		Code:            "argument-overwritten-before-use",
 		Summary:         "detect function arguments replaced before their incoming value is used",
@@ -23,7 +23,7 @@ func (argumentOverwrittenBeforeUseRule) Meta() Meta {
 	}
 }
 
-func (argumentOverwrittenBeforeUseRule) Run(pass *Pass) {
+func (argumentOverwrittenBeforeUseCheck) Run(pass *Pass) {
 	for _, function := range pass.Functions {
 		if function == nil || function.Synthetic != "" || function.Blocks == nil {
 			continue
@@ -96,14 +96,12 @@ func firstAssignmentToObject(pass *Pass, body *ast.BlockStmt, object types.Objec
 			if found != nil {
 				return false
 			}
-			assignment,
-				ok := node.(*ast.AssignStmt)
+			assignment, ok := node.(*ast.AssignStmt)
 			if !ok {
 				return true
 			}
 			for _, left := range assignment.Lhs {
-				identifier,
-					ok := left.(*ast.Ident)
+				identifier, ok := left.(*ast.Ident)
 				if ok && pass.TypesInfo.ObjectOf(identifier) == object {
 					found = assignment
 					return false
@@ -113,4 +111,10 @@ func firstAssignmentToObject(pass *Pass, body *ast.BlockStmt, object types.Objec
 		},
 	)
 	return found
+}
+
+func (argumentOverwrittenBeforeUseCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+	}
 }

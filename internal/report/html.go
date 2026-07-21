@@ -3,11 +3,8 @@ package report
 import (
 	"html/template"
 	"io"
-	"os"
-	"path/filepath"
 	"sort"
 	"strconv"
-	"strings"
 	"unicode/utf8"
 
 	"github.com/gempir/strider/internal/diagnostic"
@@ -54,17 +51,17 @@ a{color:var(--accent-text)}
 .limit-note{color:var(--muted);margin:10px 0 0}
 
 .layout{display:grid;grid-template-columns:minmax(220px,300px) 1fr;gap:0 28px;align-items:start;margin-top:14px}
-aside.rules{position:sticky;top:10px;max-height:calc(100vh - 20px);overflow:auto}
-aside.rules h2{margin:0 0 6px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.rules table{width:100%;border-collapse:collapse}
-.rules td{padding:3px 0;border-bottom:1px solid var(--line-soft);vertical-align:middle}
-.rules td:last-child{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;padding-left:10px;width:1%}
-.rules button{all:unset;display:block;width:100%;cursor:pointer;color:var(--warning)}
-.rules button[data-severity="error"]{color:var(--error)}
-.rules button[data-severity="note"]{color:var(--note)}
-.rules button[data-severity="none"]{color:var(--muted)}
-.rules button:hover code{text-decoration:underline}
-.rules i{display:block;height:2px;margin-top:2px;background:currentColor;opacity:.55}
+aside.checks{position:sticky;top:10px;max-height:calc(100vh - 20px);overflow:auto}
+aside.checks h2{margin:0 0 6px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.checks table{width:100%;border-collapse:collapse}
+.checks td{padding:3px 0;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+.checks td:last-child{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;padding-left:10px;width:1%}
+.checks button{all:unset;display:block;width:100%;cursor:pointer;color:var(--warning)}
+.checks button[data-severity="error"]{color:var(--error)}
+.checks button[data-severity="note"]{color:var(--note)}
+.checks button[data-severity="none"]{color:var(--muted)}
+.checks button:hover code{text-decoration:underline}
+.checks i{display:block;height:2px;margin-top:2px;background:currentColor;opacity:.55}
 
 .controls{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:8px;padding:8px 0;background:var(--bg);border-bottom:1px solid var(--line)}
 .controls input{flex:1 1 220px;min-height:30px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);font:inherit;padding:4px 9px;outline:0}
@@ -87,10 +84,10 @@ summary{display:grid;grid-template-columns:3.2rem minmax(11rem,17rem) 1fr;gap:12
 summary:hover{background:var(--panel-2)}
 summary::-webkit-details-marker{display:none}
 .where{color:var(--faint);text-align:right;font-variant-numeric:tabular-nums}
-.rule{color:var(--warning)}
-[data-severity="error"] .rule{color:var(--error)}
-[data-severity="note"] .rule{color:var(--note)}
-[data-severity="none"] .rule{color:var(--muted)}
+.check{color:var(--warning)}
+[data-severity="error"] .check{color:var(--error)}
+[data-severity="note"] .check{color:var(--note)}
+[data-severity="none"] .check{color:var(--muted)}
 details[open] summary{background:var(--panel-2)}
 .message{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 details[open] .message{white-space:normal}
@@ -109,7 +106,7 @@ details[open] .message{white-space:normal}
 .hidden{display:none}
 
 html.embedded main{padding:0 14px 24px}
-@media(max-width:900px){.layout{grid-template-columns:1fr}aside.rules{position:static;max-height:none}}
+@media(max-width:900px){.layout{grid-template-columns:1fr}aside.checks{position:static;max-height:none}}
 @media(max-width:640px){summary{grid-template-columns:3.2rem 1fr}.message{grid-column:1/-1;padding-left:0}.details{padding-left:0}}
 </style>
 </head>
@@ -127,11 +124,11 @@ html.embedded main{padding:0 14px 24px}
 </section>
 {{if .Omitted}}<p class="limit-note">Showing {{.Shown}} of {{.Total}} detailed findings. The summary includes all {{.Total}} findings.</p>{{end}}
 <div class="layout">
-{{if .Rules}}<aside class="rules" aria-label="Findings by rule"><h2>Findings by rule</h2><table><tbody>{{range .Rules}}<tr><td><button type="button" data-rule="{{.Code}}" data-severity="{{.Severity}}"><code>{{.Code}}</code><i style="width:{{.Percent}}%"></i></button></td><td>{{.Count}}</td></tr>{{end}}</tbody></table></aside>{{else}}<aside class="rules"></aside>{{end}}
+{{if .Checks}}<aside class="checks" aria-label="Findings by check"><h2>Findings by check</h2><table><tbody>{{range .Checks}}<tr><td><button type="button" data-check="{{.Code}}" data-severity="{{.Severity}}"><code>{{.Code}}</code><i style="width:{{.Percent}}%"></i></button></td><td>{{.Count}}</td></tr>{{end}}</tbody></table></aside>{{else}}<aside class="checks"></aside>{{end}}
 <div class="findings">
 {{if .Files}}
 <section class="controls" aria-label="Report filters">
-<input id="search" type="search" placeholder="Filter by rule, message, or file…" aria-label="Search diagnostics">
+<input id="search" type="search" placeholder="Filter by check, message, or file…" aria-label="Search diagnostics">
 <span class="seg" id="severity" role="group" aria-label="Filter by severity">
 <button type="button" data-severity="" aria-pressed="true">all</button>
 <button type="button" class="n-error" data-severity="error" aria-pressed="false"><b>{{.Errors}}</b> error</button>
@@ -143,7 +140,7 @@ html.embedded main{padding:0 14px 24px}
 <section id="diagnostics">
 {{range .Files}}<section class="file">{{if .File}}<h2 class="file-head"><code>{{.File}}</code><span>{{len .Diagnostics}}</span></h2>{{end}}
 {{range .Diagnostics}}<details class="diagnostic" data-severity="{{.Severity}}" data-search="{{.Code}} {{.Message}} {{.File}}">
-<summary><code class="where">{{.Where}}</code><code class="rule">{{.Code}}</code><span class="message">{{.Message}}</span></summary>
+<summary><code class="where">{{.Where}}</code><code class="check">{{.Code}}</code><span class="message">{{.Message}}</span></summary>
 <div class="details"><p class="location"><code>{{.Location}}</code></p>{{if .Source}}<div class="source">{{range .Source}}<div class="source-line{{if .Current}} current{{end}}"><span class="line-number">{{.Number}}</span><code>{{.Before}}{{if .Highlight}}<mark>{{.Highlight}}</mark>{{end}}{{.After}}</code></div>{{end}}</div>{{end}}{{if or .Notes .Fixes}}<ul class="extras">{{range .Notes}}<li><strong>Note:</strong> {{.Message}}</li>{{end}}{{range .Fixes}}<li><strong>Fix ({{.Safety}}):</strong> {{.Message}}</li>{{end}}</ul>{{end}}</div>
 </details>{{end}}
 </section>{{end}}
@@ -163,7 +160,7 @@ for(const item of items)item.classList.toggle('hidden',!!((level&&item.dataset.s
 for(const group of groups)group.classList.toggle('hidden',!group.querySelector('.diagnostic:not(.hidden)'))};
 search.addEventListener('input',filter);
 for(const button of buttons)button.addEventListener('click',()=>{level=button.dataset.severity;for(const other of buttons)other.setAttribute('aria-pressed',String(other===button));filter()});
-for(const rule of document.querySelectorAll('.rules button'))rule.addEventListener('click',()=>{search.value=search.value===rule.dataset.rule?'':rule.dataset.rule;filter()});
+for(const check of document.querySelectorAll('.checks button'))check.addEventListener('click',()=>{search.value=search.value===check.dataset.check?'':check.dataset.check;filter()});
 })();
 </script>
 </body>
@@ -187,7 +184,7 @@ type htmlReport struct {
 	NonePct    int
 	Shown      int
 	Omitted    int
-	Rules      []htmlRuleCount
+	Checks     []htmlCheckCount
 }
 
 type htmlFileGroup struct {
@@ -195,7 +192,7 @@ type htmlFileGroup struct {
 	Diagnostics []htmlDiagnostic
 }
 
-type htmlRuleCount struct {
+type htmlCheckCount struct {
 	Code     string
 	Count    int
 	Percent  int
@@ -270,7 +267,7 @@ func HTMLWithOptions(writer io.Writer, options HTMLOptions, diagnostics []diagno
 			data.Warnings++
 		}
 	}
-	data.Rules = sortedRuleCounts(counts, severities)
+	data.Checks = sortedCheckCounts(counts, severities)
 	if data.Total > 0 {
 		data.ErrorPct = data.Errors * 100 / data.Total
 		data.WarningPct = data.Warnings * 100 / data.Total
@@ -280,8 +277,7 @@ func HTMLWithOptions(writer io.Writer, options HTMLOptions, diagnostics []diagno
 	displayed := limitedDiagnostics(diagnostics, options.MaxDiagnostics)
 	data.Shown = len(displayed)
 	data.Omitted = len(diagnostics) - len(displayed)
-	sources := make(map[string][]string)
-	missing := make(map[string]bool)
+	sources := newSourceLineCache(options.SourceRoot)
 	for _, item := range displayed {
 		entry := htmlDiagnostic{
 			Code:     item.Code,
@@ -290,7 +286,7 @@ func HTMLWithOptions(writer io.Writer, options HTMLOptions, diagnostics []diagno
 			File:     item.File,
 			Location: htmlLocation(item),
 			Where:    htmlWhere(item),
-			Source:   htmlSourceContext(item, options.SourceRoot, sources, missing),
+			Source:   htmlSourceContext(item, sources),
 			Notes:    item.Notes,
 			Fixes:    item.Fixes,
 		}
@@ -308,10 +304,10 @@ func HTMLWithOptions(writer io.Writer, options HTMLOptions, diagnostics []diagno
 	return htmlTemplate.Execute(writer, data)
 }
 
-func sortedRuleCounts(counts map[string]int, severities map[string]diagnostic.Severity) []htmlRuleCount {
-	result := make([]htmlRuleCount, 0, len(counts))
+func sortedCheckCounts(counts map[string]int, severities map[string]diagnostic.Severity) []htmlCheckCount {
+	result := make([]htmlCheckCount, 0, len(counts))
 	for code, count := range counts {
-		result = append(result, htmlRuleCount{
+		result = append(result, htmlCheckCount{
 			Code:     code,
 			Count:    count,
 			Severity: severities[code],
@@ -389,24 +385,11 @@ func htmlWhere(item diagnostic.Diagnostic) string {
 	return where
 }
 
-func htmlSourceContext(item diagnostic.Diagnostic, root string, cache map[string][]string, missing map[string]bool) []htmlSourceLine {
+func htmlSourceContext(item diagnostic.Diagnostic, sources *sourceLineCache) []htmlSourceLine {
 	if item.Start.Line <= 0 {
 		return nil
 	}
-	filename := item.File
-	if root != "" && !filepath.IsAbs(filename) {
-		filename = filepath.Join(root, filepath.FromSlash(filename))
-	}
-	lines, ok := cache[filename]
-	if !ok && !missing[filename] {
-		contents, err := os.ReadFile(filename)
-		if err != nil {
-			missing[filename] = true
-		} else {
-			lines = strings.Split(strings.ReplaceAll(string(contents), "\r\n", "\n"), "\n")
-			cache[filename] = lines
-		}
-	}
+	lines := sources.read(item.File)
 	if item.Start.Line > len(lines) {
 		return nil
 	}

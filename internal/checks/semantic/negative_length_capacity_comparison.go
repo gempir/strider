@@ -10,9 +10,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type negativeLengthCapacityComparisonRule struct{}
+type negativeLengthCapacityComparisonCheck struct{}
 
-func (negativeLengthCapacityComparisonRule) Meta() Meta {
+func (negativeLengthCapacityComparisonCheck) Meta() Meta {
 	return Meta{
 		Code:            "negative-length-capacity-comparison",
 		Summary:         "detect checks for negative len or cap results",
@@ -23,34 +23,33 @@ func (negativeLengthCapacityComparisonRule) Meta() Meta {
 	}
 }
 
-func (negativeLengthCapacityComparisonRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				binary,
-					ok := node.(*ast.BinaryExpr)
-				if !ok {
-					return true
-				}
-				name := ""
-				switch binary.Op {
-				case token.LSS:
-					if integerZero(pass, binary.Y) {
-						name = lengthCapacityBuiltin(pass, binary.X)
-					}
-				case token.GTR:
-					if integerZero(pass, binary.X) {
-						name = lengthCapacityBuiltin(pass, binary.Y)
-					}
-				}
-				if name != "" {
-					pass.Report(binary, fmt.Sprintf("%s never returns a negative value", name))
-				}
+func (negativeLengthCapacityComparisonCheck) Run(pass *Pass) {
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.BinaryExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			binary, ok := node.(*ast.BinaryExpr)
+			if !ok {
 				return true
-			},
-		)
-	}
+			}
+			name := ""
+			switch binary.Op {
+			case token.LSS:
+				if integerZero(pass, binary.Y) {
+					name = lengthCapacityBuiltin(pass, binary.X)
+				}
+			case token.GTR:
+				if integerZero(pass, binary.X) {
+					name = lengthCapacityBuiltin(pass, binary.Y)
+				}
+			}
+			if name != "" {
+				pass.Report(binary, fmt.Sprintf("%s never returns a negative value", name))
+			}
+			return true
+		},
+	)
 }
 
 func lengthCapacityBuiltin(pass *Pass, expression ast.Expr) string {
@@ -72,4 +71,10 @@ func lengthCapacityBuiltin(pass *Pass, expression ast.Expr) string {
 func integerZero(pass *Pass, expression ast.Expr) bool {
 	value := pass.TypesInfo.Types[expression].Value
 	return value != nil && value.Kind() == constant.Int && constant.Sign(value) == 0
+}
+
+func (negativeLengthCapacityComparisonCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

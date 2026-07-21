@@ -12,9 +12,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type invalidListenAddressRule struct{}
+type invalidListenAddressCheck struct{}
 
-func (invalidListenAddressRule) Meta() Meta {
+func (invalidListenAddressCheck) Meta() Meta {
 	return Meta{
 		Code:            "invalid-listen-address",
 		Summary:         "detect invalid constant HTTP listen addresses",
@@ -25,7 +25,7 @@ func (invalidListenAddressRule) Meta() Meta {
 	}
 }
 
-func (invalidListenAddressRule) Run(pass *Pass) {
+func (invalidListenAddressCheck) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
 	for _, call := range pass.staticCallsInPackage("net/http") {
 		if !isHTTPListenCall(call) || len(call.Common().Args) == 0 {
@@ -79,4 +79,14 @@ func validListenPort(port string) bool {
 		}
 	}
 	return hasLetter
+}
+
+func (invalidListenAddressCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"net/http",
+		},
+	}
 }

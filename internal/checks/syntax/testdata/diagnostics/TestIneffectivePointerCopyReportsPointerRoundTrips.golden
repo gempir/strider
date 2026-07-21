@@ -1,0 +1,2 @@
+fixture.go:2:42-2:51 ineffective-pointer-copy
+fixture.go:2:57-2:64 ineffective-pointer-copy

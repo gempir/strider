@@ -8,9 +8,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type partiallyTypedConstantGroupRule struct{}
+type partiallyTypedConstantGroupCheck struct{}
 
-func (partiallyTypedConstantGroupRule) Meta() Meta {
+func (partiallyTypedConstantGroupCheck) Meta() Meta {
 	return Meta{
 		Code:            "partially-typed-constant-group",
 		Summary:         "detect constant groups where only the first explicit value has a type",
@@ -21,7 +21,7 @@ func (partiallyTypedConstantGroupRule) Meta() Meta {
 	}
 }
 
-func (partiallyTypedConstantGroupRule) Run(pass *Pass) {
+func (partiallyTypedConstantGroupCheck) Run(pass *Pass) {
 	for _, file := range pass.Files {
 		for _, declaration := range file.Decls {
 			group, ok := declaration.(*ast.GenDecl)
@@ -64,5 +64,11 @@ func constantLiteral(expression ast.Expr) bool {
 		return ok
 	default:
 		return false
+	}
+}
+
+func (partiallyTypedConstantGroupCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
 	}
 }

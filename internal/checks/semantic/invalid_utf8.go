@@ -9,9 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type invalidUTF8StringArgumentRule struct{}
+type invalidUTF8StringArgumentCheck struct{}
 
-func (invalidUTF8StringArgumentRule) Meta() Meta {
+func (invalidUTF8StringArgumentCheck) Meta() Meta {
 	return Meta{
 		Code:            "invalid-utf8",
 		Summary:         "detect invalid UTF-8 arguments to strings functions",
@@ -22,7 +22,7 @@ func (invalidUTF8StringArgumentRule) Meta() Meta {
 	}
 }
 
-func (invalidUTF8StringArgumentRule) Run(pass *Pass) {
+func (invalidUTF8StringArgumentCheck) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
 	for _, call := range pass.staticCallsInPackage("strings") {
 		if !isUTF8StringsCall(call) || len(call.Common().Args) < 2 {
@@ -50,5 +50,15 @@ func isUTF8StringsCall(call ssa.CallInstruction) bool {
 		return true
 	default:
 		return false
+	}
+}
+
+func (invalidUTF8StringArgumentCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"strings",
+		},
 	}
 }

@@ -61,9 +61,10 @@ func Run(shared *workspace.Workspace, registry *Registry, options RunOptions) (R
 	if err != nil {
 		return Result{}, err
 	}
-	if err := appendAnalysis(&result, shared, registry, options, semantic.Run); err != nil {
+	if err := appendAnalysis(&result, shared, registry, semantic.Run); err != nil {
 		return Result{}, err
 	}
+	filterExcludedResults(&result, options.Root, options.Excludes)
 	sortDiagnostics(result.Diagnostics)
 	if result.Diagnostics == nil {
 		result.Diagnostics = []diagnostic.Diagnostic{}
@@ -71,8 +72,8 @@ func Run(shared *workspace.Workspace, registry *Registry, options RunOptions) (R
 	return result, nil
 }
 
-func appendAnalysis(result *Result, shared *workspace.Workspace, registry *Registry, options RunOptions, run analysisRunner) error {
-	if registry.semantic == nil || len(registry.semantic.Rules()) == 0 {
+func appendAnalysis(result *Result, shared *workspace.Workspace, registry *Registry, run analysisRunner) error {
+	if registry.semantic == nil || len(registry.semantic.Checks()) == 0 {
 		return nil
 	}
 	packageDiagnostics, err := run(shared.Inputs(), registry.semantic)
@@ -80,12 +81,27 @@ func appendAnalysis(result *Result, shared *workspace.Workspace, registry *Regis
 		return err
 	}
 	for _, item := range packageDiagnostics {
-		if pathfilter.Matches(options.Root, item.File, options.Excludes) {
-			continue
-		}
 		result.Diagnostics = append(result.Diagnostics, item)
 	}
 	return nil
+}
+
+func filterExcludedResults(result *Result, root string, excludes []string) {
+	if len(excludes) == 0 {
+		return
+	}
+	diagnostics := result.Diagnostics[:0]
+	for _, item := range result.Diagnostics {
+		if !pathfilter.Excluded(root, item.File, excludes) {
+			diagnostics = append(diagnostics, item)
+		}
+	}
+	result.Diagnostics = diagnostics
+	for filename := range result.Candidates {
+		if pathfilter.Excluded(root, filename, excludes) {
+			delete(result.Candidates, filename)
+		}
+	}
 }
 
 func runConcreteChecks(files []*workspace.File, registry *Registry, formatOptions formatter.Options, collectCandidates bool) (Result, error) {
@@ -102,7 +118,7 @@ func runConcreteChecks(files []*workspace.File, registry *Registry, formatOption
 		return result, nil
 	}
 
-	session := formatter.NewSession()
+	session := formatter.NewFormatter()
 	workers := min(runtime.GOMAXPROCS(0), len(applicable))
 	jobs := make(chan *workspace.File)
 	results := make(chan fileResult, len(applicable))
@@ -149,7 +165,7 @@ func runConcreteChecks(files []*workspace.File, registry *Registry, formatOption
 	return result, nil
 }
 
-func runConcreteFile(file *workspace.File, registry *Registry, session *formatter.Session, formatOptions formatter.Options, collectCandidate bool) fileResult {
+func runConcreteFile(file *workspace.File, registry *Registry, session *formatter.Formatter, formatOptions formatter.Options, collectCandidate bool) fileResult {
 	filename := file.Path()
 	defer file.Release()
 	lintApplies := registry.syntax != nil && registry.syntax.Applies(filename)
@@ -183,14 +199,14 @@ func runConcreteFile(file *workspace.File, registry *Registry, session *formatte
 		if collectCandidate {
 			formatted, formatErr = session.FormatTree(filename, tree, formatOptions)
 		} else {
-			formatted, formatErr = session.PreviewTree(filename, tree, formatOptions)
+			formatted, formatErr = session.FormatTreeUnverified(filename, tree, formatOptions)
 		}
 		if formatErr != nil {
 			result.err = formatErr
 			return result
 		}
 		if formatted.Changed && !formatted.Ignored {
-			result.diagnostics = append(result.diagnostics, formatDiagnostic(filename, registry.Severity(formatMeta.Code)))
+			result.diagnostics = append(result.diagnostics, formatDiagnostic(registry.root, filename, registry.Severity(formatMeta.Code)))
 			if collectCandidate {
 				result.candidate = &formatted
 			}
@@ -202,8 +218,8 @@ func runConcreteFile(file *workspace.File, registry *Registry, session *formatte
 	return result
 }
 
-func formatDiagnostic(filename string, severity diagnostic.Severity) diagnostic.Diagnostic {
-	display := source.DisplayPath(filename)
+func formatDiagnostic(root, filename string, severity diagnostic.Severity) diagnostic.Diagnostic {
+	display := source.DiagnosticPath(root, filename)
 	position := token.Position{
 		Filename: display,
 		Offset:   0,

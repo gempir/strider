@@ -46,7 +46,7 @@ func generateCatalogStats(docsDirectory string, registry *checks.Registry) {
 	stats := struct {
 		Checks int `json:"checks"`
 	}{
-		Checks: len(registry.Rules()),
+		Checks: len(registry.Checks()),
 	}
 	contents, err := json.MarshalIndent(stats, "", "  ")
 	if err != nil {
@@ -192,7 +192,7 @@ func synchronizeCheckPages(docsDirectory string) *checks.Registry {
 	if err != nil {
 		fatal(err)
 	}
-	for _, rule := range registry.Rules() {
+	for _, rule := range registry.Checks() {
 		meta := rule.Meta()
 		path := checkPagePath(docsDirectory, meta)
 		contents, readErr := os.ReadFile(path)
@@ -271,8 +271,8 @@ func firstGoCodeBlock(contents string) (int, int, bool) {
 }
 
 func validateCheckPages(docsDirectory string, registry *checks.Registry) {
-	expected := make(map[string]bool, len(registry.Rules())-1)
-	for _, rule := range registry.Rules() {
+	expected := make(map[string]bool, len(registry.Checks())-1)
+	for _, rule := range registry.Checks() {
 		meta := rule.Meta()
 		path := checkPagePath(docsDirectory, meta)
 		contents, err := os.ReadFile(path)
@@ -362,8 +362,8 @@ func validateBehaviorConfiguration(docsDirectory string, registry *checks.Regist
 			"max-public-structs",
 		},
 	}
-	byCode := make(map[string]checks.Meta, len(registry.Rules()))
-	for _, rule := range registry.Rules() {
+	byCode := make(map[string]checks.Meta, len(registry.Checks()))
+	for _, rule := range registry.Checks() {
 		byCode[rule.Meta().Code] = rule.Meta()
 	}
 	for code, options := range required {

@@ -14,25 +14,8 @@ import (
 
 const PrintWidth = 180
 
-const MaxBlankLines = 1
-
-const ExistingLineBreaks = "structural-only"
-
-const ErrUnsupported unsupportedErrorValue = "unsupported Go syntax"
-
 type Options struct {
-	PrintWidth         int
-	MaxBlankLines      int
-	ExistingLineBreaks string
-}
-
-type unsupportedErrorValue string
-
-type UnsupportedError struct {
-	Filename string
-	Line     int
-	Column   int
-	Feature  string
+	PrintWidth int
 }
 
 type Result struct {
@@ -41,34 +24,20 @@ type Result struct {
 	Ignored bool
 }
 
-// Session reuses formatter metadata across a batch of files. A Session is safe
+// Formatter reuses formatter metadata across a batch of files. A Formatter is safe
 // for concurrent use by independent formatting calls.
-type Session struct {
+type Formatter struct {
 	modules modulePathCache
 }
 
 func DefaultOptions() Options {
 	return Options{
-		PrintWidth:         PrintWidth,
-		MaxBlankLines:      MaxBlankLines,
-		ExistingLineBreaks: ExistingLineBreaks,
+		PrintWidth: PrintWidth,
 	}
 }
 
-func (value unsupportedErrorValue) Error() string {
-	return string(value)
-}
-
-func (e *UnsupportedError) Error() string {
-	return fmt.Sprintf("%s:%d:%d: %v: %s", e.Filename, e.Line, e.Column, ErrUnsupported, e.Feature)
-}
-
-func (e *UnsupportedError) Unwrap() error {
-	return ErrUnsupported
-}
-
-func NewSession() *Session {
-	return &Session{}
+func NewFormatter() *Formatter {
+	return &Formatter{}
 }
 
 func Format(filename string, source []byte) (Result, error) {
@@ -76,10 +45,10 @@ func Format(filename string, source []byte) (Result, error) {
 }
 
 func FormatWithOptions(filename string, source []byte, options Options) (Result, error) {
-	return NewSession().FormatWithOptions(filename, source, options)
+	return NewFormatter().FormatWithOptions(filename, source, options)
 }
 
-func (s *Session) FormatWithOptions(filename string, source []byte, options Options) (Result, error) {
+func (s *Formatter) FormatWithOptions(filename string, source []byte, options Options) (Result, error) {
 	if IsIgnored(source) {
 		copyOfSource := append([]byte(nil), source...)
 		return Result{
@@ -91,7 +60,7 @@ func (s *Session) FormatWithOptions(filename string, source []byte, options Opti
 	if err != nil {
 		return Result{}, err
 	}
-	return s.FormatTree(filename, originalTree, options)
+	return s.formatTree(filename, originalTree, normalizeOptions(options), false)
 }
 
 // IsIgnored reports whether a header comment before the package clause opts
@@ -117,9 +86,12 @@ func IsIgnored(source []byte) bool {
 
 // FormatTree formats a previously parsed source tree. The tree and its source
 // remain immutable and may be shared with other checks.
-func (s *Session) FormatTree(filename string, originalTree *cst.Tree, options Options) (Result, error) {
-	options = normalizeOptions(options)
-	preview, module, err := s.previewTree(filename, originalTree, options)
+func (s *Formatter) FormatTree(filename string, originalTree *cst.Tree, options Options) (Result, error) {
+	return s.formatTree(filename, originalTree, normalizeOptions(options), true)
+}
+
+func (s *Formatter) formatTree(filename string, originalTree *cst.Tree, options Options, checkIgnored bool) (Result, error) {
+	preview, module, err := s.previewTree(filename, originalTree, options, checkIgnored)
 	if err != nil || preview.Ignored {
 		return preview, err
 	}
@@ -130,10 +102,7 @@ func (s *Session) FormatTree(filename string, originalTree *cst.Tree, options Op
 	if err := equivalentTrees(originalTree, formattedTree); err != nil {
 		return Result{}, fmt.Errorf("formatter safety check: %w", err)
 	}
-	if _, err := validateConcreteSyntax(filename, formattedTree); err != nil {
-		return Result{}, fmt.Errorf("formatter idempotence check: %w", err)
-	}
-	second, err := renderCandidate(filename, formattedTree, options, module)
+	second, err := renderCandidate(formattedTree, options, module)
 	if err != nil {
 		return Result{}, fmt.Errorf("formatter idempotence check: %w", err)
 	}
@@ -143,57 +112,48 @@ func (s *Session) FormatTree(filename string, originalTree *cst.Tree, options Op
 	return preview, nil
 }
 
-// PreviewTree renders a read-only formatting candidate without reparsing it.
+// FormatTreeUnverified renders a read-only formatting candidate without reparsing it.
 // It is intended for drift checks; callers that may expose or write the
 // candidate must use FormatTree and its equivalence/idempotence checks.
-func (s *Session) PreviewTree(filename string, originalTree *cst.Tree, options Options) (Result, error) {
-	result, _, err := s.previewTree(filename, originalTree, options)
+func (s *Formatter) FormatTreeUnverified(filename string, originalTree *cst.Tree, options Options) (Result, error) {
+	result, _, err := s.previewTree(filename, originalTree, normalizeOptions(options), true)
 	return result, err
 }
 
-func (s *Session) previewTree(filename string, originalTree *cst.Tree, options Options) (Result, string, error) {
+func (s *Formatter) previewTree(filename string, originalTree *cst.Tree, options Options, checkIgnored bool) (Result, string, error) {
 	if originalTree == nil {
 		return Result{}, "", fmt.Errorf("format %s: nil concrete syntax tree", filename)
 	}
-	options = normalizeOptions(options)
 	if options.PrintWidth < 40 || options.PrintWidth > 500 {
 		return Result{}, "", fmt.Errorf("format %s: print width must be between 40 and 500", filename)
 	}
-	if options.MaxBlankLines != MaxBlankLines {
-		return Result{}, "", fmt.Errorf("format %s: max blank lines must be %d", filename, MaxBlankLines)
-	}
-	if options.ExistingLineBreaks != ExistingLineBreaks {
-		return Result{}, "", fmt.Errorf("format %s: existing line breaks must be %q", filename, ExistingLineBreaks)
-	}
 	source := originalTree.Bytes()
-	if IsIgnored(source) {
+	if checkIgnored && IsIgnored(source) {
 		copyOfSource := append([]byte(nil), source...)
 		return Result{
 			Source:  copyOfSource,
 			Ignored: true,
 		}, "", nil
 	}
-	hasImports, err := validateConcreteSyntax(filename, originalTree)
-	if err != nil {
-		return Result{}, "", err
-	}
+	hasImports := treeHasImports(originalTree)
 	module := ""
 	if hasImports {
 		module = s.modules.find(filename)
 	}
-	formatted, err := renderCandidate(filename, originalTree, options, module)
+	formatted, err := renderCandidate(originalTree, options, module)
 	if err != nil {
 		return Result{}, "", err
 	}
+	// Rendering uses CST trivia to preserve deliberate vertical space. Because a
+	// render can move that trivia to its canonical token boundary, render the new
+	// tree until those boundaries stabilize. The bound is defensive; the separate
+	// idempotence check above still verifies the stable candidate once more.
 	for range 100 {
 		formattedTree, parseErr := cst.Parse(filename, formatted)
 		if parseErr != nil {
 			return Result{}, "", fmt.Errorf("formatter convergence check: formatted output does not parse: %w", parseErr)
 		}
-		if _, syntaxErr := validateConcreteSyntax(filename, formattedTree); syntaxErr != nil {
-			return Result{}, "", fmt.Errorf("formatter convergence check: %w", syntaxErr)
-		}
-		next, formatErr := renderCandidate(filename, formattedTree, options, module)
+		next, formatErr := renderCandidate(formattedTree, options, module)
 		if formatErr != nil {
 			return Result{}, "", formatErr
 		}
@@ -208,35 +168,28 @@ func (s *Session) previewTree(filename string, originalTree *cst.Tree, options O
 	return Result{}, "", fmt.Errorf("formatter did not converge for %s", filename)
 }
 
-func renderCandidate(filename string, tree *cst.Tree, options Options, module string) ([]byte, error) {
-	formatted, err := goformat.Source([]byte(renderConcreteWithModule(tree, options, module)))
+func renderCandidate(tree *cst.Tree, options Options, module string) ([]byte, error) {
+	formatted, err := goformat.Source([]byte(renderWithModule(tree, options, module)))
 	if err != nil {
 		return nil, fmt.Errorf("formatter gofmt compatibility: %w", err)
 	}
-	ordered, err := orderTopLevelDeclarations(filename, formatted)
-	if err != nil {
-		return nil, fmt.Errorf("formatter declaration ordering: %w", err)
-	}
-	return ordered, nil
+	return formatted, nil
 }
 
 func normalizeOptions(options Options) Options {
 	defaults := DefaultOptions()
-	if options.MaxBlankLines == 0 {
-		options.MaxBlankLines = defaults.MaxBlankLines
-	}
-	if options.ExistingLineBreaks == "" {
-		options.ExistingLineBreaks = defaults.ExistingLineBreaks
+	if options.PrintWidth == 0 {
+		options.PrintWidth = defaults.PrintWidth
 	}
 	return options
 }
 
-func validateConcreteSyntax(_ string, tree *cst.Tree) (bool, error) {
+func treeHasImports(tree *cst.Tree) bool {
 	hasImports := false
 	for _, current := range tree.Tokens() {
 		if current.Ch() == token.IMPORT {
 			hasImports = true
 		}
 	}
-	return hasImports, nil
+	return hasImports
 }

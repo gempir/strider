@@ -10,7 +10,8 @@ import (
 	"strings"
 	"sync"
 
-	builtinrules "github.com/gempir/strider/internal/checks/syntax/rules"
+	"github.com/gempir/strider/internal/checks/core"
+	builtinchecks "github.com/gempir/strider/internal/checks/syntax/rules"
 	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/cst"
 	"github.com/gempir/strider/internal/diagnostic"
@@ -18,29 +19,24 @@ import (
 	"github.com/gempir/strider/internal/source"
 )
 
-var defaultBannedCharacters = []rune{
-	'ᐸ',
-	'ᐳ',
-}
-
 type Registry struct {
-	rules      []builtinrules.Rule
-	settings   map[string]configuredRule
+	checks     []builtinchecks.Check
+	settings   map[string]configuredCheck
 	knownCodes map[string]bool
 	root       string
 }
 
-type configuredRule struct {
+type configuredCheck struct {
 	severity   diagnostic.Severity
 	excludes   []string
 	characters []rune
-	config     config.RuleConfig
+	config     config.CheckConfig
 }
 
-// RegistryOptions selects and configures concrete-syntax rules.
+// RegistryOptions selects and configures concrete-syntax checks.
 type RegistryOptions struct {
 	Only            []string
-	Settings        map[string]config.RuleConfig
+	Settings        map[string]config.CheckConfig
 	Root            string
 	MinimumSeverity diagnostic.Severity
 }
@@ -69,8 +65,8 @@ func NewRegistry(only []string) (*Registry, error) {
 	return NewRegistryConfigured(only, nil, "")
 }
 
-// NewRegistryConfigured applies project rule settings.
-func NewRegistryConfigured(only []string, settings map[string]config.RuleConfig, root string) (*Registry, error) {
+// NewRegistryConfigured applies project check settings.
+func NewRegistryConfigured(only []string, settings map[string]config.CheckConfig, root string) (*Registry, error) {
 	return NewRegistryWithOptions(RegistryOptions{
 		Only:            only,
 		Settings:        settings,
@@ -82,65 +78,42 @@ func NewRegistryConfigured(only []string, settings map[string]config.RuleConfig,
 // NewRegistryWithOptions applies project settings and a minimum effective
 // severity. Explicit selection never bypasses the severity threshold.
 func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
-	minimumSeverity := options.MinimumSeverity
-	if minimumSeverity == "" {
-		minimumSeverity = diagnostic.SeverityNote
-	}
-	if !diagnostic.ValidSeverity(minimumSeverity) {
-		return nil, fmt.Errorf("minimum severity must be none, note, warning, or error")
-	}
-	all, err := builtinrules.Select(nil)
+	all, err := builtinchecks.Select(nil)
 	if err != nil {
 		return nil, err
 	}
-	byCode := make(map[string]builtinrules.Rule, len(all))
-	for _, rule := range all {
-		byCode[rule.Meta().Code] = rule
-	}
-	if err := validateConfiguredRules("lint", options.Settings, byCode); err != nil {
+	selection, err := core.Select(
+		core.SelectionOptions[builtinchecks.Check]{
+			Checks:          all,
+			Only:            options.Only,
+			Settings:        options.Settings,
+			MinimumSeverity: options.MinimumSeverity,
+			Validate:        validateConfiguredCheck,
+		},
+	)
+	if err != nil {
 		return nil, err
 	}
-	if len(options.Only) != 0 {
-		if _, err := builtinrules.Select(options.Only); err != nil {
-			return nil, err
-		}
-	}
-	wanted := make(map[string]bool, len(options.Only))
-	for _, code := range options.Only {
-		wanted[code] = true
-	}
 	registry := &Registry{
-		settings:   make(map[string]configuredRule, len(all)),
-		knownCodes: make(map[string]bool, len(all)),
-		root:       options.Root,
+		settings:   make(map[string]configuredCheck, len(all)),
+		knownCodes: selection.KnownCodes,
+		root:       source.ResolveRoot(options.Root),
 	}
-	for _, rule := range all {
-		meta := rule.Meta()
-		registry.knownCodes[meta.Code] = true
-		ruleConfig := options.Settings[meta.Code]
-		if len(options.Only) != 0 && !wanted[meta.Code] {
-			continue
-		}
-		severity := meta.DefaultSeverity
-		if ruleConfig.Severity != "" {
-			severity = diagnostic.Severity(ruleConfig.Severity)
-		}
-		if !severity.AtLeast(minimumSeverity) {
-			continue
-		}
-		registry.rules = append(registry.rules, rule)
-		configured := configuredRule{
+	for _, check := range selection.Checks {
+		meta := check.Meta()
+		ruleConfig := selection.Settings[strings.ToLower(meta.Code)]
+		severity := selection.Severities[meta.Code]
+		registry.checks = append(registry.checks, check)
+		configured := configuredCheck{
 			severity: severity,
 			excludes: ruleConfig.Excludes,
 			config:   ruleConfig,
 		}
 		if meta.Code == "banned-characters" {
-			configured.characters = defaultBannedCharacters
-			if ruleConfig.Characters != nil {
-				configured.characters = make([]rune, 0, len(ruleConfig.Characters))
-				for _, character := range ruleConfig.Characters {
-					configured.characters = append(configured.characters, []rune(character)[0])
-				}
+			characters, _ := core.StringsOption(meta, ruleConfig, "characters")
+			configured.characters = make([]rune, 0, len(characters))
+			for _, character := range characters {
+				configured.characters = append(configured.characters, []rune(character)[0])
 			}
 		}
 		registry.settings[meta.Code] = configured
@@ -148,36 +121,23 @@ func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
 	return registry, nil
 }
 
-func validateConfiguredRules(tool string, settings map[string]config.RuleConfig, available map[string]builtinrules.Rule) error {
-	unknown := make([]string, 0)
-	for code, setting := range settings {
-		if available[code] == nil {
-			unknown = append(unknown, code)
-		}
-		if setting.Severity != "" && !diagnostic.ValidSeverity(diagnostic.Severity(setting.Severity)) {
-			return fmt.Errorf("%s rule %q severity must be none, note, warning, or error", tool, code)
-		}
-		if setting.Characters != nil && code != "banned-characters" {
-			return fmt.Errorf("%s rule %q does not support characters", tool, code)
-		}
-		for _, character := range setting.Characters {
-			if len([]rune(character)) != 1 {
-				return fmt.Errorf("%s rule %q characters must contain exactly one Unicode character each", tool, code)
-			}
+func validateConfiguredCheck(code string, setting config.CheckConfig) error {
+	if setting.Characters != nil && code != "banned-characters" {
+		return fmt.Errorf("check %q does not support characters", code)
+	}
+	for _, character := range setting.Characters {
+		if len([]rune(character)) != 1 {
+			return fmt.Errorf("check %q characters must contain exactly one Unicode character each", code)
 		}
 	}
-	if len(unknown) == 0 {
-		return nil
-	}
-	sort.Strings(unknown)
-	return fmt.Errorf("unknown %s rule(s) in configuration: %s", tool, strings.Join(unknown, ", "))
+	return nil
 }
 
-func (r *Registry) Rules() []builtinrules.Rule {
-	return append([]builtinrules.Rule(nil), r.rules...)
+func (r *Registry) Checks() []builtinchecks.Check {
+	return append([]builtinchecks.Check(nil), r.checks...)
 }
 
-// KnownCodes returns every concrete-syntax rule code, including rules that
+// KnownCodes returns every concrete-syntax check code, including checks that
 // are disabled or below the current severity threshold.
 func (r *Registry) KnownCodes() map[string]bool {
 	if r == nil {
@@ -200,33 +160,43 @@ func (r *Registry) bannedCharacters() []rune {
 
 func (r *Registry) limits() map[string]int {
 	limits := make(map[string]int)
-	for code, setting := range r.settings {
+	for _, check := range r.checks {
+		code := check.Meta().Code
+		setting := r.settings[code]
 		switch code {
 		case "file-length-limit":
-			limits[code] = 500
-			if setting.config.MaxLines != 0 || setting.config.HasExplicitOption("max-lines") {
-				limits[code] = setting.config.MaxLines
-			}
+			limits[code], _ = core.IntOption(check.Meta(), setting.config, "max-lines")
 		case "function-length":
-			limits[code+"-lines"], limits[code+"-statements"] = setting.config.MaxLines, setting.config.MaxStatements
+			limits[code+"-lines"], _ = core.IntOption(check.Meta(), setting.config, "max-lines")
+			limits[code+"-statements"], _ = core.IntOption(check.Meta(), setting.config, "max-statements")
 		case "function-result-limit":
-			limits[code] = setting.config.MaxResults
+			limits[code], _ = core.IntOption(check.Meta(), setting.config, "max-results")
 		case "max-parameters":
-			limits[code] = setting.config.MaxParameters
+			limits[code], _ = core.IntOption(check.Meta(), setting.config, "max-parameters")
 		case "max-public-structs":
-			limits[code] = setting.config.MaxPublicStructs
+			limits[code], _ = core.IntOption(check.Meta(), setting.config, "max-public-structs")
 		}
 	}
 	return limits
 }
 
-func (r *Registry) activeRules(filename string) []builtinrules.Rule {
-	active := make([]builtinrules.Rule, 0, len(r.rules))
-	for _, rule := range r.rules {
-		if pathfilter.Matches(r.root, filename, r.settings[rule.Meta().Code].excludes) {
+func (r *Registry) blockedImports() []string {
+	for _, check := range r.checks {
+		if check.Meta().Code == "imports-blocklist" {
+			paths, _ := core.StringsOption(check.Meta(), r.settings[check.Meta().Code].config, "blocked-imports")
+			return paths
+		}
+	}
+	return nil
+}
+
+func (r *Registry) activeChecks(filename string) []builtinchecks.Check {
+	active := make([]builtinchecks.Check, 0, len(r.checks))
+	for _, check := range r.checks {
+		if pathfilter.Excluded(r.root, filename, r.settings[check.Meta().Code].excludes) {
 			continue
 		}
-		active = append(active, rule)
+		active = append(active, check)
 	}
 	return active
 }
@@ -237,8 +207,8 @@ func (r *Registry) Applies(filename string) bool {
 	if r == nil {
 		return false
 	}
-	for _, rule := range r.rules {
-		if !pathfilter.Matches(r.root, filename, r.settings[rule.Meta().Code].excludes) {
+	for _, check := range r.checks {
+		if !pathfilter.Excluded(r.root, filename, r.settings[check.Meta().Code].excludes) {
 			return true
 		}
 	}
@@ -250,7 +220,7 @@ func Run(files []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
 		return []diagnostic.Diagnostic{}, nil
 	}
 	if len(files) == 1 {
-		diagnostics, err := lintFile(files[0], registry)
+		diagnostics, err := checkFile(files[0], registry)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", source.DisplayPath(files[0]), err)
 		}
@@ -269,7 +239,7 @@ func Run(files []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
 		go func() {
 			defer group.Done()
 			for filename := range jobs {
-				diagnostics, err := lintFile(filename, registry)
+				diagnostics, err := checkFile(filename, registry)
 				results <- fileResult{
 					filename:    filename,
 					diagnostics: diagnostics,
@@ -309,9 +279,7 @@ func sortDiagnostics(diagnostics []diagnostic.Diagnostic) {
 	sort.SliceStable(
 		diagnostics,
 		func(i, j int) bool {
-			left,
-				right := diagnostics[i],
-				diagnostics[j]
+			left, right := diagnostics[i], diagnostics[j]
 			if left.File != right.File {
 				return left.File < right.File
 			}
@@ -332,9 +300,9 @@ func sortDiagnostics(diagnostics []diagnostic.Diagnostic) {
 	)
 }
 
-func lintFile(filename string, registry *Registry) ([]diagnostic.Diagnostic, error) {
-	activeRules := registry.activeRules(filename)
-	if len(activeRules) == 0 {
+func checkFile(filename string, registry *Registry) ([]diagnostic.Diagnostic, error) {
+	activeChecks := registry.activeChecks(filename)
+	if len(activeChecks) == 0 {
 		return nil, nil
 	}
 	content, err := os.ReadFile(filename)
@@ -345,7 +313,7 @@ func lintFile(filename string, registry *Registry) ([]diagnostic.Diagnostic, err
 	if err != nil {
 		return nil, err
 	}
-	return analyzeTree(filename, concreteTree, activeRules, registry), nil
+	return analyzeTree(filename, concreteTree, activeChecks, registry), nil
 }
 
 // AnalyzeTree runs the selected concrete-syntax checks against a shared tree.
@@ -353,30 +321,30 @@ func AnalyzeTree(filename string, concreteTree *cst.Tree, registry *Registry) []
 	if concreteTree == nil || registry == nil {
 		return nil
 	}
-	activeRules := registry.activeRules(filename)
-	return analyzeTree(filename, concreteTree, activeRules, registry)
+	activeChecks := registry.activeChecks(filename)
+	return analyzeTree(filename, concreteTree, activeChecks, registry)
 }
 
-func analyzeTree(filename string, concreteTree *cst.Tree, activeRules []builtinrules.Rule, registry *Registry) []diagnostic.Diagnostic {
-	if len(activeRules) == 0 {
+func analyzeTree(filename string, concreteTree *cst.Tree, activeChecks []builtinchecks.Check, registry *Registry) []diagnostic.Diagnostic {
+	if len(activeChecks) == 0 {
 		return nil
 	}
 	concreteIgnores, concreteNodes := concreteSuppressions(concreteTree)
 	context := &Context{
 		filename:        filename,
-		displayFilename: source.DisplayPath(filename),
+		displayFilename: source.DiagnosticPath(registry.root, filename),
 		concreteIgnores: concreteIgnores,
 		concreteNodes:   concreteNodes,
 	}
-	builtinrules.AnalyzeCST(
-		builtinrules.CSTInput{
+	builtinchecks.AnalyzeCST(
+		builtinchecks.CSTInput{
 			Filename:         filename,
 			Tree:             concreteTree,
-			Rules:            activeRules,
+			Checks:           activeChecks,
 			BannedCharacters: registry.bannedCharacters(),
 			Limits:           registry.limits(),
-			BlockedImports:   registry.settings["imports-blocklist"].config.BlockedImports,
-			Report: func(finding builtinrules.Finding) {
+			BlockedImports:   registry.blockedImports(),
+			Report: func(finding builtinchecks.Finding) {
 				context.reportConcrete(concreteTree, finding, registry.Severity(finding.Code))
 			},
 		},
@@ -384,10 +352,10 @@ func analyzeTree(filename string, concreteTree *cst.Tree, activeRules []builtinr
 	return context.diagnostics
 }
 
-func (c *Context) reportConcrete(tree *cst.Tree, finding builtinrules.Finding, severity diagnostic.Severity) {
-	startOffset, endOffset := cst.Range(finding.ConcreteNode)
-	if finding.HasConcreteRange {
-		startOffset, endOffset = finding.ConcreteStart, finding.ConcreteEnd
+func (c *Context) reportConcrete(tree *cst.Tree, finding builtinchecks.Finding, severity diagnostic.Severity) {
+	startOffset, endOffset := cst.Range(finding.Node)
+	if finding.HasRange {
+		startOffset, endOffset = finding.Start, finding.End
 	}
 	if c.suppressedRange(finding.Code, startOffset, endOffset) {
 		return
@@ -472,8 +440,7 @@ func concreteSuppressionCandidates(tree *cst.Tree) []concreteSuppression {
 			if !strings.HasSuffix(kind, "Decl") && !strings.HasSuffix(kind, "Stmt") {
 				return true
 			}
-			start,
-				end := cst.Range(node)
+			start, end := cst.Range(node)
 			if end > start {
 				result = append(result, concreteSuppression{
 					start: start,

@@ -6,9 +6,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type unusedAppendResultRule struct{}
+type unusedAppendResultCheck struct{}
 
-func (unusedAppendResultRule) Meta() Meta {
+func (unusedAppendResultCheck) Meta() Meta {
 	return Meta{
 		Code:            "unused-append-result",
 		Summary:         "detect append results that can never be observed",
@@ -19,7 +19,7 @@ func (unusedAppendResultRule) Meta() Meta {
 	}
 }
 
-func (unusedAppendResultRule) Run(pass *Pass) {
+func (unusedAppendResultCheck) Run(pass *Pass) {
 	for _, function := range pass.Functions {
 		for _, block := range function.Blocks {
 			for _, instruction := range block.Instrs {
@@ -31,9 +31,7 @@ func (unusedAppendResultRule) Run(pass *Pass) {
 				if !validAppendOrigin(call.Common().Args[0], origins) || appendOriginEscapes(call, origins) {
 					continue
 				}
-				pass.Report(positionNode{
-					position: call.Pos(),
-				}, "result of append is never used or observed")
+				pass.ReportPos(call.Pos(), "result of append is never used or observed")
 			}
 		}
 	}
@@ -155,4 +153,10 @@ func appendValueEscapes(value ssa.Value, allowed map[ssa.Instruction]bool, visit
 		}
 	}
 	return false
+}
+
+func (unusedAppendResultCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+	}
 }

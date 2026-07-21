@@ -7,53 +7,107 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"reflect"
 	"strings"
 	"time"
 
-	checkengine "github.com/gempir/strider/internal/checks"
+	"github.com/gempir/strider/internal/checks"
+	"github.com/gempir/strider/internal/checks/semantic"
 	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/diagnostic"
-	fixengine "github.com/gempir/strider/internal/fix"
+	"github.com/gempir/strider/internal/fix"
 	"github.com/gempir/strider/internal/formatter"
+	"github.com/gempir/strider/internal/report"
 	"github.com/gempir/strider/internal/ui"
 	"github.com/gempir/strider/internal/workspace"
 )
 
 const checkWatchInterval = time.Second
 
+var checkConflicts = []checkConflict{
+	{
+		left:    "watch",
+		right:   "structured-report",
+		message: "--watch requires text report format",
+	},
+	{
+		left:    "summary-only",
+		right:   "structured-report",
+		message: "--summary-only requires text report format",
+	},
+	{
+		left:    "fix",
+		right:   "fix-unsafe",
+		message: "--fix and --fix-unsafe are mutually exclusive",
+	},
+	{
+		left:    "fix-mode",
+		right:   "watch",
+		message: "fix mode cannot be combined with --watch",
+	},
+	{
+		left:    "fix-mode",
+		right:   "baseline-update",
+		message: "fix mode cannot update a baseline",
+	},
+	{
+		left:    "watch",
+		right:   "baseline-update",
+		message: "watch mode cannot update a baseline",
+	},
+}
+
 type checkWatcher struct {
 	paths            []string
 	workspaceOptions workspace.Options
 	cache            *workspace.Cache
-	session          *checkengine.Session
+	session          *checks.Session
 	baseline         baselineOptions
 	summaryOnly      bool
 	colorMode        ui.ColorMode
 	stdout           io.Writer
 	stderr           io.Writer
 
-	iteration uint64
+	iteration       uint64
+	hasDiagnostics  bool
+	lastDiagnostics []diagnostic.Diagnostic
+}
+
+type checkExecution struct {
+	paths            []string
+	workspaceOptions workspace.Options
+	registry         *checks.Registry
+	runOptions       checks.RunOptions
+	baseline         baselineOptions
+	reportFormat     string
+	summaryOnly      bool
+	fix              bool
+	fixMode          fix.Mode
+	configuration    config.Config
+	colorMode        ui.ColorMode
+	stdout           io.Writer
+	stderr           io.Writer
+}
+
+type checkConflict struct {
+	left    string
+	right   string
+	message string
 }
 
 func runCheck(args []string, configuration config.Config, colorMode ui.ColorMode, stdout, stderr io.Writer) int {
+	exitCode, err := runCheckCommand(args, configuration, colorMode, stdout, stderr)
+	if err != nil {
+		printCommandError(stderr, colorMode, "strider check", "%v", err)
+		return exitError
+	}
+	return exitCode
+}
+
+func runCheckCommand(args []string, configuration config.Config, colorMode ui.ColorMode, stdout, stderr io.Writer) (int, error) {
 	flags := flag.NewFlagSet("check", flag.ContinueOnError)
 	flags.SetOutput(stderr)
-	aliases := map[string]string{
-		"format":                           "f",
-		"minimum-severity":                 "s",
-		"summary-only":                     "q",
-		"watch":                            "w",
-		"list-checks":                      "l",
-		"list-rules":                       "l",
-		"explain":                          "e",
-		"baseline":                         "b",
-		"generate-baseline":                "g",
-		"remove-outdated-baseline-entries": "r",
-		"only":                             "o",
-		"fix":                              "x",
-		"fix-unsafe":                       "u",
-		"help":                             "h",
-	}
+	aliases := commandOptionAliases["check"]
 	reportFormat := stringOption(flags, "format", "f", "text", "report format: text, json, or html")
 	minimumSeverityFlag := stringOption(flags, "minimum-severity", "s", "", "minimum effective severity: none, note, warning, or error")
 	summaryOnly := boolOption(flags, "summary-only", "q", false, "only print per-check counts and the aggregate issue summary")
@@ -74,42 +128,29 @@ func runCheck(args []string, configuration config.Config, colorMode ui.ColorMode
 		printFlagDefaults(stderr, flags, aliases, palette)
 	}
 	if !parseCommandFlags(flags, args, aliases, "check", colorMode, stderr) {
-		return exitError
+		return exitError, nil
 	}
 	if *reportFormat != "text" && *reportFormat != "json" && *reportFormat != "html" {
-		printCommandError(stderr, colorMode, "strider check", "unsupported report format %q", *reportFormat)
-		return exitError
-	}
-	if *watch && *reportFormat != "text" {
-		printCommandError(stderr, colorMode, "strider check", "--watch requires text report format")
-		return exitError
-	}
-	if *summaryOnly && *reportFormat != "text" {
-		printCommandError(stderr, colorMode, "strider check", "--summary-only requires text report format")
-		return exitError
-	}
-	if *fixSafe && *fixUnsafe {
-		printCommandError(stderr, colorMode, "strider check", "--fix and --fix-unsafe are mutually exclusive")
-		return exitError
+		return exitError, fmt.Errorf("unsupported report format %q", *reportFormat)
 	}
 	fixMode := *fixSafe || *fixUnsafe
-	if fixMode && *watch {
-		printCommandError(stderr, colorMode, "strider check", "fix mode cannot be combined with --watch")
-		return exitError
+	activeModes := map[string]bool{
+		"watch":             *watch,
+		"structured-report": *reportFormat != "text",
+		"summary-only":      *summaryOnly,
+		"fix":               *fixSafe,
+		"fix-unsafe":        *fixUnsafe,
+		"fix-mode":          fixMode,
+		"baseline-update":   *generateBaseline || *removeOutdated,
 	}
-	if fixMode && (*generateBaseline || *removeOutdated) {
-		printCommandError(stderr, colorMode, "strider check", "fix mode cannot update a baseline")
-		return exitError
-	}
-	if *watch && (*generateBaseline || *removeOutdated) {
-		printCommandError(stderr, colorMode, "strider check", "--watch cannot update a baseline")
-		return exitError
+	if err := validateCheckConflicts(activeModes); err != nil {
+		return exitError, err
 	}
 
 	checkConfig := configuration.Checks
 	minimumSeverity, ok := resolveMinimumSeverity(flags, *minimumSeverityFlag, checkConfig.MinimumSeverity, "check", colorMode, stderr)
 	if !ok {
-		return exitError
+		return exitError, nil
 	}
 	selected := []string(only)
 	if *explain != "" {
@@ -118,45 +159,40 @@ func runCheck(args []string, configuration config.Config, colorMode ui.ColorMode
 		}
 		minimumSeverity = diagnostic.SeverityNone
 	}
-	registry, err := checkengine.NewRegistry(
-		checkengine.RegistryOptions{
+	registry, err := checks.NewRegistry(
+		checks.RegistryOptions{
 			Only:            selected,
-			Settings:        checkConfig.Rules,
+			Settings:        checkConfig.Settings,
 			MinimumSeverity: minimumSeverity,
 			FormatExcludes:  configuration.Formatter.Excludes,
 			Root:            configuration.Root,
 		},
 	)
 	if err != nil {
-		printCommandError(stderr, colorMode, "strider check", "%v", err)
-		return exitError
+		return exitError, err
 	}
 	if *listChecks {
-		return listChecksInRegistry(registry, colorMode, stdout)
+		return listChecksInRegistry(registry, colorMode, stdout), nil
 	}
 	if *explain != "" {
-		return explainCheck(registry, *explain, colorMode, stdout, stderr)
+		return explainCheck(registry, *explain, colorMode, stdout, stderr), nil
 	}
 
 	baselineConfig, ok := resolveBaselineOptions(flags, configuration, checkConfig, *baselinePath, *generateBaseline, *removeOutdated, stderr, "check", colorMode)
 	if !ok {
-		return exitError
+		return exitError, nil
 	}
-	baselineConfig.selectedCodes = make(map[string]bool, len(registry.Rules()))
-	for _, rule := range registry.Rules() {
-		baselineConfig.selectedCodes[rule.Meta().Code] = true
+	baselineConfig.selectedCodes = make(map[string]bool, len(registry.Checks()))
+	for _, check := range registry.Checks() {
+		baselineConfig.selectedCodes[check.Meta().Code] = true
 	}
 	baselineConfig.knownCodes = registry.KnownCodes()
 	workspaceOptions := workspace.Options{
 		SkipGenerated: true,
-		Root:          configuration.Root,
-		Excludes:      checkConfig.Excludes,
 	}
-	runOptions := checkengine.RunOptions{
+	runOptions := checks.RunOptions{
 		Formatter: formatter.Options{
-			PrintWidth:         configuration.Formatter.PrintWidth,
-			MaxBlankLines:      configuration.Formatter.MaxBlankLines,
-			ExistingLineBreaks: configuration.Formatter.ExistingLineBreaks,
+			PrintWidth: configuration.Formatter.PrintWidth,
 		},
 		Root:              configuration.Root,
 		Excludes:          checkConfig.Excludes,
@@ -164,122 +200,149 @@ func runCheck(args []string, configuration config.Config, colorMode ui.ColorMode
 	}
 	if *watch {
 		if err := runCheckWatch(flags.Args(), workspaceOptions, registry, runOptions, baselineConfig, *summaryOnly, colorMode, stdout, stderr); err != nil {
-			printCommandError(stderr, colorMode, "strider check", "%v", err)
-			return exitError
+			return exitError, err
 		}
-		return exitSuccess
+		return exitSuccess, nil
 	}
-	shared, err := workspace.Open(flags.Args(), workspaceOptions)
+	mode := fix.SafeOnly
+	if *fixUnsafe {
+		mode = fix.IncludeUnsafe
+	}
+	return runCheckOnce(
+		checkExecution{
+			paths:            flags.Args(),
+			workspaceOptions: workspaceOptions,
+			registry:         registry,
+			runOptions:       runOptions,
+			baseline:         baselineConfig,
+			reportFormat:     *reportFormat,
+			summaryOnly:      *summaryOnly,
+			fix:              fixMode,
+			fixMode:          mode,
+			configuration:    configuration,
+			colorMode:        colorMode,
+			stdout:           stdout,
+			stderr:           stderr,
+		},
+	)
+}
+
+func validateCheckConflicts(active map[string]bool) error {
+	for _, conflict := range checkConflicts {
+		if active[conflict.left] && active[conflict.right] {
+			return fmt.Errorf("%s", conflict.message)
+		}
+	}
+	return nil
+}
+
+func runCheckOnce(execution checkExecution) (int, error) {
+	shared, err := workspace.Open(execution.paths, execution.workspaceOptions)
 	if err != nil {
-		printCommandError(stderr, colorMode, "strider check", "%v", err)
-		return exitError
+		return exitError, err
 	}
-	var snapshot fixengine.Snapshot
-	if fixMode {
-		snapshot, err = fixengine.Capture(shared)
+	var snapshot fix.Snapshot
+	if execution.fix {
+		snapshot, err = fix.Capture(shared, execution.configuration.Root)
 		if err != nil {
-			printCommandError(stderr, colorMode, "strider check", "%v", err)
-			return exitError
+			return exitError, err
 		}
 	}
-	result, err := checkengine.Run(shared, registry, runOptions)
+	result, err := checks.Run(shared, execution.registry, execution.runOptions)
 	if err != nil {
-		printCommandError(stderr, colorMode, "strider check", "%v", err)
-		return exitError
+		return exitError, err
 	}
-	baselineWriter := stderr
-	if fixMode {
+	baselineWriter := execution.stderr
+	if execution.fix {
 		baselineWriter = io.Discard
 	}
-	diagnostics, handled, err := prepareCheckDiagnostics(result.Diagnostics, baselineConfig, colorMode, baselineWriter)
+	diagnostics, handled, err := prepareCheckDiagnostics(result.Diagnostics, execution.baseline, execution.colorMode, baselineWriter)
 	if err != nil {
-		printCommandError(stderr, colorMode, "strider check", "%v", err)
-		return exitError
+		return exitError, err
 	}
 	if handled {
-		return exitSuccess
+		return exitSuccess, nil
 	}
-	if fixMode {
-		mode := fixengine.SafeOnly
-		if *fixUnsafe {
-			mode = fixengine.IncludeUnsafe
-		}
-		formatRule := configuration.EffectiveCheckRule("format")
-		formatExcludes := append(append([]string(nil), configuration.Formatter.Excludes...), formatRule.Excludes...)
-		fixed, fixErr := fixengine.Plan(
-			snapshot,
-			diagnostics,
-			result.Candidates,
-			fixengine.Options{
-				Mode:           mode,
-				Formatter:      runOptions.Formatter,
-				Root:           configuration.Root,
-				FormatExcludes: formatExcludes,
-			},
-		)
-		if fixErr != nil {
-			printCommandError(stderr, colorMode, "strider check", "%v", fixErr)
-			return exitError
-		}
-		palette := ui.NewPalette(stderr, colorMode)
-		for _, skipped := range fixed.Skipped {
-			fmt.Fprintf(
-				stderr,
-				"%s skipped %s in %s: %s\n",
-				palette.Warning("strider check:"),
-				palette.Code(skipped.Code),
-				palette.Path(skipped.File),
-				skipped.Reason,
-			)
-		}
-		if fixErr = fixengine.Apply(fixed); fixErr != nil {
-			printCommandError(stderr, colorMode, "strider check", "%v", fixErr)
-			return exitError
-		}
-
-		shared, err = workspace.Open(flags.Args(), workspaceOptions)
+	if execution.fix {
+		diagnostics, handled, err = applyCheckFixes(execution, snapshot, diagnostics, result.Candidates)
 		if err != nil {
-			printCommandError(stderr, colorMode, "strider check", "%v", err)
-			return exitError
-		}
-		runOptions.CollectCandidates = false
-		result, err = checkengine.Run(shared, registry, runOptions)
-		if err != nil {
-			printCommandError(stderr, colorMode, "strider check", "%v", err)
-			return exitError
-		}
-		diagnostics, handled, err = prepareCheckDiagnostics(result.Diagnostics, baselineConfig, colorMode, stderr)
-		if err != nil {
-			printCommandError(stderr, colorMode, "strider check", "%v", err)
-			return exitError
+			return exitError, err
 		}
 		if handled {
-			return exitSuccess
+			return exitSuccess, nil
 		}
 	}
-	err = reportCheckDiagnostics(stdout, diagnostics, *reportFormat, *summaryOnly, colorMode)
+	err = reportCheckDiagnostics(execution.stdout, diagnostics, execution.reportFormat, execution.summaryOnly, execution.colorMode)
 	if err != nil {
-		printCommandError(stderr, colorMode, "strider check", "%v", err)
-		return exitError
+		return exitError, err
 	}
 	if len(diagnostics) != 0 {
-		return exitFindings
+		return exitFindings, nil
 	}
-	return exitSuccess
+	return exitSuccess, nil
+}
+
+func applyCheckFixes(execution checkExecution, snapshot fix.Snapshot, diagnostics []diagnostic.Diagnostic, candidates map[string]formatter.Result) (
+	[]diagnostic.Diagnostic,
+	bool,
+	error,
+) {
+	formatCheck := execution.configuration.EffectiveCheck("format")
+	formatExcludes := append(append([]string(nil), execution.configuration.Formatter.Excludes...), formatCheck.Excludes...)
+	fixed, err := fix.Plan(
+		snapshot,
+		diagnostics,
+		candidates,
+		fix.Options{
+			Mode:           execution.fixMode,
+			Formatter:      execution.runOptions.Formatter,
+			Root:           execution.configuration.Root,
+			FormatExcludes: formatExcludes,
+			Validate:       semantic.ValidateOverlay,
+		},
+	)
+	if err != nil {
+		return nil, false, err
+	}
+	palette := ui.NewPalette(execution.stderr, execution.colorMode)
+	for _, skipped := range fixed.Skipped {
+		fmt.Fprintf(
+			execution.stderr,
+			"%s skipped %s in %s: %s\n",
+			palette.Warning("strider check:"),
+			palette.Code(skipped.Code),
+			palette.Path(skipped.File),
+			skipped.Reason,
+		)
+	}
+	if err := fix.Apply(fixed); err != nil {
+		return nil, false, err
+	}
+	shared, err := workspace.Open(execution.paths, execution.workspaceOptions)
+	if err != nil {
+		return nil, false, err
+	}
+	runOptions := execution.runOptions
+	runOptions.CollectCandidates = false
+	result, err := checks.Run(shared, execution.registry, runOptions)
+	if err != nil {
+		return nil, false, err
+	}
+	return prepareCheckDiagnostics(result.Diagnostics, execution.baseline, execution.colorMode, execution.stderr)
 }
 
 func runCheckWatch(
 	paths []string,
 	workspaceOptions workspace.Options,
-	registry *checkengine.Registry,
-	runOptions checkengine.RunOptions,
+	registry *checks.Registry,
+	runOptions checks.RunOptions,
 	baselineConfig baselineOptions,
 	summaryOnly bool,
 	colorMode ui.ColorMode,
 	stdout,
 	stderr io.Writer,
 ) error {
-	session, err := checkengine.NewSession(registry, runOptions, checkengine.SessionOptions{})
+	session, err := checks.NewSession(registry, runOptions)
 	if err != nil {
 		return err
 	}
@@ -328,10 +391,6 @@ func (watcher *checkWatcher) run() error {
 	}
 	after := watcher.session.Stats()
 	concreteChanged := after.ConcreteMisses > before.ConcreteMisses
-	packageChanged := after.Analysis.Generation > before.Analysis.Generation
-	if watcher.iteration != 0 && !concreteChanged && !packageChanged {
-		return nil
-	}
 	diagnostics, handled, err := prepareCheckDiagnostics(result.Diagnostics, watcher.baseline, watcher.colorMode, watcher.stderr)
 	if err != nil {
 		return err
@@ -339,6 +398,12 @@ func (watcher *checkWatcher) run() error {
 	if handled {
 		return fmt.Errorf("watch mode cannot update a baseline")
 	}
+	diagnosticsChanged := !watcher.hasDiagnostics || !reflect.DeepEqual(watcher.lastDiagnostics, diagnostics)
+	if watcher.iteration != 0 && !concreteChanged && !diagnosticsChanged {
+		return nil
+	}
+	watcher.lastDiagnostics = diagnostics
+	watcher.hasDiagnostics = true
 	watcher.iteration++
 	fmt.Fprintf(watcher.stdout, "== strider check #%d ==\n", watcher.iteration)
 	if err := reportCheckDiagnostics(watcher.stdout, diagnostics, "text", watcher.summaryOnly, watcher.colorMode); err != nil {
@@ -359,43 +424,45 @@ func prepareCheckDiagnostics(diagnostics []diagnostic.Diagnostic, baselineConfig
 
 func reportCheckDiagnostics(stdout io.Writer, diagnostics []diagnostic.Diagnostic, reportFormat string, summaryOnly bool, colorMode ui.ColorMode) error {
 	if reportFormat == "json" {
-		return checkengine.ReportJSON(stdout, diagnostics)
+		return report.JSON(stdout, diagnostics)
 	}
 	if reportFormat == "html" {
-		return checkengine.ReportHTML(stdout, diagnostics)
+		return report.HTML(stdout, "Strider check report", diagnostics)
 	}
 	if summaryOnly {
-		return checkengine.ReportSummary(stdout, diagnostics, colorMode)
+		return report.TextWithOptions(stdout, diagnostics, colorMode, report.TextOptions{
+			SummaryOnly: true,
+		})
 	}
-	return checkengine.ReportText(stdout, diagnostics, colorMode)
+	return report.Text(stdout, diagnostics, colorMode)
 }
 
-func listChecksInRegistry(registry *checkengine.Registry, colorMode ui.ColorMode, stdout io.Writer) int {
+func listChecksInRegistry(registry *checks.Registry, colorMode ui.ColorMode, stdout io.Writer) int {
 	palette := ui.NewPalette(stdout, colorMode)
-	entries := make([]ruleListEntry, 0, len(registry.Rules()))
-	for _, rule := range registry.Rules() {
-		meta := rule.Meta()
-		entries = append(entries, ruleListEntry{
+	entries := make([]checkListEntry, 0, len(registry.Checks()))
+	for _, check := range registry.Checks() {
+		meta := check.Meta()
+		entries = append(entries, checkListEntry{
 			code:     meta.Code,
 			severity: registry.Severity(meta.Code),
 			summary:  meta.Summary,
 		})
 	}
-	writeRuleList(stdout, palette, entries)
+	writeCheckList(stdout, palette, entries)
 	return exitSuccess
 }
 
-func explainCheck(registry *checkengine.Registry, code string, colorMode ui.ColorMode, stdout, stderr io.Writer) int {
+func explainCheck(registry *checks.Registry, code string, colorMode ui.ColorMode, stdout, stderr io.Writer) int {
 	palette := ui.NewPalette(stdout, colorMode)
-	for _, rule := range registry.Rules() {
-		meta := rule.Meta()
+	for _, check := range registry.Checks() {
+		meta := check.Meta()
 		if !strings.EqualFold(meta.Code, code) {
 			continue
 		}
 		fmt.Fprintf(
 			stdout,
 			"%s (%s)\n\n%s\n\n%s\n%s\n\n%s\n%s\n",
-			colorSeverityText(registry.Severity(meta.Code), meta.Code, palette),
+			report.StyleSeverity(registry.Severity(meta.Code), meta.Code, palette),
 			colorSeverity(registry.Severity(meta.Code), palette),
 			meta.Explanation,
 			palette.Success("Good:"),

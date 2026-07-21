@@ -10,7 +10,7 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type contextCancelInLoopRule struct{}
+type contextCancelInLoopCheck struct{}
 
 type contextCancelAcquisition struct {
 	call   *ast.CallExpr
@@ -29,7 +29,7 @@ type contextCancelPathState struct {
 	active bool
 }
 
-func (contextCancelInLoopRule) Meta() Meta {
+func (contextCancelInLoopCheck) Meta() Meta {
 	return Meta{
 		Code:            "context-cancel-in-loop",
 		Summary:         "detect derived contexts whose cancellation is retained across loop iterations",
@@ -40,21 +40,22 @@ func (contextCancelInLoopRule) Meta() Meta {
 	}
 }
 
-func (contextCancelInLoopRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				switch loop := node.(type) {
-				case *ast.ForStmt:
-					reportLoopContextCancellations(pass, loop.Body)
-				case *ast.RangeStmt:
-					reportLoopContextCancellations(pass, loop.Body)
-				}
-				return true
-			},
-		)
-	}
+func (contextCancelInLoopCheck) Run(pass *Pass) {
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.ForStmt)(nil),
+			(*ast.RangeStmt)(nil),
+		},
+		func(node ast.Node) bool {
+			switch loop := node.(type) {
+			case *ast.ForStmt:
+				reportLoopContextCancellations(pass, loop.Body)
+			case *ast.RangeStmt:
+				reportLoopContextCancellations(pass, loop.Body)
+			}
+			return true
+		},
+	)
 }
 
 func reportLoopContextCancellations(pass *Pass, body *ast.BlockStmt) {
@@ -72,9 +73,7 @@ func reportLoopContextCancellations(pass *Pass, body *ast.BlockStmt) {
 			}
 			if !first {
 				switch node.(type) {
-				case *ast.FuncLit,
-					*ast.ForStmt,
-					*ast.RangeStmt:
+				case *ast.FuncLit, *ast.ForStmt, *ast.RangeStmt:
 					return false
 				}
 			}
@@ -132,12 +131,7 @@ func reportLoopContextCancellations(pass *Pass, body *ast.BlockStmt) {
 			continue
 		}
 		if deferred != nil {
-			pass.Report(
-				positionNode{
-					position: deferred.position,
-				},
-				"cancellation deferred inside a loop runs only when the surrounding function returns; cancel before the iteration ends",
-			)
+			pass.ReportPos(deferred.position, "cancellation deferred inside a loop runs only when the surrounding function returns; cancel before the iteration ends")
 			continue
 		}
 		pass.Report(acquisition.call, acquisition.name+" is created in a loop but its cancellation function is not called during the iteration")
@@ -263,4 +257,10 @@ func calledCancelObject(pass *Pass, expression ast.Expr) types.Object {
 		return nil
 	}
 	return object
+}
+
+func (contextCancelInLoopCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

@@ -15,9 +15,6 @@ func TestDefaultsUseVersionOneAndWideFormatting(t *testing.T) {
 	if defaults.Formatter.PrintWidth != 180 {
 		t.Fatalf("unexpected formatter defaults: %#v", defaults.Formatter)
 	}
-	if defaults.Formatter.MaxBlankLines != 1 || defaults.Formatter.ExistingLineBreaks != "structural-only" || !defaults.Formatter.Alignment.Declarations {
-		t.Fatalf("unexpected formatter policy defaults: %#v", defaults.Formatter)
-	}
 	if defaults.Checks.MinimumSeverity != "warning" {
 		t.Fatalf("default minimum severity = %q, want warning", defaults.Checks.MinimumSeverity)
 	}
@@ -32,9 +29,6 @@ func TestLoadDiscoversVersionOneChecks(t *testing.T) {
 	contents := `version = 1
 [formatter]
 print-width = 120
-max-blank-lines = 1
-existing-line-breaks = "structural-only"
-alignment.declarations = true
 excludes = ["internal/generated/**"]
 [check]
 excludes = ["generated/**"]
@@ -57,23 +51,20 @@ characters = ["ᐸ", "ᐳ"]
 	if configuration.Formatter.PrintWidth != 120 {
 		t.Fatalf("unexpected formatter config: %#v", configuration.Formatter)
 	}
-	if configuration.Formatter.MaxBlankLines != 1 || configuration.Formatter.ExistingLineBreaks != "structural-only" || !configuration.Formatter.Alignment.Declarations || strings.Join(
-		configuration.Formatter.Excludes,
-		",",
-	) != "internal/generated/**" {
+	if strings.Join(configuration.Formatter.Excludes, ",") != "internal/generated/**" {
 		t.Fatalf("unexpected formatter policy config: %#v", configuration.Formatter)
 	}
 	if configuration.Checks.Baseline != "strider-baseline.toml" || configuration.Checks.MinimumSeverity != "warning" {
 		t.Fatalf("unexpected checks config: %#v", configuration.Checks)
 	}
-	rule := configuration.EffectiveCheckRule("no-init")
-	if rule.Severity != "none" {
-		t.Fatalf("unexpected effective rule: %#v", rule)
+	check := configuration.EffectiveCheck("no-init")
+	if check.Severity != "none" {
+		t.Fatalf("unexpected effective check: %#v", check)
 	}
-	if strings.Join(rule.Excludes, ",") != "generated/**,legacy/**" {
-		t.Fatalf("effective excludes = %q", rule.Excludes)
+	if strings.Join(check.Excludes, ",") != "generated/**,legacy/**" {
+		t.Fatalf("effective excludes = %q", check.Excludes)
 	}
-	if got := strings.Join(configuration.EffectiveCheckRule("banned-characters").Characters, ","); got != "ᐸ,ᐳ" {
+	if got := strings.Join(configuration.EffectiveCheck("banned-characters").Characters, ","); got != "ᐸ,ᐳ" {
 		t.Fatalf("banned characters = %q", got)
 	}
 	canonicalRoot, err := filepath.EvalSymlinks(root)
@@ -116,19 +107,19 @@ func TestLoadRejectsUnknownAndInvalidSettings(t *testing.T) {
 		},
 		"max-blank-lines": {
 			"version = 1\n[formatter]\nmax-blank-lines = 0\n",
-			"max-blank-lines",
+			"unknown configuration key",
 		},
 		"multiple-blank-lines": {
 			"version = 1\n[formatter]\nmax-blank-lines = 2\n",
-			"max-blank-lines",
+			"unknown configuration key",
 		},
 		"existing-line-breaks": {
 			"version = 1\n[formatter]\nexisting-line-breaks = \"preserve\"\n",
-			"existing-line-breaks",
+			"unknown configuration key",
 		},
 		"declaration-alignment": {
 			"version = 1\n[formatter]\nalignment.declarations = false\n",
-			"alignment.declarations",
+			"unknown configuration key",
 		},
 		"severity": {
 			"version = 1\n[checks.no-init]\nseverity = \"fatal\"\n",
@@ -178,8 +169,7 @@ func TestLoadRejectsUnknownAndInvalidSettings(t *testing.T) {
 				if err := os.WriteFile(path, []byte(test.contents), 0o600); err != nil {
 					t.Fatal(err)
 				}
-				_,
-					err := Load(path, false)
+				_, err := Load(path, false)
 				if err == nil || !strings.Contains(err.Error(), test.wanted) {
 					t.Fatalf("got %v, want error containing %q", err, test.wanted)
 				}
@@ -188,7 +178,7 @@ func TestLoadRejectsUnknownAndInvalidSettings(t *testing.T) {
 	}
 }
 
-func TestLoadTracksExplicitZeroValuedRuleOptions(t *testing.T) {
+func TestLoadTracksExplicitZeroValuedCheckOptions(t *testing.T) {
 	path := filepath.Join(t.TempDir(), Filename)
 	contents := "version = 1\n[checks.no-init]\nmax-lines = 0\n"
 	if err := os.WriteFile(path, []byte(contents), 0o600); err != nil {
@@ -198,12 +188,12 @@ func TestLoadTracksExplicitZeroValuedRuleOptions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rule := configuration.Checks.Rules["no-init"]
-	if !rule.HasExplicitOption("max-lines") {
-		t.Fatal("explicit max-lines = 0 was not retained for check-specific validation")
+	check := configuration.Checks.Settings["no-init"]
+	if check.MaxLines == nil || *check.MaxLines != 0 {
+		t.Fatalf("max-lines = %v, want explicit zero", check.MaxLines)
 	}
-	if rule.HasExplicitOption("max-methods") {
-		t.Fatal("omitted option was marked explicit")
+	if check.MaxMethods != nil {
+		t.Fatalf("max-methods = %v, want unset", check.MaxMethods)
 	}
 }
 

@@ -8,17 +8,12 @@ package cst
 import (
 	"go/scanner"
 	"go/token"
-	"reflect"
 	"sort"
 	"strings"
 	"sync"
 
 	gc "modernc.org/gc/v3"
 )
-
-var kindCache sync.Map
-
-var childFieldsCache sync.Map
 
 // Node is a production or token in the concrete syntax tree.
 type Node = gc.Node
@@ -30,69 +25,72 @@ type Token = gc.Token
 // Grammar node aliases keep consumers coupled to Strider's CST vocabulary
 // rather than to the parser implementation package.
 type (
-	AliasDecl         = gc.AliasDeclNode
-	Assignment        = gc.AssignmentNode
-	Arguments         = gc.ArgumentsNode
-	Arguments1        = gc.Arguments1Node
-	Arguments2        = gc.Arguments2Node
-	Arguments3        = gc.Arguments3Node
-	BasicLit          = gc.BasicLitNode
-	BinaryExpression  = gc.BinaryExpressionNode
-	Block             = gc.BlockNode
-	BreakStmt         = gc.BreakStmtNode
-	CommCase          = gc.CommCaseNode
-	CommClause        = gc.CommClauseNode
-	CommClauseList    = gc.CommClauseListNode
-	ConstSpec         = gc.ConstSpecNode
-	ConstSpec2        = gc.ConstSpec2Node
-	DeferStmt         = gc.DeferStmtNode
-	ExprSwitchCase    = gc.ExprSwitchCaseNode
-	ExprSwitchCase2   = gc.ExprSwitchCase2Node
-	ExprCaseClause    = gc.ExprCaseClauseListNode
-	ExprSwitchStmt    = gc.ExprSwitchStmtNode
-	ExpressionList    = gc.ExpressionListNode
-	FallthroughStmt   = gc.FallthroughStmtNode
-	FieldDecl         = gc.FieldDeclNode
-	ForStmt           = gc.ForStmtNode
-	FunctionBody      = gc.FunctionBodyNode
-	FunctionDecl      = gc.FunctionDeclNode
-	FunctionLit       = gc.FunctionLitNode
-	IdentifierList    = gc.IdentifierListNode
-	IfElseStmt        = gc.IfElseStmtNode
-	IfStmt            = gc.IfStmtNode
-	ImportDecl        = gc.ImportDeclNode
-	ImportSpec        = gc.ImportSpecNode
-	IncDecStmt        = gc.IncDecStmtNode
-	InterfaceType     = gc.InterfaceTypeNode
-	MethodDecl        = gc.MethodDeclNode
-	ParameterDecl     = gc.ParameterDeclNode
-	ParameterDeclList = gc.ParameterDeclListNode
-	Parameters        = gc.ParametersNode
-	ParenthesizedExpr = gc.ParenthesizedExpressionNode
-	PrimaryExpr       = gc.PrimaryExprNode
-	RangeClause       = gc.RangeClauseNode
-	ReturnStmt        = gc.ReturnStmtNode
-	Result            = gc.ResultNode
-	SelectStmt        = gc.SelectStmtNode
-	Selector          = gc.SelectorNode
-	ShortVarDecl      = gc.ShortVarDeclNode
-	Signature         = gc.SignatureNode
-	StatementList     = gc.StatementListNode
-	StructType        = gc.StructTypeNode
-	Tag               = gc.TagNode
-	TypeDef           = gc.TypeDefNode
-	TypeElemList      = gc.TypeElemListNode
-	TypeParamDecl     = gc.TypeParamDeclNode
-	TypeSwitchCase    = gc.TypeSwitchCaseNode
-	TypeSwitchStmt    = gc.TypeSwitchStmtNode
-	TypeArgs          = gc.TypeArgsNode
-	TypeAssertion     = gc.TypeAssertionNode
-	TypeCaseClause    = gc.TypeCaseClauseNode
-	TypeParameters    = gc.TypeParametersNode
-	UnaryExpr         = gc.UnaryExprNode
-	VarDecl           = gc.VarDeclNode
-	VarSpec           = gc.VarSpecNode
-	VarSpec2          = gc.VarSpec2Node
+	AliasDecl          = gc.AliasDeclNode
+	Assignment         = gc.AssignmentNode
+	Arguments          = gc.ArgumentsNode
+	Arguments1         = gc.Arguments1Node
+	Arguments2         = gc.Arguments2Node
+	Arguments3         = gc.Arguments3Node
+	BasicLit           = gc.BasicLitNode
+	BinaryExpression   = gc.BinaryExpressionNode
+	Block              = gc.BlockNode
+	BreakStmt          = gc.BreakStmtNode
+	CommCase           = gc.CommCaseNode
+	CommClause         = gc.CommClauseNode
+	CommClauseList     = gc.CommClauseListNode
+	ConstDecl          = gc.ConstDeclNode
+	ConstSpec          = gc.ConstSpecNode
+	ConstSpec2         = gc.ConstSpec2Node
+	DeferStmt          = gc.DeferStmtNode
+	ExprSwitchCase     = gc.ExprSwitchCaseNode
+	ExprSwitchCase2    = gc.ExprSwitchCase2Node
+	ExprCaseClauseList = gc.ExprCaseClauseListNode
+	ExprSwitchStmt     = gc.ExprSwitchStmtNode
+	ExpressionList     = gc.ExpressionListNode
+	FallthroughStmt    = gc.FallthroughStmtNode
+	FieldDecl          = gc.FieldDeclNode
+	ForStmt            = gc.ForStmtNode
+	FunctionBody       = gc.FunctionBodyNode
+	FunctionDecl       = gc.FunctionDeclNode
+	FunctionLit        = gc.FunctionLitNode
+	IdentifierList     = gc.IdentifierListNode
+	IfElseStmt         = gc.IfElseStmtNode
+	IfStmt             = gc.IfStmtNode
+	ImportDecl         = gc.ImportDeclNode
+	ImportSpec         = gc.ImportSpecNode
+	IncDecStmt         = gc.IncDecStmtNode
+	InterfaceType      = gc.InterfaceTypeNode
+	MethodDecl         = gc.MethodDeclNode
+	ParameterDecl      = gc.ParameterDeclNode
+	ParameterDeclList  = gc.ParameterDeclListNode
+	Parameters         = gc.ParametersNode
+	ParenthesizedExpr  = gc.ParenthesizedExpressionNode
+	PrimaryExpr        = gc.PrimaryExprNode
+	RangeClause        = gc.RangeClauseNode
+	ReturnStmt         = gc.ReturnStmtNode
+	Result             = gc.ResultNode
+	SelectStmt         = gc.SelectStmtNode
+	Selector           = gc.SelectorNode
+	ShortVarDecl       = gc.ShortVarDeclNode
+	Signature          = gc.SignatureNode
+	StatementList      = gc.StatementListNode
+	SourceFile         = gc.SourceFileNode
+	StructType         = gc.StructTypeNode
+	Tag                = gc.TagNode
+	TypeDef            = gc.TypeDefNode
+	TypeDecl           = gc.TypeDeclNode
+	TypeElemList       = gc.TypeElemListNode
+	TypeParamDecl      = gc.TypeParamDeclNode
+	TypeSwitchCase     = gc.TypeSwitchCaseNode
+	TypeSwitchStmt     = gc.TypeSwitchStmtNode
+	TypeArgs           = gc.TypeArgsNode
+	TypeAssertion      = gc.TypeAssertionNode
+	TypeCaseClause     = gc.TypeCaseClauseNode
+	TypeParameters     = gc.TypeParametersNode
+	UnaryExpr          = gc.UnaryExprNode
+	VarDecl            = gc.VarDeclNode
+	VarSpec            = gc.VarSpecNode
+	VarSpec2           = gc.VarSpec2Node
 )
 
 // Tree owns one parsed source file and its lossless concrete representation.
@@ -116,11 +114,6 @@ type Comment struct {
 	End    int
 	Line   int
 	Column int
-}
-
-type childField struct {
-	index int
-	slice bool
 }
 
 type bounds struct {
@@ -162,14 +155,6 @@ func (t *Tree) Root() Node {
 	return t.root.SourceFile
 }
 
-// Source returns an independent copy of the original bytes.
-func (t *Tree) Source() []byte {
-	if t == nil {
-		return nil
-	}
-	return append([]byte(nil), t.source...)
-}
-
 // Bytes returns the original source without copying it. The returned slice is
 // owned by the tree and must be treated as read-only.
 func (t *Tree) Bytes() []byte {
@@ -193,9 +178,7 @@ func (t *Tree) Comments() []Comment {
 			var lexer scanner.Scanner
 			lexer.Init(file, t.source, nil, scanner.ScanComments)
 			for {
-				position,
-					kind,
-					literal := lexer.Scan()
+				position, kind, literal := lexer.Scan()
 				if kind == token.EOF {
 					break
 				}
@@ -250,22 +233,37 @@ func Kind(node Node) string {
 	if isNilNode(node) {
 		return ""
 	}
-	if current, ok := node.(gc.Token); ok {
+	if current, ok := nodeTokenValue(node); ok {
 		return current.Ch().String()
 	}
 	if kind, ok := generatedKind(node); ok {
 		return kind
 	}
-	valueType := reflect.TypeOf(node)
-	for valueType.Kind() == reflect.Pointer {
-		valueType = valueType.Elem()
+	return ""
+}
+
+// IsArguments reports whether node is any grammar variant of a call argument
+// list.
+func IsArguments(node Node) bool {
+	switch node.(type) {
+	case *Arguments, *Arguments1, *Arguments2, *Arguments3:
+		return true
+	default:
+		return false
 	}
-	if cached, ok := kindCache.Load(valueType); ok {
-		return cached.(string)
-	}
-	kind := strings.TrimSuffix(valueType.Name(), "Node")
-	kindCache.Store(valueType, kind)
-	return kind
+}
+
+// ImportSpecs returns the import specifications below node in grammar order.
+func ImportSpecs(node Node) []*ImportSpec {
+	result := []*ImportSpec{}
+	Walk(node, func(current Node) bool {
+		spec, ok := current.(*ImportSpec)
+		if ok {
+			result = append(result, spec)
+		}
+		return !ok
+	})
+	return result
 }
 
 // Range returns the byte range occupied by a node's syntax, excluding leading
@@ -374,15 +372,14 @@ func Children(node Node) []Node {
 	if isNilNode(node) {
 		return nil
 	}
-	if _, ok := node.(gc.Token); ok {
+	if tokenNode(node) {
 		return nil
 	}
 	result := []Node{}
 	if generated, ok := appendGeneratedChildren(result, node, false); ok {
 		return generated
 	}
-	collectChildren(indirect(reflect.ValueOf(node)), &result)
-	return result
+	return nil
 }
 
 // Walk visits node and its concrete children in structural grammar order.
@@ -475,71 +472,9 @@ func WalkProductionsWithAncestors(node Node, visit func(Node, []Node) bool) {
 	}
 }
 
-func collectChildren(value reflect.Value, result *[]Node) {
-	if !value.IsValid() || value.Kind() != reflect.Struct {
-		return
-	}
-	for _, plan := range childFields(value.Type()) {
-		field := value.Field(plan.index)
-		if child, ok := nodeValue(field); ok {
-			*result = append(*result, child)
-			continue
-		}
-		if plan.slice {
-			for item := 0; item < field.Len(); item++ {
-				if child, ok := nodeValue(field.Index(item)); ok {
-					*result = append(*result, child)
-				}
-			}
-		}
-	}
-}
-
-func childFields(valueType reflect.Type) []childField {
-	if cached, ok := childFieldsCache.Load(valueType); ok {
-		return cached.([]childField)
-	}
-	fields := make([]childField, 0, valueType.NumField())
-	for index := 0; index < valueType.NumField(); index++ {
-		field := valueType.Field(index)
-		if !field.IsExported() {
-			continue
-		}
-		fields = append(fields, childField{
-			index: index,
-			slice: field.Type.Kind() == reflect.Slice,
-		})
-	}
-	childFieldsCache.Store(valueType, fields)
-	return fields
-}
-
 func appendChildrenReverse(stack []Node, node Node) []Node {
 	if generated, ok := appendGeneratedChildren(stack, node, true); ok {
 		return generated
-	}
-	if _, ok := node.(Token); ok {
-		return stack
-	}
-	value := indirect(reflect.ValueOf(node))
-	if !value.IsValid() || value.Kind() != reflect.Struct {
-		return stack
-	}
-	fields := childFields(value.Type())
-	for fieldIndex := len(fields) - 1; fieldIndex >= 0; fieldIndex-- {
-		plan := fields[fieldIndex]
-		field := value.Field(plan.index)
-		if child, ok := nodeValue(field); ok {
-			stack = append(stack, child)
-			continue
-		}
-		if plan.slice {
-			for item := field.Len() - 1; item >= 0; item-- {
-				if child, ok := nodeValue(field.Index(item)); ok {
-					stack = append(stack, child)
-				}
-			}
-		}
 	}
 	return stack
 }
@@ -551,33 +486,6 @@ func appendChildItemsReverse[T ~struct {
 	if generated, ok := appendGeneratedChildItemsReverse(stack, node, true); ok {
 		return generated
 	}
-	if _, ok := node.(Token); ok {
-		return stack
-	}
-	value := indirect(reflect.ValueOf(node))
-	if !value.IsValid() || value.Kind() != reflect.Struct {
-		return stack
-	}
-	fields := childFields(value.Type())
-	for fieldIndex := len(fields) - 1; fieldIndex >= 0; fieldIndex-- {
-		plan := fields[fieldIndex]
-		field := value.Field(plan.index)
-		if child, ok := nodeValue(field); ok {
-			stack = append(stack, T{
-				node: child,
-			})
-			continue
-		}
-		if plan.slice {
-			for item := field.Len() - 1; item >= 0; item-- {
-				if child, ok := nodeValue(field.Index(item)); ok {
-					stack = append(stack, T{
-						node: child,
-					})
-				}
-			}
-		}
-	}
 	return stack
 }
 
@@ -587,35 +495,6 @@ func appendProductionChildItemsReverse[T ~struct {
 }](stack []T, node Node) []T {
 	if generated, ok := appendGeneratedChildItemsReverse(stack, node, false); ok {
 		return generated
-	}
-	if tokenNode(node) {
-		return stack
-	}
-	value := indirect(reflect.ValueOf(node))
-	if !value.IsValid() || value.Kind() != reflect.Struct {
-		return stack
-	}
-	fields := childFields(value.Type())
-	for fieldIndex := len(fields) - 1; fieldIndex >= 0; fieldIndex-- {
-		plan := fields[fieldIndex]
-		field := value.Field(plan.index)
-		if child, ok := nodeValue(field); ok {
-			if !tokenNode(child) {
-				stack = append(stack, T{
-					node: child,
-				})
-			}
-			continue
-		}
-		if plan.slice {
-			for item := field.Len() - 1; item >= 0; item-- {
-				if child, ok := nodeValue(field.Index(item)); ok && !tokenNode(child) {
-					stack = append(stack, T{
-						node: child,
-					})
-				}
-			}
-		}
 	}
 	return stack
 }
@@ -636,7 +515,7 @@ func nodeTokenBounds(node Node, concreteOnly bool) (Token, Token, bool) {
 			includeTokenBounds(current.token, concreteOnly, &result)
 			continue
 		}
-		if currentToken, ok := current.node.(Token); ok {
+		if currentToken, ok := nodeTokenValue(current.node); ok {
 			includeTokenBounds(currentToken, concreteOnly, &result)
 			continue
 		}
@@ -644,7 +523,6 @@ func nodeTokenBounds(node Node, concreteOnly bool) (Token, Token, bool) {
 			stack = generated
 			continue
 		}
-		collectTokenBounds(reflect.ValueOf(current.node), concreteOnly, &result)
 	}
 	return result.first, result.last, result.found
 }
@@ -665,67 +543,21 @@ func includeTokenBounds(current Token, concreteOnly bool, result *bounds) {
 	result.found = true
 }
 
-func collectTokenBounds(value reflect.Value, concreteOnly bool, result *bounds) {
-	if !value.IsValid() {
-		return
-	}
-	if current, ok := tokenValue(value); ok {
-		includeTokenBounds(current, concreteOnly, result)
-		return
-	}
-	value = indirect(value)
-	if !value.IsValid() {
-		return
-	}
-	switch value.Kind() {
-	case reflect.Interface, reflect.Pointer:
-		collectTokenBounds(value.Elem(), concreteOnly, result)
-	case reflect.Struct:
-		for _, field := range childFields(value.Type()) {
-			collectTokenBounds(value.Field(field.index), concreteOnly, result)
-		}
-	case reflect.Slice:
-		for index := 0; index < value.Len(); index++ {
-			collectTokenBounds(value.Index(index), concreteOnly, result)
-		}
-	}
-}
-
-func nodeValue(value reflect.Value) (Node, bool) {
-	if !value.IsValid() || (nilable(value.Kind()) && value.IsNil()) || !value.CanInterface() {
-		return nil, false
-	}
-	if current, ok := value.Interface().(Token); ok && !current.IsValid() {
-		return nil, false
-	}
-	node, ok := value.Interface().(Node)
-	return node, ok && !isNilNode(node)
-}
-
-func tokenValue(value reflect.Value) (Token, bool) {
-	if !value.IsValid() || !value.CanInterface() {
-		return Token{}, false
-	}
-	current, ok := value.Interface().(Token)
-	return current, ok
-}
-
-func indirect(value reflect.Value) reflect.Value {
-	for value.IsValid() && (value.Kind() == reflect.Interface || value.Kind() == reflect.Pointer) {
-		if value.IsNil() {
-			return reflect.Value{}
-		}
-		value = value.Elem()
-	}
-	return value
-}
-
 func isNilNode(node Node) bool {
+	if node == nil {
+		return true
+	}
 	if result, ok := generatedNodeNil(node); ok {
 		return result
 	}
-	value := reflect.ValueOf(node)
-	return nilable(value.Kind()) && value.IsNil()
+	switch current := node.(type) {
+	case Token:
+		return !current.IsValid()
+	case *Token:
+		return current == nil || !current.IsValid()
+	default:
+		return false
+	}
 }
 
 func nodePresent(node Node) bool {
@@ -735,10 +567,14 @@ func nodePresent(node Node) bool {
 	if node == nil {
 		return false
 	}
-	if current, ok := node.(Token); ok && !current.IsValid() {
+	switch current := node.(type) {
+	case Token:
+		return current.IsValid()
+	case *Token:
+		return current != nil && current.IsValid()
+	default:
 		return false
 	}
-	return !isNilNode(node)
 }
 
 func tokenNode(node Node) bool {
@@ -750,6 +586,14 @@ func tokenNode(node Node) bool {
 	}
 }
 
-func nilable(kind reflect.Kind) bool {
-	return kind == reflect.Chan || kind == reflect.Func || kind == reflect.Interface || kind == reflect.Map || kind == reflect.Pointer || kind == reflect.Slice
+func nodeTokenValue(node Node) (Token, bool) {
+	switch current := node.(type) {
+	case Token:
+		return current, true
+	case *Token:
+		if current != nil {
+			return *current, true
+		}
+	}
+	return Token{}, false
 }

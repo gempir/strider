@@ -13,15 +13,26 @@ import (
 func TestStrictBaselineTracksExactLineRangesAndStaleEntries(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "analysis-baseline.toml")
-	baseline, err := Generate(path, []diagnostic.Diagnostic{
+	baseline, err := Generate(path, root, []diagnostic.Diagnostic{
 		item(filepath.Join(root, "main.go"), "invalid-regexp", "bad", 4, 5),
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	result, err := Apply(path, baseline, []diagnostic.Diagnostic{
-		item(filepath.Join(root, "main.go"), "invalid-regexp", "changed", 5, 6),
-	})
+	result, err := Apply(
+		path,
+		root,
+		baseline,
+		[]diagnostic.Diagnostic{
+			item(filepath.Join(root, "main.go"), "invalid-regexp", "changed", 5, 6),
+		},
+		map[string]bool{
+			"invalid-regexp": true,
+		},
+		map[string]bool{
+			"invalid-regexp": true,
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -30,11 +41,26 @@ func TestStrictBaselineTracksExactLineRangesAndStaleEntries(t *testing.T) {
 	}
 }
 
+func TestGenerateResolvesRootRelativeDiagnosticPaths(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "baselines", "strider.toml")
+	generated, err := Generate(path, root, []diagnostic.Diagnostic{
+		item("internal/main.go", "no-init", "init", 2, 2),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(generated.Issues) != 1 || generated.Issues[0].File != "../internal/main.go" {
+		t.Fatalf("generated issues = %#v", generated.Issues)
+	}
+}
+
 func TestApplySelectedPreservesUnselectedEntriesWithoutMarkingThemStale(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "baseline.toml")
 	generated, err := Generate(
 		path,
+		root,
 		[]diagnostic.Diagnostic{
 			item(filepath.Join(root, "main.go"), "advisory", "old note", 2, 2),
 			item(filepath.Join(root, "main.go"), "critical", "old error", 3, 3),
@@ -43,13 +69,18 @@ func TestApplySelectedPreservesUnselectedEntriesWithoutMarkingThemStale(t *testi
 	if err != nil {
 		t.Fatal(err)
 	}
-	result, err := ApplySelected(
+	result, err := Apply(
 		path,
+		root,
 		generated,
 		[]diagnostic.Diagnostic{
 			item(filepath.Join(root, "main.go"), "critical", "old error", 3, 3),
 		},
 		map[string]bool{
+			"critical": true,
+		},
+		map[string]bool{
+			"advisory": true,
 			"critical": true,
 		},
 	)
@@ -68,11 +99,12 @@ func TestApplySelectedPreservesUnselectedEntriesWithoutMarkingThemStale(t *testi
 	}
 }
 
-func TestApplyCatalogSelectionMakesUnknownCodesStale(t *testing.T) {
+func TestApplyMakesUnknownCodesStale(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "baseline.toml")
 	generated, err := Generate(
 		path,
+		root,
 		[]diagnostic.Diagnostic{
 			item(filepath.Join(root, "main.go"), "advisory", "old note", 2, 2),
 			item(filepath.Join(root, "main.go"), "critical", "old error", 3, 3),
@@ -82,8 +114,9 @@ func TestApplyCatalogSelectionMakesUnknownCodesStale(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	result, err := ApplyCatalogSelection(
+	result, err := Apply(
 		path,
+		root,
 		generated,
 		[]diagnostic.Diagnostic{
 			item(filepath.Join(root, "main.go"), "critical", "old error", 3, 3),

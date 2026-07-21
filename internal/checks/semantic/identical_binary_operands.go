@@ -8,9 +8,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type identicalBinaryOperandsRule struct{}
+type identicalBinaryOperandsCheck struct{}
 
-func (identicalBinaryOperandsRule) Meta() Meta {
+func (identicalBinaryOperandsCheck) Meta() Meta {
 	return Meta{
 		Code:            "identical-binary-operands",
 		Summary:         "detect suspicious binary operations with identical operands",
@@ -21,25 +21,24 @@ func (identicalBinaryOperandsRule) Meta() Meta {
 	}
 }
 
-func (identicalBinaryOperandsRule) Run(pass *Pass) {
+func (identicalBinaryOperandsCheck) Run(pass *Pass) {
 	parents := pass.analysisParents()
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				binary,
-					ok := node.(*ast.BinaryExpr)
-				if !ok || !suspiciousSelfOperator(binary.Op) || typeMayContainFloat(pass.TypesInfo.TypeOf(binary.X)) || renderAnalysisExpression(pass, binary.X) != renderAnalysisExpression(
-					pass,
-					binary.Y,
-				) || isRandomSelfCall(pass, binary.X) || isComparableAssertion(binary, parents) {
-					return true
-				}
-				pass.Report(binary, "identical expressions appear on both sides of "+binary.Op.String())
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.BinaryExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			binary, ok := node.(*ast.BinaryExpr)
+			if !ok || !suspiciousSelfOperator(binary.Op) || typeMayContainFloat(pass.TypesInfo.TypeOf(binary.X)) || renderAnalysisExpression(pass, binary.X) != renderAnalysisExpression(
+				pass,
+				binary.Y,
+			) || isRandomSelfCall(pass, binary.X) || isComparableAssertion(binary, parents) {
 				return true
-			},
-		)
-	}
+			}
+			pass.Report(binary, "identical expressions appear on both sides of "+binary.Op.String())
+			return true
+		},
+	)
 }
 
 func suspiciousSelfOperator(operator token.Token) bool {
@@ -96,4 +95,11 @@ func isComparableAssertion(binary *ast.BinaryExpr, parents map[ast.Node]ast.Node
 		}
 	}
 	return false
+}
+
+func (identicalBinaryOperandsCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+		Facts: FactParents,
+	}
 }

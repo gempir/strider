@@ -10,9 +10,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type oversizedFixedWidthShiftRule struct{}
+type oversizedFixedWidthShiftCheck struct{}
 
-func (oversizedFixedWidthShiftRule) Meta() Meta {
+func (oversizedFixedWidthShiftCheck) Meta() Meta {
 	return Meta{
 		Code:            "oversized-fixed-width-shift",
 		Summary:         "detect shifts that always clear fixed-width integers",
@@ -23,25 +23,26 @@ func (oversizedFixedWidthShiftRule) Meta() Meta {
 	}
 }
 
-func (oversizedFixedWidthShiftRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				switch expression := node.(type) {
-				case *ast.BinaryExpr:
-					if expression.Op == token.SHL || expression.Op == token.SHR {
-						reportOversizedShift(pass, expression, expression.X, expression.Y)
-					}
-				case *ast.AssignStmt:
-					if (expression.Tok == token.SHL_ASSIGN || expression.Tok == token.SHR_ASSIGN) && len(expression.Lhs) == 1 && len(expression.Rhs) == 1 {
-						reportOversizedShift(pass, expression, expression.Lhs[0], expression.Rhs[0])
-					}
+func (oversizedFixedWidthShiftCheck) Run(pass *Pass) {
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.AssignStmt)(nil),
+			(*ast.BinaryExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			switch expression := node.(type) {
+			case *ast.BinaryExpr:
+				if expression.Op == token.SHL || expression.Op == token.SHR {
+					reportOversizedShift(pass, expression, expression.X, expression.Y)
 				}
-				return true
-			},
-		)
-	}
+			case *ast.AssignStmt:
+				if (expression.Tok == token.SHL_ASSIGN || expression.Tok == token.SHR_ASSIGN) && len(expression.Lhs) == 1 && len(expression.Rhs) == 1 {
+					reportOversizedShift(pass, expression, expression.Lhs[0], expression.Rhs[0])
+				}
+			}
+			return true
+		},
+	)
 }
 
 func reportOversizedShift(pass *Pass, node ast.Node, value, count ast.Expr) {
@@ -70,5 +71,11 @@ func fixedWidthInteger(kind types.BasicKind) bool {
 		return true
 	default:
 		return false
+	}
+}
+
+func (oversizedFixedWidthShiftCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
 	}
 }

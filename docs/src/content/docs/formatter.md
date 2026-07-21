@@ -95,12 +95,9 @@ version = 1
 
 [formatter]
 print-width = 120
-max-blank-lines = 1
-existing-line-breaks = "structural-only"
-alignment.declarations = true
 excludes = ["internal/generated/**"]
 ```
 
 Formatter exclusions apply both to `strider fmt` and to the `format` check. See
-[Configuration](/configuration/#formatter) for ranges and the fixed parts of
-Strider's formatting profile.
+[Configuration](/configuration/#formatter) for the width range and Strider's
+fixed formatting profile.

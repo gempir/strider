@@ -8,9 +8,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type nanComparisonRule struct{}
+type nanComparisonCheck struct{}
 
-func (nanComparisonRule) Meta() Meta {
+func (nanComparisonCheck) Meta() Meta {
 	return Meta{
 		Code:            "nan-comparison",
 		Summary:         "detect direct comparisons with NaN",
@@ -21,7 +21,7 @@ func (nanComparisonRule) Meta() Meta {
 	}
 }
 
-func (nanComparisonRule) Run(pass *Pass) {
+func (nanComparisonCheck) Run(pass *Pass) {
 	for _, function := range pass.Functions {
 		for _, block := range function.Blocks {
 			for _, instruction := range block.Instrs {
@@ -29,9 +29,7 @@ func (nanComparisonRule) Run(pass *Pass) {
 				if !ok || !comparisonOperator(binary.Op) || (!isNaNValue(flattenEquivalentPhi(binary.X)) && !isNaNValue(flattenEquivalentPhi(binary.Y))) {
 					continue
 				}
-				pass.Report(positionNode{
-					position: binary.Pos(),
-				}, "direct comparison with NaN can never test for NaN; use math.IsNaN")
+				pass.ReportPos(binary.Pos(), "direct comparison with NaN can never test for NaN; use math.IsNaN")
 			}
 		}
 	}
@@ -78,4 +76,10 @@ func flattenEquivalentPhi(value ssa.Value) ssa.Value {
 		return nil
 	}
 	return result
+}
+
+func (nanComparisonCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+	}
 }

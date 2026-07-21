@@ -9,9 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type suspiciousSleepRule struct{}
+type suspiciousSleepCheck struct{}
 
-func (suspiciousSleepRule) Meta() Meta {
+func (suspiciousSleepCheck) Meta() Meta {
 	return Meta{
 		Code:            "suspicious-sleep",
 		Summary:         "detect suspiciously small time.Sleep constants",
@@ -22,30 +22,33 @@ func (suspiciousSleepRule) Meta() Meta {
 	}
 }
 
-func (suspiciousSleepRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				call,
-					ok := node.(*ast.CallExpr)
-				if !ok || len(call.Args) != 1 || !isPackageFunction(pass.TypesInfo, call.Fun, "time", "Sleep") {
-					return true
-				}
-				literal,
-					ok := call.Args[0].(*ast.BasicLit)
-				if !ok || literal.Kind != token.INT {
-					return true
-				}
-				value := pass.TypesInfo.Types[literal].Value
-				nanoseconds,
-					exact := constant.Int64Val(value)
-				if !exact || nanoseconds == 0 || nanoseconds > 120 {
-					return true
-				}
-				pass.Report(literal, fmt.Sprintf("sleeping for %d nanoseconds is probably a bug; be explicit if it isn't", nanoseconds))
+func (suspiciousSleepCheck) Run(pass *Pass) {
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.CallExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			call, ok := node.(*ast.CallExpr)
+			if !ok || len(call.Args) != 1 || !isPackageFunction(pass.TypesInfo, call.Fun, "time", "Sleep") {
 				return true
-			},
-		)
+			}
+			literal, ok := call.Args[0].(*ast.BasicLit)
+			if !ok || literal.Kind != token.INT {
+				return true
+			}
+			value := pass.TypesInfo.Types[literal].Value
+			nanoseconds, exact := constant.Int64Val(value)
+			if !exact || nanoseconds == 0 || nanoseconds > 120 {
+				return true
+			}
+			pass.Report(literal, fmt.Sprintf("sleeping for %d nanoseconds is probably a bug; be explicit if it isn't", nanoseconds))
+			return true
+		},
+	)
+}
+
+func (suspiciousSleepCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
 	}
 }

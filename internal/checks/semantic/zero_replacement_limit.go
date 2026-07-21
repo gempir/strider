@@ -9,9 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type zeroReplacementLimitRule struct{}
+type zeroReplacementLimitCheck struct{}
 
-func (zeroReplacementLimitRule) Meta() Meta {
+func (zeroReplacementLimitCheck) Meta() Meta {
 	return Meta{
 		Code:            "zero-replacement-limit",
 		Summary:         "detect replacement calls with a zero limit",
@@ -22,7 +22,7 @@ func (zeroReplacementLimitRule) Meta() Meta {
 	}
 }
 
-func (zeroReplacementLimitRule) Run(pass *Pass) {
+func (zeroReplacementLimitCheck) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
 	for _, packagePath := range []string{
 		"bytes",
@@ -44,4 +44,15 @@ func (zeroReplacementLimitRule) Run(pass *Pass) {
 
 func isReplacementCall(call ssa.CallInstruction) bool {
 	return isStaticFunction(call, "strings", "Replace") || isStaticFunction(call, "bytes", "Replace")
+}
+
+func (zeroReplacementLimitCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"bytes",
+			"strings",
+		},
+	}
 }

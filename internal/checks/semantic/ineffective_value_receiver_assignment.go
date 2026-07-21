@@ -10,9 +10,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type ineffectiveValueReceiverAssignmentRule struct{}
+type ineffectiveValueReceiverAssignmentCheck struct{}
 
-func (ineffectiveValueReceiverAssignmentRule) Meta() Meta {
+func (ineffectiveValueReceiverAssignmentCheck) Meta() Meta {
 	return Meta{
 		Code:            "ineffective-value-receiver-assignment",
 		Summary:         "detect field assignments that cannot escape a value receiver",
@@ -23,7 +23,7 @@ func (ineffectiveValueReceiverAssignmentRule) Meta() Meta {
 	}
 }
 
-func (ineffectiveValueReceiverAssignmentRule) Run(pass *Pass) {
+func (ineffectiveValueReceiverAssignmentCheck) Run(pass *Pass) {
 	for _, function := range pass.Functions {
 		receiver, fields, ok := valueReceiver(function)
 		if !ok {
@@ -42,10 +42,8 @@ func (ineffectiveValueReceiverAssignmentRule) Run(pass *Pass) {
 				if anyReadReachableAfter(store, reads[field]) {
 					continue
 				}
-				pass.Report(
-					positionNode{
-						position: store.Pos(),
-					},
+				pass.ReportPos(
+					store.Pos(),
 					fmt.Sprintf(
 						"assignment to value receiver field %s.%s has no observable effect",
 						receiverTypeName(receiver.Type()),
@@ -191,4 +189,10 @@ func receiverTypeName(valueType types.Type) string {
 		return valueType.String()
 	}
 	return named.Obj().Name()
+}
+
+func (ineffectiveValueReceiverAssignmentCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+	}
 }

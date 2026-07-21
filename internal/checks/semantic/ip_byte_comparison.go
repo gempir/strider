@@ -1,16 +1,14 @@
 package semantic
 
 import (
-	"go/types"
-
 	"golang.org/x/tools/go/ssa"
 
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type ipByteComparisonRule struct{}
+type ipByteComparisonCheck struct{}
 
-func (ipByteComparisonRule) Meta() Meta {
+func (ipByteComparisonCheck) Meta() Meta {
 	return Meta{
 		Code:            "ip-byte-comparison",
 		Summary:         "detect bytes.Equal comparisons between IP addresses",
@@ -21,7 +19,7 @@ func (ipByteComparisonRule) Meta() Meta {
 	}
 }
 
-func (ipByteComparisonRule) Run(pass *Pass) {
+func (ipByteComparisonCheck) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
 	for _, call := range pass.staticCallsInPackage("bytes") {
 		if !isStaticFunction(call, "bytes", "Equal") || len(call.Common().Args) != 2 || !convertedFromNamedType(call.Common().Args[0], "net", "IP") || !convertedFromNamedType(
@@ -41,6 +39,15 @@ func convertedFromNamedType(value ssa.Value, packagePath, name string) bool {
 	if !ok {
 		return false
 	}
-	named, ok := types.Unalias(change.X.Type()).(*types.Named)
-	return ok && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == packagePath && named.Obj().Name() == name
+	return isNamedType(change.X.Type(), packagePath, name)
+}
+
+func (ipByteComparisonCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"bytes",
+		},
+	}
 }

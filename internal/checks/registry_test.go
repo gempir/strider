@@ -11,18 +11,22 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
+func intPointer(value int) *int {
+	return &value
+}
+
 func TestUnifiedRegistryHasGloballyUniqueCodes(t *testing.T) {
 	registry, err := NewRegistry(RegistryOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := len(registry.Rules()), 207; got != want {
+	if got, want := len(registry.Checks()), 204; got != want {
 		t.Fatalf("all check count = %d, want %d", got, want)
 	}
 	descriptiveCode := regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)+$`)
 	seen := make(map[string]bool)
-	for _, rule := range registry.Rules() {
-		meta := rule.Meta()
+	for _, check := range registry.Checks() {
+		meta := check.Meta()
 		code := meta.Code
 		if seen[code] {
 			t.Fatalf("duplicate check code %q", code)
@@ -51,13 +55,13 @@ func TestUnifiedRegistrySelectsEveryCheckByDefault(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := len(registry.Rules()), 207; got != want {
+	if got, want := len(registry.Checks()), 204; got != want {
 		t.Fatalf("check count = %d, want %d", got, want)
 	}
 }
 
 func TestUnifiedRegistryNoneSeverityDisablesUnlessRequested(t *testing.T) {
-	settings := map[string]config.RuleConfig{
+	settings := map[string]config.CheckConfig{
 		"format": {
 			Severity: "none",
 		},
@@ -74,7 +78,7 @@ func TestUnifiedRegistryNoneSeverityDisablesUnlessRequested(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := len(registry.Rules()), 204; got != want {
+	if got, want := len(registry.Checks()), 201; got != want {
 		t.Fatalf("check count with none settings = %d, want %d", got, want)
 	}
 	registry, err = NewRegistry(RegistryOptions{
@@ -84,7 +88,7 @@ func TestUnifiedRegistryNoneSeverityDisablesUnlessRequested(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := len(registry.Rules()), 207; got != want {
+	if got, want := len(registry.Checks()), 204; got != want {
 		t.Fatalf("none-threshold check count = %d, want %d", got, want)
 	}
 	for code := range settings {
@@ -140,12 +144,12 @@ func TestUnifiedRegistryExplicitSelectionIsCaseInsensitive(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rules := registry.Rules()
-	if got, want := len(rules), 2; got != want {
+	checks := registry.Checks()
+	if got, want := len(checks), 2; got != want {
 		t.Fatalf("selected check count = %d, want %d", got, want)
 	}
-	if rules[0].Meta().Code != "format" || rules[1].Meta().Code != "no-init" {
-		t.Fatalf("selected checks = %q, %q", rules[0].Meta().Code, rules[1].Meta().Code)
+	if checks[0].Meta().Code != "format" || checks[1].Meta().Code != "no-init" {
+		t.Fatalf("selected checks = %q, %q", checks[0].Meta().Code, checks[1].Meta().Code)
 	}
 }
 
@@ -161,7 +165,7 @@ func TestUnifiedRegistryCapabilitiesAvoidPackageLoadingForCSTChecks(t *testing.T
 	if registry.semantic != nil {
 		t.Fatal("CST-only selection constructed package analyzer")
 	}
-	if got := registry.Rules()[0].Meta().Capabilities; got != CapabilityCST {
+	if got := registry.Checks()[0].Meta().Capabilities; got != CapabilityCST {
 		t.Fatalf("no-init capabilities = %d, want CST", got)
 	}
 }
@@ -175,7 +179,7 @@ func TestUnifiedRegistryFiltersEffectiveSeverityBeforeCapabilities(t *testing.T)
 				"regexp-match-in-loop",
 				"invalid-template",
 			},
-			Settings: map[string]config.RuleConfig{
+			Settings: map[string]config.CheckConfig{
 				"format": {
 					Severity: "warning",
 				},
@@ -195,9 +199,9 @@ func TestUnifiedRegistryFiltersEffectiveSeverityBeforeCapabilities(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	rules := registry.Rules()
-	if got := len(rules); got != 2 || rules[0].Meta().Code != "invalid-template" || rules[1].Meta().Code != "no-init" {
-		t.Fatalf("filtered checks = %#v, want invalid-template and no-init", rules)
+	checks := registry.Checks()
+	if got := len(checks); got != 2 || checks[0].Meta().Code != "invalid-template" || checks[1].Meta().Code != "no-init" {
+		t.Fatalf("filtered checks = %#v, want invalid-template and no-init", checks)
 	}
 	if capabilities := registry.Capabilities(); capabilities&CapabilitySSA != 0 {
 		t.Fatalf("filtered SSA check still affected capabilities: %d", capabilities)
@@ -209,7 +213,7 @@ func TestUnifiedRegistryFiltersEffectiveSeverityBeforeCapabilities(t *testing.T)
 
 func TestUnifiedRegistrySelectionDoesNotBypassMinimumSeverity(t *testing.T) {
 	registry, err := NewRegistry(RegistryOptions{
-		Settings: map[string]config.RuleConfig{
+		Settings: map[string]config.CheckConfig{
 			"no-init": {
 				Severity: "warning",
 			},
@@ -219,9 +223,9 @@ func TestUnifiedRegistrySelectionDoesNotBypassMinimumSeverity(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, rule := range registry.Rules() {
-		if rule.Meta().Code == "no-init" || rule.Meta().Code == "format" {
-			t.Fatalf("registry retained below-threshold check %q", rule.Meta().Code)
+	for _, check := range registry.Checks() {
+		if check.Meta().Code == "no-init" || check.Meta().Code == "format" {
+			t.Fatalf("registry retained below-threshold check %q", check.Meta().Code)
 		}
 	}
 }
@@ -237,33 +241,33 @@ func TestUnifiedRegistryRejectsInvalidMinimumSeverity(t *testing.T) {
 		Only: []string{
 			"format",
 		},
-		Settings: map[string]config.RuleConfig{
+		Settings: map[string]config.CheckConfig{
 			"no-init": {
 				Severity: "fatal",
 			},
 		},
 	})
 	if err == nil || !strings.Contains(err.Error(), "severity must be") {
-		t.Fatalf("got %v, want rule severity error", err)
+		t.Fatalf("got %v, want check severity error", err)
 	}
 }
 
 func TestUnifiedRegistryAcceptsOnlySupportedBehavioralOptions(t *testing.T) {
-	tests := map[string]config.RuleConfig{
+	tests := map[string]config.CheckConfig{
 		"banned-characters": {
 			Characters: []string{
 				"_",
 			},
 		},
 		"file-length-limit": {
-			MaxLines: 500,
+			MaxLines: intPointer(500),
 		},
 		"function-length": {
-			MaxLines:      100,
-			MaxStatements: 60,
+			MaxLines:      intPointer(100),
+			MaxStatements: intPointer(60),
 		},
 		"function-result-limit": {
-			MaxResults: 4,
+			MaxResults: intPointer(4),
 		},
 		"imports-blocklist": {
 			BlockedImports: []string{
@@ -271,22 +275,21 @@ func TestUnifiedRegistryAcceptsOnlySupportedBehavioralOptions(t *testing.T) {
 			},
 		},
 		"interface-method-limit": {
-			MaxMethods: 12,
+			MaxMethods: intPointer(12),
 		},
 		"max-parameters": {
-			MaxParameters: 10,
+			MaxParameters: intPointer(10),
 		},
 		"max-public-structs": {
-			MaxPublicStructs: 8,
+			MaxPublicStructs: intPointer(8),
 		},
 	}
 	for code, setting := range tests {
 		t.Run(
 			code,
 			func(t *testing.T) {
-				if _,
-					err := NewRegistry(RegistryOptions{
-					Settings: map[string]config.RuleConfig{
+				if _, err := NewRegistry(RegistryOptions{
+					Settings: map[string]config.CheckConfig{
 						code: setting,
 					},
 				}); err != nil {
@@ -298,12 +301,12 @@ func TestUnifiedRegistryAcceptsOnlySupportedBehavioralOptions(t *testing.T) {
 }
 
 func TestUnifiedRegistryRejectsBehavioralOptionOnWrongCheck(t *testing.T) {
-	tests := map[string]config.RuleConfig{
+	tests := map[string]config.CheckConfig{
 		"no-init": {
-			MaxLines: 10,
+			MaxLines: intPointer(10),
 		},
 		"invalid-regexp": {
-			MaxMethods: 3,
+			MaxMethods: intPointer(3),
 		},
 		"format": {
 			BlockedImports: []string{},
@@ -314,16 +317,15 @@ func TestUnifiedRegistryRejectsBehavioralOptionOnWrongCheck(t *testing.T) {
 			},
 		},
 		"interface-method-limit": {
-			MaxParameters: 4,
+			MaxParameters: intPointer(4),
 		},
 	}
 	for code, setting := range tests {
 		t.Run(
 			code,
 			func(t *testing.T) {
-				_,
-					err := NewRegistry(RegistryOptions{
-					Settings: map[string]config.RuleConfig{
+				_, err := NewRegistry(RegistryOptions{
+					Settings: map[string]config.CheckConfig{
 						code: setting,
 					},
 				})
@@ -346,7 +348,7 @@ func TestUnifiedRegistryRejectsExplicitZeroOptionOnWrongCheck(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err = NewRegistry(RegistryOptions{
-		Settings: configuration.Checks.Rules,
+		Settings: configuration.Checks.Settings,
 	})
 	if err == nil || !strings.Contains(err.Error(), "does not support max-lines") {
 		t.Fatalf("got %v, want unsupported max-lines error", err)

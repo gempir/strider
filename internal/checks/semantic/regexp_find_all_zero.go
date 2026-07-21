@@ -11,9 +11,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type regexpFindAllZeroRule struct{}
+type regexpFindAllZeroCheck struct{}
 
-func (regexpFindAllZeroRule) Meta() Meta {
+func (regexpFindAllZeroCheck) Meta() Meta {
 	return Meta{
 		Code:            "regexp-find-all-zero",
 		Summary:         "detect regexp FindAll calls with n equal to zero",
@@ -24,7 +24,7 @@ func (regexpFindAllZeroRule) Meta() Meta {
 	}
 }
 
-func (regexpFindAllZeroRule) Run(pass *Pass) {
+func (regexpFindAllZeroCheck) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
 	for _, call := range pass.staticCallsInPackage("regexp") {
 		if !isRegexpFindAllCall(call) || len(call.Common().Args) < 3 {
@@ -39,7 +39,11 @@ func (regexpFindAllZeroRule) Run(pass *Pass) {
 			continue
 		}
 		node := explicitCallArgument(calls[call.Pos()], 1, call.Pos())
-		pass.Report(node, "calling a FindAll method with n == 0 will return no results, did you mean -1?")
+		if node != nil {
+			pass.Report(node, "calling a FindAll method with n == 0 will return no results, did you mean -1?")
+		} else {
+			pass.ReportPos(call.Pos(), "calling a FindAll method with n == 0 will return no results, did you mean -1?")
+		}
 	}
 }
 
@@ -60,14 +64,22 @@ func isRegexpFindAllCall(call ssa.CallInstruction) bool {
 	}
 }
 
-func explicitCallArgument(arguments []ast.Node, index int, position token.Pos) ast.Node {
+func explicitCallArgument(arguments []ast.Node, index int, _ token.Pos) ast.Node {
 	if index >= 0 && index < len(arguments) {
 		return arguments[index]
 	}
 	if len(arguments) != 0 {
 		return arguments[0]
 	}
-	return positionNode{
-		position: position,
+	return nil
+}
+
+func (regexpFindAllZeroCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"regexp",
+		},
 	}
 }

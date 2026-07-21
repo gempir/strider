@@ -8,9 +8,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type spinningEmptyLoopRule struct{}
+type spinningEmptyLoopCheck struct{}
 
-func (spinningEmptyLoopRule) Meta() Meta {
+func (spinningEmptyLoopCheck) Meta() Meta {
 	return Meta{
 		Code:            "spinning-empty-loop",
 		Summary:         "detect empty loops that consume a core while waiting unsafely",
@@ -21,28 +21,27 @@ func (spinningEmptyLoopRule) Meta() Meta {
 	}
 }
 
-func (spinningEmptyLoopRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				loop,
-					ok := node.(*ast.ForStmt)
-				if !ok || len(loop.Body.List) != 0 || loop.Init != nil || loop.Post != nil {
-					return true
-				}
-				if loop.Cond == nil {
-					pass.Report(loop, "empty unconditional loop spins and consumes a full CPU core")
-					return true
-				}
-				if analysisExpressionHasDynamicEffect(loop.Cond) || constantFalse(pass, loop.Cond) {
-					return true
-				}
-				pass.Report(loop, "empty loop condition cannot change safely; synchronize instead of spinning")
+func (spinningEmptyLoopCheck) Run(pass *Pass) {
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.ForStmt)(nil),
+		},
+		func(node ast.Node) bool {
+			loop, ok := node.(*ast.ForStmt)
+			if !ok || len(loop.Body.List) != 0 || loop.Init != nil || loop.Post != nil {
 				return true
-			},
-		)
-	}
+			}
+			if loop.Cond == nil {
+				pass.Report(loop, "empty unconditional loop spins and consumes a full CPU core")
+				return true
+			}
+			if analysisExpressionHasDynamicEffect(loop.Cond) || constantFalse(pass, loop.Cond) {
+				return true
+			}
+			pass.Report(loop, "empty loop condition cannot change safely; synchronize instead of spinning")
+			return true
+		},
+	)
 }
 
 func analysisExpressionHasDynamicEffect(expression ast.Expr) bool {
@@ -72,4 +71,10 @@ func analysisExpressionHasDynamicEffect(expression ast.Expr) bool {
 func constantFalse(pass *Pass, expression ast.Expr) bool {
 	value := pass.TypesInfo.Types[expression].Value
 	return value != nil && value.Kind() == constant.Bool && !constant.BoolVal(value)
+}
+
+func (spinningEmptyLoopCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

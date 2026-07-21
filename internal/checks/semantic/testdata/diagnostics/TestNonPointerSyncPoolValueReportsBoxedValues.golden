@@ -1,0 +1,2 @@
+main.go:7:11-7:11 non-pointer-sync-pool-value
+main.go:8:11-8:11 non-pointer-sync-pool-value

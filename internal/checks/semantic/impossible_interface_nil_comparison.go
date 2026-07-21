@@ -16,7 +16,7 @@ const (
 	interfaceNilFromCall
 )
 
-type impossibleInterfaceNilComparisonRule struct{}
+type impossibleInterfaceNilComparisonCheck struct{}
 
 type interfaceNilProof uint8
 
@@ -31,7 +31,7 @@ type interfaceNilChecker struct {
 	results  map[interfaceResultKey]interfaceNilProof
 }
 
-func (impossibleInterfaceNilComparisonRule) Meta() Meta {
+func (impossibleInterfaceNilComparisonCheck) Meta() Meta {
 	return Meta{
 		Code:            "impossible-interface-nil-comparison",
 		Summary:         "detect interface comparisons made non-nil by a concrete dynamic type",
@@ -42,7 +42,7 @@ func (impossibleInterfaceNilComparisonRule) Meta() Meta {
 	}
 }
 
-func (impossibleInterfaceNilComparisonRule) Run(pass *Pass) {
+func (impossibleInterfaceNilComparisonCheck) Run(pass *Pass) {
 	checker := newInterfaceNilChecker(pass)
 	for _, function := range pass.Functions {
 		for _, block := range function.Blocks {
@@ -66,9 +66,7 @@ func (impossibleInterfaceNilComparisonRule) Run(pass *Pass) {
 				if binary.Op == token.NEQ {
 					truth = "always"
 				}
-				pass.Report(positionNode{
-					position: binary.Pos(),
-				}, "interface has a concrete dynamic type; this comparison is "+truth+" true")
+				pass.ReportPos(binary.Pos(), "interface has a concrete dynamic type; this comparison is "+truth+" true")
 			}
 		}
 	}
@@ -183,4 +181,10 @@ func copyValueSet(values map[ssa.Value]bool) map[ssa.Value]bool {
 		copy[value] = true
 	}
 	return copy
+}
+
+func (impossibleInterfaceNilComparisonCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+	}
 }

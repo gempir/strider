@@ -6,9 +6,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type urlQueryCopyMutationRule struct{}
+type urlQueryCopyMutationCheck struct{}
 
-func (urlQueryCopyMutationRule) Meta() Meta {
+func (urlQueryCopyMutationCheck) Meta() Meta {
 	return Meta{
 		Code:            "url-query-copy-mutation",
 		Summary:         "detect mutations of the temporary copy returned by URL.Query",
@@ -19,36 +19,32 @@ func (urlQueryCopyMutationRule) Meta() Meta {
 	}
 }
 
-func (urlQueryCopyMutationRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				call,
-					ok := node.(*ast.CallExpr)
-				if !ok {
-					return true
-				}
-				mutation,
-					ok := call.Fun.(*ast.SelectorExpr)
-				if !ok || !isURLValuesMutation(pass, mutation) {
-					return true
-				}
-				queryCall,
-					ok := ast.Unparen(mutation.X).(*ast.CallExpr)
-				if !ok || len(queryCall.Args) != 0 {
-					return true
-				}
-				querySelector,
-					ok := queryCall.Fun.(*ast.SelectorExpr)
-				if !ok || !isNetURLMethod(pass, querySelector, "Query") {
-					return true
-				}
-				pass.Report(call, "URL.Query returns a copy; encode the modified values back into RawQuery")
+func (urlQueryCopyMutationCheck) Run(pass *Pass) {
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.CallExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			call, ok := node.(*ast.CallExpr)
+			if !ok {
 				return true
-			},
-		)
-	}
+			}
+			mutation, ok := call.Fun.(*ast.SelectorExpr)
+			if !ok || !isURLValuesMutation(pass, mutation) {
+				return true
+			}
+			queryCall, ok := ast.Unparen(mutation.X).(*ast.CallExpr)
+			if !ok || len(queryCall.Args) != 0 {
+				return true
+			}
+			querySelector, ok := queryCall.Fun.(*ast.SelectorExpr)
+			if !ok || !isNetURLMethod(pass, querySelector, "Query") {
+				return true
+			}
+			pass.Report(call, "URL.Query returns a copy; encode the modified values back into RawQuery")
+			return true
+		},
+	)
 }
 
 func isURLValuesMutation(pass *Pass, selector *ast.SelectorExpr) bool {
@@ -63,4 +59,10 @@ func isURLValuesMutation(pass *Pass, selector *ast.SelectorExpr) bool {
 func isNetURLMethod(pass *Pass, selector *ast.SelectorExpr, name string) bool {
 	function := calledFunction(pass.TypesInfo, selector)
 	return function != nil && function.Pkg() != nil && function.Pkg().Path() == "net/url" && function.Name() == name
+}
+
+func (urlQueryCopyMutationCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

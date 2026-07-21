@@ -7,9 +7,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type separateByteStringMapKeyRule struct{}
+type separateByteStringMapKeyCheck struct{}
 
-func (separateByteStringMapKeyRule) Meta() Meta {
+func (separateByteStringMapKeyCheck) Meta() Meta {
 	return Meta{
 		Code:            "separate-byte-string-map-key",
 		Summary:         "detect allocated byte-to-string temporaries used only for map lookups",
@@ -20,37 +20,37 @@ func (separateByteStringMapKeyRule) Meta() Meta {
 	}
 }
 
-func (separateByteStringMapKeyRule) Run(pass *Pass) {
+func (separateByteStringMapKeyCheck) Run(pass *Pass) {
 	parents := pass.analysisParents()
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				switch declaration := node.(type) {
-				case *ast.AssignStmt:
-					if declaration.Tok.String() != ":=" || len(declaration.Lhs) != len(declaration.Rhs) {
-						return true
-					}
-					for index, left := range declaration.Lhs {
-						identifier,
-							ok := left.(*ast.Ident)
-						if !ok {
-							continue
-						}
-						reportSeparateMapKey(pass, parents, identifier, declaration.Rhs[index])
-					}
-				case *ast.ValueSpec:
-					if len(declaration.Names) != len(declaration.Values) {
-						return true
-					}
-					for index, identifier := range declaration.Names {
-						reportSeparateMapKey(pass, parents, identifier, declaration.Values[index])
-					}
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.AssignStmt)(nil),
+			(*ast.ValueSpec)(nil),
+		},
+		func(node ast.Node) bool {
+			switch declaration := node.(type) {
+			case *ast.AssignStmt:
+				if declaration.Tok.String() != ":=" || len(declaration.Lhs) != len(declaration.Rhs) {
+					return true
 				}
-				return true
-			},
-		)
-	}
+				for index, left := range declaration.Lhs {
+					identifier, ok := left.(*ast.Ident)
+					if !ok {
+						continue
+					}
+					reportSeparateMapKey(pass, parents, identifier, declaration.Rhs[index])
+				}
+			case *ast.ValueSpec:
+				if len(declaration.Names) != len(declaration.Values) {
+					return true
+				}
+				for index, identifier := range declaration.Names {
+					reportSeparateMapKey(pass, parents, identifier, declaration.Values[index])
+				}
+			}
+			return true
+		},
+	)
 }
 
 func reportSeparateMapKey(pass *Pass, parents map[ast.Node]ast.Node, identifier *ast.Ident, expression ast.Expr) {
@@ -98,4 +98,11 @@ func usedOnlyAsStringMapKey(pass *Pass, parents map[ast.Node]ast.Node, object ty
 		}
 	}
 	return uses != 0
+}
+
+func (separateByteStringMapKeyCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+		Facts: FactParents,
+	}
 }

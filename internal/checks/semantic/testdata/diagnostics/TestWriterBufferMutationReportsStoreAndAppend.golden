@@ -1,0 +1,2 @@
+main.go:6:8-6:8 writer-buffer-mutation
+main.go:7:17-7:17 writer-buffer-mutation

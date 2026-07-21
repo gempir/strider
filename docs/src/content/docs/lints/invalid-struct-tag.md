@@ -15,9 +15,8 @@ silently ignore them.
 ## Behavior
 
 The rule validates quoted key-value syntax, duplicate keys, whitespace and
-quoting in common tag names, and JSON/XML options. Repeated `choice`,
-`optional-value`, and `default` keys are accepted in files importing
-`github.com/jessevdk/go-flags`, whose tag format intentionally uses them.
+quoting in common tag names, and JSON/XML options. Duplicate keys are reported
+consistently regardless of which packages the file imports.
 
 ## Bad
 

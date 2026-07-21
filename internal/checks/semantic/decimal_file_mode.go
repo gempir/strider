@@ -4,15 +4,14 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
-	"go/types"
 	"strconv"
 
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type decimalFileModeRule struct{}
+type decimalFileModeCheck struct{}
 
-func (decimalFileModeRule) Meta() Meta {
+func (decimalFileModeCheck) Meta() Meta {
 	return Meta{
 		Code:            "decimal-file-mode",
 		Summary:         "detect decimal file modes that look like octal permissions",
@@ -23,41 +22,37 @@ func (decimalFileModeRule) Meta() Meta {
 	}
 }
 
-func (decimalFileModeRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				call,
-					ok := node.(*ast.CallExpr)
-				if !ok {
-					return true
-				}
-				for _, argument := range call.Args {
-					literal,
-						ok := argument.(*ast.BasicLit)
-					if !ok || literal.Kind != token.INT || !looksLikeDecimalMode(literal.Value) || !isFileModeType(pass.TypesInfo.TypeOf(literal)) {
-						continue
-					}
-					value,
-						err := strconv.ParseInt(literal.Value, 10, 64)
-					if err != nil {
-						continue
-					}
-					pass.Report(
-						literal,
-						fmt.Sprintf(
-							"decimal file mode %s evaluates to %#o; use 0o%s if octal permissions were intended",
-							literal.Value,
-							value,
-							literal.Value,
-						),
-					)
-				}
+func (decimalFileModeCheck) Run(pass *Pass) {
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.CallExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			call, ok := node.(*ast.CallExpr)
+			if !ok {
 				return true
-			},
-		)
-	}
+			}
+			for _, argument := range call.Args {
+				literal, ok := argument.(*ast.BasicLit)
+				if !ok || literal.Kind != token.INT || !looksLikeDecimalMode(literal.Value) || !(isNamedType(pass.TypesInfo.TypeOf(literal), "os", "FileMode") || isNamedType(
+					pass.TypesInfo.TypeOf(literal),
+					"io/fs",
+					"FileMode",
+				)) {
+					continue
+				}
+				value, err := strconv.ParseInt(literal.Value, 10, 64)
+				if err != nil {
+					continue
+				}
+				pass.Report(
+					literal,
+					fmt.Sprintf("decimal file mode %s evaluates to %#o; use 0o%s if octal permissions were intended", literal.Value, value, literal.Value),
+				)
+			}
+			return true
+		},
+	)
 }
 
 func looksLikeDecimalMode(value string) bool {
@@ -72,11 +67,8 @@ func looksLikeDecimalMode(value string) bool {
 	return true
 }
 
-func isFileModeType(valueType types.Type) bool {
-	named, ok := types.Unalias(valueType).(*types.Named)
-	if !ok || named.Obj().Pkg() == nil || named.Obj().Name() != "FileMode" {
-		return false
+func (decimalFileModeCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
 	}
-	path := named.Obj().Pkg().Path()
-	return path == "os" || path == "io/fs"
 }

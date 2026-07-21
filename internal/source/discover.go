@@ -4,7 +4,6 @@ package source
 import (
 	"bufio"
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -13,6 +12,8 @@ import (
 	"sort"
 	"strings"
 )
+
+var workingDirectory = currentWorkingDirectory()
 
 type Options struct {
 	SkipGenerated bool
@@ -126,28 +127,85 @@ func IsGenerated(filename string) (bool, error) {
 		return false, err
 	}
 	defer file.Close()
-	limited := io.LimitReader(file, 4096)
-	scanner := bufio.NewScanner(limited)
+	contents, err := io.ReadAll(io.LimitReader(file, 4096))
+	if err != nil {
+		return false, err
+	}
+	return IsGeneratedSource(contents), nil
+}
+
+// IsGeneratedSource reports whether the first 4 KiB contains the canonical
+// generated-code marker.
+func IsGeneratedSource(contents []byte) bool {
+	if len(contents) > 4096 {
+		contents = contents[:4096]
+	}
+	scanner := bufio.NewScanner(bytes.NewReader(contents))
 	for scanner.Scan() {
 		line := bytes.TrimSpace(scanner.Bytes())
 		if bytes.HasPrefix(line, []byte("// Code generated ")) && bytes.HasSuffix(line, []byte(" DO NOT EDIT.")) {
-			return true, nil
+			return true
 		}
 	}
-	if err := scanner.Err(); err != nil && !errors.Is(err, io.EOF) {
-		return false, err
-	}
-	return false, nil
+	return false
 }
 
 func DisplayPath(filename string) string {
-	cwd, err := os.Getwd()
+	return DiagnosticPath(workingDirectory, filename)
+}
+
+// DiagnosticPath returns the stable slash-separated spelling used by
+// diagnostics. Files within root are root-relative; files outside it remain
+// absolute. An empty root uses the process working directory captured once.
+func DiagnosticPath(root, filename string) string {
+	if root == "" {
+		root = workingDirectory
+	}
+	absolute, err := filepath.Abs(filename)
 	if err != nil {
 		return filepath.ToSlash(filename)
 	}
-	rel, err := filepath.Rel(cwd, filename)
-	if err != nil || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
-		return filepath.ToSlash(filename)
+	absolute = filepath.Clean(absolute)
+	if resolved, resolveErr := filepath.EvalSymlinks(absolute); resolveErr == nil {
+		absolute = filepath.Clean(resolved)
+	} else if resolvedDirectory, directoryErr := filepath.EvalSymlinks(filepath.Dir(absolute)); directoryErr == nil {
+		absolute = filepath.Join(resolvedDirectory, filepath.Base(absolute))
+	}
+	root, err = filepath.Abs(root)
+	if err != nil {
+		return filepath.ToSlash(absolute)
+	}
+	root = filepath.Clean(root)
+	if resolved, resolveErr := filepath.EvalSymlinks(root); resolveErr == nil {
+		root = filepath.Clean(resolved)
+	}
+	rel, err := filepath.Rel(root, absolute)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return filepath.ToSlash(absolute)
 	}
 	return filepath.ToSlash(rel)
+}
+
+// ResolveRoot returns one absolute, canonical diagnostic root. Callers keep
+// the result for a complete check run instead of resolving the cwd per file.
+func ResolveRoot(root string) string {
+	if root == "" {
+		root = currentWorkingDirectory()
+	}
+	absolute, err := filepath.Abs(root)
+	if err != nil {
+		return root
+	}
+	if resolved, resolveErr := filepath.EvalSymlinks(absolute); resolveErr == nil {
+		return filepath.Clean(resolved)
+	}
+	return filepath.Clean(absolute)
+}
+
+func currentWorkingDirectory() string {
+	directory, err := os.Getwd()
+	if err != nil {
+		return "."
+	}
+	return directory
 }

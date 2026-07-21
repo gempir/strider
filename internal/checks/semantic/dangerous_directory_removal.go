@@ -8,9 +8,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type dangerousDirectoryRemovalRule struct{}
+type dangerousDirectoryRemovalCheck struct{}
 
-func (dangerousDirectoryRemovalRule) Meta() Meta {
+func (dangerousDirectoryRemovalCheck) Meta() Meta {
 	return Meta{
 		Code:            "dangerous-directory-removal",
 		Summary:         "detect removal of whole system or user directories",
@@ -21,7 +21,7 @@ func (dangerousDirectoryRemovalRule) Meta() Meta {
 	}
 }
 
-func (dangerousDirectoryRemovalRule) Run(pass *Pass) {
+func (dangerousDirectoryRemovalCheck) Run(pass *Pass) {
 	for _, call := range pass.staticCallsInPackage("os") {
 		if !isStaticFunction(call, "os", "RemoveAll") || len(call.Common().Args) == 0 {
 			continue
@@ -30,12 +30,7 @@ func (dangerousDirectoryRemovalRule) Run(pass *Pass) {
 		if helper == "" {
 			continue
 		}
-		pass.Report(
-			positionNode{
-				position: call.Pos(),
-			},
-			fmt.Sprintf("os.RemoveAll receives the entire %s directory from os.%s; remove only an application-owned subdirectory", kind, helper),
-		)
+		pass.ReportPos(call.Pos(), fmt.Sprintf("os.RemoveAll receives the entire %s directory from os.%s; remove only an application-owned subdirectory", kind, helper))
 	}
 }
 
@@ -66,5 +61,15 @@ func dangerousDirectorySource(value ssa.Value) (string, string) {
 		return "UserHomeDir", "user home"
 	default:
 		return "", ""
+	}
+}
+
+func (dangerousDirectoryRemovalCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactStaticCalls,
+		staticCallPackages: []string{
+			"os",
+		},
 	}
 }

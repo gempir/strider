@@ -8,11 +8,11 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type nilErrorReturnRule struct{}
+type nilErrorReturnCheck struct{}
 
-type nilValueWithNilErrorRule struct{}
+type nilValueWithNilErrorCheck struct{}
 
-func (nilErrorReturnRule) Meta() Meta {
+func (nilErrorReturnCheck) Meta() Meta {
 	return Meta{
 		Code:            "nil-error-return",
 		Summary:         "detect nil errors returned from branches that prove an error is non-nil",
@@ -23,7 +23,7 @@ func (nilErrorReturnRule) Meta() Meta {
 	}
 }
 
-func (nilErrorReturnRule) Run(pass *Pass) {
+func (nilErrorReturnCheck) Run(pass *Pass) {
 	forEachAnalysisFunction(
 		pass,
 		func(body *ast.BlockStmt, signature *types.Signature) {
@@ -33,8 +33,7 @@ func (nilErrorReturnRule) Run(pass *Pass) {
 			inspectFunctionBody(
 				body,
 				func(node ast.Node) bool {
-					statement,
-						ok := node.(*ast.IfStmt)
+					statement, ok := node.(*ast.IfStmt)
 					if !ok {
 						return true
 					}
@@ -51,7 +50,7 @@ func (nilErrorReturnRule) Run(pass *Pass) {
 	)
 }
 
-func (nilValueWithNilErrorRule) Meta() Meta {
+func (nilValueWithNilErrorCheck) Meta() Meta {
 	return Meta{
 		Code:            "nil-value-with-nil-error",
 		Summary:         "detect nil payloads returned together with a nil error",
@@ -62,7 +61,7 @@ func (nilValueWithNilErrorRule) Meta() Meta {
 	}
 }
 
-func (nilValueWithNilErrorRule) Run(pass *Pass) {
+func (nilValueWithNilErrorCheck) Run(pass *Pass) {
 	forEachAnalysisFunction(
 		pass,
 		func(body *ast.BlockStmt, signature *types.Signature) {
@@ -73,8 +72,7 @@ func (nilValueWithNilErrorRule) Run(pass *Pass) {
 			inspectFunctionBody(
 				body,
 				func(node ast.Node) bool {
-					statement,
-						ok := node.(*ast.ReturnStmt)
+					statement, ok := node.(*ast.ReturnStmt)
 					if !ok || len(statement.Results) != signature.Results().Len() || !isExplicitNil(pass, statement.Results[errorIndex]) {
 						return true
 					}
@@ -105,51 +103,34 @@ func ambiguousNilPayloadType(valueType types.Type) bool {
 }
 
 func forEachAnalysisFunction(pass *Pass, visit func(*ast.BlockStmt, *types.Signature)) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				switch function := node.(type) {
-				case *ast.FuncDecl:
-					object,
-						_ := pass.TypesInfo.Defs[function.Name].(*types.Func)
-					if object == nil {
-						return true
-					}
-					signature,
-						_ := object.Type().(*types.Signature)
-					if signature != nil {
-						visit(function.Body, signature)
-					}
-				case *ast.FuncLit:
-					signature,
-						_ := pass.TypesInfo.TypeOf(function.Type).(*types.Signature)
-					if signature == nil {
-						signature,
-							_ = pass.TypesInfo.TypeOf(function).(*types.Signature)
-					}
-					if signature != nil {
-						visit(function.Body, signature)
-					}
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.FuncDecl)(nil),
+			(*ast.FuncLit)(nil),
+		},
+		func(node ast.Node) bool {
+			switch function := node.(type) {
+			case *ast.FuncDecl:
+				object, _ := pass.TypesInfo.Defs[function.Name].(*types.Func)
+				if object == nil {
+					return true
 				}
-				return true
-			},
-		)
-	}
-}
-
-func inspectFunctionBody(body *ast.BlockStmt, visit func(ast.Node) bool) {
-	first := true
-	ast.Inspect(body, func(node ast.Node) bool {
-		if node == nil {
+				signature, _ := object.Type().(*types.Signature)
+				if signature != nil {
+					visit(function.Body, signature)
+				}
+			case *ast.FuncLit:
+				signature, _ := pass.TypesInfo.TypeOf(function.Type).(*types.Signature)
+				if signature == nil {
+					signature, _ = pass.TypesInfo.TypeOf(function).(*types.Signature)
+				}
+				if signature != nil {
+					visit(function.Body, signature)
+				}
+			}
 			return true
-		}
-		if _, nested := node.(*ast.FuncLit); nested && !first {
-			return false
-		}
-		first = false
-		return visit(node)
-	})
+		},
+	)
 }
 
 func nonNilErrorComparison(pass *Pass, expression ast.Expr, operator token.Token) types.Object {
@@ -177,11 +158,10 @@ func reportNilErrorsInProvenBranch(pass *Pass, branch ast.Node, signature *types
 	if branch == nil {
 		return
 	}
-	inspectFunctionBodyNode(
+	inspectFunctionBody(
 		branch,
 		func(node ast.Node) bool {
-			statement,
-				ok := node.(*ast.ReturnStmt)
+			statement, ok := node.(*ast.ReturnStmt)
 			if !ok || len(statement.Results) != signature.Results().Len() {
 				return true
 			}
@@ -198,20 +178,6 @@ func reportNilErrorsInProvenBranch(pass *Pass, branch ast.Node, signature *types
 			return true
 		},
 	)
-}
-
-func inspectFunctionBodyNode(root ast.Node, visit func(ast.Node) bool) {
-	first := true
-	ast.Inspect(root, func(node ast.Node) bool {
-		if node == nil {
-			return true
-		}
-		if _, nested := node.(*ast.FuncLit); nested && !first {
-			return false
-		}
-		first = false
-		return visit(node)
-	})
 }
 
 func branchAssignsObjectBeforeReturn(pass *Pass, branch ast.Node, object types.Object, returning *ast.ReturnStmt) bool {
@@ -306,5 +272,17 @@ func isNilableType(valueType types.Type) bool {
 		return true
 	default:
 		return false
+	}
+}
+
+func (nilErrorReturnCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
+}
+
+func (nilValueWithNilErrorCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
 	}
 }

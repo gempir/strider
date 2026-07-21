@@ -8,9 +8,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type swappedErrorsIsArgumentsRule struct{}
+type swappedErrorsIsArgumentsCheck struct{}
 
-func (swappedErrorsIsArgumentsRule) Meta() Meta {
+func (swappedErrorsIsArgumentsCheck) Meta() Meta {
 	return Meta{
 		Code:            "swapped-errors-is-arguments",
 		Summary:         "detect likely reversed errors.Is arguments",
@@ -21,7 +21,7 @@ func (swappedErrorsIsArgumentsRule) Meta() Meta {
 	}
 }
 
-func (swappedErrorsIsArgumentsRule) Run(pass *Pass) {
+func (swappedErrorsIsArgumentsCheck) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
 	for _, call := range pass.staticCallsInPackage("errors") {
 		if !isStaticFunction(call, "errors", "Is") || len(call.Common().Args) != 2 {
@@ -48,4 +48,14 @@ func loadedGlobal(value ssa.Value) *ssa.Global {
 	}
 	global, _ := flattenSSAValue(load.X).(*ssa.Global)
 	return global
+}
+
+func (swappedErrorsIsArgumentsCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"errors",
+		},
+	}
 }

@@ -10,9 +10,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type neverNilComparisonRule struct{}
+type neverNilComparisonCheck struct{}
 
-func (neverNilComparisonRule) Meta() Meta {
+func (neverNilComparisonCheck) Meta() Meta {
 	return Meta{
 		Code:            "never-nil-comparison",
 		Summary:         "detect nil checks on values proven to be non-nil",
@@ -23,7 +23,7 @@ func (neverNilComparisonRule) Meta() Meta {
 	}
 }
 
-func (neverNilComparisonRule) Run(pass *Pass) {
+func (neverNilComparisonCheck) Run(pass *Pass) {
 	for _, function := range pass.Functions {
 		if function == nil || function.Synthetic != "" || function.Blocks == nil || function.Syntax() == nil {
 			continue
@@ -31,27 +31,22 @@ func (neverNilComparisonRule) Run(pass *Pass) {
 		inspectFunctionSyntax(
 			function.Syntax(),
 			func(node ast.Node) bool {
-				ifStatement,
-					ok := node.(*ast.IfStmt)
+				ifStatement, ok := node.(*ast.IfStmt)
 				if !ok {
 					return true
 				}
-				binary,
-					ok := ast.Unparen(ifStatement.Cond).(*ast.BinaryExpr)
+				binary, ok := ast.Unparen(ifStatement.Cond).(*ast.BinaryExpr)
 				if !ok || binary.Op != token.EQL && binary.Op != token.NEQ {
 					return true
 				}
-				checked,
-					ok := nilCheckedExpression(pass, binary.X, binary.Y)
+				checked, ok := nilCheckedExpression(pass, binary.X, binary.Y)
 				if !ok {
-					checked,
-						ok = nilCheckedExpression(pass, binary.Y, binary.X)
+					checked, ok = nilCheckedExpression(pass, binary.Y, binary.X)
 				}
 				if !ok {
 					return true
 				}
-				value,
-					isAddress := function.ValueForExpr(checked)
+				value, isAddress := function.ValueForExpr(checked)
 				if value == nil || isAddress || !ssaValueNeverNil(value, make(map[ssa.Value]bool)) {
 					return true
 				}
@@ -60,8 +55,7 @@ func (neverNilComparisonRule) Run(pass *Pass) {
 					truth = "always"
 				}
 				message := "this nil comparison is " + truth + " true"
-				if _,
-					functionValue := flattenEquivalentPhi(value).(*ssa.Function); functionValue {
+				if _, functionValue := flattenEquivalentPhi(value).(*ssa.Function); functionValue {
 					message = "function values are never nil; did you mean to call the function?"
 				}
 				pass.Report(binary, message)
@@ -118,5 +112,12 @@ func ssaValueNeverNil(value ssa.Value, seen map[ssa.Value]bool) bool {
 		return true
 	default:
 		return false
+	}
+}
+
+func (neverNilComparisonCheck) Requirements() Requirements {
+	return Requirements{
+		Stage:       AnalysisStageSSA,
+		SSAFeatures: SSAFeatureGlobalDebug,
 	}
 }

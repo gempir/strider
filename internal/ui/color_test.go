@@ -9,26 +9,26 @@ func TestColorModesAndEnvironmentPrecedence(t *testing.T) {
 	t.Setenv("FORCE_COLOR", "")
 	t.Setenv("NO_COLOR", "")
 	writer := &bytes.Buffer{}
-	if NewPalette(writer, ColorAuto).Enabled() {
+	if NewPalette(writer, ColorAuto).enabled {
 		t.Fatal("auto color should be disabled for a non-terminal writer")
 	}
-	if !NewPalette(writer, ColorAlways).Enabled() {
+	if !NewPalette(writer, ColorAlways).enabled {
 		t.Fatal("always color should be enabled")
 	}
-	if NewPalette(writer, ColorNever).Enabled() {
+	if NewPalette(writer, ColorNever).enabled {
 		t.Fatal("never color should be disabled")
 	}
 
 	t.Setenv("NO_COLOR", "1")
-	if NewPalette(writer, ColorAlways).Enabled() {
+	if NewPalette(writer, ColorAlways).enabled {
 		t.Fatal("NO_COLOR should disable an always palette")
 	}
 	t.Setenv("FORCE_COLOR", "1")
-	if !NewPalette(writer, ColorNever).Enabled() {
+	if !NewPalette(writer, ColorNever).enabled {
 		t.Fatal("FORCE_COLOR should take precedence over mode and NO_COLOR")
 	}
 	t.Setenv("FORCE_COLOR", "0")
-	if NewPalette(writer, ColorAlways).Enabled() {
+	if NewPalette(writer, ColorAlways).enabled {
 		t.Fatal("FORCE_COLOR=0 should disable color")
 	}
 }

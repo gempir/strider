@@ -17,17 +17,6 @@ import (
 
 const Filename = "strider.toml"
 
-var behavioralRuleOptions = []string{
-	"characters",
-	"max-lines",
-	"max-statements",
-	"max-results",
-	"max-parameters",
-	"max-public-structs",
-	"max-methods",
-	"blocked-imports",
-}
-
 // Config is the complete project configuration document.
 type Config struct {
 	Version   int             `toml:"version"`
@@ -40,22 +29,15 @@ type Config struct {
 }
 
 type FormatterConfig struct {
-	PrintWidth         int                      `toml:"print-width"`
-	MaxBlankLines      int                      `toml:"max-blank-lines"`
-	ExistingLineBreaks string                   `toml:"existing-line-breaks"`
-	Alignment          FormatterAlignmentConfig `toml:"alignment"`
-	Excludes           []string                 `toml:"excludes"`
-}
-
-type FormatterAlignmentConfig struct {
-	Declarations bool `toml:"declarations"`
+	PrintWidth int      `toml:"print-width"`
+	Excludes   []string `toml:"excludes"`
 }
 
 type ToolConfig struct {
-	Excludes        []string              `toml:"excludes"`
-	Baseline        string                `toml:"baseline"`
-	MinimumSeverity string                `toml:"minimum-severity"`
-	Rules           map[string]RuleConfig `toml:"-"`
+	Excludes        []string               `toml:"excludes"`
+	Baseline        string                 `toml:"baseline"`
+	MinimumSeverity string                 `toml:"minimum-severity"`
+	Settings        map[string]CheckConfig `toml:"-"`
 }
 
 type fileConfig struct {
@@ -66,18 +48,17 @@ type fileConfig struct {
 	Checks    map[string]toml.Primitive `toml:"checks"`
 }
 
-type RuleConfig struct {
+type CheckConfig struct {
 	Severity         string   `toml:"severity"`
 	Excludes         []string `toml:"excludes"`
 	Characters       []string `toml:"characters"`
-	MaxLines         int      `toml:"max-lines"`
-	MaxStatements    int      `toml:"max-statements"`
-	MaxResults       int      `toml:"max-results"`
-	MaxParameters    int      `toml:"max-parameters"`
-	MaxPublicStructs int      `toml:"max-public-structs"`
-	MaxMethods       int      `toml:"max-methods"`
+	MaxLines         *int     `toml:"max-lines"`
+	MaxStatements    *int     `toml:"max-statements"`
+	MaxResults       *int     `toml:"max-results"`
+	MaxParameters    *int     `toml:"max-parameters"`
+	MaxPublicStructs *int     `toml:"max-public-structs"`
+	MaxMethods       *int     `toml:"max-methods"`
 	BlockedImports   []string `toml:"blocked-imports"`
-	definedOptions   map[string]bool
 }
 
 func Defaults() Config {
@@ -85,12 +66,7 @@ func Defaults() Config {
 		Version: 1,
 		Color:   string(ui.ColorAuto),
 		Formatter: FormatterConfig{
-			PrintWidth:         180,
-			MaxBlankLines:      1,
-			ExistingLineBreaks: "structural-only",
-			Alignment: FormatterAlignmentConfig{
-				Declarations: true,
-			},
+			PrintWidth: 180,
 		},
 		Checks: defaultToolConfig(),
 	}
@@ -99,7 +75,7 @@ func Defaults() Config {
 func defaultToolConfig() ToolConfig {
 	return ToolConfig{
 		MinimumSeverity: string(diagnostic.SeverityWarning),
-		Rules:           make(map[string]RuleConfig),
+		Settings:        make(map[string]CheckConfig),
 	}
 }
 
@@ -154,28 +130,12 @@ func Load(explicitPath string, disabled bool) (Config, error) {
 		sort.Strings(keys)
 		return Config{}, fmt.Errorf("%s: unknown configuration key(s): %s", absolute, strings.Join(keys, ", "))
 	}
-	recordDefinedRuleOptions(&configuration, metadata)
 	configuration.Path = absolute
 	configuration.Root = filepath.Dir(absolute)
 	if err := configuration.validate(); err != nil {
 		return Config{}, fmt.Errorf("%s: %w", absolute, err)
 	}
 	return configuration, nil
-}
-
-func recordDefinedRuleOptions(configuration *Config, metadata toml.MetaData) {
-	for code, rule := range configuration.Checks.Rules {
-		for _, option := range behavioralRuleOptions {
-			if !metadata.IsDefined("checks", code, option) {
-				continue
-			}
-			if rule.definedOptions == nil {
-				rule.definedOptions = make(map[string]bool)
-			}
-			rule.definedOptions[option] = true
-		}
-		configuration.Checks.Rules[code] = rule
-	}
 }
 
 func decodeCheck(destination *ToolConfig, values map[string]toml.Primitive, metadata toml.MetaData) error {
@@ -205,19 +165,61 @@ func decodeChecks(destination *ToolConfig, values map[string]toml.Primitive, met
 		if metadata.Type("checks", code) != "Hash" {
 			return fmt.Errorf("unknown configuration key(s): checks.%s", code)
 		}
-		rule := RuleConfig{}
-		if err := metadata.PrimitiveDecode(value, &rule); err != nil {
+		check := CheckConfig{}
+		if err := metadata.PrimitiveDecode(value, &check); err != nil {
 			return err
 		}
-		destination.Rules[code] = rule
+		destination.Settings[code] = check
 	}
 	return nil
 }
 
-// HasExplicitOption reports whether a behavioral option was present in the
-// decoded TOML, including when its value decoded to the Go zero value.
-func (rule RuleConfig) HasExplicitOption(option string) bool {
-	return rule.definedOptions[option]
+// ConfiguredOptions returns behavioral option names explicitly present in the
+// decoded configuration.
+func (check CheckConfig) ConfiguredOptions() []string {
+	configured := make([]string, 0, 8)
+	for _, option := range []struct {
+		name    string
+		present bool
+	}{
+		{
+			name:    "characters",
+			present: check.Characters != nil,
+		},
+		{
+			name:    "max-lines",
+			present: check.MaxLines != nil,
+		},
+		{
+			name:    "max-statements",
+			present: check.MaxStatements != nil,
+		},
+		{
+			name:    "max-results",
+			present: check.MaxResults != nil,
+		},
+		{
+			name:    "max-parameters",
+			present: check.MaxParameters != nil,
+		},
+		{
+			name:    "max-public-structs",
+			present: check.MaxPublicStructs != nil,
+		},
+		{
+			name:    "max-methods",
+			present: check.MaxMethods != nil,
+		},
+		{
+			name:    "blocked-imports",
+			present: check.BlockedImports != nil,
+		},
+	} {
+		if option.present {
+			configured = append(configured, option.name)
+		}
+	}
+	return configured
 }
 
 func discover() (string, error) {
@@ -247,19 +249,10 @@ func (configuration Config) validate() error {
 		return fmt.Errorf("unsupported configuration version %d; expected 1", configuration.Version)
 	}
 	if !ui.ValidColorMode(configuration.Color) {
-		return fmt.Errorf("color must be \"auto\", \"always\", or \"never\"")
+		return fmt.Errorf("color must be auto, always, or never")
 	}
 	if configuration.Formatter.PrintWidth < 40 || configuration.Formatter.PrintWidth > 500 {
 		return fmt.Errorf("formatter.print-width must be between 40 and 500")
-	}
-	if configuration.Formatter.MaxBlankLines != 1 {
-		return fmt.Errorf("formatter.max-blank-lines must be 1 while gofmt stability is required")
-	}
-	if configuration.Formatter.ExistingLineBreaks != "structural-only" {
-		return fmt.Errorf("formatter.existing-line-breaks must be \"structural-only\"")
-	}
-	if !configuration.Formatter.Alignment.Declarations {
-		return fmt.Errorf("formatter.alignment.declarations must be true while gofmt stability is required")
 	}
 	return validateTool("check", configuration.Checks)
 }
@@ -268,19 +261,19 @@ func validateTool(name string, tool ToolConfig) error {
 	if !diagnostic.ValidSeverity(diagnostic.Severity(tool.MinimumSeverity)) {
 		return fmt.Errorf("%s.minimum-severity must be none, note, warning, or error", name)
 	}
-	for code, rule := range tool.Rules {
-		if rule.Severity != "" && !diagnostic.ValidSeverity(diagnostic.Severity(rule.Severity)) {
+	for code, check := range tool.Settings {
+		if check.Severity != "" && !diagnostic.ValidSeverity(diagnostic.Severity(check.Severity)) {
 			return fmt.Errorf("%s.%s.severity must be none, note, warning, or error", name, code)
 		}
-		for option, value := range map[string]int{
-			"max-lines":          rule.MaxLines,
-			"max-statements":     rule.MaxStatements,
-			"max-results":        rule.MaxResults,
-			"max-parameters":     rule.MaxParameters,
-			"max-public-structs": rule.MaxPublicStructs,
-			"max-methods":        rule.MaxMethods,
+		for option, value := range map[string]*int{
+			"max-lines":          check.MaxLines,
+			"max-statements":     check.MaxStatements,
+			"max-results":        check.MaxResults,
+			"max-parameters":     check.MaxParameters,
+			"max-public-structs": check.MaxPublicStructs,
+			"max-methods":        check.MaxMethods,
 		} {
-			if value < 0 {
+			if value != nil && *value < 0 {
 				return fmt.Errorf("%s.%s.%s must not be negative", name, code, option)
 			}
 		}
@@ -295,24 +288,32 @@ func (configuration Config) Resolve(path string) string {
 	return filepath.Join(configuration.Root, filepath.FromSlash(path))
 }
 
-// EffectiveCheckRule returns one rule setting with the tool-wide exclusions
+// EffectiveCheck returns one check setting with the tool-wide exclusions
 // appended.
-func (configuration Config) EffectiveCheckRule(code string) RuleConfig {
-	rule := cloneRuleConfig(configuration.Checks.Rules[code])
-	rule.Excludes = append(append([]string(nil), configuration.Checks.Excludes...), rule.Excludes...)
-	return rule
+func (configuration Config) EffectiveCheck(code string) CheckConfig {
+	check := cloneCheckConfig(configuration.Checks.Settings[code])
+	check.Excludes = append(append([]string(nil), configuration.Checks.Excludes...), check.Excludes...)
+	return check
 }
 
-func cloneRuleConfig(rule RuleConfig) RuleConfig {
-	cloned := rule
-	cloned.Excludes = append([]string(nil), rule.Excludes...)
-	cloned.Characters = append([]string(nil), rule.Characters...)
-	cloned.BlockedImports = append([]string(nil), rule.BlockedImports...)
-	if rule.definedOptions != nil {
-		cloned.definedOptions = make(map[string]bool, len(rule.definedOptions))
-		for option := range rule.definedOptions {
-			cloned.definedOptions[option] = true
-		}
-	}
+func cloneCheckConfig(check CheckConfig) CheckConfig {
+	cloned := check
+	cloned.Excludes = append([]string(nil), check.Excludes...)
+	cloned.Characters = append([]string(nil), check.Characters...)
+	cloned.BlockedImports = append([]string(nil), check.BlockedImports...)
+	cloned.MaxLines = cloneInt(check.MaxLines)
+	cloned.MaxStatements = cloneInt(check.MaxStatements)
+	cloned.MaxResults = cloneInt(check.MaxResults)
+	cloned.MaxParameters = cloneInt(check.MaxParameters)
+	cloned.MaxPublicStructs = cloneInt(check.MaxPublicStructs)
+	cloned.MaxMethods = cloneInt(check.MaxMethods)
 	return cloned
+}
+
+func cloneInt(value *int) *int {
+	if value == nil {
+		return nil
+	}
+	cloned := *value
+	return &cloned
 }

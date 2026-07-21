@@ -16,13 +16,11 @@ import (
 
 const Version = 1
 
-const Strict Variant = "strict"
-
-type Variant string
+const Strict = "strict"
 
 type File struct {
 	Version int     `toml:"version"`
-	Variant Variant `toml:"variant"`
+	Variant string  `toml:"variant"`
 	Issues  []Issue `toml:"issues"`
 }
 
@@ -39,15 +37,22 @@ type Result struct {
 	Stale       int
 }
 
+type issueIdentity struct {
+	file      string
+	code      string
+	startLine int
+	endLine   int
+}
+
 // Generate constructs a deterministic baseline from diagnostics.
-func Generate(path string, diagnostics []diagnostic.Diagnostic) (File, error) {
+func Generate(path, root string, diagnostics []diagnostic.Diagnostic) (File, error) {
 	directory := filepath.Dir(path)
 	baseline := File{
 		Version: Version,
 		Variant: Strict,
 	}
 	for _, item := range diagnostics {
-		issue, err := strictIssue(directory, item)
+		issue, err := strictIssue(directory, root, item)
 		if err != nil {
 			return File{}, err
 		}
@@ -90,29 +95,15 @@ func Load(path string) (File, error) {
 	return baseline, nil
 }
 
-// Apply suppresses diagnostics consumed by a baseline and reports unmatched
-// baseline entries as stale. Matched contains only entries still present.
-func Apply(path string, baseline File, diagnostics []diagnostic.Diagnostic) (Result, error) {
-	return ApplySelected(path, baseline, diagnostics, nil)
-}
-
-// ApplySelected applies active check entries while preserving entries for
-// checks that were not selected for this run. An omitted check was not
-// evaluated, so its baseline debt is neither matched nor stale and must survive
-// pruning unchanged. A nil selectedCodes map means every code is active.
-func ApplySelected(path string, baseline File, diagnostics []diagnostic.Diagnostic, selectedCodes map[string]bool) (Result, error) {
-	return applySelection(path, baseline, diagnostics, selectedCodes, nil)
-}
-
-// ApplyCatalogSelection preserves known checks that were inactive for this
+// Apply preserves known checks that were inactive for this
 // run while treating codes outside the current catalog as stale. This keeps a
-// severity-filtered baseline intact without retaining entries for rules that
+// severity-filtered baseline intact without retaining entries for checks that
 // were removed or renamed.
-func ApplyCatalogSelection(path string, baseline File, diagnostics []diagnostic.Diagnostic, selectedCodes, knownCodes map[string]bool) (Result, error) {
-	return applySelection(path, baseline, diagnostics, selectedCodes, knownCodes)
+func Apply(path, root string, baseline File, diagnostics []diagnostic.Diagnostic, selectedCodes, knownCodes map[string]bool) (Result, error) {
+	return applySelection(path, root, baseline, diagnostics, selectedCodes, knownCodes)
 }
 
-func applySelection(path string, baseline File, diagnostics []diagnostic.Diagnostic, selectedCodes, knownCodes map[string]bool) (Result, error) {
+func applySelection(path, root string, baseline File, diagnostics []diagnostic.Diagnostic, selectedCodes, knownCodes map[string]bool) (Result, error) {
 	directory := filepath.Dir(path)
 	result := Result{
 		Matched: File{
@@ -120,8 +111,8 @@ func applySelection(path string, baseline File, diagnostics []diagnostic.Diagnos
 			Variant: baseline.Variant,
 		},
 	}
-	remaining := make(map[string]int, len(baseline.Issues))
-	templates := make(map[string]Issue, len(baseline.Issues))
+	remaining := make(map[issueIdentity]int, len(baseline.Issues))
+	templates := make(map[issueIdentity]Issue, len(baseline.Issues))
 	for _, issue := range baseline.Issues {
 		if selectedCodes != nil && !selectedCodes[issue.Code] && (knownCodes == nil || knownCodes[issue.Code]) {
 			result.Matched.Issues = append(result.Matched.Issues, issue)
@@ -131,9 +122,9 @@ func applySelection(path string, baseline File, diagnostics []diagnostic.Diagnos
 		remaining[key]++
 		templates[key] = issue
 	}
-	matched := make(map[string]int, len(remaining))
+	matched := make(map[issueIdentity]int, len(remaining))
 	for _, item := range diagnostics {
-		issue, err := strictIssue(directory, item)
+		issue, err := strictIssue(directory, root, item)
 		if err != nil {
 			return Result{}, err
 		}
@@ -188,8 +179,8 @@ func Write(path string, baseline File) (err error) {
 	return nil
 }
 
-func strictIssue(directory string, item diagnostic.Diagnostic) (Issue, error) {
-	file, err := relativeFile(directory, item.File)
+func strictIssue(directory, root string, item diagnostic.Diagnostic) (Issue, error) {
+	file, err := relativeFile(directory, root, item.File)
 	if err != nil {
 		return Issue{}, err
 	}
@@ -201,11 +192,14 @@ func strictIssue(directory string, item diagnostic.Diagnostic) (Issue, error) {
 	}, nil
 }
 
-func relativeFile(directory, filename string) (string, error) {
+func relativeFile(directory, root, filename string) (string, error) {
 	absolute := filename
 	if !filepath.IsAbs(absolute) {
+		if root != "" {
+			absolute = filepath.Join(root, filepath.FromSlash(filename))
+		}
 		var err error
-		absolute, err = filepath.Abs(filename)
+		absolute, err = filepath.Abs(absolute)
 		if err != nil {
 			return "", err
 		}
@@ -217,12 +211,31 @@ func relativeFile(directory, filename string) (string, error) {
 	return filepath.ToSlash(relative), nil
 }
 
-func issueKey(issue Issue) string {
-	return fmt.Sprintf("%s\x00%s\x00%d\x00%d", issue.File, issue.Code, issue.StartLine, issue.EndLine)
+func issueKey(issue Issue) issueIdentity {
+	return issueIdentity{
+		file:      issue.File,
+		code:      issue.Code,
+		startLine: issue.StartLine,
+		endLine:   issue.EndLine,
+	}
 }
 
 func sortIssues(issues []Issue) {
-	sort.Slice(issues, func(i, j int) bool {
-		return issueKey(issues[i]) < issueKey(issues[j])
-	})
+	sort.Slice(
+		issues,
+		func(i, j int) bool {
+			left := issueKey(issues[i])
+			right := issueKey(issues[j])
+			if left.file != right.file {
+				return left.file < right.file
+			}
+			if left.code != right.code {
+				return left.code < right.code
+			}
+			if left.startLine != right.startLine {
+				return left.startLine < right.startLine
+			}
+			return left.endLine < right.endLine
+		},
+	)
 }

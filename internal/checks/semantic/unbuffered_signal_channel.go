@@ -8,9 +8,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type unbufferedSignalChannelRule struct{}
+type unbufferedSignalChannelCheck struct{}
 
-func (unbufferedSignalChannelRule) Meta() Meta {
+func (unbufferedSignalChannelCheck) Meta() Meta {
 	return Meta{
 		Code:            "unbuffered-signal-channel",
 		Summary:         "detect unbuffered channels used for signal notification",
@@ -21,7 +21,7 @@ func (unbufferedSignalChannelRule) Meta() Meta {
 	}
 }
 
-func (unbufferedSignalChannelRule) Run(pass *Pass) {
+func (unbufferedSignalChannelCheck) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
 	for _, call := range pass.staticCallsInPackage("os/signal") {
 		if !isStaticFunction(call, "os/signal", "Notify") || len(call.Common().Args) == 0 || !isUnbufferedChannel(call.Common().Args[0]) {
@@ -51,5 +51,15 @@ func isUnbufferedChannel(value ssa.Value) bool {
 			length, exact := constant.Int64Val(size.Value)
 			return exact && length == 0
 		}
+	}
+}
+
+func (unbufferedSignalChannelCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"os/signal",
+		},
 	}
 }

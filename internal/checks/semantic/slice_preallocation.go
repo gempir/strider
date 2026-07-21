@@ -10,14 +10,14 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type slicePreallocationRule struct{}
+type slicePreallocationCheck struct{}
 
 type emptySliceCandidate struct {
 	identifier *ast.Ident
 	variable   *types.Var
 }
 
-func (slicePreallocationRule) Meta() Meta {
+func (slicePreallocationCheck) Meta() Meta {
 	return Meta{
 		Code:            "slice-preallocation",
 		Summary:         "detect slices that can use range-source capacity",
@@ -28,17 +28,20 @@ func (slicePreallocationRule) Meta() Meta {
 	}
 }
 
-func (slicePreallocationRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(file, func(node ast.Node) bool {
+func (slicePreallocationCheck) Run(pass *Pass) {
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.BlockStmt)(nil),
+		},
+		func(node ast.Node) bool {
 			block, ok := node.(*ast.BlockStmt)
 			if !ok {
 				return true
 			}
 			checkPreallocationBlock(pass, block)
 			return true
-		})
-	}
+		},
+	)
 }
 
 func checkPreallocationBlock(pass *Pass, block *ast.BlockStmt) {
@@ -186,8 +189,7 @@ func rangeAppendsExactlyOnce(pass *Pass, loop *ast.RangeStmt, variable *types.Va
 	ast.Inspect(
 		loop.Body,
 		func(node ast.Node) bool {
-			if _,
-				nested := node.(*ast.FuncLit); nested {
+			if _, nested := node.(*ast.FuncLit); nested {
 				return false
 			}
 			switch node := node.(type) {
@@ -197,15 +199,13 @@ func rangeAppendsExactlyOnce(pass *Pass, loop *ast.RangeStmt, variable *types.Va
 				}
 			case *ast.AssignStmt:
 				for _, left := range node.Lhs {
-					identifier,
-						ok := left.(*ast.Ident)
+					identifier, ok := left.(*ast.Ident)
 					if ok && pass.TypesInfo.ObjectOf(identifier) == variable {
 						assignments++
 					}
 				}
 			case *ast.UnaryExpr:
-				identifier,
-					ok := node.X.(*ast.Ident)
+				identifier, ok := node.X.(*ast.Ident)
 				if node.Op == token.AND && ok && pass.TypesInfo.ObjectOf(identifier) == variable {
 					addressTaken = true
 				}
@@ -273,8 +273,7 @@ func statementMutatesSlice(pass *Pass, statement ast.Stmt, variable *types.Var) 
 			switch node := node.(type) {
 			case *ast.AssignStmt:
 				for _, left := range node.Lhs {
-					identifier,
-						ok := left.(*ast.Ident)
+					identifier, ok := left.(*ast.Ident)
 					if ok && pass.TypesInfo.ObjectOf(identifier) == variable {
 						mutated = true
 						return false
@@ -286,8 +285,7 @@ func statementMutatesSlice(pass *Pass, statement ast.Stmt, variable *types.Var) 
 					return false
 				}
 			case *ast.UnaryExpr:
-				identifier,
-					ok := node.X.(*ast.Ident)
+				identifier, ok := node.X.(*ast.Ident)
 				if node.Op == token.AND && ok && pass.TypesInfo.ObjectOf(identifier) == variable {
 					mutated = true
 					return false
@@ -297,4 +295,10 @@ func statementMutatesSlice(pass *Pass, statement ast.Stmt, variable *types.Var) 
 		},
 	)
 	return mutated
+}
+
+func (slicePreallocationCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

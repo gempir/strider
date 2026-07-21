@@ -9,9 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type pointlessIntegerMathRule struct{}
+type pointlessIntegerMathCheck struct{}
 
-func (pointlessIntegerMathRule) Meta() Meta {
+func (pointlessIntegerMathCheck) Meta() Meta {
 	return Meta{
 		Code:            "pointless-integer-math",
 		Summary:         "detect floating-point helpers applied to converted integers",
@@ -22,7 +22,7 @@ func (pointlessIntegerMathRule) Meta() Meta {
 	}
 }
 
-func (pointlessIntegerMathRule) Run(pass *Pass) {
+func (pointlessIntegerMathCheck) Run(pass *Pass) {
 	for _, function := range pass.Functions {
 		for _, block := range function.Blocks {
 			for _, instruction := range block.Instrs {
@@ -38,9 +38,7 @@ func (pointlessIntegerMathRule) Run(pass *Pass) {
 				if !ok || !allIntegerTypes(conversion.X.Type()) {
 					continue
 				}
-				pass.Report(positionNode{
-					position: call.Pos(),
-				}, fmt.Sprintf("calling math.%s on a converted integer is pointless", name))
+				pass.ReportPos(call.Pos(), fmt.Sprintf("calling math.%s on a converted integer is pointless", name))
 			}
 		}
 	}
@@ -90,5 +88,11 @@ func allIntegerTypes(valueType types.Type) bool {
 		return underlying.Len() != 0
 	default:
 		return false
+	}
+}
+
+func (pointlessIntegerMathCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
 	}
 }

@@ -11,9 +11,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type leakyTimeTickRule struct{}
+type leakyTimeTickCheck struct{}
 
-func (leakyTimeTickRule) Meta() Meta {
+func (leakyTimeTickCheck) Meta() Meta {
 	return Meta{
 		Code:            "leaky-time-tick",
 		Summary:         "detect time.Tick calls that leak on older Go versions",
@@ -24,7 +24,7 @@ func (leakyTimeTickRule) Meta() Meta {
 	}
 }
 
-func (leakyTimeTickRule) Run(pass *Pass) {
+func (leakyTimeTickCheck) Run(pass *Pass) {
 	if pass.GoVersion == "" || version.Compare(normalizeGoVersion(pass.GoVersion), "go1.23") >= 0 || pass.Types.Name() == "main" {
 		return
 	}
@@ -41,13 +41,11 @@ func (leakyTimeTickRule) Run(pass *Pass) {
 				}
 				if node != root {
 					switch node.(type) {
-					case *ast.FuncDecl,
-						*ast.FuncLit:
+					case *ast.FuncDecl, *ast.FuncLit:
 						return false
 					}
 				}
-				call,
-					ok := node.(*ast.CallExpr)
+				call, ok := node.(*ast.CallExpr)
 				if !ok || len(call.Args) != 1 || !isPackageFunction(pass.TypesInfo, call.Fun, "time", "Tick") {
 					return true
 				}
@@ -62,13 +60,6 @@ func (leakyTimeTickRule) Run(pass *Pass) {
 			},
 		)
 	}
-}
-
-func normalizeGoVersion(value string) string {
-	if len(value) >= 2 && value[:2] == "go" {
-		return value
-	}
-	return "go" + value
 }
 
 func functionCanReturn(function *ssa.Function) bool {
@@ -112,4 +103,10 @@ func receivesClosedTimeTick(condition ssa.Value) bool {
 	}
 	call, ok := receive.X.(*ssa.Call)
 	return ok && isStaticFunction(call, "time", "Tick")
+}
+
+func (leakyTimeTickCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+	}
 }

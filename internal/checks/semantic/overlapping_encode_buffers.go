@@ -9,7 +9,7 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type overlappingEncodeBuffersRule struct{}
+type overlappingEncodeBuffersCheck struct{}
 
 type encodeBufferCall struct {
 	destinationSSA    int
@@ -17,7 +17,7 @@ type encodeBufferCall struct {
 	destinationSource int
 }
 
-func (overlappingEncodeBuffersRule) Meta() Meta {
+func (overlappingEncodeBuffersCheck) Meta() Meta {
 	return Meta{
 		Code:            "overlapping-encode-buffers",
 		Summary:         "detect overlapping source and destination encoding buffers",
@@ -28,7 +28,7 @@ func (overlappingEncodeBuffersRule) Meta() Meta {
 	}
 }
 
-func (overlappingEncodeBuffersRule) Run(pass *Pass) {
+func (overlappingEncodeBuffersCheck) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
 	for _, packagePath := range []string{
 		"encoding/ascii85",
@@ -113,4 +113,17 @@ func sameSliceBound(left, right ssa.Value) bool {
 	leftConstant, leftOK := left.(*ssa.Const)
 	rightConstant, rightOK := right.(*ssa.Const)
 	return leftOK && rightOK && leftConstant.Value != nil && rightConstant.Value != nil && constant.Compare(leftConstant.Value, token.EQL, rightConstant.Value)
+}
+
+func (overlappingEncodeBuffersCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"encoding/ascii85",
+			"encoding/base32",
+			"encoding/base64",
+			"encoding/hex",
+		},
+	}
 }

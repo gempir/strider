@@ -1,0 +1,2 @@
+main.go:6:6-6:6 duration-multiplied-by-duration
+main.go:11:6-11:6 duration-multiplied-by-duration

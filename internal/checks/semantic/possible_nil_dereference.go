@@ -9,14 +9,14 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type possibleNilDereferenceRule struct{}
+type possibleNilDereferenceCheck struct{}
 
-type nilCheck struct {
+type nilState struct {
 	value      ssa.Value
 	nonNilPath *ssa.BasicBlock
 }
 
-func (possibleNilDereferenceRule) Meta() Meta {
+func (possibleNilDereferenceCheck) Meta() Meta {
 	return Meta{
 		Code:            "possible-nil-dereference",
 		Summary:         "detect pointer dereferences not protected by their nil checks",
@@ -27,7 +27,7 @@ func (possibleNilDereferenceRule) Meta() Meta {
 	}
 }
 
-func (possibleNilDereferenceRule) Run(pass *Pass) {
+func (possibleNilDereferenceCheck) Run(pass *Pass) {
 	for _, function := range pass.Functions {
 		if function == nil || function.Blocks == nil {
 			continue
@@ -58,20 +58,15 @@ func (possibleNilDereferenceRule) Run(pass *Pass) {
 					}
 				}
 				if matched && !protected {
-					pass.Report(
-						positionNode{
-							position: instruction.Pos(),
-						},
-						"pointer is dereferenced on a path where its nil check does not prove it is non-nil",
-					)
+					pass.ReportPos(instruction.Pos(), "pointer is dereferenced on a path where its nil check does not prove it is non-nil")
 				}
 			}
 		}
 	}
 }
 
-func collectNilChecks(function *ssa.Function) []nilCheck {
-	checks := make([]nilCheck, 0, len(function.Blocks))
+func collectNilChecks(function *ssa.Function) []nilState {
+	checks := make([]nilState, 0, len(function.Blocks))
 	for _, block := range function.Blocks {
 		if len(block.Instrs) == 0 || len(block.Succs) < 2 {
 			continue
@@ -103,7 +98,7 @@ func collectNilChecks(function *ssa.Function) []nilCheck {
 			// it does not prove that the comparison selected the non-nil edge.
 			nonNilPath = nil
 		}
-		checks = append(checks, nilCheck{
+		checks = append(checks, nilState{
 			value:      value,
 			nonNilPath: nonNilPath,
 		})
@@ -152,5 +147,11 @@ func pointerCannotBeNil(value ssa.Value) bool {
 		return true
 	default:
 		return false
+	}
+}
+
+func (possibleNilDereferenceCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
 	}
 }

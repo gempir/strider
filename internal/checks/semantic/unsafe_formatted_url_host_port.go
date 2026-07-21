@@ -8,9 +8,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type unsafeFormattedURLHostPortRule struct{}
+type unsafeFormattedURLHostPortCheck struct{}
 
-func (unsafeFormattedURLHostPortRule) Meta() Meta {
+func (unsafeFormattedURLHostPortCheck) Meta() Meta {
 	return Meta{
 		Code:            "unsafe-formatted-url-host-port",
 		Summary:         "detect URL and network-address construction that breaks IPv6",
@@ -21,29 +21,28 @@ func (unsafeFormattedURLHostPortRule) Meta() Meta {
 	}
 }
 
-func (unsafeFormattedURLHostPortRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				call,
-					ok := node.(*ast.CallExpr)
-				if !ok {
-					return true
-				}
-				formatted := formattedHostPortCall(pass, call)
-				if formatted == nil {
-					argument := networkAddressArgument(pass, call)
-					formatted = bareFormattedHostPortCall(pass, argument)
-				}
-				if formatted == nil {
-					return true
-				}
-				pass.Report(formatted.Args[0], "formatted host and port may be invalid for IPv6; build the address with net.JoinHostPort")
+func (unsafeFormattedURLHostPortCheck) Run(pass *Pass) {
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.CallExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			call, ok := node.(*ast.CallExpr)
+			if !ok {
 				return true
-			},
-		)
-	}
+			}
+			formatted := formattedHostPortCall(pass, call)
+			if formatted == nil {
+				argument := networkAddressArgument(pass, call)
+				formatted = bareFormattedHostPortCall(pass, argument)
+			}
+			if formatted == nil {
+				return true
+			}
+			pass.Report(formatted.Args[0], "formatted host and port may be invalid for IPv6; build the address with net.JoinHostPort")
+			return true
+		},
+	)
 }
 
 func formattedHostPortCall(pass *Pass, call *ast.CallExpr) *ast.CallExpr {
@@ -121,4 +120,10 @@ func formatsURLHostAndPort(format string) bool {
 	}
 	authority = authority[:end]
 	return strings.Contains(authority, "%s:") || strings.Contains(authority, "%v:")
+}
+
+func (unsafeFormattedURLHostPortCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

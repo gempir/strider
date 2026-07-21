@@ -2,9 +2,6 @@ version = 1
 
 [formatter]
 print-width = 180
-max-blank-lines = 1
-existing-line-breaks = "structural-only"
-alignment.declarations = true
 excludes = ["internal/generated/**"]
 
 # The repository predates these warning- and error-level policies and has
@@ -41,9 +38,6 @@ severity = "note"
 severity = "note"
 
 [checks.max-control-nesting]
-severity = "note"
-
-[checks.optimize-operands-order]
 severity = "note"
 
 [checks.range-value-address]

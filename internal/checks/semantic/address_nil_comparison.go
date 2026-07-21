@@ -8,9 +8,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type addressNilComparisonRule struct{}
+type addressNilComparisonCheck struct{}
 
-func (addressNilComparisonRule) Meta() Meta {
+func (addressNilComparisonCheck) Meta() Meta {
 	return Meta{
 		Code:            "address-nil-comparison",
 		Summary:         "detect comparisons between a freshly taken address and nil",
@@ -21,28 +21,27 @@ func (addressNilComparisonRule) Meta() Meta {
 	}
 }
 
-func (addressNilComparisonRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				binary,
-					ok := node.(*ast.BinaryExpr)
-				if !ok || binary.Op != token.EQL && binary.Op != token.NEQ {
-					return true
-				}
-				if !addressComparedWithNil(pass, binary.X, binary.Y) && !addressComparedWithNil(pass, binary.Y, binary.X) {
-					return true
-				}
-				result := "false"
-				if binary.Op == token.NEQ {
-					result = "true"
-				}
-				pass.Report(binary, "address cannot be nil; this comparison is always "+result)
+func (addressNilComparisonCheck) Run(pass *Pass) {
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.BinaryExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			binary, ok := node.(*ast.BinaryExpr)
+			if !ok || binary.Op != token.EQL && binary.Op != token.NEQ {
 				return true
-			},
-		)
-	}
+			}
+			if !addressComparedWithNil(pass, binary.X, binary.Y) && !addressComparedWithNil(pass, binary.Y, binary.X) {
+				return true
+			}
+			result := "false"
+			if binary.Op == token.NEQ {
+				result = "true"
+			}
+			pass.Report(binary, "address cannot be nil; this comparison is always "+result)
+			return true
+		},
+	)
 }
 
 func addressComparedWithNil(pass *Pass, addressExpression, nilExpression ast.Expr) bool {
@@ -59,4 +58,10 @@ func addressComparedWithNil(pass *Pass, addressExpression, nilExpression ast.Exp
 	}
 	_, isNil := pass.TypesInfo.ObjectOf(identifier).(*types.Nil)
 	return isNil
+}
+
+func (addressNilComparisonCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

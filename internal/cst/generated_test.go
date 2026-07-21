@@ -1,15 +1,9 @@
 package cst
 
 import (
-	"go/token"
 	"os/exec"
-	"slices"
 	"testing"
 )
-
-type fallbackNode struct {
-	Child Node
-}
 
 func TestGeneratedAccessorsAreCurrent(t *testing.T) {
 	command := exec.Command("go", "run", "./cmd/gencst", "-check", "-output", "zz_nodes_generated.go")
@@ -18,7 +12,7 @@ func TestGeneratedAccessorsAreCurrent(t *testing.T) {
 	}
 }
 
-func TestGeneratedAccessorsPreserveNilAndFallbackBehavior(t *testing.T) {
+func TestGeneratedAccessorsPreserveTypedNilBehavior(t *testing.T) {
 	var typedNil Node = (*Block)(nil)
 	if Kind(typedNil) != "" {
 		t.Fatalf("typed nil kind is %q", Kind(typedNil))
@@ -36,25 +30,6 @@ func TestGeneratedAccessorsPreserveNilAndFallbackBehavior(t *testing.T) {
 	}
 	if start, end := Range(typedNil); start != 0 || end != 0 {
 		t.Fatalf("typed nil range = %d:%d", start, end)
-	}
-
-	tree, err := Parse("fixture.go", []byte("package p\nvar value = 1\n"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	wrapper := &fallbackNode{
-		Child: tree.Root(),
-	}
-	if got, want := Children(wrapper), []Node{
-		tree.Root(),
-	}; !slices.Equal(got, want) {
-		t.Fatalf("fallback children = %#v, want %#v", got, want)
-	}
-	if got, want := NodeTokens(wrapper), NodeTokens(tree.Root()); !slices.Equal(got, want) {
-		t.Fatalf("fallback tokens = %d, want %d", len(got), len(want))
-	}
-	if gotStart, gotEnd := Range(wrapper); gotStart != 0 || gotEnd != len("package p\nvar value = 1") {
-		t.Fatalf("fallback range = %d:%d", gotStart, gotEnd)
 	}
 }
 
@@ -102,32 +77,4 @@ func TestProductionWalkSkipsTokenValuesAndPointers(t *testing.T) {
 			},
 		)
 	}
-
-	wrapper := &fallbackNode{
-		Child: &valid,
-	}
-	visits := []Node{}
-	WalkProductionsWithAncestors(wrapper, func(node Node, _ []Node) bool {
-		visits = append(visits, node)
-		return true
-	})
-	if !slices.Equal(visits, []Node{
-		wrapper,
-	}) {
-		t.Fatalf("fallback production visits = %#v", visits)
-	}
-}
-
-func (n *fallbackNode) Position() token.Position {
-	if n == nil || n.Child == nil {
-		return token.Position{}
-	}
-	return n.Child.Position()
-}
-
-func (n *fallbackNode) Source(full bool) string {
-	if n == nil || n.Child == nil {
-		return ""
-	}
-	return n.Child.Source(full)
 }

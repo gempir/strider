@@ -1,0 +1,2 @@
+main.go:18:15-18:15 unsupported-marshal-type
+main.go:19:14-19:14 unsupported-marshal-type

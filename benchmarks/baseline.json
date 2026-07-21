@@ -7,8 +7,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "b55bd6d6c1249084c4a1201f616b6c3f9229c768f6ad2e2660f46f8f831270f2",
-          "findings": 1115,
+          "digest": "9fc3634c65ca7b8da3b03c28948e55eb7ef55f3e76d0e1d4d9dd6d1a1016357a",
+          "findings": 953,
           "by_code": {
             "add-constant": 175,
             "boolean-literal-comparison": 10,
@@ -19,15 +19,14 @@
             "context-stored-in-struct": 2,
             "cyclomatic-complexity": 14,
             "discarded-error-result": 177,
-            "doc-comment-period": 22,
+            "doc-comment-period": 21,
             "early-return": 1,
             "error-strings": 17,
             "excessive-blank-identifiers": 2,
             "exported-declaration-comment": 123,
-            "external-call-in-loop": 3,
             "file-length-limit": 5,
             "flag-parameter": 1,
-            "format": 48,
+            "format": 46,
             "function-length": 19,
             "function-result-limit": 1,
             "get-function-return-value": 1,
@@ -43,7 +42,6 @@
             "no-init": 4,
             "no-naked-return": 1,
             "no-package-var": 40,
-            "optimize-operands-order": 11,
             "package-comments": 34,
             "redefines-builtin-id": 2,
             "redundant-conversion": 1,
@@ -51,10 +49,9 @@
             "slice-preallocation": 2,
             "standard-http-method-constant": 14,
             "task-comment": 6,
-            "test-parallelism": 142,
             "top-level-declaration-order": 15,
             "unchecked-type-assertion": 26,
-            "unclosed-http-response-body": 12,
+            "unclosed-http-response-body": 9,
             "unexported-return": 4,
             "unused-parameter": 5,
             "unused-receiver": 4,
@@ -63,8 +60,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "0ed8927473bd8d6145f4877435d8110d8ad5f6fbc83b981e573591a168fa5ef0",
-          "findings": 48
+          "digest": "9f245158665b35294b517176db19c3d1c571d53b466e3b2745e81aa8722fb981",
+          "findings": 46
         }
       }
     },
@@ -74,8 +71,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "d3c041afb28f4c397853e61ff967a373528abd1d9cbbb5d17f30dd017ec74eb7",
-          "findings": 2879,
+          "digest": "3b84d0edbc6dcf97f7d79eac6c25f9e33f0c2ddea167318adda02065da34ab78",
+          "findings": 2202,
           "by_code": {
             "add-constant": 503,
             "boolean-literal-comparison": 1,
@@ -84,15 +81,14 @@
             "cyclomatic-complexity": 16,
             "deprecated-api-usage": 3,
             "discarded-error-result": 230,
-            "doc-comment-period": 102,
+            "doc-comment-period": 101,
             "error-naming": 1,
             "error-strings": 19,
             "error-type-naming": 1,
             "exported-declaration-comment": 352,
-            "external-call-in-loop": 4,
             "file-length-limit": 12,
             "flag-parameter": 6,
-            "format": 70,
+            "format": 59,
             "function-length": 20,
             "import-alias-naming": 1,
             "import-shadowing": 7,
@@ -109,17 +105,15 @@
             "no-init": 14,
             "no-naked-return": 31,
             "no-package-var": 88,
-            "optimize-operands-order": 35,
             "package-comments": 57,
             "package-naming": 2,
             "range-value-address": 5,
             "redundant-conversion": 99,
             "single-case-switch": 34,
             "task-comment": 2,
-            "test-parallelism": 629,
-            "top-level-declaration-order": 45,
+            "top-level-declaration-order": 49,
             "unchecked-type-assertion": 29,
-            "unclosed-http-response-body": 20,
+            "unclosed-http-response-body": 19,
             "unexported-return": 1,
             "unsafe-formatted-url-host-port": 1,
             "unused-parameter": 22,
@@ -129,8 +123,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "7a4635e57da60077b71ba6fcce2683f6e8f15f7ec510b8bbc16062ed361f9d78",
-          "findings": 70
+          "digest": "d8c5ab4add9e3225dae2c350d5d8e04404595c7d675ed757ca3865086202bb31",
+          "findings": 59
         }
       }
     },
@@ -140,8 +134,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "a1316f8fe4c4aeb84d3d3010f99b5493cb964b05cd7ee8af3e871c97db4c5312",
-          "findings": 818,
+          "digest": "b00a358cdecee2c30804f16c9657dcc683ac0df34b1b89572625e8de4874d1f3",
+          "findings": 725,
           "by_code": {
             "add-constant": 42,
             "byte-string-write": 1,
@@ -153,7 +147,6 @@
             "error-strings": 27,
             "excessive-blank-identifiers": 2,
             "exported-declaration-comment": 90,
-            "external-call-in-loop": 1,
             "file-length-limit": 5,
             "flag-parameter": 8,
             "format": 26,
@@ -166,7 +159,6 @@
             "nested-structs": 46,
             "nil-value-with-nil-error": 1,
             "no-package-var": 61,
-            "optimize-operands-order": 17,
             "overwritten-before-use": 1,
             "package-comments": 19,
             "possible-nil-dereference": 5,
@@ -177,10 +169,8 @@
             "redundant-conversion": 23,
             "single-case-switch": 13,
             "task-comment": 1,
-            "test-parallelism": 75,
-            "top-level-declaration-order": 16,
+            "top-level-declaration-order": 17,
             "unchecked-type-assertion": 3,
-            "unclosed-http-response-body": 1,
             "unused-parameter": 9,
             "unused-receiver": 12,
             "use-any": 10,
@@ -201,8 +191,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "37f3897d3636b886f66c305ddd511cac1a50d2ff8a1dd14f594ae5bed68f82bc",
-          "findings": 249,
+          "digest": "1895a676a5c9b61158e32ebb95c78bec65971167ab7079fe099cd2dcba822798",
+          "findings": 193,
           "by_code": {
             "add-constant": 22,
             "cognitive-complexity": 9,
@@ -210,7 +200,6 @@
             "discarded-error-result": 14,
             "doc-comment-period": 4,
             "exported-declaration-comment": 28,
-            "external-call-in-loop": 1,
             "file-length-limit": 2,
             "format": 3,
             "function-length": 6,
@@ -221,7 +210,6 @@
             "nested-structs": 7,
             "nil-error-return": 1,
             "no-package-var": 11,
-            "optimize-operands-order": 8,
             "package-comments": 3,
             "possible-nil-dereference": 1,
             "range-value-address": 1,
@@ -230,11 +218,9 @@
             "redundant-conversion": 2,
             "single-case-switch": 1,
             "standard-http-method-constant": 4,
-            "test-parallelism": 46,
             "time-naming": 3,
             "top-level-declaration-order": 2,
             "unchecked-type-assertion": 1,
-            "unclosed-http-response-body": 1,
             "unused-parameter": 2,
             "use-any": 17,
             "var-declaration": 1
@@ -253,8 +239,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "7ba07e0c72cfcbead61760b7f5700941d60dd5de4107a39fe4e7a321d5fbac5d",
-          "findings": 278,
+          "digest": "3f3a86be54d51139e3e4b5f02ca0651a51c0f68999fad48742001f94f4a8d250",
+          "findings": 239,
           "by_code": {
             "add-constant": 8,
             "cognitive-complexity": 11,
@@ -264,7 +250,7 @@
             "doc-comment-period": 15,
             "error-strings": 6,
             "exported-declaration-comment": 34,
-            "format": 9,
+            "format": 8,
             "import-alias-naming": 1,
             "ineffective-bitwise-zero": 1,
             "marshal-receiver": 2,
@@ -274,7 +260,6 @@
             "no-init": 1,
             "no-naked-return": 14,
             "no-package-var": 15,
-            "optimize-operands-order": 3,
             "package-comments": 7,
             "range-value-capture": 5,
             "receiver-naming": 2,
@@ -282,7 +267,6 @@
             "redundant-conversion": 5,
             "single-case-switch": 6,
             "slice-preallocation": 1,
-            "test-parallelism": 35,
             "time-value-equality": 1,
             "top-level-declaration-order": 3,
             "unchecked-type-assertion": 1,
@@ -293,8 +277,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "faf4112782cee3b3312a563c27067b0bdaf1c9c0ff93d73c8b5fa6c1ec892b8d",
-          "findings": 9
+          "digest": "ca0a7b1c1b4df0ef44d598890531d610f32f794a1ea96c24511e04423ec236dd",
+          "findings": 8
         }
       }
     },
@@ -304,8 +288,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "09f6f1e00844e83376addd23e28464ccce3bba8416e11cc2cf0b0c0796996578",
-          "findings": 321,
+          "digest": "386faae7dc1383aae7ed0b3f01354eb507195b2a4f4a3619845628558975cc6e",
+          "findings": 299,
           "by_code": {
             "add-constant": 13,
             "cognitive-complexity": 8,
@@ -328,7 +312,6 @@
             "no-init": 2,
             "no-naked-return": 13,
             "no-package-var": 18,
-            "optimize-operands-order": 1,
             "package-comments": 6,
             "range-value-address": 1,
             "redefines-builtin-id": 1,
@@ -336,7 +319,6 @@
             "single-case-switch": 1,
             "standard-http-method-constant": 1,
             "task-comment": 10,
-            "test-parallelism": 21,
             "top-level-declaration-order": 8,
             "unchecked-type-assertion": 14,
             "unused-parameter": 2,
@@ -357,8 +339,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "a26615b4cda326b1651e72c3c8149936d3ad16a3c0533b445ea496d8aa29f2d6",
-          "findings": 536,
+          "digest": "76a0f09548d86f27d0e8c9e0cad599032e188d02e65c4b72d52986bae9472a8c",
+          "findings": 519,
           "by_code": {
             "add-constant": 38,
             "append-to-sized-slice": 1,
@@ -373,7 +355,7 @@
             "exported-declaration-comment": 18,
             "file-length-limit": 2,
             "flag-parameter": 1,
-            "format": 20,
+            "format": 18,
             "get-function-return-value": 2,
             "increment-decrement": 2,
             "insecure-url-scheme": 1,
@@ -383,7 +365,6 @@
             "no-else-after-return": 1,
             "no-init": 1,
             "no-package-var": 14,
-            "optimize-operands-order": 1,
             "package-comments": 19,
             "range-value-capture": 7,
             "redefines-builtin-id": 8,
@@ -391,7 +372,6 @@
             "redundant-conversion": 32,
             "single-case-switch": 4,
             "standard-http-method-constant": 2,
-            "test-parallelism": 14,
             "top-level-declaration-order": 7,
             "unused-parameter": 7,
             "unused-receiver": 3,
@@ -400,8 +380,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "b5a180db9fb006e24669c7beaa11aa9f3ce07a1ae4f8bea24eb683ed2f508e68",
-          "findings": 20
+          "digest": "ff1cec9802b14f7774ac1af8af0b56a15a355bcb72369fc8364b10ea26cec74b",
+          "findings": 18
         }
       }
     },
@@ -411,8 +391,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "66204fc8a8832a67b4f7e0237630fdf3daf6fa5657fec046b2c88347b6a21393",
-          "findings": 210,
+          "digest": "2f05b3eff157f01c0d4cdfdfbee84eb436c1c7021de392c0ffa198e927282996",
+          "findings": 192,
           "by_code": {
             "add-constant": 1,
             "cognitive-complexity": 5,
@@ -424,27 +404,25 @@
             "error-type-naming": 1,
             "exported-declaration-comment": 64,
             "flag-parameter": 2,
-            "format": 21,
+            "format": 19,
             "function-length": 9,
             "import-shadowing": 1,
             "modifies-value-receiver": 2,
             "nested-structs": 6,
             "no-else-after-return": 2,
             "no-package-var": 2,
-            "optimize-operands-order": 1,
             "package-comments": 11,
             "range-value-capture": 10,
             "redefines-builtin-id": 1,
             "redundant-conversion": 15,
-            "test-parallelism": 15,
             "top-level-declaration-order": 6,
             "unchecked-type-assertion": 3
           }
         },
         "format": {
           "exit_code": 1,
-          "digest": "bc2338a4b20b2239f95d2d6a81a14739093345b916633f638647d04d995b175c",
-          "findings": 21
+          "digest": "626480bd973d4c1131edf99596a8003d8bf2b8cd2979c948c94b573a2eee1e1f",
+          "findings": 19
         }
       }
     },
@@ -454,8 +432,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "b82435214cce655183dbe2d2b7ad05c96e38dab613dafde35bd25e1c071655c8",
-          "findings": 466,
+          "digest": "2ba2272d3fe77d2ce065b1aab36b3b51d29032601aecae9b7d0f1c518f35da96",
+          "findings": 329,
           "by_code": {
             "add-constant": 35,
             "cognitive-complexity": 6,
@@ -468,21 +446,19 @@
             "exported-declaration-comment": 77,
             "file-length-limit": 3,
             "flag-parameter": 2,
-            "format": 10,
+            "format": 9,
             "interface-method-limit": 1,
             "marshal-receiver": 1,
             "modifies-parameter": 1,
             "nested-structs": 16,
             "no-else-after-return": 1,
             "no-naked-return": 2,
-            "optimize-operands-order": 27,
             "overwritten-before-use": 4,
             "package-comments": 6,
             "package-directory-mismatch": 15,
             "redundant-build-tag": 3,
             "redundant-conversion": 10,
             "slice-preallocation": 4,
-            "test-parallelism": 109,
             "top-level-declaration-order": 3,
             "unchecked-type-assertion": 22,
             "unused-parameter": 18,
@@ -492,8 +468,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "730856c6d23bf4d32f3a244f8039f7f186677889854c6ce8154c26f25169d2f9",
-          "findings": 10
+          "digest": "7e8100cabf9b454af4319fff2671ad2495ff7e0bc7f41cea26e7596a9c5eff77",
+          "findings": 9
         }
       }
     },
@@ -503,8 +479,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "3fb08a3733fda4b8294b2f633895448ce39ca0b7768d444372b73b88ae4a2660",
-          "findings": 656,
+          "digest": "db104ee0531968bc008b1fca657df74efb61ced18ffe9febe46256f1c838338f",
+          "findings": 532,
           "by_code": {
             "add-constant": 47,
             "boolean-literal-comparison": 1,
@@ -512,7 +488,7 @@
             "confusing-naming": 5,
             "cyclomatic-complexity": 13,
             "discarded-error-result": 56,
-            "doc-comment-period": 7,
+            "doc-comment-period": 8,
             "error-strings": 73,
             "exported-declaration-comment": 101,
             "file-length-limit": 2,
@@ -529,14 +505,12 @@
             "no-else-after-return": 4,
             "no-naked-return": 15,
             "no-package-var": 8,
-            "optimize-operands-order": 29,
             "package-comments": 2,
             "possible-nil-dereference": 1,
             "range-value-address": 2,
             "redundant-conversion": 3,
             "single-case-switch": 2,
             "task-comment": 1,
-            "test-parallelism": 96,
             "time-value-equality": 3,
             "top-level-declaration-order": 5,
             "unchecked-type-assertion": 19,
@@ -560,8 +534,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "4349c8aa4b3c6aaf65d577376f80daa6acff31cdb11a80338c0e2c087546541a",
-          "findings": 24991,
+          "digest": "55098b27393f57a139dbbc68dd559a6177a83fe49f8463cbb561736314f05b52",
+          "findings": 22161,
           "by_code": {
             "add-constant": 3608,
             "blank-imports": 1,
@@ -577,7 +551,7 @@
             "deep-exit": 4,
             "deprecated-api-usage": 178,
             "discarded-error-result": 490,
-            "doc-comment-period": 529,
+            "doc-comment-period": 528,
             "early-return": 15,
             "empty-conditional-block": 5,
             "error-naming": 2,
@@ -587,7 +561,7 @@
             "exported-declaration-comment": 2436,
             "file-length-limit": 135,
             "flag-parameter": 84,
-            "format": 644,
+            "format": 631,
             "function-length": 758,
             "function-result-limit": 24,
             "identical-switch-branches": 2,
@@ -611,7 +585,6 @@
             "no-init": 19,
             "no-naked-return": 58,
             "no-package-var": 833,
-            "optimize-operands-order": 407,
             "overwritten-before-use": 12,
             "package-comments": 468,
             "package-directory-mismatch": 8,
@@ -625,10 +598,9 @@
             "single-case-switch": 130,
             "slice-preallocation": 145,
             "standard-http-method-constant": 4,
-            "task-comment": 156,
-            "test-parallelism": 2436,
+            "task-comment": 179,
             "time-value-equality": 4,
-            "top-level-declaration-order": 355,
+            "top-level-declaration-order": 359,
             "unchecked-type-assertion": 1205,
             "unexported-return": 32,
             "unnecessary-format": 1,
@@ -643,8 +615,8 @@
         },
         "format": {
           "exit_code": 1,
-          "digest": "49ba6257896e72eae6e5227c557271a5ef7e28b4357b9d167b4fb35939d3c328",
-          "findings": 644
+          "digest": "df26a672944187d871900ebaf1cea205bdc996c00c7f40490b1a19ba776af2a3",
+          "findings": 631
         }
       }
     }

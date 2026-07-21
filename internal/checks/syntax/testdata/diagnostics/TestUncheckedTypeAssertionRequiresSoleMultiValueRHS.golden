@@ -1,0 +1,3 @@
+fixture.go:10:25-10:34 unchecked-type-assertion
+fixture.go:11:24-11:33 unchecked-type-assertion
+fixture.go:14:37-14:46 unchecked-type-assertion

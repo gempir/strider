@@ -2,7 +2,7 @@ package semantic
 
 import (
 	"fmt"
-	"go/ast"
+	"go/token"
 	"go/types"
 	"os"
 	"path/filepath"
@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 
+	astinspector "golang.org/x/tools/go/ast/inspector"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/go/ssa"
 	"golang.org/x/tools/go/ssa/ssautil"
@@ -27,8 +28,8 @@ type target struct {
 }
 
 type analysisTask struct {
-	pass *Pass
-	rule Rule
+	pass  *Pass
+	check Check
 }
 
 type ssaBuildResult struct {
@@ -55,7 +56,7 @@ type analysisFileInfoCacheEntry struct {
 	info analysisFileInfo
 }
 
-// Run loads the requested packages, executes the selected rules, and returns
+// Run loads the requested packages, executes the selected checks, and returns
 // deterministic diagnostics. Directories are analyzed recursively, matching
 // the path behavior of strider syntax.
 func Run(paths []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
@@ -66,15 +67,20 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnos
 	if registry == nil {
 		return nil, fmt.Errorf("analysis registry is nil")
 	}
-	patterns, targets, err := loadInputs(paths)
+	loadDirectory, patterns, targets, err := loadInputs(paths)
 	if err != nil {
 		return nil, err
 	}
-	if len(registry.rules) == 0 {
+	if len(registry.checks) == 0 {
 		return []diagnostic.Diagnostic{}, nil
+	}
+	diagnosticRoot := registry.root
+	if !registry.rootSet {
+		diagnosticRoot = loadDirectory
 	}
 	plan := registry.executionPlan()
 	loaded, err := packages.Load(&packages.Config{
+		Dir:   loadDirectory,
 		Mode:  loadMode,
 		Tests: true,
 	}, patterns...)
@@ -111,6 +117,16 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnos
 		if pkg.Module != nil {
 			goVersion = pkg.Module.GoVersion
 		}
+		facts := newPackageFacts(plan.requirements.Facts, plan.staticCallPackages)
+		if facts != nil {
+			facts.deprecatedObjects = deprecatedObjects
+			facts.deprecatedPackages = deprecatedPackages
+		} else {
+			facts = &packageFacts{
+				deprecatedObjects:  deprecatedObjects,
+				deprecatedPackages: deprecatedPackages,
+			}
+		}
 		passes = append(
 			passes,
 			&Pass{
@@ -124,10 +140,8 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnos
 				SSAProgram:  ssaProgram,
 				SSAPackage:  ssaPackage,
 				Functions:   functionsByPackage[ssaPackage],
-				facts:       newPackageFacts(plan.requirements.Facts, plan.staticCallPackages),
-
-				deprecatedObjects:  deprecatedObjects,
-				deprecatedPackages: deprecatedPackages,
+				inspector:   astinspector.New(pkg.Syntax),
+				facts:       facts,
 			},
 		)
 	}
@@ -141,15 +155,13 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnos
 		entry := cached.(*analysisFileInfoCacheEntry)
 		entry.once.Do(
 			func() {
-				canonical,
-					pathErr := canonicalPath(filename)
+				canonical, pathErr := canonicalPath(filename)
 				if pathErr == nil && matchesTarget(canonical, targets) {
-					generated,
-						generatedErr := source.IsGenerated(canonical)
+					generated, generatedErr := source.IsGenerated(canonical)
 					if generatedErr == nil && !generated {
 						entry.info = analysisFileInfo{
 							filename: canonical,
-							display:  source.DisplayPath(canonical),
+							display:  source.DiagnosticPath(diagnosticRoot, canonical),
 							eligible: true,
 						}
 					}
@@ -159,7 +171,7 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnos
 		return entry.info
 	}
 
-	taskCount := len(passes) * len(registry.rules)
+	taskCount := len(passes) * len(registry.checks)
 	jobs := make(chan analysisTask, taskCount)
 	results := make(chan []analysisFinding, taskCount)
 	workers := min(runtime.GOMAXPROCS(0), max(1, taskCount))
@@ -174,10 +186,10 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnos
 		}()
 	}
 	for _, pass := range passes {
-		for _, rule := range registry.rules {
+		for _, check := range registry.checks {
 			jobs <- analysisTask{
-				pass: pass,
-				rule: rule,
+				pass:  pass,
+				check: check,
 			}
 		}
 	}
@@ -265,37 +277,40 @@ func selectInitialPackages(loaded []*packages.Package) []*packages.Package {
 }
 
 func runAnalysisTask(task analysisTask, registry *Registry, fileInfoFor func(string) analysisFileInfo) []analysisFinding {
-	meta := task.rule.Meta()
+	meta := task.check.Meta()
 	severity := registry.Severity(meta.Code)
 	pass := *task.pass
-	pass.maxMethods = registry.settings[meta.Code].config.MaxMethods
 	findings := []analysisFinding{}
-	pass.report = func(node ast.Node, message string, fixes []diagnostic.Fix) {
-		position := pass.FileSet.Position(node.Pos())
+	pass.report = func(start, end token.Pos, message string, fixes []diagnostic.Fix) {
+		position := pass.FileSet.Position(start)
 		info := fileInfoFor(position.Filename)
 		if !info.eligible || registry.Excluded(meta.Code, info.filename) {
 			return
 		}
-		end := pass.FileSet.Position(node.End())
+		endPosition := pass.FileSet.Position(end)
 		position.Filename = info.display
-		end.Filename = info.display
+		endPosition.Filename = info.display
 		findings = append(
 			findings,
 			analysisFinding{
-				key: fmt.Sprintf("%s:%d:%d:%s:%s", info.filename, position.Offset, end.Offset, meta.Code, message),
+				key: fmt.Sprintf("%s:%d:%d:%s:%s", info.filename, position.Offset, endPosition.Offset, meta.Code, message),
 				diagnostic: diagnostic.Diagnostic{
 					Code:     meta.Code,
 					Message:  message,
 					Severity: severity,
 					File:     info.display,
 					Start:    position,
-					End:      end,
+					End:      endPosition,
 					Fixes:    fixes,
 				},
 			},
 		)
 	}
-	task.rule.Run(&pass)
+	if configurable, ok := task.check.(configurableCheck); ok {
+		configurable.RunConfigured(&pass, registry.settings[meta.Code].config)
+	} else {
+		task.check.Run(&pass)
+	}
 	return findings
 }
 
@@ -345,7 +360,7 @@ func collectPackageFunctions(program *ssa.Program, ssaPackages []*ssa.Package) m
 	return functions
 }
 
-func loadInputs(paths []string) ([]string, []target, error) {
+func loadInputs(paths []string) (string, []string, []target, error) {
 	if len(paths) == 0 {
 		paths = []string{
 			".",
@@ -353,12 +368,16 @@ func loadInputs(paths []string) ([]string, []target, error) {
 	}
 	cwd, err := os.Getwd()
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 	if cwd, err = canonicalPath(cwd); err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-	patterns := make([]string, 0, len(paths))
+	type inputTarget struct {
+		path      string
+		recursive bool
+	}
+	inputs := make([]inputTarget, 0, len(paths))
 	targets := make([]target, 0, len(paths))
 	for _, input := range paths {
 		path := filepath.Clean(input)
@@ -372,14 +391,17 @@ func loadInputs(paths []string) ([]string, []target, error) {
 		}
 		info, err := os.Stat(path)
 		if err != nil {
-			return nil, nil, fmt.Errorf("discover %q: %w", input, err)
+			return "", nil, nil, fmt.Errorf("discover %q: %w", input, err)
 		}
 		absolute, err := canonicalPath(path)
 		if err != nil {
-			return nil, nil, err
+			return "", nil, nil, err
 		}
 		if info.IsDir() {
-			patterns = append(patterns, recursivePackagePattern(cwd, absolute))
+			inputs = append(inputs, inputTarget{
+				path:      absolute,
+				recursive: true,
+			})
 			targets = append(targets, target{
 				path:      absolute,
 				recursive: true,
@@ -387,14 +409,28 @@ func loadInputs(paths []string) ([]string, []target, error) {
 			continue
 		}
 		if filepath.Ext(absolute) != ".go" {
-			return nil, nil, fmt.Errorf("%q is not a Go source file", input)
+			return "", nil, nil, fmt.Errorf("%q is not a Go source file", input)
 		}
-		patterns = append(patterns, "file="+filepath.ToSlash(absolute))
+		inputs = append(inputs, inputTarget{
+			path: absolute,
+		})
 		targets = append(targets, target{
 			path: absolute,
 		})
 	}
-	return patterns, targets, nil
+	loadDirectory := cwd
+	if len(inputs) == 1 && inputs[0].recursive {
+		loadDirectory = inputs[0].path
+	}
+	patterns := make([]string, 0, len(inputs))
+	for _, input := range inputs {
+		if input.recursive {
+			patterns = append(patterns, recursivePackagePattern(loadDirectory, input.path))
+		} else {
+			patterns = append(patterns, "file="+filepath.ToSlash(input.path))
+		}
+	}
+	return loadDirectory, patterns, targets, nil
 }
 
 func canonicalPath(path string) (string, error) {
@@ -450,9 +486,7 @@ func sortDiagnostics(diagnostics []diagnostic.Diagnostic) {
 	sort.SliceStable(
 		diagnostics,
 		func(i, j int) bool {
-			left,
-				right := diagnostics[i],
-				diagnostics[j]
+			left, right := diagnostics[i], diagnostics[j]
 			if left.File != right.File {
 				return left.File < right.File
 			}

@@ -9,9 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type duplicateTrimCutsetRule struct{}
+type duplicateTrimCutsetCheck struct{}
 
-func (duplicateTrimCutsetRule) Meta() Meta {
+func (duplicateTrimCutsetCheck) Meta() Meta {
 	return Meta{
 		Code:            "duplicate-trim-cutset",
 		Summary:         "detect duplicate characters in string trim cutsets",
@@ -22,7 +22,7 @@ func (duplicateTrimCutsetRule) Meta() Meta {
 	}
 }
 
-func (duplicateTrimCutsetRule) Run(pass *Pass) {
+func (duplicateTrimCutsetCheck) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
 	for _, call := range pass.staticCallsInPackage("strings") {
 		if !isStringTrimCutsetCall(call) || len(call.Common().Args) <= 1 {
@@ -54,4 +54,14 @@ func duplicateRune(value string) (rune, bool) {
 		seen[character] = true
 	}
 	return 0, false
+}
+
+func (duplicateTrimCutsetCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"strings",
+		},
+	}
 }

@@ -24,8 +24,8 @@ func TestParseIsLossless(t *testing.T) {
 	if rebuilt.String() != string(source) {
 		t.Fatalf("rebuilt source:\n%q\nwant:\n%q", rebuilt.String(), source)
 	}
-	if string(tree.Source()) != string(source) {
-		t.Fatal("Tree.Source did not preserve the input")
+	if string(tree.Bytes()) != string(source) {
+		t.Fatal("Tree.Bytes did not preserve the input")
 	}
 }
 
@@ -230,8 +230,7 @@ var (
 		t.Run(
 			fmt.Sprintf("fixture-%d", index),
 			func(t *testing.T) {
-				tree,
-					err := Parse("fixture.go", []byte(source))
+				tree, err := Parse("fixture.go", []byte(source))
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -245,20 +244,14 @@ var (
 					t.Fatal("generated walk differs from reflection")
 				}
 				for _, node := range wantWalk {
-					if got,
-						want := Children(node),
-						referenceChildren(node); !slices.Equal(got, want) {
+					if got, want := Children(node), referenceChildren(node); !slices.Equal(got, want) {
 						t.Fatalf("%s children differ", Kind(node))
 					}
-					if got,
-						want := NodeTokens(node),
-						referenceNodeTokens(node); !slices.Equal(got, want) {
+					if got, want := NodeTokens(node), referenceNodeTokens(node); !slices.Equal(got, want) {
 						t.Fatalf("%s tokens differ", Kind(node))
 					}
-					gotStart,
-						gotEnd := Range(node)
-					wantStart,
-						wantEnd := referenceRange(referenceNodeTokens(node))
+					gotStart, gotEnd := Range(node)
+					wantStart, wantEnd := referenceRange(referenceNodeTokens(node))
 					if gotStart != wantStart || gotEnd != wantEnd {
 						t.Fatalf("%s range = %d:%d, want %d:%d", Kind(node), gotStart, gotEnd, wantStart, wantEnd)
 					}
@@ -411,8 +404,7 @@ func BenchmarkReflectionRange(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for range b.N {
-		result := bounds{}
-		collectTokenBounds(reflect.ValueOf(tree.Root()), true, &result)
+		referenceRange(referenceNodeTokens(tree.Root()))
 	}
 }
 

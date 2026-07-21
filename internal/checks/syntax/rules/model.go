@@ -1,53 +1,75 @@
 package rules
 
 import (
+	"github.com/gempir/strider/internal/checks/core"
 	"github.com/gempir/strider/internal/cst"
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-// Meta describes one built-in syntax check.
-type Meta struct {
-	Code            string              `json:"code"`
-	Summary         string              `json:"summary"`
-	Explanation     string              `json:"explanation"`
-	GoodExample     string              `json:"good_example"`
-	BadExample      string              `json:"bad_example"`
-	DefaultSeverity diagnostic.Severity `json:"default_severity"`
-}
+const (
+	fileNodeKind   NodeKind = "<file>"
+	finishNodeKind NodeKind = "<finish>"
+)
 
-// Rule is the common contract used to select, list, explain, and run every
-// built-in syntax check.
-type Rule interface {
-	Meta() Meta
+// Meta describes one built-in syntax check.
+type Meta = core.Meta
+
+// NodeKind identifies a CST shape a syntax check consumes. The native engine
+// keeps a single traversal and dispatches only the selected interests.
+type NodeKind string
+
+// Check is a concrete-syntax check selected by the registry. The
+// traversal owns walking the CST; checks declare their metadata here and are
+// the only source of enabled syntax work.
+type Check interface {
+	core.Check
+	Interests() []NodeKind
+	Inspect(*Pass, cst.Node)
 }
 
 type definition struct {
-	meta Meta
+	meta     Meta
+	behavior syntaxBehavior
 }
 
-// Finding is a rule result before the syntax package converts source positions
+type syntaxBehavior struct {
+	interests []NodeKind
+	inspect   func(*Pass, cst.Node)
+}
+
+// Finding is a check result before the syntax package converts source positions
 // and applies suppression directives.
 type Finding struct {
-	ConcreteNode     cst.Node
-	ConcreteStart    int
-	ConcreteEnd      int
-	HasConcreteRange bool
-	Code             string
-	Message          string
-	Fixes            []diagnostic.Fix
+	Node     cst.Node
+	Start    int
+	End      int
+	HasRange bool
+	Code     string
+	Message  string
+	Fixes    []diagnostic.Fix
 }
 
 // CSTInput contains everything needed for the concrete-syntax lint pass.
 type CSTInput struct {
 	Filename         string
 	Tree             *cst.Tree
-	Rules            []Rule
+	Checks           []Check
 	BannedCharacters []rune
 	Limits           map[string]int
 	BlockedImports   []string
 	Report           func(Finding)
 }
 
-func (rule definition) Meta() Meta {
-	return rule.meta
+func (check definition) Meta() Meta {
+	return check.meta
+}
+
+func (check definition) Interests() []NodeKind {
+	return append([]NodeKind(nil), check.behavior.interests...)
+}
+
+func (check definition) Inspect(pass *Pass, node cst.Node) {
+	if check.behavior.inspect != nil {
+		check.behavior.inspect(pass, node)
+	}
 }

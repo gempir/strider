@@ -1,7 +1,6 @@
 package workspace
 
 import (
-	"bufio"
 	"bytes"
 	"crypto/sha256"
 	"fmt"
@@ -96,8 +95,7 @@ type fileSnapshot struct {
 func (snapshot *fileSnapshot) CST() (*cst.Tree, error) {
 	snapshot.treeOnce.Do(
 		func() {
-			snapshot.tree,
-				snapshot.treeErr = cst.Parse(snapshot.path, snapshot.source)
+			snapshot.tree, snapshot.treeErr = cst.Parse(snapshot.path, snapshot.source)
 			if snapshot.tree != nil && snapshot.onTree != nil {
 				snapshot.onTree(estimatedCSTBytes(snapshot.source))
 			}
@@ -156,14 +154,14 @@ func (cache *Cache) Open(paths []string, options Options) (*Workspace, error) {
 	}
 	captured := make([]capturedFile, 0, len(filenames))
 	for _, filename := range filenames {
-		if pathfilter.Matches(options.Root, filename, options.Excludes) {
+		if pathfilter.Excluded(options.Root, filename, options.Excludes) {
 			continue
 		}
 		contents, readErr := os.ReadFile(filename)
 		if readErr != nil {
 			return nil, fmt.Errorf("read workspace file %s: %w", filename, readErr)
 		}
-		if options.SkipGenerated && generatedSource(contents) {
+		if options.SkipGenerated && source.IsGeneratedSource(contents) {
 			continue
 		}
 		captured = append(captured, capturedFile{
@@ -212,9 +210,8 @@ func (cache *Cache) Open(paths []string, options Options) (*Workspace, error) {
 	}
 	cache.evictLocked()
 	return &Workspace{
-		inputs:     inputs,
-		files:      files,
-		generation: cache.generation,
+		inputs: inputs,
+		files:  files,
 	}, nil
 }
 
@@ -301,19 +298,4 @@ func estimatedCSTBytes(source []byte) int64 {
 		return cstEstimateFloor
 	}
 	return estimate
-}
-
-func generatedSource(contents []byte) bool {
-	limited := contents
-	if len(limited) > 4096 {
-		limited = limited[:4096]
-	}
-	scanner := bufio.NewScanner(bytes.NewReader(limited))
-	for scanner.Scan() {
-		line := bytes.TrimSpace(scanner.Bytes())
-		if bytes.HasPrefix(line, []byte("// Code generated ")) && bytes.HasSuffix(line, []byte(" DO NOT EDIT.")) {
-			return true
-		}
-	}
-	return false
 }

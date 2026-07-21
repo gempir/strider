@@ -16,29 +16,22 @@ import (
 	"github.com/gempir/strider/internal/workspace"
 )
 
-// SessionOptions bounds package-aware results retained across incremental
-// generations. Concrete results retain only the most recent generation.
-type SessionOptions struct {
-	Analysis semantic.SessionOptions
-}
-
-// SessionStats reports reuse across completed workspace generations.
+// SessionStats reports concrete-syntax reuse across completed workspace
+// generations. Package-aware checks intentionally run fresh each time.
 type SessionStats struct {
 	ConcreteHits   uint64
 	ConcreteMisses uint64
-	Analysis       semantic.SessionStats
 }
 
 // Session executes a fixed check registry and option set across immutable
 // workspace generations. Unchanged source snapshots reuse concrete findings;
-// the analyzer session independently verifies the complete package boundary,
-// so changes in imported local packages still invalidate package-aware work.
+// package-aware checks run fresh so watch mode does not need a second package
+// load merely to prove a cached result reusable.
 type Session struct {
 	mu sync.Mutex
 
 	registry *Registry
 	options  RunOptions
-	analyzer *semantic.Session
 
 	hasConcrete bool
 	concreteKey [sha256.Size]byte
@@ -54,7 +47,7 @@ type moduleFileState struct {
 
 // NewSession constructs a bounded incremental check session. The registry and
 // run options are immutable for the lifetime of the session.
-func NewSession(registry *Registry, options RunOptions, sessionOptions SessionOptions) (*Session, error) {
+func NewSession(registry *Registry, options RunOptions) (*Session, error) {
 	if registry == nil {
 		return nil, fmt.Errorf("check session registry is nil")
 	}
@@ -64,7 +57,6 @@ func NewSession(registry *Registry, options RunOptions, sessionOptions SessionOp
 	return &Session{
 		registry: registry,
 		options:  options,
-		analyzer: semantic.NewSession(sessionOptions.Analysis),
 	}, nil
 }
 
@@ -99,9 +91,10 @@ func (session *Session) Run(shared *workspace.Workspace) (Result, error) {
 		session.concrete = cloneResult(result)
 		session.hasConcrete = true
 	}
-	if err := appendAnalysis(&result, shared, session.registry, session.options, session.analyzer.Run); err != nil {
+	if err := appendAnalysis(&result, shared, session.registry, semantic.Run); err != nil {
 		return Result{}, err
 	}
+	filterExcludedResults(&result, session.options.Root, session.options.Excludes)
 	sortDiagnostics(result.Diagnostics)
 	if result.Diagnostics == nil {
 		result.Diagnostics = []diagnostic.Diagnostic{}
@@ -119,7 +112,6 @@ func (session *Session) Stats() SessionStats {
 	return SessionStats{
 		ConcreteHits:   session.hits,
 		ConcreteMisses: session.misses,
-		Analysis:       session.analyzer.Stats(),
 	}
 }
 
@@ -133,7 +125,6 @@ func (session *Session) Invalidate() {
 	session.hasConcrete = false
 	session.concreteKey = [sha256.Size]byte{}
 	session.concrete = Result{}
-	session.analyzer.Invalidate()
 }
 
 func concreteFingerprint(shared *workspace.Workspace, includeFormatterContext bool) ([sha256.Size]byte, error) {

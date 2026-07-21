@@ -64,7 +64,7 @@ checks. `--minimum-severity note` also includes notes, and
 | `-q, --summary-only` | Print only per-check counts and the final aggregate issue summary. Text reports only. |
 | `-l, --list-checks` | List the effective selected registry and severity, then exit. |
 | `-e, --explain CODE` | Explain one selected check and show its effective severity, then exit. |
-| `-w, --watch` | Keep a text-mode incremental session open and rerun changed generations. |
+| `-w, --watch` | Keep a text-mode session open and rerun checks for each polled generation. |
 | `-x, --fix` | Apply explicitly safe automatic fixes, then rerun the checks once. |
 | `-u, --fix-unsafe` | Apply all automatic fixes, including potentially unsafe and unsafe fixes, then rerun once. |
 
@@ -77,9 +77,10 @@ Use `--only format` to check formatting without writing. Add `--fix` to apply
 the validated result, use `strider fmt` for the focused write workflow, or use
 `strider fmt --diff` to inspect it.
 
-Watch mode prints a numbered full report for the initial generation and each
-detected source or package-boundary change. It requires text output and cannot
-be combined with fix mode, baseline generation, or pruning.
+Watch mode prints a numbered full report for the initial generation and when
+selected source or the resulting findings change. Package-aware checks run
+fresh; unchanged CST work is reused. Watch requires text output and cannot be
+combined with fix mode, baseline generation, or pruning.
 
 ### Automatic fixes
 

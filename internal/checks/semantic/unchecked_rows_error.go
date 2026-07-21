@@ -7,9 +7,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type uncheckedRowsErrorRule struct{}
+type uncheckedRowsErrorCheck struct{}
 
-func (uncheckedRowsErrorRule) Meta() Meta {
+func (uncheckedRowsErrorCheck) Meta() Meta {
 	return Meta{
 		Code:            "unchecked-rows-error",
 		Summary:         "detect sql.Rows iteration without an Err check",
@@ -20,27 +20,28 @@ func (uncheckedRowsErrorRule) Meta() Meta {
 	}
 }
 
-func (uncheckedRowsErrorRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				var body *ast.BlockStmt
-				switch function := node.(type) {
-				case *ast.FuncDecl:
-					body = function.Body
-				case *ast.FuncLit:
-					body = function.Body
-				default:
-					return true
-				}
-				if body != nil {
-					reportUncheckedRowsErrors(pass, body)
-				}
+func (uncheckedRowsErrorCheck) Run(pass *Pass) {
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.FuncDecl)(nil),
+			(*ast.FuncLit)(nil),
+		},
+		func(node ast.Node) bool {
+			var body *ast.BlockStmt
+			switch function := node.(type) {
+			case *ast.FuncDecl:
+				body = function.Body
+			case *ast.FuncLit:
+				body = function.Body
+			default:
 				return true
-			},
-		)
-	}
+			}
+			if body != nil {
+				reportUncheckedRowsErrors(pass, body)
+			}
+			return true
+		},
+	)
 }
 
 func reportUncheckedRowsErrors(pass *Pass, body *ast.BlockStmt) {
@@ -49,22 +50,18 @@ func reportUncheckedRowsErrors(pass *Pass, body *ast.BlockStmt) {
 	ast.Inspect(
 		body,
 		func(node ast.Node) bool {
-			if _,
-				nested := node.(*ast.FuncLit); nested {
+			if _, nested := node.(*ast.FuncLit); nested {
 				return false
 			}
-			call,
-				ok := node.(*ast.CallExpr)
+			call, ok := node.(*ast.CallExpr)
 			if !ok {
 				return true
 			}
-			selector,
-				ok := call.Fun.(*ast.SelectorExpr)
-			if !ok || !isSQLRowsType(pass.TypesInfo.TypeOf(selector.X)) {
+			selector, ok := call.Fun.(*ast.SelectorExpr)
+			if !ok || !isPointerToNamedType(pass.TypesInfo.TypeOf(selector.X), "database/sql", "Rows") {
 				return true
 			}
-			receiver,
-				ok := unparenExpression(selector.X).(*ast.Ident)
+			receiver, ok := unparenExpression(selector.X).(*ast.Ident)
 			if !ok {
 				return true
 			}
@@ -73,8 +70,7 @@ func reportUncheckedRowsErrors(pass *Pass, body *ast.BlockStmt) {
 				return true
 			}
 			switch selector.Sel.Name {
-			case "Next",
-				"NextResultSet":
+			case "Next", "NextResultSet":
 				if iterated[object] == nil {
 					iterated[object] = call
 				}
@@ -92,14 +88,8 @@ func reportUncheckedRowsErrors(pass *Pass, body *ast.BlockStmt) {
 	}
 }
 
-func isSQLRowsType(valueType types.Type) bool {
-	if valueType == nil {
-		return false
+func (uncheckedRowsErrorCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
 	}
-	pointer, ok := types.Unalias(valueType).(*types.Pointer)
-	if !ok {
-		return false
-	}
-	named, ok := types.Unalias(pointer.Elem()).(*types.Named)
-	return ok && named.Obj() != nil && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "database/sql" && named.Obj().Name() == "Rows"
 }

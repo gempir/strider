@@ -3,7 +3,6 @@ package semantic
 import (
 	"fmt"
 	"go/ast"
-	"go/token"
 	"go/types"
 
 	"golang.org/x/tools/go/ssa"
@@ -11,9 +10,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type unsupportedBinaryWriteRule struct{}
+type unsupportedBinaryWriteCheck struct{}
 
-func (unsupportedBinaryWriteRule) Meta() Meta {
+func (unsupportedBinaryWriteCheck) Meta() Meta {
 	return Meta{
 		Code:            "unsupported-binary-write",
 		Summary:         "detect unsupported encoding/binary.Write values",
@@ -24,7 +23,7 @@ func (unsupportedBinaryWriteRule) Meta() Meta {
 	}
 }
 
-func (unsupportedBinaryWriteRule) Run(pass *Pass) {
+func (unsupportedBinaryWriteCheck) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
 	for _, call := range pass.staticCallsInPackage("encoding/binary") {
 		if !isStaticFunction(call, "encoding/binary", "Write") || len(call.Common().Args) < 3 {
@@ -34,8 +33,12 @@ func (unsupportedBinaryWriteRule) Run(pass *Pass) {
 		if canBinaryMarshal(value.Type()) {
 			continue
 		}
-		node := binaryWriteDataNode(calls[call.Pos()], call.Pos())
-		pass.Report(node, fmt.Sprintf("value of type %s cannot be used with binary.Write", value.Type()))
+		message := fmt.Sprintf("value of type %s cannot be used with binary.Write", value.Type())
+		if node := binaryWriteDataNode(calls[call.Pos()]); node != nil {
+			pass.Report(node, message)
+		} else {
+			pass.ReportPos(call.Pos(), message)
+		}
 	}
 }
 
@@ -86,14 +89,22 @@ func validEncodingBinaryType(valueType types.Type) bool {
 	}
 }
 
-func binaryWriteDataNode(arguments []ast.Node, position token.Pos) ast.Node {
+func binaryWriteDataNode(arguments []ast.Node) ast.Node {
 	if len(arguments) > 2 {
 		return arguments[2]
 	}
 	if len(arguments) != 0 {
 		return arguments[0]
 	}
-	return positionNode{
-		position: position,
+	return nil
+}
+
+func (unsupportedBinaryWriteCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"encoding/binary",
+		},
 	}
 }

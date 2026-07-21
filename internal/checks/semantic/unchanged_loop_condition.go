@@ -9,9 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type unchangedLoopConditionRule struct{}
+type unchangedLoopConditionCheck struct{}
 
-func (unchangedLoopConditionRule) Meta() Meta {
+func (unchangedLoopConditionCheck) Meta() Meta {
 	return Meta{
 		Code:            "unchanged-loop-condition",
 		Summary:         "detect counted loops whose condition variable never changes",
@@ -22,7 +22,7 @@ func (unchangedLoopConditionRule) Meta() Meta {
 	}
 }
 
-func (unchangedLoopConditionRule) Run(pass *Pass) {
+func (unchangedLoopConditionCheck) Run(pass *Pass) {
 	for _, function := range pass.Functions {
 		if function == nil || function.Synthetic != "" || function.Blocks == nil || function.Syntax() == nil {
 			continue
@@ -30,18 +30,15 @@ func (unchangedLoopConditionRule) Run(pass *Pass) {
 		inspectFunctionSyntax(
 			function.Syntax(),
 			func(node ast.Node) bool {
-				loop,
-					ok := node.(*ast.ForStmt)
+				loop, ok := node.(*ast.ForStmt)
 				if !ok {
 					return true
 				}
-				condition,
-					ok := unchangedConditionCandidate(pass, loop)
+				condition, ok := unchangedConditionCandidate(pass, loop)
 				if !ok {
 					return true
 				}
-				value,
-					isAddress := function.ValueForExpr(condition.X)
+				value, isAddress := function.ValueForExpr(condition.X)
 				if value == nil || isAddress {
 					return true
 				}
@@ -84,4 +81,11 @@ func unchangedConditionCandidate(pass *Pass, loop *ast.ForStmt) (*ast.BinaryExpr
 		return nil, false
 	}
 	return condition, true
+}
+
+func (unchangedLoopConditionCheck) Requirements() Requirements {
+	return Requirements{
+		Stage:       AnalysisStageSSA,
+		SSAFeatures: SSAFeatureGlobalDebug,
+	}
 }

@@ -23,9 +23,8 @@ type Options struct {
 // Workspace is an immutable set of input paths and source files. File contents
 // and CSTs are loaded lazily and are safe to request concurrently.
 type Workspace struct {
-	inputs     []string
-	files      []*File
-	generation uint64
+	inputs []string
+	files  []*File
 }
 
 // File owns the cached source and CST for one Go file.
@@ -61,7 +60,7 @@ func Open(paths []string, options Options) (*Workspace, error) {
 	}
 	files := make([]*File, 0, len(filenames))
 	for _, filename := range filenames {
-		if pathfilter.Matches(options.Root, filename, options.Excludes) {
+		if pathfilter.Excluded(options.Root, filename, options.Excludes) {
 			continue
 		}
 		files = append(files, &File{
@@ -90,15 +89,6 @@ func (workspace *Workspace) Files() []*File {
 		return nil
 	}
 	return append([]*File(nil), workspace.files...)
-}
-
-// Generation returns the cache generation that owns this immutable view. A
-// workspace opened through Open is a one-shot generation and returns zero.
-func (workspace *Workspace) Generation() uint64 {
-	if workspace == nil {
-		return 0
-	}
-	return workspace.generation
 }
 
 // Path returns the absolute source filename.
@@ -164,16 +154,14 @@ func (file *File) CST() (*cst.Tree, error) {
 	}
 	file.treeOnce.Do(
 		func() {
-			contents,
-				err := file.Bytes()
+			contents, err := file.Bytes()
 			if err != nil {
 				file.treeMu.Lock()
 				file.treeErr = err
 				file.treeMu.Unlock()
 				return
 			}
-			tree,
-				parseErr := cst.Parse(file.path, contents)
+			tree, parseErr := cst.Parse(file.path, contents)
 			file.treeMu.Lock()
 			if !file.treeReleased {
 				file.tree = tree

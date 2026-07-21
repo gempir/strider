@@ -2,15 +2,14 @@ package semantic
 
 import (
 	"go/ast"
-	"go/types"
 	"go/version"
 
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type testMainMissingExitRule struct{}
+type testMainMissingExitCheck struct{}
 
-func (testMainMissingExitRule) Meta() Meta {
+func (testMainMissingExitCheck) Meta() Meta {
 	return Meta{
 		Code:            "test-main-missing-exit",
 		Summary:         "detect legacy TestMain functions that lose the test exit code",
@@ -21,7 +20,7 @@ func (testMainMissingExitRule) Meta() Meta {
 	}
 }
 
-func (testMainMissingExitRule) Run(pass *Pass) {
+func (testMainMissingExitCheck) Run(pass *Pass) {
 	if pass.GoVersion == "" || version.Compare(normalizeGoVersion(pass.GoVersion), "go1.15") >= 0 {
 		return
 	}
@@ -36,21 +35,18 @@ func (testMainMissingExitRule) Run(pass *Pass) {
 			ast.Inspect(
 				function.Body,
 				func(node ast.Node) bool {
-					call,
-						ok := node.(*ast.CallExpr)
+					call, ok := node.(*ast.CallExpr)
 					if !ok {
 						return true
 					}
 					if isPackageFunction(pass.TypesInfo, call.Fun, "os", "Exit") {
 						callsExit = true
 					}
-					selector,
-						ok := call.Fun.(*ast.SelectorExpr)
+					selector, ok := call.Fun.(*ast.SelectorExpr)
 					if !ok || selector.Sel.Name != "Run" {
 						return true
 					}
-					identifier,
-						ok := selector.X.(*ast.Ident)
+					identifier, ok := selector.X.(*ast.Ident)
 					if ok && pass.TypesInfo.Uses[identifier] == parameter {
 						callsRun = true
 					}
@@ -68,11 +64,11 @@ func isTestMainFunction(pass *Pass, function *ast.FuncDecl) bool {
 	if function.Name.Name != "TestMain" || function.Recv != nil || function.Type.Params == nil || len(function.Type.Params.List) != 1 || len(function.Type.Params.List[0].Names) != 1 {
 		return false
 	}
-	parameterType := pass.TypesInfo.TypeOf(function.Type.Params.List[0].Type)
-	pointer, ok := types.Unalias(parameterType).(*types.Pointer)
-	if !ok {
-		return false
+	return isPointerToNamedType(pass.TypesInfo.TypeOf(function.Type.Params.List[0].Type), "testing", "M")
+}
+
+func (testMainMissingExitCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
 	}
-	named, ok := types.Unalias(pointer.Elem()).(*types.Named)
-	return ok && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "testing" && named.Obj().Name() == "M"
 }

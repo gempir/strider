@@ -1,15 +1,15 @@
 package semantic
 
 import (
-	"fmt"
 	"go/ast"
 	"go/token"
+	"go/types"
 	"sync"
 
 	"golang.org/x/tools/go/ssa"
 )
 
-const syntaxFacts = FactCallArguments | FactFirstCallArgument | FactParents
+const syntaxFacts = FactCallArguments | FactParents
 
 const ssaFacts = FactStaticCalls
 
@@ -36,6 +36,8 @@ type packageFacts struct {
 	ssaBuilder         packageSSAFactBuilder
 	data               packageFactData
 	ssaData            packageSSAFactData
+	deprecatedObjects  map[types.Object]string
+	deprecatedPackages map[*types.Package]string
 }
 
 func newPackageFacts(required FactSet, staticCallPackages ...map[string]bool) *packageFacts {
@@ -54,7 +56,7 @@ func newPackageFacts(required FactSet, staticCallPackages ...map[string]bool) *p
 
 func (facts *packageFacts) require(files []*ast.File, wanted FactSet) {
 	if facts == nil || !facts.required.Has(wanted) {
-		panic(fmt.Sprintf("analysis fact %d was not included in the execution plan", wanted))
+		return
 	}
 	facts.syntaxOnce.Do(func() {
 		builder := facts.builder
@@ -67,7 +69,7 @@ func (facts *packageFacts) require(files []*ast.File, wanted FactSet) {
 
 func (facts *packageFacts) requireSSA(functions []*ssa.Function, wanted FactSet) {
 	if facts == nil || !facts.required.Has(wanted) {
-		panic(fmt.Sprintf("analysis fact %d was not included in the execution plan", wanted))
+		return
 	}
 	facts.ssaOnce.Do(
 		func() {
@@ -87,7 +89,7 @@ func (facts *packageFacts) requireSSA(functions []*ssa.Function, wanted FactSet)
 func buildPackageFacts(files []*ast.File, required FactSet) packageFactData {
 	result := packageFactData{}
 	wantArguments := required.Has(FactCallArguments)
-	wantFirstArgument := required.Has(FactFirstCallArgument)
+	wantFirstArgument := required.Has(FactCallArguments)
 	wantParents := required.Has(FactParents)
 	if wantArguments {
 		result.arguments = make(map[token.Pos][]ast.Node)
@@ -118,8 +120,7 @@ func buildPackageFacts(files []*ast.File, required FactSet) packageFactData {
 				if !wantArguments && !wantFirstArgument {
 					return true
 				}
-				call,
-					ok := node.(*ast.CallExpr)
+				call, ok := node.(*ast.CallExpr)
 				if !ok {
 					return true
 				}
@@ -144,7 +145,7 @@ func buildPackageFacts(files []*ast.File, required FactSet) packageFactData {
 
 // buildPackageSSAFacts is the shared SSA dispatch index. It deliberately
 // indexes only statically resolved calls: every consumer already rejects
-// dynamic calls, and grouping by package keeps each rule's candidate set
+// dynamic calls, and grouping by package keeps each check's candidate set
 // small without changing its matching logic.
 func buildPackageSSAFacts(functions []*ssa.Function, required FactSet, staticCallPackages ...map[string]bool) packageSSAFactData {
 	result := packageSSAFactData{}
@@ -202,24 +203,33 @@ func buildPackageSSAFacts(functions []*ssa.Function, required FactSet, staticCal
 }
 
 func (pass *Pass) argumentsByCallPosition() map[token.Pos][]ast.Node {
+	if pass.facts == nil {
+		return nil
+	}
 	pass.facts.require(pass.Files, FactCallArguments)
 	return pass.facts.data.arguments
 }
 
 func (pass *Pass) firstArgumentsByCallPosition() map[token.Pos]ast.Node {
-	pass.facts.require(pass.Files, FactFirstCallArgument)
+	if pass.facts == nil {
+		return nil
+	}
+	pass.facts.require(pass.Files, FactCallArguments)
 	return pass.facts.data.firstArguments
 }
 
 func (pass *Pass) analysisParents() map[ast.Node]ast.Node {
+	if pass.facts == nil {
+		return nil
+	}
 	pass.facts.require(pass.Files, FactParents)
 	return pass.facts.data.parents
 }
 
 func (pass *Pass) staticCallsInPackage(packagePath string) []ssa.CallInstruction {
-	pass.facts.requireSSA(pass.Functions, FactStaticCalls)
-	if pass.facts.staticCallPackages != nil && !pass.facts.staticCallPackages[packagePath] {
-		panic("static-call package was not included in the execution plan: " + packagePath)
+	if pass.facts == nil || pass.facts.staticCallPackages != nil && !pass.facts.staticCallPackages[packagePath] {
+		return nil
 	}
+	pass.facts.requireSSA(pass.Functions, FactStaticCalls)
 	return pass.facts.ssaData.staticCallsByPackage[packagePath]
 }

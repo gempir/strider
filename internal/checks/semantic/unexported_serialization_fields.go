@@ -9,7 +9,7 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type unexportedSerializationFieldsRule struct{}
+type unexportedSerializationFieldsCheck struct{}
 
 type serializationCall struct {
 	format         string
@@ -18,7 +18,7 @@ type serializationCall struct {
 	sourceArgument int
 }
 
-func (unexportedSerializationFieldsRule) Meta() Meta {
+func (unexportedSerializationFieldsCheck) Meta() Meta {
 	return Meta{
 		Code:            "unexported-serialization-fields",
 		Summary:         "detect serialization of structs with no exported fields",
@@ -29,7 +29,7 @@ func (unexportedSerializationFieldsRule) Meta() Meta {
 	}
 }
 
-func (unexportedSerializationFieldsRule) Run(pass *Pass) {
+func (unexportedSerializationFieldsCheck) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
 	for _, packagePath := range []string{
 		"encoding/json",
@@ -167,4 +167,15 @@ func hasCustomSerializationMethod(valueType types.Type, descriptor serialization
 		}
 	}
 	return false
+}
+
+func (unexportedSerializationFieldsCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"encoding/json",
+			"encoding/xml",
+		},
+	}
 }

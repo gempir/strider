@@ -8,9 +8,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type contradictoryInterfaceAssertionRule struct{}
+type contradictoryInterfaceAssertionCheck struct{}
 
-func (contradictoryInterfaceAssertionRule) Meta() Meta {
+func (contradictoryInterfaceAssertionCheck) Meta() Meta {
 	return Meta{
 		Code:            "contradictory-interface-assertion",
 		Summary:         "detect interface assertions with conflicting method signatures",
@@ -21,50 +21,53 @@ func (contradictoryInterfaceAssertionRule) Meta() Meta {
 	}
 }
 
-func (contradictoryInterfaceAssertionRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				assertion,
-					ok := node.(*ast.TypeAssertExpr)
-				if !ok || assertion.Type == nil {
-					return true
-				}
-				left := pass.TypesInfo.TypeOf(assertion.X)
-				right := pass.TypesInfo.TypeOf(assertion.Type)
-				rightInterface,
-					ok := right.Underlying().(*types.Interface)
-				if !ok {
-					return true
-				}
-				leftMethods := types.NewMethodSet(left)
-				for method := range rightInterface.Methods() {
-					selection := leftMethods.Lookup(method.Pkg(), method.Name())
-					if selection == nil {
-						continue
-					}
-					leftMethod,
-						ok := selection.Obj().(*types.Func)
-					if !ok || leftMethod.Origin() != leftMethod || method.Origin() != method {
-						return true
-					}
-					if types.AssignableTo(leftMethod.Type(), method.Type()) {
-						continue
-					}
-					pass.Report(
-						assertion,
-						fmt.Sprintf(
-							"interface assertion can never succeed: method %s has type %s in the source interface and %s in the asserted interface",
-							method.Name(),
-							types.TypeString(leftMethod.Type(), types.RelativeTo(pass.Types)),
-							types.TypeString(method.Type(), types.RelativeTo(pass.Types)),
-						),
-					)
-					return true
-				}
+func (contradictoryInterfaceAssertionCheck) Run(pass *Pass) {
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.TypeAssertExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			assertion, ok := node.(*ast.TypeAssertExpr)
+			if !ok || assertion.Type == nil {
 				return true
-			},
-		)
+			}
+			left := pass.TypesInfo.TypeOf(assertion.X)
+			right := pass.TypesInfo.TypeOf(assertion.Type)
+			rightInterface, ok := right.Underlying().(*types.Interface)
+			if !ok {
+				return true
+			}
+			leftMethods := types.NewMethodSet(left)
+			for method := range rightInterface.Methods() {
+				selection := leftMethods.Lookup(method.Pkg(), method.Name())
+				if selection == nil {
+					continue
+				}
+				leftMethod, ok := selection.Obj().(*types.Func)
+				if !ok || leftMethod.Origin() != leftMethod || method.Origin() != method {
+					return true
+				}
+				if types.AssignableTo(leftMethod.Type(), method.Type()) {
+					continue
+				}
+				pass.Report(
+					assertion,
+					fmt.Sprintf(
+						"interface assertion can never succeed: method %s has type %s in the source interface and %s in the asserted interface",
+						method.Name(),
+						types.TypeString(leftMethod.Type(), types.RelativeTo(pass.Types)),
+						types.TypeString(method.Type(), types.RelativeTo(pass.Types)),
+					),
+				)
+				return true
+			}
+			return true
+		},
+	)
+}
+
+func (contradictoryInterfaceAssertionCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
 	}
 }

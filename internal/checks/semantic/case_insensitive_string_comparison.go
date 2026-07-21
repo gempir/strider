@@ -7,9 +7,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type caseInsensitiveStringComparisonRule struct{}
+type caseInsensitiveStringComparisonCheck struct{}
 
-func (caseInsensitiveStringComparisonRule) Meta() Meta {
+func (caseInsensitiveStringComparisonCheck) Meta() Meta {
 	return Meta{
 		Code:            "case-insensitive-string-comparison",
 		Summary:         "detect allocating case conversions used only for comparison",
@@ -20,38 +20,41 @@ func (caseInsensitiveStringComparisonRule) Meta() Meta {
 	}
 }
 
-func (caseInsensitiveStringComparisonRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				comparison,
-					ok := node.(*ast.BinaryExpr)
-				if !ok || (comparison.Op != token.EQL && comparison.Op != token.NEQ) {
-					return true
-				}
-				left,
-					ok := comparison.X.(*ast.CallExpr)
-				if !ok || len(left.Args) != 1 {
-					return true
-				}
-				right,
-					ok := comparison.Y.(*ast.CallExpr)
-				if !ok || len(right.Args) != 1 {
-					return true
-				}
-				leftFunction := calledFunction(pass.TypesInfo, left.Fun)
-				rightFunction := calledFunction(pass.TypesInfo, right.Fun)
-				if leftFunction == nil || rightFunction != leftFunction || leftFunction.Pkg() == nil || leftFunction.Pkg().Path() != "strings" || (leftFunction.Name() != "ToLower" && leftFunction.Name() != "ToUpper") {
-					return true
-				}
-				message := "use strings.EqualFold instead of converting both strings before comparison"
-				if comparison.Op == token.NEQ {
-					message = "use !strings.EqualFold instead of converting both strings before comparison"
-				}
-				pass.Report(comparison, message)
+func (caseInsensitiveStringComparisonCheck) Run(pass *Pass) {
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.BinaryExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			comparison, ok := node.(*ast.BinaryExpr)
+			if !ok || (comparison.Op != token.EQL && comparison.Op != token.NEQ) {
 				return true
-			},
-		)
+			}
+			left, ok := comparison.X.(*ast.CallExpr)
+			if !ok || len(left.Args) != 1 {
+				return true
+			}
+			right, ok := comparison.Y.(*ast.CallExpr)
+			if !ok || len(right.Args) != 1 {
+				return true
+			}
+			leftFunction := calledFunction(pass.TypesInfo, left.Fun)
+			rightFunction := calledFunction(pass.TypesInfo, right.Fun)
+			if leftFunction == nil || rightFunction != leftFunction || leftFunction.Pkg() == nil || leftFunction.Pkg().Path() != "strings" || (leftFunction.Name() != "ToLower" && leftFunction.Name() != "ToUpper") {
+				return true
+			}
+			message := "use strings.EqualFold instead of converting both strings before comparison"
+			if comparison.Op == token.NEQ {
+				message = "use !strings.EqualFold instead of converting both strings before comparison"
+			}
+			pass.Report(comparison, message)
+			return true
+		},
+	)
+}
+
+func (caseInsensitiveStringComparisonCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
 	}
 }

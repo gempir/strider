@@ -9,9 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type testingFatalInGoroutineRule struct{}
+type testingFatalInGoroutineCheck struct{}
 
-func (testingFatalInGoroutineRule) Meta() Meta {
+func (testingFatalInGoroutineCheck) Meta() Meta {
 	return Meta{
 		Code:            "testing-fatal-in-goroutine",
 		Summary:         "detect test termination methods called from child goroutines",
@@ -22,7 +22,7 @@ func (testingFatalInGoroutineRule) Meta() Meta {
 	}
 }
 
-func (testingFatalInGoroutineRule) Run(pass *Pass) {
+func (testingFatalInGoroutineCheck) Run(pass *Pass) {
 	for _, function := range pass.Functions {
 		for _, block := range function.Blocks {
 			for _, instruction := range block.Instrs {
@@ -38,9 +38,7 @@ func (testingFatalInGoroutineRule) Run(pass *Pass) {
 				if method == "" {
 					continue
 				}
-				pass.Report(positionNode{
-					position: started.Pos(),
-				}, fmt.Sprintf("%s must be called from the test goroutine, not a child goroutine", method))
+				pass.ReportPos(started.Pos(), fmt.Sprintf("%s must be called from the test goroutine, not a child goroutine", method))
 			}
 		}
 	}
@@ -72,4 +70,10 @@ func terminatingTestMethod(function *ssa.Function) string {
 		}
 	}
 	return ""
+}
+
+func (testingFatalInGoroutineCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+	}
 }

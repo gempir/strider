@@ -9,9 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type contextKeyTypeRule struct{}
+type contextKeyTypeCheck struct{}
 
-func (contextKeyTypeRule) Meta() Meta {
+func (contextKeyTypeCheck) Meta() Meta {
 	return Meta{
 		Code:            "context-key-type",
 		Summary:         "detect unsafe context.WithValue key types",
@@ -22,7 +22,7 @@ func (contextKeyTypeRule) Meta() Meta {
 	}
 }
 
-func (contextKeyTypeRule) Run(pass *Pass) {
+func (contextKeyTypeCheck) Run(pass *Pass) {
 	calls := pass.argumentsByCallPosition()
 	for _, call := range pass.staticCallsInPackage("context") {
 		if !isStaticFunction(call, "context", "WithValue") || len(call.Common().Args) <= 1 {
@@ -53,4 +53,14 @@ func invalidContextKeyMessage(key ssa.Value) string {
 		return fmt.Sprintf("context.WithValue key type %s is not comparable and will panic", types.TypeString(key.Type(), nil))
 	}
 	return ""
+}
+
+func (contextKeyTypeCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"context",
+		},
+	}
 }

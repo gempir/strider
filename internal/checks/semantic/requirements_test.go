@@ -4,6 +4,11 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"os"
+	"path/filepath"
+	"runtime"
+	"sort"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -12,34 +17,41 @@ import (
 	"golang.org/x/tools/go/ssa"
 )
 
-func TestRuleRequirementsCoverCatalog(t *testing.T) {
-	seen := make(map[string]bool, len(ruleCatalog))
-	typed := 0
-	ssaRules := 0
-	for _, definition := range ruleCatalog {
-		code := definition.rule.Meta().Code
+func TestCheckRequirementsCoverCatalog(t *testing.T) {
+	seen := make(map[string]bool, len(checkCatalog))
+	codes := make([]string, 0, len(checkCatalog))
+	for _, check := range checkCatalog {
+		code := check.Meta().Code
 		if seen[code] {
-			t.Fatalf("duplicate rule %q", code)
+			t.Fatalf("duplicate check %q", code)
 		}
 		seen[code] = true
+		codes = append(codes, code)
 		requirements, ok := RequirementsFor(code)
 		if !ok {
-			t.Fatalf("rule %q has no requirements", code)
+			t.Fatalf("check %q has no requirements", code)
 		}
 		switch requirements.Stage {
 		case AnalysisStageTypes:
-			typed++
 		case AnalysisStageSSA:
-			ssaRules++
 		default:
-			t.Fatalf("rule %q has invalid stage %d", code, requirements.Stage)
+			t.Fatalf("check %q has invalid stage %d", code, requirements.Stage)
 		}
 		if UsesSSA(code) != (requirements.Stage == AnalysisStageSSA) {
 			t.Fatalf("UsesSSA(%q) disagrees with its requirements", code)
 		}
+		if requirements.Facts.Has(FactStaticCalls) != (len(requirements.staticCallPackages) != 0) {
+			t.Fatalf("check %q has inconsistent static-call requirements", code)
+		}
 	}
-	if typed != 68 || ssaRules != 44 {
-		t.Fatalf("got %d typed and %d SSA rules, want 68 and 44", typed, ssaRules)
+	sort.Strings(codes)
+	_, testFile, _, _ := runtime.Caller(0)
+	want, err := os.ReadFile(filepath.Join(filepath.Dir(testFile), "testdata", "check_codes.txt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Join(codes, "\n") + "\n"; got != string(want) {
+		t.Errorf("check catalog differs from testdata/check_codes.txt\ngot:\n%s\nwant:\n%s", got, want)
 	}
 }
 
@@ -50,7 +62,7 @@ func TestExecutionPlanSelectsNamedFacts(t *testing.T) {
 	}{
 		{
 			code:  "invalid-regexp",
-			facts: FactFirstCallArgument | FactStaticCalls,
+			facts: FactCallArguments | FactStaticCalls,
 		},
 		{
 			code:  "unsupported-binary-write",
@@ -77,8 +89,7 @@ func TestExecutionPlanSelectsNamedFacts(t *testing.T) {
 		t.Run(
 			test.code,
 			func(t *testing.T) {
-				registry,
-					err := NewRegistry([]string{
+				registry, err := newRegistry([]string{
 					test.code,
 				})
 				if err != nil {
@@ -93,7 +104,7 @@ func TestExecutionPlanSelectsNamedFacts(t *testing.T) {
 }
 
 func TestExecutionPlanSelectsStaticCallPackages(t *testing.T) {
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"invalid-regexp",
 		"unsupported-marshal-type",
 	})
@@ -146,7 +157,7 @@ func TestTypedOnlyPlanDoesNotBuildSSA(t *testing.T) {
 
 func valid() string { return "ok" }
 `)
-	registry, err := NewRegistry([]string{
+	registry, err := newRegistry([]string{
 		"invalid-template",
 	})
 	if err != nil {
@@ -184,8 +195,7 @@ func TestSSADebugMetadataIsCapabilityDriven(t *testing.T) {
 		t.Run(
 			test.code,
 			func(t *testing.T) {
-				registry,
-					err := NewRegistry([]string{
+				registry, err := newRegistry([]string{
 					test.code,
 				})
 				if err != nil {
@@ -217,7 +227,7 @@ func TestNamedPackageFactsInitializeOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	required := FactCallArguments | FactFirstCallArgument | FactParents
+	required := FactCallArguments | FactParents
 	facts := newPackageFacts(required)
 	var builds atomic.Int32
 	facts.builder = func(files []*ast.File, required FactSet) packageFactData {

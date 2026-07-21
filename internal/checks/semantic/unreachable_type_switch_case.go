@@ -8,14 +8,14 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type unreachableTypeSwitchCaseRule struct{}
+type unreachableTypeSwitchCaseCheck struct{}
 
 type typedCaseClause struct {
 	clause *ast.CaseClause
 	types  []types.Type
 }
 
-func (unreachableTypeSwitchCaseRule) Meta() Meta {
+func (unreachableTypeSwitchCaseCheck) Meta() Meta {
 	return Meta{
 		Code:            "unreachable-type-switch-case",
 		Summary:         "detect type-switch cases hidden by earlier interfaces",
@@ -26,39 +26,36 @@ func (unreachableTypeSwitchCaseRule) Meta() Meta {
 	}
 }
 
-func (unreachableTypeSwitchCaseRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				switchStatement,
-					ok := node.(*ast.TypeSwitchStmt)
-				if !ok {
-					return true
-				}
-				cases := typeSwitchCases(pass, switchStatement)
-				for earlierIndex, earlier := range cases {
-					for _, later := range cases[earlierIndex+1:] {
-						first,
-							hidden,
-							ok := subsumingCaseTypes(earlier.types, later.types)
-						if !ok {
-							continue
-						}
-						pass.Report(
-							later.clause,
-							fmt.Sprintf(
-								"unreachable type-switch case: %s always matches before %s",
-								conciseAnalysisType(pass, first),
-								conciseAnalysisType(pass, hidden),
-							),
-						)
-					}
-				}
+func (unreachableTypeSwitchCaseCheck) Run(pass *Pass) {
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.TypeSwitchStmt)(nil),
+		},
+		func(node ast.Node) bool {
+			switchStatement, ok := node.(*ast.TypeSwitchStmt)
+			if !ok {
 				return true
-			},
-		)
-	}
+			}
+			cases := typeSwitchCases(pass, switchStatement)
+			for earlierIndex, earlier := range cases {
+				for _, later := range cases[earlierIndex+1:] {
+					first, hidden, ok := subsumingCaseTypes(earlier.types, later.types)
+					if !ok {
+						continue
+					}
+					pass.Report(
+						later.clause,
+						fmt.Sprintf(
+							"unreachable type-switch case: %s always matches before %s",
+							conciseAnalysisType(pass, first),
+							conciseAnalysisType(pass, hidden),
+						),
+					)
+				}
+			}
+			return true
+		},
+	)
 }
 
 func conciseAnalysisType(pass *Pass, valueType types.Type) string {
@@ -109,4 +106,10 @@ func subsumingCaseTypes(earlier, later []types.Type) (types.Type, types.Type, bo
 		}
 	}
 	return nil, nil, false
+}
+
+func (unreachableTypeSwitchCaseCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

@@ -6,9 +6,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type infiniteRecursionRule struct{}
+type infiniteRecursionCheck struct{}
 
-func (infiniteRecursionRule) Meta() Meta {
+func (infiniteRecursionCheck) Meta() Meta {
 	return Meta{
 		Code:            "infinite-recursion",
 		Summary:         "detect recursive calls with no path to a function exit",
@@ -19,7 +19,7 @@ func (infiniteRecursionRule) Meta() Meta {
 	}
 }
 
-func (infiniteRecursionRule) Run(pass *Pass) {
+func (infiniteRecursionCheck) Run(pass *Pass) {
 	for _, function := range pass.Functions {
 		if function == nil || function.Blocks == nil {
 			continue
@@ -37,9 +37,7 @@ func (infiniteRecursionRule) Run(pass *Pass) {
 				) {
 					continue
 				}
-				pass.Report(positionNode{
-					position: call.Pos(),
-				}, "recursive call has no path to a function exit")
+				pass.ReportPos(call.Pos(), "recursive call has no path to a function exit")
 			}
 		}
 	}
@@ -62,4 +60,10 @@ func blockDominatesEveryExit(block *ssa.BasicBlock, exits []*ssa.BasicBlock) boo
 		}
 	}
 	return true
+}
+
+func (infiniteRecursionCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+	}
 }

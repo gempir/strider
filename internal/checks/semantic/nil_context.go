@@ -7,9 +7,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type nilContextRule struct{}
+type nilContextCheck struct{}
 
-func (nilContextRule) Meta() Meta {
+func (nilContextCheck) Meta() Meta {
 	return Meta{
 		Code:            "nil-context",
 		Summary:         "detect nil context.Context arguments",
@@ -20,33 +20,28 @@ func (nilContextRule) Meta() Meta {
 	}
 }
 
-func (nilContextRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				call,
-					ok := node.(*ast.CallExpr)
-				if !ok || len(call.Args) == 0 || !isNilIdentifier(call.Args[0]) {
-					return true
-				}
-				function := calledFunction(pass.TypesInfo, call.Fun)
-				if function == nil {
-					return true
-				}
-				signature,
-					ok := function.Type().(*types.Signature)
-				if !ok || signature.Params().Len() == 0 || !isContextType(signature.Params().At(0).Type()) {
-					return true
-				}
-				pass.Report(
-					call.Args[0],
-					"do not pass a nil Context, even if a function permits it; pass context.TODO if you are unsure about which Context to use",
-				)
+func (nilContextCheck) Run(pass *Pass) {
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.CallExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			call, ok := node.(*ast.CallExpr)
+			if !ok || len(call.Args) == 0 || !isNilIdentifier(call.Args[0]) {
 				return true
-			},
-		)
-	}
+			}
+			function := calledFunction(pass.TypesInfo, call.Fun)
+			if function == nil {
+				return true
+			}
+			signature, ok := function.Type().(*types.Signature)
+			if !ok || signature.Params().Len() == 0 || !isNamedType(signature.Params().At(0).Type(), "context", "Context") {
+				return true
+			}
+			pass.Report(call.Args[0], "do not pass a nil Context, even if a function permits it; pass context.TODO if you are unsure about which Context to use")
+			return true
+		},
+	)
 }
 
 func isNilIdentifier(expression ast.Expr) bool {
@@ -54,7 +49,8 @@ func isNilIdentifier(expression ast.Expr) bool {
 	return ok && identifier.Name == "nil"
 }
 
-func isContextType(valueType types.Type) bool {
-	named, ok := types.Unalias(valueType).(*types.Named)
-	return ok && named.Obj() != nil && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "context" && named.Obj().Name() == "Context"
+func (nilContextCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

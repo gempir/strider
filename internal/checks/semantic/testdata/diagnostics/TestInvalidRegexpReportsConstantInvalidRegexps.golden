@@ -1,0 +1,4 @@
+main.go:8:17-8:17 invalid-regexp
+main.go:10:13-10:13 invalid-regexp
+main.go:11:17-11:17 invalid-regexp
+main.go:13:10-13:10 invalid-regexp

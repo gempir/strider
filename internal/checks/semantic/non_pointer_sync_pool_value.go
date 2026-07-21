@@ -7,9 +7,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type nonPointerSyncPoolValueRule struct{}
+type nonPointerSyncPoolValueCheck struct{}
 
-func (nonPointerSyncPoolValueRule) Meta() Meta {
+func (nonPointerSyncPoolValueCheck) Meta() Meta {
 	return Meta{
 		Code:            "non-pointer-sync-pool-value",
 		Summary:         "detect sync.Pool values that allocate while being stored",
@@ -20,25 +20,24 @@ func (nonPointerSyncPoolValueRule) Meta() Meta {
 	}
 }
 
-func (nonPointerSyncPoolValueRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				call,
-					ok := node.(*ast.CallExpr)
-				if !ok || len(call.Args) != 1 || !syncPoolPutCall(pass, call) {
-					return true
-				}
-				valueType := pass.TypesInfo.TypeOf(call.Args[0])
-				if poolPointerLike(valueType) {
-					return true
-				}
-				pass.Report(call.Args[0], "store a pointer-like value in sync.Pool to avoid an allocation during Put")
+func (nonPointerSyncPoolValueCheck) Run(pass *Pass) {
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.CallExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			call, ok := node.(*ast.CallExpr)
+			if !ok || len(call.Args) != 1 || !syncPoolPutCall(pass, call) {
 				return true
-			},
-		)
-	}
+			}
+			valueType := pass.TypesInfo.TypeOf(call.Args[0])
+			if poolPointerLike(valueType) {
+				return true
+			}
+			pass.Report(call.Args[0], "store a pointer-like value in sync.Pool to avoid an allocation during Put")
+			return true
+		},
+	)
 }
 
 func syncPoolPutCall(pass *Pass, call *ast.CallExpr) bool {
@@ -69,5 +68,11 @@ func poolPointerLike(valueType types.Type) bool {
 		return underlying.Kind() == types.UnsafePointer
 	default:
 		return false
+	}
+}
+
+func (nonPointerSyncPoolValueCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
 	}
 }

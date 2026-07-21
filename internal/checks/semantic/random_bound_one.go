@@ -11,9 +11,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type randomBoundOneRule struct{}
+type randomBoundOneCheck struct{}
 
-func (randomBoundOneRule) Meta() Meta {
+func (randomBoundOneCheck) Meta() Meta {
 	return Meta{
 		Code:            "random-bound-one",
 		Summary:         "detect random integer calls whose upper bound permits only zero",
@@ -24,7 +24,7 @@ func (randomBoundOneRule) Meta() Meta {
 	}
 }
 
-func (randomBoundOneRule) Run(pass *Pass) {
+func (randomBoundOneCheck) Run(pass *Pass) {
 	for _, packagePath := range []string{
 		"math/rand",
 		"math/rand/v2",
@@ -41,9 +41,7 @@ func (randomBoundOneRule) Run(pass *Pass) {
 			if bound == nil || bound.Value == nil || bound.Value.Kind() != constant.Int || !constant.Compare(bound.Value, token.EQL, constant.MakeInt64(1)) {
 				continue
 			}
-			pass.Report(positionNode{
-				position: call.Pos(),
-			}, fmt.Sprintf("%s with an upper bound of one always returns zero", name))
+			pass.ReportPos(call.Pos(), fmt.Sprintf("%s with an upper bound of one always returns zero", name))
 		}
 	}
 }
@@ -77,4 +75,15 @@ func boundedRandomFunction(call ssa.CallInstruction) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+func (randomBoundOneCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactStaticCalls,
+		staticCallPackages: []string{
+			"math/rand",
+			"math/rand/v2",
+		},
+	}
 }

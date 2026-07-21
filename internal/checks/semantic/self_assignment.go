@@ -4,17 +4,14 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
-	"go/types"
 	"reflect"
-
-	"golang.org/x/tools/go/ssa"
 
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type selfAssignmentRule struct{}
+type selfAssignmentCheck struct{}
 
-func (selfAssignmentRule) Meta() Meta {
+func (selfAssignmentCheck) Meta() Meta {
 	return Meta{
 		Code:            "self-assignment",
 		Summary:         "detect assignments that store an expression back into itself",
@@ -25,52 +22,33 @@ func (selfAssignmentRule) Meta() Meta {
 	}
 }
 
-func (selfAssignmentRule) Run(pass *Pass) {
-	purity := newPurityChecker(pass)
-	functions := functionsByObject(pass.Functions)
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				assignment,
-					ok := node.(*ast.AssignStmt)
-				if !ok || assignment.Tok != token.ASSIGN || len(assignment.Lhs) != len(assignment.Rhs) {
-					return true
-				}
-				for index, left := range assignment.Lhs {
-					right := assignment.Rhs[index]
-					if reflect.TypeOf(left) != reflect.TypeOf(right) || renderAnalysisExpression(pass, left) != renderAnalysisExpression(pass, right) || !sideEffectFreeExpression(
-						pass,
-						purity,
-						functions,
-						left,
-					) || !sideEffectFreeExpression(pass, purity, functions, right) {
-						continue
-					}
-					text := renderAnalysisExpression(pass, left)
-					pass.Report(assignment, fmt.Sprintf("self-assignment of %s has no effect", text))
-				}
+func (selfAssignmentCheck) Run(pass *Pass) {
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.AssignStmt)(nil),
+		},
+		func(node ast.Node) bool {
+			assignment, ok := node.(*ast.AssignStmt)
+			if !ok || assignment.Tok != token.ASSIGN || len(assignment.Lhs) != len(assignment.Rhs) {
 				return true
-			},
-		)
-	}
+			}
+			for index, left := range assignment.Lhs {
+				right := assignment.Rhs[index]
+				if reflect.TypeOf(left) != reflect.TypeOf(right) || renderAnalysisExpression(pass, left) != renderAnalysisExpression(pass, right) || !sideEffectFreeExpression(
+					pass,
+					left,
+				) || !sideEffectFreeExpression(pass, right) {
+					continue
+				}
+				text := renderAnalysisExpression(pass, left)
+				pass.Report(assignment, fmt.Sprintf("self-assignment of %s has no effect", text))
+			}
+			return true
+		},
+	)
 }
 
-func functionsByObject(functions []*ssa.Function) map[*types.Func]*ssa.Function {
-	byObject := make(map[*types.Func]*ssa.Function)
-	for _, function := range functions {
-		if function == nil {
-			continue
-		}
-		object, ok := function.Object().(*types.Func)
-		if ok && function.Synthetic == "" {
-			byObject[object] = function
-		}
-	}
-	return byObject
-}
-
-func sideEffectFreeExpression(pass *Pass, purity *purityChecker, functions map[*types.Func]*ssa.Function, expression ast.Expr) bool {
+func sideEffectFreeExpression(pass *Pass, expression ast.Expr) bool {
 	safe := true
 	ast.Inspect(
 		expression,
@@ -96,11 +74,8 @@ func sideEffectFreeExpression(pass *Pass, purity *purityChecker, functions map[*
 				if knownPureFunction(function) {
 					return true
 				}
-				ssaFunction := functions[function]
-				if ssaFunction == nil || !purity.pure(ssaFunction) {
-					safe = false
-					return false
-				}
+				safe = false
+				return false
 			}
 			return true
 		},
@@ -118,5 +93,11 @@ func pureBuiltinCall(call *ast.CallExpr) bool {
 		return true
 	default:
 		return false
+	}
+}
+
+func (selfAssignmentCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
 	}
 }

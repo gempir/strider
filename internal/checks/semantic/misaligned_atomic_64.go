@@ -9,9 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type misalignedAtomic64Rule struct{}
+type misalignedAtomic64Check struct{}
 
-func (misalignedAtomic64Rule) Meta() Meta {
+func (misalignedAtomic64Check) Meta() Meta {
 	return Meta{
 		Code:            "misaligned-atomic-64",
 		Summary:         "detect misaligned 64-bit atomic field access on 32-bit targets",
@@ -22,7 +22,7 @@ func (misalignedAtomic64Rule) Meta() Meta {
 	}
 }
 
-func (misalignedAtomic64Rule) Run(pass *Pass) {
+func (misalignedAtomic64Check) Run(pass *Pass) {
 	if pass.TypesSizes == nil || pass.TypesSizes.Sizeof(types.Typ[types.Uintptr]) != 4 {
 		return
 	}
@@ -78,5 +78,15 @@ func atomicFieldAddress(value ssa.Value) (int, *types.Struct, bool) {
 		default:
 			return 0, nil, false
 		}
+	}
+}
+
+func (misalignedAtomic64Check) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"sync/atomic",
+		},
 	}
 }

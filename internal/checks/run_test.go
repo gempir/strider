@@ -28,6 +28,7 @@ func TestRunSharesCSTBetweenFormattingAndSyntaxChecks(t *testing.T) {
 			"format",
 			"no-init",
 		},
+		Root: directory,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -55,6 +56,47 @@ func TestRunSharesCSTBetweenFormattingAndSyntaxChecks(t *testing.T) {
 	}
 	if !bytes.Equal(contents, original) {
 		t.Fatal("read-only check modified source")
+	}
+}
+
+func TestRunExcludesFilterDiagnosticsAndCandidates(t *testing.T) {
+	directory := t.TempDir()
+	filename := filepath.Join(directory, "excluded.go")
+	if err := os.WriteFile(filename, []byte("package sample\nfunc init( ){return}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	shared, err := workspace.Open([]string{
+		directory,
+	}, workspace.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	registry, err := NewRegistry(RegistryOptions{
+		Only: []string{
+			"format",
+			"no-init",
+		},
+		Root: directory,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := Run(shared, registry, RunOptions{
+		Formatter: formatter.DefaultOptions(),
+		Root:      directory,
+		Excludes: []string{
+			"excluded.go",
+		},
+		CollectCandidates: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(shared.Files()) != 1 {
+		t.Fatalf("excluded source was removed from workspace: %#v", shared.Files())
+	}
+	if len(result.Diagnostics) != 0 || len(result.Candidates) != 0 {
+		t.Fatalf("excluded result = %#v", result)
 	}
 }
 

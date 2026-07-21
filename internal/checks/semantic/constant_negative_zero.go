@@ -9,9 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type constantNegativeZeroRule struct{}
+type constantNegativeZeroCheck struct{}
 
-func (constantNegativeZeroRule) Meta() Meta {
+func (constantNegativeZeroCheck) Meta() Meta {
 	return Meta{
 		Code:            "constant-negative-zero",
 		Summary:         "detect constant expressions that cannot represent negative zero",
@@ -22,21 +22,22 @@ func (constantNegativeZeroRule) Meta() Meta {
 	}
 }
 
-func (constantNegativeZeroRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				expression,
-					ok := node.(ast.Expr)
-				if ok && constantNegativeZero(pass, expression) {
-					pass.Report(expression, "Go constants cannot represent negative zero; use math.Copysign(0, -1)")
-					return false
-				}
-				return true
-			},
-		)
-	}
+func (constantNegativeZeroCheck) Run(pass *Pass) {
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.CallExpr)(nil),
+			(*ast.ParenExpr)(nil),
+			(*ast.UnaryExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			expression := node.(ast.Expr)
+			if constantNegativeZero(pass, expression) {
+				pass.Report(expression, "Go constants cannot represent negative zero; use math.Copysign(0, -1)")
+				return false
+			}
+			return true
+		},
+	)
 }
 
 func constantNegativeZero(pass *Pass, expression ast.Expr) bool {
@@ -83,4 +84,10 @@ func zeroIntegerLiteral(pass *Pass, expression ast.Expr) bool {
 func zeroLiteral(pass *Pass, literal *ast.BasicLit) bool {
 	value := pass.TypesInfo.Types[literal].Value
 	return value != nil && (value.Kind() == constant.Int || value.Kind() == constant.Float) && constant.Sign(value) == 0
+}
+
+func (constantNegativeZeroCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

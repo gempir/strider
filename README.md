@@ -75,10 +75,10 @@ apply the same validated formatter result. Strider internally schedules only
 the source representations required by the selected checks; those
 implementation capabilities are not separate user-facing tools.
 
-`--watch` keeps a text-mode check session alive. Unchanged concrete syntax and
-proven-equivalent package results are reused between generations; edits emit a
-fresh complete report without modifying source. Watch and fix modes cannot be
-combined.
+`--watch` keeps a text-mode check session alive. Unchanged concrete syntax is
+reused between generations while package-aware checks run fresh; selected
+source changes or changed findings emit a complete report without modifying
+source. Watch and fix modes cannot be combined.
 
 ## Format
 
@@ -103,8 +103,8 @@ current syntax boundary.
 
 Strider discovers the nearest `strider.toml` from the current directory upward.
 Version 1 uses `[check]` for command-wide policy and `[checks.<code>]` for
-individual checks. Every check supports `severity` and path `excludes`; the formatter exposes the selected width, blank-line,
-source-break, declaration-alignment, and filesystem policies.
+individual checks. Every check supports `severity` and path `excludes`; the
+formatter exposes only its selected width and filesystem exclusions.
 
 ```toml
 version = 1
@@ -112,9 +112,6 @@ color = "auto"
 
 [formatter]
 print-width = 180
-max-blank-lines = 1
-existing-line-breaks = "structural-only"
-alignment.declarations = true
 excludes = ["internal/generated/**"]
 
 [check]

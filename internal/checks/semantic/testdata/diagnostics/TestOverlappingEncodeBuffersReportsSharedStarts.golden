@@ -1,0 +1,2 @@
+main.go:9:13-9:13 overlapping-encode-buffers
+main.go:10:28-10:28 overlapping-encode-buffers

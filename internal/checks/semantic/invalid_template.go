@@ -10,9 +10,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type invalidTemplateRule struct{}
+type invalidTemplateCheck struct{}
 
-func (invalidTemplateRule) Meta() Meta {
+func (invalidTemplateCheck) Meta() Meta {
 	return Meta{
 		Code:            "invalid-template",
 		Summary:         "detect invalid templates",
@@ -23,37 +23,35 @@ func (invalidTemplateRule) Meta() Meta {
 	}
 }
 
-func (invalidTemplateRule) Run(pass *Pass) {
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				call,
-					ok := node.(*ast.CallExpr)
-				if !ok || len(call.Args) == 0 {
-					return true
-				}
-				selector,
-					ok := call.Fun.(*ast.SelectorExpr)
-				if !ok {
-					return true
-				}
-				kind := templateParseKind(pass, selector)
-				if kind == "" || !isDirectTemplateNew(pass, selector.X, kind) {
-					return true
-				}
-				value := pass.TypesInfo.Types[call.Args[0]].Value
-				if value == nil || value.Kind() != constant.String {
-					return true
-				}
-				message := parseTemplate(kind, constant.StringVal(value))
-				if strings.Contains(message, "unexpected") || strings.Contains(message, "bad character") {
-					pass.Report(call.Args[0], message)
-				}
+func (invalidTemplateCheck) Run(pass *Pass) {
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.CallExpr)(nil),
+		},
+		func(node ast.Node) bool {
+			call, ok := node.(*ast.CallExpr)
+			if !ok || len(call.Args) == 0 {
 				return true
-			},
-		)
-	}
+			}
+			selector, ok := call.Fun.(*ast.SelectorExpr)
+			if !ok {
+				return true
+			}
+			kind := templateParseKind(pass, selector)
+			if kind == "" || !isDirectTemplateNew(pass, selector.X, kind) {
+				return true
+			}
+			value := pass.TypesInfo.Types[call.Args[0]].Value
+			if value == nil || value.Kind() != constant.String {
+				return true
+			}
+			message := parseTemplate(kind, constant.StringVal(value))
+			if strings.Contains(message, "unexpected") || strings.Contains(message, "bad character") {
+				pass.Report(call.Args[0], message)
+			}
+			return true
+		},
+	)
 }
 
 func templateParseKind(pass *Pass, selector *ast.SelectorExpr) string {
@@ -87,4 +85,10 @@ func parseTemplate(kind, source string) string {
 		return ""
 	}
 	return err.Error()
+}
+
+func (invalidTemplateCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageTypes,
+	}
 }

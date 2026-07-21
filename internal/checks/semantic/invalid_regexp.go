@@ -2,7 +2,6 @@ package semantic
 
 import (
 	"go/constant"
-	"go/token"
 	"regexp"
 
 	"golang.org/x/tools/go/ssa"
@@ -10,13 +9,9 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type invalidRegexpRule struct{}
+type invalidRegexpCheck struct{}
 
-type positionNode struct {
-	position token.Pos
-}
-
-func (invalidRegexpRule) Meta() Meta {
+func (invalidRegexpCheck) Meta() Meta {
 	return Meta{
 		Code:            "invalid-regexp",
 		Summary:         "detect invalid regular expressions",
@@ -27,7 +22,7 @@ func (invalidRegexpRule) Meta() Meta {
 	}
 }
 
-func (invalidRegexpRule) Run(pass *Pass) {
+func (invalidRegexpCheck) Run(pass *Pass) {
 	calls := pass.firstArgumentsByCallPosition()
 	for _, call := range pass.staticCallsInPackage("regexp") {
 		if !isRegexpCompileCall(call) || len(call.Common().Args) == 0 {
@@ -38,13 +33,11 @@ func (invalidRegexpRule) Run(pass *Pass) {
 			continue
 		}
 		if _, err := regexp.Compile(constant.StringVal(value.Value)); err != nil {
-			node := calls[call.Pos()]
-			if node == nil {
-				node = positionNode{
-					position: call.Pos(),
-				}
+			if node := calls[call.Pos()]; node != nil {
+				pass.Report(node, err.Error())
+			} else {
+				pass.ReportPos(call.Pos(), err.Error())
 			}
-			pass.Report(node, err.Error())
 		}
 	}
 }
@@ -83,10 +76,12 @@ func ssaConstant(value ssa.Value) *ssa.Const {
 	}
 }
 
-func (node positionNode) Pos() token.Pos {
-	return node.position
-}
-
-func (node positionNode) End() token.Pos {
-	return node.position
+func (invalidRegexpCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"regexp",
+		},
+	}
 }

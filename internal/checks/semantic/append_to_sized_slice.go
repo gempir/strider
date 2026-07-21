@@ -12,7 +12,7 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type appendToSizedSliceRule struct{}
+type appendToSizedSliceCheck struct{}
 
 type sizedSliceCandidate struct {
 	name string
@@ -24,7 +24,7 @@ type sizedSliceTrace struct {
 	valid  bool
 }
 
-func (appendToSizedSliceRule) Meta() Meta {
+func (appendToSizedSliceCheck) Meta() Meta {
 	return Meta{
 		Code:            "append-to-sized-slice",
 		Summary:         "detect appends to slices created with a known positive length",
@@ -35,7 +35,7 @@ func (appendToSizedSliceRule) Meta() Meta {
 	}
 }
 
-func (appendToSizedSliceRule) Run(pass *Pass) {
+func (appendToSizedSliceCheck) Run(pass *Pass) {
 	eligible := localPositiveLengthMakes(pass)
 	reported := make(map[token.Pos]bool)
 	for _, function := range pass.Functions {
@@ -54,10 +54,8 @@ func (appendToSizedSliceRule) Run(pass *Pass) {
 					continue
 				}
 				reported[origin.Pos()] = true
-				pass.Report(
-					positionNode{
-						position: call.Pos(),
-					},
+				pass.ReportPos(
+					call.Pos(),
 					fmt.Sprintf("%s already has a positive length; use make with length zero and capacity, or reslice to zero before append", candidate.name),
 				)
 			}
@@ -79,22 +77,19 @@ func localPositiveLengthMakes(pass *Pass) map[token.Pos]sizedSliceCandidate {
 						if index >= len(node.Lhs) {
 							break
 						}
-						identifier,
-							ok := node.Lhs[index].(*ast.Ident)
+						identifier, ok := node.Lhs[index].(*ast.Ident)
 						if !ok {
 							continue
 						}
 						addPositiveLengthMake(pass, result, identifier, right)
 					}
 				case *ast.DeclStmt:
-					declaration,
-						ok := node.Decl.(*ast.GenDecl)
+					declaration, ok := node.Decl.(*ast.GenDecl)
 					if !ok || declaration.Tok != token.VAR {
 						return true
 					}
 					for _, specification := range declaration.Specs {
-						value,
-							ok := specification.(*ast.ValueSpec)
+						value, ok := specification.(*ast.ValueSpec)
 						if !ok {
 							continue
 						}
@@ -110,22 +105,23 @@ func localPositiveLengthMakes(pass *Pass) map[token.Pos]sizedSliceCandidate {
 			},
 		)
 	}
-	for _, file := range pass.Files {
-		ast.Inspect(
-			file,
-			func(node ast.Node) bool {
-				switch node := node.(type) {
-				case *ast.FuncDecl:
-					if node.Body != nil {
-						visitBody(node.Body)
-					}
-				case *ast.FuncLit:
+	pass.Inspect(
+		[]ast.Node{
+			(*ast.FuncDecl)(nil),
+			(*ast.FuncLit)(nil),
+		},
+		func(node ast.Node) bool {
+			switch node := node.(type) {
+			case *ast.FuncDecl:
+				if node.Body != nil {
 					visitBody(node.Body)
 				}
-				return true
-			},
-		)
-	}
+			case *ast.FuncLit:
+				visitBody(node.Body)
+			}
+			return true
+		},
+	)
 	return result
 }
 
@@ -238,5 +234,11 @@ func traceSizedSliceOrigin(value ssa.Value, visiting map[ssa.Value]bool) sizedSl
 		return traceSizedSliceOrigin(value.Common().Args[0], visiting)
 	default:
 		return sizedSliceTrace{}
+	}
+}
+
+func (appendToSizedSliceCheck) Requirements() Requirements {
+	return Requirements{
+		Stage: AnalysisStageSSA,
 	}
 }

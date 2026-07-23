@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
@@ -48,7 +49,11 @@ type diffHunk struct {
 	end   int
 }
 
-func runFormat(args []string, configuration config.Config, colorMode ui.ColorMode, stdin io.Reader, stdout, stderr io.Writer) int {
+func runFormat(ctx context.Context, args []string, configuration config.Config, colorMode ui.ColorMode, stdin io.Reader, stdout, stderr io.Writer) int {
+	if err := ctx.Err(); err != nil {
+		printCommandError(stderr, colorMode, "strider fmt", "%v", err)
+		return exitError
+	}
 	options, ok := parseFormatOptions(args, colorMode, stderr)
 	if !ok {
 		return exitError
@@ -60,9 +65,9 @@ func runFormat(args []string, configuration config.Config, colorMode ui.ColorMod
 	options.excludes = configuration.Formatter.Excludes
 	options.colorMode = colorMode
 	if options.stdin {
-		return formatStdin(options.stdinFilename, options.formatter, colorMode, stdin, stdout, stderr)
+		return formatStdin(ctx, options.stdinFilename, options.formatter, colorMode, stdin, stdout, stderr)
 	}
-	return formatPaths(options, stdout, stderr)
+	return formatPaths(ctx, options, stdout, stderr)
 }
 
 func parseFormatOptions(args []string, colorMode ui.ColorMode, stderr io.Writer) (formatOptions, bool) {
@@ -121,9 +126,17 @@ func parseFormatOptions(args []string, colorMode ui.ColorMode, stderr io.Writer)
 	}, true
 }
 
-func formatStdin(filename string, formatOptions formatter.Options, colorMode ui.ColorMode, stdin io.Reader, stdout, stderr io.Writer) int {
+func formatStdin(ctx context.Context, filename string, formatOptions formatter.Options, colorMode ui.ColorMode, stdin io.Reader, stdout, stderr io.Writer) int {
+	if err := ctx.Err(); err != nil {
+		printCommandError(stderr, colorMode, "strider fmt", "%v", err)
+		return exitError
+	}
 	input, err := io.ReadAll(stdin)
 	if err != nil {
+		printCommandError(stderr, colorMode, "strider fmt", "%v", err)
+		return exitError
+	}
+	if err := ctx.Err(); err != nil {
 		printCommandError(stderr, colorMode, "strider fmt", "%v", err)
 		return exitError
 	}
@@ -139,7 +152,11 @@ func formatStdin(filename string, formatOptions formatter.Options, colorMode ui.
 	return exitSuccess
 }
 
-func formatPaths(options formatOptions, stdout, stderr io.Writer) int {
+func formatPaths(ctx context.Context, options formatOptions, stdout, stderr io.Writer) int {
+	if err := ctx.Err(); err != nil {
+		printCommandError(stderr, options.colorMode, "strider fmt", "%v", err)
+		return exitError
+	}
 	shared, err := workspace.Open(options.paths, workspace.Options{
 		SkipGenerated: true,
 		Root:          options.root,
@@ -149,12 +166,20 @@ func formatPaths(options formatOptions, stdout, stderr io.Writer) int {
 		printCommandError(stderr, options.colorMode, "strider fmt", "%v", err)
 		return exitError
 	}
-	formatted, formatErrors := formatFiles(shared.Files(), options.formatter, options.write || options.diff)
+	if err := ctx.Err(); err != nil {
+		printCommandError(stderr, options.colorMode, "strider fmt", "%v", err)
+		return exitError
+	}
+	formatted, formatErrors := formatFiles(ctx, shared.Files(), options.formatter, options.write || options.diff)
 	for _, formatErr := range formatErrors {
 		if formatErr != nil {
 			printCommandError(stderr, options.colorMode, "strider fmt", "%v", formatErr)
 			return exitError
 		}
+	}
+	if err := ctx.Err(); err != nil {
+		printCommandError(stderr, options.colorMode, "strider fmt", "%v", err)
+		return exitError
 	}
 	changed := reportFormatChanges(formatted, options, stdout)
 	if options.write {

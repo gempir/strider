@@ -404,11 +404,16 @@ func (configuration Config) EffectiveCheck(code string) CheckConfig {
 	return check
 }
 
+// CloneCheckConfig returns an owned copy of a check setting.
+func CloneCheckConfig(check CheckConfig) CheckConfig {
+	return cloneCheckConfig(check)
+}
+
 func cloneCheckConfig(check CheckConfig) CheckConfig {
 	cloned := check
-	cloned.Excludes = append([]string(nil), check.Excludes...)
-	cloned.Characters = append([]string(nil), check.Characters...)
-	cloned.BlockedImports = append([]string(nil), check.BlockedImports...)
+	cloned.Excludes = cloneStrings(check.Excludes)
+	cloned.Characters = cloneStrings(check.Characters)
+	cloned.BlockedImports = cloneStrings(check.BlockedImports)
 	cloned.MaxLines = cloneInt(check.MaxLines)
 	cloned.MaxStatements = cloneInt(check.MaxStatements)
 	cloned.MaxResults = cloneInt(check.MaxResults)
@@ -416,6 +421,13 @@ func cloneCheckConfig(check CheckConfig) CheckConfig {
 	cloned.MaxPublicStructs = cloneInt(check.MaxPublicStructs)
 	cloned.MaxMethods = cloneInt(check.MaxMethods)
 	return cloned
+}
+
+func cloneStrings(values []string) []string {
+	if values == nil {
+		return nil
+	}
+	return append([]string{}, values...)
 }
 
 func cloneInt(value *int) *int {

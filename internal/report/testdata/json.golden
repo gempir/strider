@@ -1,0 +1,79 @@
+[
+  {
+    "code": "example-check",
+    "message": "found <tag> & \"quoted\" value",
+    "severity": "error",
+    "file": "nested/example.go",
+    "start": {
+      "Filename": "nested/example.go",
+      "Offset": 7,
+      "Line": 2,
+      "Column": 3
+    },
+    "end": {
+      "Filename": "nested/example.go",
+      "Offset": 12,
+      "Line": 2,
+      "Column": 8
+    },
+    "notes": [
+      {
+        "message": "declared here",
+        "start": {
+          "Filename": "nested/example.go",
+          "Offset": 0,
+          "Line": 1,
+          "Column": 1
+        },
+        "end": {
+          "Filename": "nested/example.go",
+          "Offset": 4,
+          "Line": 1,
+          "Column": 5
+        }
+      }
+    ],
+    "fixes": [
+      {
+        "message": "replace the value",
+        "safety": "safe",
+        "automatic": true,
+        "edits": [
+          {
+            "start": 7,
+            "end": 12,
+            "old_text": "value",
+            "new_text": "other"
+          },
+          {
+            "start": 12,
+            "end": 12,
+            "new_text": "!"
+          }
+        ]
+      },
+      {
+        "message": "review manually",
+        "safety": "unsafe"
+      }
+    ]
+  },
+  {
+    "code": "empty-fields",
+    "message": "no notes or fixes",
+    "severity": "note",
+    "file": "empty.go",
+    "start": {
+      "Filename": "empty.go",
+      "Offset": 0,
+      "Line": 1,
+      "Column": 1
+    },
+    "end": {
+      "Filename": "empty.go",
+      "Offset": 0,
+      "Line": 1,
+      "Column": 1
+    }
+  }
+]

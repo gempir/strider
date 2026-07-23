@@ -1,6 +1,8 @@
 package semantic
 
 import (
+	"context"
+	"errors"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -16,6 +18,14 @@ import (
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/go/ssa"
 )
+
+func TestRunContextRejectsPreCanceledContext(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := RunContext(ctx, nil, nil); !errors.Is(err, context.Canceled) {
+		t.Fatalf("RunContext error = %v, want context.Canceled", err)
+	}
+}
 
 func TestCheckRequirementsCoverCatalog(t *testing.T) {
 	seen := make(map[string]bool, len(checkCatalog))

@@ -1,6 +1,7 @@
 package checks
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
@@ -63,12 +64,18 @@ func NewSession(registry *Registry, options RunOptions) (*Session, error) {
 // Run checks one immutable workspace generation and returns an owned result.
 // Calls are serialized to coalesce identical generations and keep publication
 // of cached concrete findings deterministic.
-func (session *Session) Run(shared *workspace.Workspace) (Result, error) {
+func (session *Session) Run(ctx context.Context, shared *workspace.Workspace) (Result, error) {
 	if session == nil {
 		return Result{}, fmt.Errorf("run check session: nil session")
 	}
 	if shared == nil {
 		return Result{}, fmt.Errorf("run check session: nil workspace")
+	}
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if err := ctx.Err(); err != nil {
+		return Result{}, err
 	}
 	session.mu.Lock()
 	defer session.mu.Unlock()
@@ -83,7 +90,7 @@ func (session *Session) Run(shared *workspace.Workspace) (Result, error) {
 		result = cloneResult(session.concrete)
 	} else {
 		session.misses++
-		result, err = runConcreteChecks(shared.Files(), session.registry, session.options.Formatter, session.options.CollectCandidates)
+		result, err = runConcreteChecks(ctx, shared.Files(), session.registry, session.options.Formatter, session.options.CollectCandidates)
 		if err != nil {
 			return Result{}, err
 		}
@@ -91,7 +98,7 @@ func (session *Session) Run(shared *workspace.Workspace) (Result, error) {
 		session.concrete = cloneResult(result)
 		session.hasConcrete = true
 	}
-	if err := appendAnalysis(&result, shared, session.registry, semantic.Run); err != nil {
+	if err := appendAnalysis(ctx, &result, shared, session.registry, semantic.RunContext); err != nil {
 		return Result{}, err
 	}
 	filterExcludedResults(&result, session.options.Root, session.options.Excludes)

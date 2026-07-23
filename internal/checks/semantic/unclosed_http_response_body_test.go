@@ -60,3 +60,27 @@ func alias(url string) error {
 	)
 	assertResearchReportCount(t, reports, 0)
 }
+
+func TestUnclosedHTTPResponseBodyTracksNamedResultOwnership(t *testing.T) {
+	reports := runResearchCorrectnessCheck(
+		t,
+		unclosedHTTPResponseBodyCheck{},
+		`package fixture
+
+import "net/http"
+
+func transferred(url string) (response *http.Response, err error) {
+	response, err = http.Get(url)
+	return
+}
+
+func replaced(url string) (response *http.Response, err error) {
+	response, err = http.Get(url + "/first")
+	response, err = http.Get(url + "/second")
+	return
+}
+`,
+	)
+	assertResearchReportCount(t, reports, 1)
+	assertResearchMessagesContain(t, reports, "HTTP response body")
+}

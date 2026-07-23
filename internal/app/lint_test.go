@@ -15,7 +15,7 @@ func TestLintJSONAndExitCode(t *testing.T) {
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{
+	code := runCLI([]string{
 		"check",
 		"--format",
 		"json",
@@ -40,7 +40,7 @@ func TestLintHTMLAndExitCode(t *testing.T) {
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{
+	code := runCLI([]string{
 		"check",
 		"--format",
 		"html",
@@ -81,7 +81,7 @@ func TestLintWithoutPathsScansCurrentDirectory(t *testing.T) {
 		restoreWorkingDirectory(t, previous)
 	})
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{
+	code := runCLI([]string{
 		"check",
 		"--minimum-severity",
 		"note",
@@ -95,7 +95,7 @@ func TestLintWithoutPathsScansCurrentDirectory(t *testing.T) {
 
 func TestLintListsCompleteRegistry(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{
+	code := runCLI([]string{
 		"check",
 		"--minimum-severity",
 		"note",

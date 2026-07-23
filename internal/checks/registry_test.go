@@ -1,12 +1,16 @@
 package checks
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
+	"sort"
 	"strings"
 	"testing"
 
+	"github.com/gempir/strider/internal/checks/core"
 	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/diagnostic"
 )
@@ -19,9 +23,6 @@ func TestUnifiedRegistryHasGloballyUniqueCodes(t *testing.T) {
 	registry, err := NewRegistry(RegistryOptions{})
 	if err != nil {
 		t.Fatal(err)
-	}
-	if got, want := len(registry.Checks()), 204; got != want {
-		t.Fatalf("all check count = %d, want %d", got, want)
 	}
 	descriptiveCode := regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)+$`)
 	seen := make(map[string]bool)
@@ -50,13 +51,122 @@ func TestUnifiedRegistryHasGloballyUniqueCodes(t *testing.T) {
 	}
 }
 
-func TestUnifiedRegistrySelectsEveryCheckByDefault(t *testing.T) {
+func TestUnifiedRegistryInventoryGolden(t *testing.T) {
 	registry, err := NewRegistry(RegistryOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := len(registry.Checks()), 204; got != want {
-		t.Fatalf("check count = %d, want %d", got, want)
+	_, syntaxCodes, semanticCodes, err := availableChecks()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var inventory strings.Builder
+	for _, check := range registry.Checks() {
+		meta := check.Meta()
+		engine := "format"
+		if syntaxCodes[meta.Code] {
+			engine = "syntax"
+		}
+		if semanticCodes[meta.Code] {
+			engine = "semantic"
+		}
+		fmt.Fprintf(&inventory, "%s\t%s\t%s\n", meta.Code, engine, meta.DefaultSeverity)
+	}
+	_, testFile, _, _ := runtime.Caller(0)
+	goldenPath := filepath.Join(filepath.Dir(testFile), "testdata", "inventory.txt")
+	if os.Getenv("STRIDER_UPDATE_GOLDEN") == "1" {
+		if err := os.MkdirAll(filepath.Dir(goldenPath), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(goldenPath, []byte(inventory.String()), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	want, err := os.ReadFile(goldenPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := inventory.String(); got != string(want) {
+		t.Fatalf("unified inventory differs from testdata/inventory.txt\ngot:\n%s\nwant:\n%s", got, want)
+	}
+}
+
+func TestOptionSchemasAreCompleteAndRoundTrip(t *testing.T) {
+	registry, err := NewRegistry(RegistryOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, check := range registry.Checks() {
+		meta := check.Meta()
+		seen := make(map[string]bool, len(meta.Options))
+		for _, option := range meta.Options {
+			if option.Name == "" || seen[strings.ToLower(option.Name)] {
+				t.Errorf("%s has empty or duplicate option name %q", meta.Code, option.Name)
+			}
+			seen[strings.ToLower(option.Name)] = true
+			setting := config.CheckConfig{}
+			switch option.Kind {
+			case core.OptionInt:
+				if option.DefaultInt < 0 {
+					t.Errorf("%s.%s has negative default %d", meta.Code, option.Name, option.DefaultInt)
+				}
+				value := option.DefaultInt + 1
+				setIntOption(&setting, option.Name, &value)
+				if got, ok := core.IntOption(meta, setting, option.Name); !ok || got != value {
+					t.Errorf("%s.%s round-trip = %d, %t; want %d", meta.Code, option.Name, got, ok, value)
+				}
+			case core.OptionStrings:
+				value := []string{
+					"configured-value",
+				}
+				if option.Name == "characters" {
+					value = []string{
+						"_",
+					}
+				}
+				setStringsOption(&setting, option.Name, value)
+				if got, ok := core.StringsOption(meta, setting, option.Name); !ok || strings.Join(got, "\x00") != strings.Join(value, "\x00") {
+					t.Errorf("%s.%s round-trip = %v, %t; want %v", meta.Code, option.Name, got, ok, value)
+				}
+			default:
+				t.Errorf("%s.%s has unsupported kind %q", meta.Code, option.Name, option.Kind)
+				continue
+			}
+			configured := setting.ConfiguredOptions()
+			sort.Strings(configured)
+			if len(configured) != 1 || configured[0] != option.Name {
+				t.Errorf("%s.%s configured options = %v", meta.Code, option.Name, configured)
+			}
+			if err := core.ValidateOptions(meta, setting); err != nil {
+				t.Errorf("%s.%s rejected its own schema value: %v", meta.Code, option.Name, err)
+			}
+		}
+	}
+}
+
+func setIntOption(setting *config.CheckConfig, name string, value *int) {
+	switch name {
+	case "max-lines":
+		setting.MaxLines = value
+	case "max-statements":
+		setting.MaxStatements = value
+	case "max-results":
+		setting.MaxResults = value
+	case "max-parameters":
+		setting.MaxParameters = value
+	case "max-public-structs":
+		setting.MaxPublicStructs = value
+	case "max-methods":
+		setting.MaxMethods = value
+	}
+}
+
+func setStringsOption(setting *config.CheckConfig, name string, value []string) {
+	switch name {
+	case "characters":
+		setting.Characters = value
+	case "blocked-imports":
+		setting.BlockedImports = value
 	}
 }
 
@@ -78,7 +188,8 @@ func TestUnifiedRegistryNoneSeverityDisablesUnlessRequested(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := len(registry.Checks()), 201; got != want {
+	total := len(registry.KnownCodes())
+	if got, want := len(registry.Checks()), total-len(settings); got != want {
 		t.Fatalf("check count with none settings = %d, want %d", got, want)
 	}
 	registry, err = NewRegistry(RegistryOptions{
@@ -88,7 +199,7 @@ func TestUnifiedRegistryNoneSeverityDisablesUnlessRequested(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := len(registry.Checks()), 204; got != want {
+	if got, want := len(registry.Checks()), total; got != want {
 		t.Fatalf("none-threshold check count = %d, want %d", got, want)
 	}
 	for code := range settings {

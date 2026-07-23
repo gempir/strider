@@ -2,6 +2,7 @@
 package app
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
@@ -38,7 +39,14 @@ type checkListEntry struct {
 	summary  string
 }
 
-func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if err := ctx.Err(); err != nil {
+		printError(stderr, ui.ColorAuto, "strider", err)
+		return exitError
+	}
 	args, globals, ok := parseGlobalOptions(args, stderr)
 	if !ok {
 		return exitError
@@ -59,7 +67,7 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 			return exitError
 		}
 		colorMode = configuredColor(configuration, globals)
-		return runCheck(args[1:], configuration, colorMode, stdout, stderr)
+		return runCheck(ctx, args[1:], configuration, colorMode, stdout, stderr)
 	case "fmt", "format":
 		configuration, err := config.Load(globals.configPath, globals.noConfig)
 		if err != nil {
@@ -67,7 +75,7 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 			return exitError
 		}
 		colorMode = configuredColor(configuration, globals)
-		return runFormat(args[1:], configuration, colorMode, stdin, stdout, stderr)
+		return runFormat(ctx, args[1:], configuration, colorMode, stdin, stdout, stderr)
 	case "help", "-h", "--help":
 		usage(stdout, colorMode)
 		return exitSuccess

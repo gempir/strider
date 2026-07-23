@@ -1,6 +1,7 @@
 package checks
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -204,7 +205,7 @@ func runCachedSession(t testingTB, cache *workspace.Cache, session *Session, fil
 	if err != nil {
 		t.Fatal(err)
 	}
-	result, err := session.Run(shared)
+	result, err := session.Run(context.Background(), shared)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"runtime"
 	"sync"
@@ -17,7 +18,7 @@ type formattedFile struct {
 	result   formatter.Result
 }
 
-func formatFiles(files []*workspace.File, options formatter.Options, verify bool) ([]formattedFile, []error) {
+func formatFiles(ctx context.Context, files []*workspace.File, options formatter.Options, verify bool) ([]formattedFile, []error) {
 	formatted := make([]formattedFile, len(files))
 	errorsByFile := make([]error, len(files))
 	if len(files) == 0 {
@@ -25,6 +26,8 @@ func formatFiles(files []*workspace.File, options formatter.Options, verify bool
 	}
 
 	session := formatter.NewFormatter()
+	workerContext, cancel := context.WithCancel(ctx)
+	defer cancel()
 	jobs := make(chan int)
 	workers := min(runtime.GOMAXPROCS(0), len(files))
 	var group sync.WaitGroup
@@ -32,14 +35,28 @@ func formatFiles(files []*workspace.File, options formatter.Options, verify bool
 		group.Add(1)
 		go func() {
 			defer group.Done()
-			for index := range jobs {
+			for {
+				var index int
+				var ok bool
+				select {
+				case <-workerContext.Done():
+					return
+				case index, ok = <-jobs:
+					if !ok {
+						return
+					}
+				}
 				file := files[index]
 				func() {
 					defer file.Release()
+					if err := workerContext.Err(); err != nil {
+						return
+					}
 					filename := file.Path()
 					original, err := file.Bytes()
 					if err != nil {
 						errorsByFile[index] = fmt.Errorf("%s: %w", source.DisplayPath(filename), err)
+						cancel()
 						return
 					}
 					if formatter.IsIgnored(original) {
@@ -56,6 +73,7 @@ func formatFiles(files []*workspace.File, options formatter.Options, verify bool
 					tree, err := file.CST()
 					if err != nil {
 						errorsByFile[index] = fmt.Errorf("%s: %w", source.DisplayPath(filename), err)
+						cancel()
 						return
 					}
 					var result formatter.Result
@@ -66,6 +84,7 @@ func formatFiles(files []*workspace.File, options formatter.Options, verify bool
 					}
 					if err != nil {
 						errorsByFile[index] = err
+						cancel()
 						return
 					}
 					formatted[index] = formattedFile{
@@ -77,11 +96,19 @@ func formatFiles(files []*workspace.File, options formatter.Options, verify bool
 			}
 		}()
 	}
+dispatch:
 	for index := range files {
-		jobs <- index
+		select {
+		case <-workerContext.Done():
+			break dispatch
+		case jobs <- index:
+		}
 	}
 	close(jobs)
 	group.Wait()
+	if err := ctx.Err(); err != nil {
+		errorsByFile = append(errorsByFile, err)
+	}
 	return formatted, errorsByFile
 }
 

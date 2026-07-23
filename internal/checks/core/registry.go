@@ -61,7 +61,7 @@ func Select[T Check](options SelectionOptions[T]) (Selection[T], error) {
 	}
 	sort.Strings(settingCodes)
 	for _, code := range settingCodes {
-		setting := settings[code]
+		setting := config.CloneCheckConfig(settings[code])
 		if setting.Severity != "" && !diagnostic.ValidSeverity(diagnostic.Severity(setting.Severity)) {
 			return Selection[T]{}, fmt.Errorf("check %q severity must be none, note, warning, or error", code)
 		}
@@ -77,6 +77,7 @@ func Select[T Check](options SelectionOptions[T]) (Selection[T], error) {
 				return Selection[T]{}, err
 			}
 		}
+		settings[code] = setting
 	}
 
 	only, err := config.NormalizeCheckCodes(options.Only)

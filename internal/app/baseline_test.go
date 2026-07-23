@@ -23,7 +23,7 @@ func TestCheckFixDoesNotApplyBaselinedFinding(t *testing.T) {
 	}
 	var stdout, stderr bytes.Buffer
 	generate := append(append([]string(nil), baseArgs...), "--generate-baseline", filename)
-	if code := Run(generate, strings.NewReader(""), &stdout, &stderr); code != exitSuccess || stdout.Len() != 0 || stderr.Len() != 0 {
+	if code := runCLI(generate, strings.NewReader(""), &stdout, &stderr); code != exitSuccess || stdout.Len() != 0 || stderr.Len() != 0 {
 		t.Fatalf("generate: exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 	before, err := os.ReadFile(filename)
@@ -33,7 +33,7 @@ func TestCheckFixDoesNotApplyBaselinedFinding(t *testing.T) {
 	stdout.Reset()
 	stderr.Reset()
 	apply := append(append([]string(nil), baseArgs...), "--fix", filename)
-	if code := Run(apply, strings.NewReader(""), &stdout, &stderr); code != exitSuccess || stdout.String() != "0 issues\n" || stderr.Len() != 0 {
+	if code := runCLI(apply, strings.NewReader(""), &stdout, &stderr); code != exitSuccess || stdout.String() != "0 issues\n" || stderr.Len() != 0 {
 		t.Fatalf("fix: exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 	after, err := os.ReadFile(filename)
@@ -53,7 +53,7 @@ func TestCheckBaselineDoesNotCaptureFormattingDebt(t *testing.T) {
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	code := Run(
+	code := runCLI(
 		[]string{
 			"--no-config",
 			"check",
@@ -121,7 +121,7 @@ func TestLintBaselineGenerateApplyIgnoreAndPrune(t *testing.T) {
 		args = append(args, extra...)
 		args = append(args, filename)
 		var stdout, stderr bytes.Buffer
-		code := Run(args, strings.NewReader(""), &stdout, &stderr)
+		code := runCLI(args, strings.NewReader(""), &stdout, &stderr)
 		return code, stdout.String(), stderr.String()
 	}
 	if code, stdout, stderr := run("--generate-baseline"); code != exitSuccess || stdout != "" || stderr != "" {
@@ -181,7 +181,7 @@ func TestSeverityFilteredBaselinePrunePreservesKnownAndRemovesUnknownCodes(t *te
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	code := Run(
+	code := runCLI(
 		[]string{
 			"--no-config",
 			"check",
@@ -233,7 +233,7 @@ func TestConfiguredAnalyzerBaseline(t *testing.T) {
 		restoreWorkingDirectory(t, previous)
 	})
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{
+	code := runCLI([]string{
 		"check",
 		"--only",
 		"invalid-regexp",
@@ -245,7 +245,7 @@ func TestConfiguredAnalyzerBaseline(t *testing.T) {
 	}
 	stdout.Reset()
 	stderr.Reset()
-	code = Run([]string{
+	code = runCLI([]string{
 		"check",
 		"--only",
 		"invalid-regexp",

@@ -60,3 +60,27 @@ func alias(database *sql.DB) error {
 	)
 	assertResearchReportCount(t, reports, 0)
 }
+
+func TestUnclosedSQLResourceTracksNamedResultOwnership(t *testing.T) {
+	reports := runResearchCorrectnessCheck(
+		t,
+		unclosedSQLResourceCheck{},
+		`package fixture
+
+import "database/sql"
+
+func transferred(database *sql.DB) (rows *sql.Rows, err error) {
+	rows, err = database.Query("select 1")
+	return
+}
+
+func replaced(database *sql.DB) (rows *sql.Rows, err error) {
+	rows, err = database.Query("select 1")
+	rows, err = database.Query("select 2")
+	return
+}
+`,
+	)
+	assertResearchReportCount(t, reports, 1)
+	assertResearchMessagesContain(t, reports, "sql.")
+}

@@ -1,6 +1,8 @@
 package checks
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"go/token"
 	"runtime"
@@ -41,12 +43,20 @@ type fileResult struct {
 	err         error
 }
 
-type analysisRunner func([]string, *semantic.Registry) ([]diagnostic.Diagnostic, error)
+type analysisRunner func(context.Context, []string, *semantic.Registry) ([]diagnostic.Diagnostic, error)
+
+type concreteFileRunner func(context.Context, *workspace.File, *Registry, *formatter.Formatter, formatter.Options, bool) fileResult
 
 // Run executes the selected checks. Concrete-syntax checks and formatting
 // share each workspace file's CST; package-aware checks retain the original
 // input patterns so go/packages semantics remain unchanged.
-func Run(shared *workspace.Workspace, registry *Registry, options RunOptions) (Result, error) {
+func Run(ctx context.Context, shared *workspace.Workspace, registry *Registry, options RunOptions) (Result, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if err := ctx.Err(); err != nil {
+		return Result{}, err
+	}
 	if shared == nil {
 		return Result{}, fmt.Errorf("check workspace is nil")
 	}
@@ -57,11 +67,11 @@ func Run(shared *workspace.Workspace, registry *Registry, options RunOptions) (R
 		options.Formatter = formatter.DefaultOptions()
 	}
 
-	result, err := runConcreteChecks(shared.Files(), registry, options.Formatter, options.CollectCandidates)
+	result, err := runConcreteChecks(ctx, shared.Files(), registry, options.Formatter, options.CollectCandidates)
 	if err != nil {
 		return Result{}, err
 	}
-	if err := appendAnalysis(&result, shared, registry, semantic.Run); err != nil {
+	if err := appendAnalysis(ctx, &result, shared, registry, semantic.RunContext); err != nil {
 		return Result{}, err
 	}
 	filterExcludedResults(&result, options.Root, options.Excludes)
@@ -72,11 +82,11 @@ func Run(shared *workspace.Workspace, registry *Registry, options RunOptions) (R
 	return result, nil
 }
 
-func appendAnalysis(result *Result, shared *workspace.Workspace, registry *Registry, run analysisRunner) error {
+func appendAnalysis(ctx context.Context, result *Result, shared *workspace.Workspace, registry *Registry, run analysisRunner) error {
 	if registry.semantic == nil || len(registry.semantic.Checks()) == 0 {
 		return nil
 	}
-	packageDiagnostics, err := run(shared.Inputs(), registry.semantic)
+	packageDiagnostics, err := run(ctx, shared.Inputs(), registry.semantic)
 	if err != nil {
 		return err
 	}
@@ -104,7 +114,17 @@ func filterExcludedResults(result *Result, root string, excludes []string) {
 	}
 }
 
-func runConcreteChecks(files []*workspace.File, registry *Registry, formatOptions formatter.Options, collectCandidates bool) (Result, error) {
+func runConcreteChecks(ctx context.Context, files []*workspace.File, registry *Registry, formatOptions formatter.Options, collectCandidates bool) (Result, error) {
+	return runConcreteChecksWith(ctx, files, registry, formatOptions, collectCandidates, runConcreteFile)
+}
+
+func runConcreteChecksWith(ctx context.Context, files []*workspace.File, registry *Registry, formatOptions formatter.Options, collectCandidates bool, runFile concreteFileRunner) (
+	Result,
+	error,
+) {
+	if err := ctx.Err(); err != nil {
+		return Result{}, err
+	}
 	applicable := make([]*workspace.File, 0, len(files))
 	for _, file := range files {
 		if registry.needsCST(file.Path()) {
@@ -119,6 +139,8 @@ func runConcreteChecks(files []*workspace.File, registry *Registry, formatOption
 	}
 
 	session := formatter.NewFormatter()
+	workerContext, cancel := context.WithCancel(ctx)
+	defer cancel()
 	workers := min(runtime.GOMAXPROCS(0), len(applicable))
 	jobs := make(chan *workspace.File)
 	results := make(chan fileResult, len(applicable))
@@ -127,29 +149,47 @@ func runConcreteChecks(files []*workspace.File, registry *Registry, formatOption
 		group.Add(1)
 		go func() {
 			defer group.Done()
-			for file := range jobs {
-				results <- runConcreteFile(file, registry, session, formatOptions, collectCandidates)
+			for {
+				select {
+				case <-workerContext.Done():
+					return
+				case file, ok := <-jobs:
+					if !ok {
+						return
+					}
+					item := runFile(workerContext, file, registry, session, formatOptions, collectCandidates)
+					results <- item
+					if item.err != nil {
+						cancel()
+					}
+				}
 			}
 		}()
 	}
-	go func() {
-		for _, file := range applicable {
-			jobs <- file
+dispatch:
+	for _, file := range applicable {
+		select {
+		case <-workerContext.Done():
+			break dispatch
+		case jobs <- file:
 		}
-		close(jobs)
-		group.Wait()
-		close(results)
-	}()
+	}
+	close(jobs)
+	group.Wait()
+	close(results)
 
 	completed := make([]fileResult, 0, len(applicable))
 	for item := range results {
 		completed = append(completed, item)
 	}
+	if err := ctx.Err(); err != nil {
+		return Result{}, err
+	}
 	sort.Slice(completed, func(left, right int) bool {
 		return completed[left].filename < completed[right].filename
 	})
 	for _, item := range completed {
-		if item.err != nil {
+		if item.err != nil && !errors.Is(item.err, context.Canceled) && !errors.Is(item.err, context.DeadlineExceeded) {
 			return Result{}, fmt.Errorf("%s: %w", source.DisplayPath(item.filename), item.err)
 		}
 	}
@@ -165,9 +205,15 @@ func runConcreteChecks(files []*workspace.File, registry *Registry, formatOption
 	return result, nil
 }
 
-func runConcreteFile(file *workspace.File, registry *Registry, session *formatter.Formatter, formatOptions formatter.Options, collectCandidate bool) fileResult {
+func runConcreteFile(ctx context.Context, file *workspace.File, registry *Registry, session *formatter.Formatter, formatOptions formatter.Options, collectCandidate bool) fileResult {
 	filename := file.Path()
 	defer file.Release()
+	if err := ctx.Err(); err != nil {
+		return fileResult{
+			filename: filename,
+			err:      err,
+		}
+	}
 	lintApplies := registry.syntax != nil && registry.syntax.Applies(filename)
 	if registry.formatApplies(filename) && !lintApplies {
 		contents, readErr := file.Bytes()
@@ -183,6 +229,12 @@ func runConcreteFile(file *workspace.File, registry *Registry, session *formatte
 			}
 		}
 	}
+	if err := ctx.Err(); err != nil {
+		return fileResult{
+			filename: filename,
+			err:      err,
+		}
+	}
 	tree, err := file.CST()
 	if err != nil {
 		return fileResult{
@@ -192,6 +244,10 @@ func runConcreteFile(file *workspace.File, registry *Registry, session *formatte
 	}
 	result := fileResult{
 		filename: filename,
+	}
+	if err := ctx.Err(); err != nil {
+		result.err = err
+		return result
 	}
 	if registry.formatApplies(filename) {
 		var formatted formatter.Result

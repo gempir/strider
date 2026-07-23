@@ -1,6 +1,7 @@
 package semantic
 
 import (
+	"context"
 	"fmt"
 	"go/token"
 	"go/types"
@@ -60,10 +61,27 @@ type analysisFileInfoCacheEntry struct {
 // deterministic diagnostics. Directories are analyzed recursively, matching
 // the path behavior of strider syntax.
 func Run(paths []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
-	return run(paths, registry, buildSSA)
+	return RunContext(context.Background(), paths, registry)
+}
+
+// RunContext loads packages and runs checks using caller-owned cancellation.
+// packages.Load receives the context directly; individual check callbacks are
+// joined before return and observe cancellation between tasks.
+func RunContext(ctx context.Context, paths []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
+	return runContext(ctx, paths, registry, buildSSA)
 }
 
 func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnostic.Diagnostic, error) {
+	return runContext(context.Background(), paths, registry, ssaBuilder)
+}
+
+func runContext(ctx context.Context, paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnostic.Diagnostic, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	if registry == nil {
 		return nil, fmt.Errorf("analysis registry is nil")
 	}
@@ -80,11 +98,15 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnos
 	}
 	plan := registry.executionPlan()
 	loaded, err := packages.Load(&packages.Config{
-		Dir:   loadDirectory,
-		Mode:  loadMode,
-		Tests: true,
+		Context: ctx,
+		Dir:     loadDirectory,
+		Mode:    loadMode,
+		Tests:   true,
 	}, patterns...)
 	if err != nil {
+		return nil, err
+	}
+	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 	if err := packageError(loaded); err != nil {
@@ -96,7 +118,13 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnos
 	if plan.requirements.Facts.Has(FactDeprecations) {
 		deprecatedObjects, deprecatedPackages = collectDeprecations(loaded)
 	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	ssaResult := prepareSSA(initial, plan, ssaBuilder)
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	ssaProgram := ssaResult.program
 	ssaPackages := ssaResult.packages
 	functionsByPackage := ssaResult.functionsByPackage
@@ -172,7 +200,7 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnos
 	}
 
 	taskCount := len(passes) * len(registry.checks)
-	jobs := make(chan analysisTask, taskCount)
+	jobs := make(chan analysisTask)
 	results := make(chan []analysisFinding, taskCount)
 	workers := min(runtime.GOMAXPROCS(0), max(1, taskCount))
 	var group sync.WaitGroup
@@ -180,25 +208,40 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnos
 		group.Add(1)
 		go func() {
 			defer group.Done()
-			for task := range jobs {
-				results <- runAnalysisTask(task, registry, fileInfoFor)
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case task, ok := <-jobs:
+					if !ok {
+						return
+					}
+					results <- runAnalysisTask(task, registry, fileInfoFor)
+				}
 			}
 		}()
 	}
+dispatch:
 	for _, pass := range passes {
 		for _, check := range registry.checks {
-			jobs <- analysisTask{
+			select {
+			case <-ctx.Done():
+				break dispatch
+			case jobs <- analysisTask{
 				pass:  pass,
 				check: check,
+			}:
 			}
 		}
 	}
 	close(jobs)
+	group.Wait()
+	close(results)
 
 	diagnostics := make([]diagnostic.Diagnostic, 0)
 	seenDiagnostics := make(map[string]bool)
-	for range taskCount {
-		for _, finding := range <-results {
+	for findings := range results {
+		for _, finding := range findings {
 			if seenDiagnostics[finding.key] {
 				continue
 			}
@@ -206,8 +249,9 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnos
 			diagnostics = append(diagnostics, finding.diagnostic)
 		}
 	}
-	group.Wait()
-	close(results)
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	diagnostic.Sort(diagnostics)
 	return diagnostics, nil
 }

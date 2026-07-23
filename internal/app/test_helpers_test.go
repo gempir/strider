@@ -1,10 +1,28 @@
 package app
 
 import (
+	"bytes"
+	"context"
+	"io"
 	"os"
 	"strings"
 	"testing"
 )
+
+func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+	return Run(context.Background(), args, stdin, stdout, stderr)
+}
+
+func TestRunRejectsPreCanceledContext(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	var stdout, stderr bytes.Buffer
+	if code := Run(ctx, []string{
+		"check",
+	}, strings.NewReader(""), &stdout, &stderr); code != exitError || !strings.Contains(stderr.String(), context.Canceled.Error()) {
+		t.Fatalf("exit = %d, stderr = %q; want canceled error", code, stderr.String())
+	}
+}
 
 func listedSeverity(output, code string) (string, bool) {
 	for _, line := range strings.Split(output, "\n") {

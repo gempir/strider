@@ -2,6 +2,7 @@ package app
 
 import (
 	"bytes"
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
@@ -34,7 +35,7 @@ func TestCheckCombinesFormattingSyntaxAndPackageChecks(t *testing.T) {
 	})
 
 	var stdout, stderr bytes.Buffer
-	code := Run(
+	code := runCLI(
 		[]string{
 			"--no-config",
 			"check",
@@ -81,7 +82,7 @@ func TestCheckFixFormatsAndReruns(t *testing.T) {
 			func(t *testing.T) {
 				_, filename := checkFixModule(t, "package sample\nfunc Ready( )bool{return true}\n")
 				var stdout, stderr bytes.Buffer
-				code := Run(
+				code := runCLI(
 					[]string{
 						"--no-config",
 						"check",
@@ -114,7 +115,7 @@ func TestCheckFixFormatsAndReruns(t *testing.T) {
 func TestCheckFixKeepsStructuredReportOnStandardOutput(t *testing.T) {
 	_, filename := checkFixModule(t, "package sample\nfunc Ready( )bool{return true}\n")
 	var stdout, stderr bytes.Buffer
-	code := Run(
+	code := runCLI(
 		[]string{
 			"--no-config",
 			"check",
@@ -151,7 +152,7 @@ func clean(ready bool, values []int, mode int) ([]int, bool) {
 `,
 	)
 	var stdout, stderr bytes.Buffer
-	code := Run(
+	code := runCLI(
 		[]string{
 			"--no-config",
 			"check",
@@ -188,7 +189,7 @@ func clean(ready bool, values []int, mode int) ([]int, bool) {
 func TestCheckFixReportsUnfixableFindingsAfterRerun(t *testing.T) {
 	_, filename := checkFixModule(t, "package sample\nfunc init( ){return}\n")
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{
+	code := runCLI([]string{
 		"--no-config",
 		"check",
 		"--minimum-severity",
@@ -217,7 +218,7 @@ func TestCheckFixHonorsFormatterExclusionsForGranularEdits(t *testing.T) {
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{
+	code := runCLI([]string{
 		"--config",
 		configurationPath,
 		"check",
@@ -280,7 +281,7 @@ func TestCheckFixRejectsIncompatibleModes(t *testing.T) {
 					"check",
 				}, test.args...)
 				var stdout, stderr bytes.Buffer
-				code := Run(args, strings.NewReader(""), &stdout, &stderr)
+				code := runCLI(args, strings.NewReader(""), &stdout, &stderr)
 				if code != exitError || stdout.Len() != 0 || !strings.Contains(stderr.String(), test.want) {
 					t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 				}
@@ -304,7 +305,7 @@ func checkFixModule(t *testing.T, source string) (string, string) {
 
 func TestCheckListsOneUnifiedCatalog(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{
+	code := runCLI([]string{
 		"--no-config",
 		"check",
 		"--minimum-severity",
@@ -314,8 +315,14 @@ func TestCheckListsOneUnifiedCatalog(t *testing.T) {
 	if code != exitSuccess || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
-	if got := strings.Count(strings.TrimSpace(stdout.String()), "\n") + 1; got != 204 {
-		t.Fatalf("listed %d checks; want 204", got)
+	registry, err := checks.NewRegistry(checks.RegistryOptions{
+		MinimumSeverity: "note",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := strings.Count(strings.TrimSpace(stdout.String()), "\n")+1, len(registry.Checks()); got != want {
+		t.Fatalf("listed %d checks; want %d", got, want)
 	}
 	for _, wanted := range []string{
 		"format",
@@ -330,7 +337,7 @@ func TestCheckListsOneUnifiedCatalog(t *testing.T) {
 
 func TestCheckExplainsKnownCheckBelowSeverityFloor(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{
+	code := runCLI([]string{
 		"--no-config",
 		"check",
 		"--explain",
@@ -355,7 +362,7 @@ func TestCheckListAlignsAndColorsChecksBySeverity(t *testing.T) {
 	t.Setenv("FORCE_COLOR", "")
 	t.Setenv("NO_COLOR", "")
 	var stdout, stderr bytes.Buffer
-	code := Run(
+	code := runCLI(
 		[]string{
 			"--color",
 			"always",
@@ -406,7 +413,7 @@ func TestCheckSummaryOnly(t *testing.T) {
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{
+	code := runCLI([]string{
 		"--no-config",
 		"check",
 		"-s",
@@ -423,7 +430,7 @@ func TestCheckSummaryOnly(t *testing.T) {
 
 func TestCheckSummaryOnlyRejectsStructuredReports(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{
+	code := runCLI([]string{
 		"--no-config",
 		"check",
 		"--summary-only",
@@ -437,7 +444,7 @@ func TestCheckSummaryOnlyRejectsStructuredReports(t *testing.T) {
 
 func TestCheckDefaultsToWarningMinimumSeverity(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{
+	code := runCLI([]string{
 		"--no-config",
 		"check",
 		"--only",
@@ -453,7 +460,7 @@ func TestCheckDefaultsToWarningMinimumSeverity(t *testing.T) {
 
 func TestCheckWatchRejectsStructuredReports(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{
+	code := runCLI([]string{
 		"--no-config",
 		"check",
 		"--watch",
@@ -495,14 +502,14 @@ func TestCheckWatcherReportsOnlyChangedGenerations(t *testing.T) {
 		stdout:           &stdout,
 		stderr:           &stderr,
 	}
-	if err := watcher.run(); err != nil {
+	if err := watcher.run(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 	firstOutput := stdout.String()
 	if !strings.Contains(firstOutput, "strider check #1") || !strings.Contains(firstOutput, "no-init") {
 		t.Fatalf("initial output = %q", firstOutput)
 	}
-	if err := watcher.run(); err != nil {
+	if err := watcher.run(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 	if stdout.String() != firstOutput {
@@ -512,7 +519,7 @@ func TestCheckWatcherReportsOnlyChangedGenerations(t *testing.T) {
 	if err := os.WriteFile(filename, []byte("package sample\nfunc main() {}\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := watcher.run(); err != nil {
+	if err := watcher.run(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 	if got := strings.Count(stdout.String(), "== strider check #"); got != 2 {
@@ -541,7 +548,7 @@ severity = "none"
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{
+	code := runCLI([]string{
 		"--config",
 		configurationPath,
 		"check",
@@ -559,7 +566,7 @@ severity = "none"
 		t.Fatalf("configured severity is missing: %s", stdout.String())
 	}
 	stdout.Reset()
-	code = Run([]string{
+	code = runCLI([]string{
 		"--config",
 		configurationPath,
 		"check",
@@ -589,7 +596,7 @@ severity = "warning"
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{
+	code := runCLI([]string{
 		"--config",
 		configurationPath,
 		"check",
@@ -607,7 +614,7 @@ severity = "warning"
 	}
 
 	stdout.Reset()
-	code = Run(
+	code = runCLI(
 		[]string{
 			"--config",
 			configurationPath,
@@ -640,7 +647,7 @@ func TestMinimumSeverityNoneExecutesSuppressedCheck(t *testing.T) {
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{
+	code := runCLI([]string{
 		"--config",
 		configurationPath,
 		"check",
@@ -652,7 +659,7 @@ func TestMinimumSeverityNoneExecutesSuppressedCheck(t *testing.T) {
 		t.Fatalf("ordinary run: exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 	stdout.Reset()
-	code = Run([]string{
+	code = runCLI([]string{
 		"--config",
 		configurationPath,
 		"check",
@@ -691,7 +698,7 @@ severity = "warning"
 			name,
 			func(t *testing.T) {
 				var stdout, stderr bytes.Buffer
-				code := Run([]string{
+				code := runCLI([]string{
 					"--config",
 					configurationPath,
 					test.command,
@@ -725,7 +732,7 @@ severity = "none"
 			command,
 			func(t *testing.T) {
 				var stdout, stderr bytes.Buffer
-				code := Run([]string{
+				code := runCLI([]string{
 					"--config",
 					configurationPath,
 					command,
@@ -762,7 +769,7 @@ severity = "warning"
 				args = append(args, command[0], "--minimum-severity", "error")
 				args = append(args, command[1:]...)
 				var stdout, stderr bytes.Buffer
-				if code := Run(args, strings.NewReader(""), &stdout, &stderr); code != exitSuccess || stdout.Len() != 0 || stderr.Len() != 0 {
+				if code := runCLI(args, strings.NewReader(""), &stdout, &stderr); code != exitSuccess || stdout.Len() != 0 || stderr.Len() != 0 {
 					t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 				}
 			},
@@ -786,7 +793,7 @@ func TestCommandsRejectInvalidMinimumSeverity(t *testing.T) {
 				arguments := append([]string{
 					"--no-config",
 				}, args...)
-				code := Run(arguments, strings.NewReader(""), &stdout, &stderr)
+				code := runCLI(arguments, strings.NewReader(""), &stdout, &stderr)
 				if code != exitError || !strings.Contains(stderr.String(), "--minimum-severity must be") {
 					t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 				}

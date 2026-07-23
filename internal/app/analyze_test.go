@@ -28,7 +28,7 @@ func TestAnalyzeInvalidRegexpJSONAndExitCode(t *testing.T) {
 	})
 
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{
+	code := runCLI([]string{
 		"check",
 		"--format",
 		"json",
@@ -45,7 +45,7 @@ func TestAnalyzeInvalidRegexpJSONAndExitCode(t *testing.T) {
 
 func TestAnalyzeListsChecks(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{
+	code := runCLI([]string{
 		"check",
 		"--list-checks",
 	}, strings.NewReader(""), &stdout, &stderr)

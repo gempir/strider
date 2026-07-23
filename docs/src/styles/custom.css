@@ -520,6 +520,13 @@ h1[data-page-title],
     color: var(--sl-color-gray-3);
 }
 
+.land-disclaimer {
+    margin: 0.65rem 0 0;
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--sl-color-gray-3);
+}
+
 @media (max-width: 40rem) {
     .land-stat+.land-stat {
         border-inline-start: 0;

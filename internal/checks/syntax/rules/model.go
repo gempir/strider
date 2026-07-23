@@ -1,7 +1,7 @@
 package rules
 
 import (
-	"github.com/gempir/strider/internal/checks/core"
+	"github.com/gempir/strider/internal/checks/catalog"
 	"github.com/gempir/strider/internal/cst"
 	"github.com/gempir/strider/internal/diagnostic"
 )
@@ -12,7 +12,7 @@ const (
 )
 
 // Meta describes one built-in syntax check.
-type Meta = core.Meta
+type Meta = catalog.Meta
 
 // NodeKind identifies a CST shape a syntax check consumes. The native engine
 // keeps a single traversal and dispatches only the selected interests.
@@ -22,7 +22,7 @@ type NodeKind string
 // traversal owns walking the CST; checks declare their metadata here and are
 // the only source of enabled syntax work.
 type Check interface {
-	core.Check
+	catalog.Check
 	Interests() []NodeKind
 	Inspect(*Pass, cst.Node)
 }
@@ -51,17 +51,15 @@ type Finding struct {
 
 // CSTInput contains everything needed for the concrete-syntax lint pass.
 type CSTInput struct {
-	Filename         string
-	Tree             *cst.Tree
-	Checks           []Check
-	BannedCharacters []rune
-	Limits           map[string]int
-	BlockedImports   []string
-	Report           func(Finding)
+	Filename string
+	Tree     *cst.Tree
+	Checks   []Check
+	Options  map[string]catalog.ResolvedOptions
+	Report   func(Finding)
 }
 
 func (check definition) Meta() Meta {
-	return check.meta
+	return catalog.CloneMeta(check.meta)
 }
 
 func (check definition) Interests() []NodeKind {

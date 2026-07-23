@@ -60,22 +60,22 @@ type analysisFileInfoCacheEntry struct {
 // Run loads the requested packages, executes the selected checks, and returns
 // deterministic diagnostics. Directories are analyzed recursively, matching
 // the path behavior of strider syntax.
-func Run(paths []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
+func Run(paths []string, registry *Plan) ([]diagnostic.Diagnostic, error) {
 	return RunContext(context.Background(), paths, registry)
 }
 
 // RunContext loads packages and runs checks using caller-owned cancellation.
 // packages.Load receives the context directly; individual check callbacks are
 // joined before return and observe cancellation between tasks.
-func RunContext(ctx context.Context, paths []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
+func RunContext(ctx context.Context, paths []string, registry *Plan) ([]diagnostic.Diagnostic, error) {
 	return runContext(ctx, paths, registry, buildSSA)
 }
 
-func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnostic.Diagnostic, error) {
+func run(paths []string, registry *Plan, ssaBuilder ssaBuildFunc) ([]diagnostic.Diagnostic, error) {
 	return runContext(context.Background(), paths, registry, ssaBuilder)
 }
 
-func runContext(ctx context.Context, paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnostic.Diagnostic, error) {
+func runContext(ctx context.Context, paths []string, registry *Plan, ssaBuilder ssaBuildFunc) ([]diagnostic.Diagnostic, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -320,10 +320,11 @@ func selectInitialPackages(loaded []*packages.Package) []*packages.Package {
 	return result
 }
 
-func runAnalysisTask(task analysisTask, registry *Registry, fileInfoFor func(string) analysisFileInfo) []analysisFinding {
+func runAnalysisTask(task analysisTask, registry *Plan, fileInfoFor func(string) analysisFileInfo) []analysisFinding {
 	meta := task.check.Meta()
 	severity := registry.Severity(meta.Code)
 	pass := *task.pass
+	pass.options = registry.settings[meta.Code].options
 	findings := []analysisFinding{}
 	pass.report = func(start, end token.Pos, message string, fixes []diagnostic.Fix) {
 		position := pass.FileSet.Position(start)
@@ -350,11 +351,7 @@ func runAnalysisTask(task analysisTask, registry *Registry, fileInfoFor func(str
 			},
 		)
 	}
-	if configurable, ok := task.check.(configurableCheck); ok {
-		configurable.RunConfigured(&pass, registry.settings[meta.Code].config)
-	} else {
-		task.check.Run(&pass)
-	}
+	task.check.Run(&pass)
 	return findings
 }
 

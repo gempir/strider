@@ -9,25 +9,18 @@ import (
 	astinspector "golang.org/x/tools/go/ast/inspector"
 	"golang.org/x/tools/go/ssa"
 
-	"github.com/gempir/strider/internal/checks/core"
-	"github.com/gempir/strider/internal/config"
+	"github.com/gempir/strider/internal/checks/catalog"
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
 // Meta describes one built-in semantic check.
-type Meta = core.Meta
+type Meta = catalog.Meta
 
 // Check is a package-aware semantic check.
 type Check interface {
-	core.Check
+	catalog.Check
 	Requirements() Requirements
 	Run(*Pass)
-}
-
-// configurableCheck keeps per-check settings with the check that consumes
-// them instead of widening Pass for a single option.
-type configurableCheck interface {
-	RunConfigured(*Pass, config.CheckConfig)
 }
 
 // Pass contains the syntax and type information for one loaded Go package.
@@ -44,7 +37,20 @@ type Pass struct {
 	Functions   []*ssa.Function
 	inspector   *astinspector.Inspector
 	facts       *packageFacts
+	options     catalog.ResolvedOptions
 	report      func(token.Pos, token.Pos, string, []diagnostic.Fix)
+}
+
+// IntOption returns a schema-bound integer option for the running check.
+func (pass *Pass) IntOption(name string) int {
+	value, _ := pass.options.Int(name)
+	return value
+}
+
+// StringsOption returns a schema-bound string-list option for the running check.
+func (pass *Pass) StringsOption(name string) []string {
+	value, _ := pass.options.Strings(name)
+	return value
 }
 
 // Report emits a diagnostic for the check currently running.

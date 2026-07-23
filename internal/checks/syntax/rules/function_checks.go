@@ -15,7 +15,7 @@ func (a *Pass) checkFunctionChecks(name cst.Token, signature *cst.Signature, bod
 	parameters := parameterDecls(signature.Parameters)
 	results := resultDecls(signature.Result)
 	resultTotal := declCount(results)
-	resultLimit := a.limit("function-result-limit")
+	resultLimit := a.intOption("max-results")
 	if a.active("function-result-limit") && resultTotal > resultLimit {
 		a.report("function-result-limit", name, fmt.Sprintf("function returns %d values; maximum is %d", resultTotal, resultLimit))
 	}
@@ -46,8 +46,8 @@ func (a *Pass) checkFunctionBody(name cst.Token, body cst.Node, resultTotal int,
 	if a.active("function-length") {
 		start, end := cst.Range(body)
 		lines := a.tree.Position(end).Line - a.tree.Position(start).Line + 1
-		statementLimit := a.limit("function-length-statements")
-		lineLimit := a.limit("function-length-lines")
+		statementLimit := a.intOption("max-statements")
+		lineLimit := a.intOption("max-lines")
 		if facts.statements > statementLimit || lines > lineLimit {
 			a.report(
 				"function-length",

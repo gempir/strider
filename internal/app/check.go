@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/gempir/strider/internal/checks"
-	"github.com/gempir/strider/internal/checks/semantic"
 	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/diagnostic"
 	"github.com/gempir/strider/internal/fix"
@@ -309,7 +308,7 @@ func applyCheckFixes(ctx context.Context, execution checkExecution, snapshot fix
 			Formatter:      execution.runOptions.Formatter,
 			Root:           execution.configuration.Root,
 			FormatExcludes: formatExcludes,
-			Validate:       semantic.ValidateOverlay,
+			Validate:       checks.ValidateOverlay,
 		},
 	)
 	if err != nil {

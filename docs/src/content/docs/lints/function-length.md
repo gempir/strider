@@ -38,12 +38,13 @@ func run() {
 
 ## Configuration
 
-The defaults are 50 statements and 75 lines.
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `max-lines` | `int` | `75` | Maximum number of lines allowed in a function. |
+| `max-statements` | `int` | `50` | Maximum number of statements allowed in a function. |
 
 ```toml
 [checks.function-length]
-max-statements = 60
-max-lines = 100
+max-lines = 75
+max-statements = 50
 ```
-
-Set either option to `0` to use its built-in default.

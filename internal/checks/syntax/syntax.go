@@ -3,38 +3,39 @@ package syntax
 
 import (
 	"bytes"
-	"fmt"
 	"sort"
 	"strings"
 
-	"github.com/gempir/strider/internal/checks/core"
+	"github.com/gempir/strider/internal/checks/catalog"
 	builtinchecks "github.com/gempir/strider/internal/checks/syntax/rules"
-	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/cst"
 	"github.com/gempir/strider/internal/diagnostic"
 	"github.com/gempir/strider/internal/pathfilter"
 	"github.com/gempir/strider/internal/source"
 )
 
-type Registry struct {
+// Check is a concrete-syntax catalog descriptor and executable rule.
+type Check = builtinchecks.Check
+
+type Plan struct {
 	checks   []builtinchecks.Check
 	settings map[string]configuredCheck
 	root     string
 }
 
 type configuredCheck struct {
-	severity   diagnostic.Severity
-	excludes   []string
-	characters []rune
-	config     config.CheckConfig
+	severity diagnostic.Severity
+	excludes []string
+	options  catalog.ResolvedOptions
 }
 
-// RegistryOptions selects and configures concrete-syntax checks.
-type RegistryOptions struct {
-	Only            []string
-	Settings        map[string]config.CheckConfig
-	Root            string
-	MinimumSeverity diagnostic.Severity
+// SelectedCheck is a fully bound syntax check produced by the unified
+// selection boundary.
+type SelectedCheck struct {
+	Check    builtinchecks.Check
+	Severity diagnostic.Severity
+	Excludes []string
+	Options  catalog.ResolvedOptions
 }
 
 type Context struct {
@@ -51,108 +52,35 @@ type concreteSuppression struct {
 	codes map[string]bool
 }
 
-// NewRegistryWithOptions applies project settings and a minimum effective
-// severity. Explicit selection never bypasses the severity threshold.
-func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
-	all, err := builtinchecks.Select(nil)
-	if err != nil {
-		return nil, err
-	}
-	selection, err := core.Select(
-		core.SelectionOptions[builtinchecks.Check]{
-			Checks:          all,
-			Only:            options.Only,
-			Settings:        options.Settings,
-			MinimumSeverity: options.MinimumSeverity,
-			Validate:        validateConfiguredCheck,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	registry := &Registry{
-		settings: make(map[string]configuredCheck, len(all)),
-		root:     source.ResolveRoot(options.Root),
-	}
-	for _, check := range selection.Checks {
-		meta := check.Meta()
-		ruleConfig := selection.Settings[strings.ToLower(meta.Code)]
-		severity := selection.Severities[meta.Code]
-		registry.checks = append(registry.checks, check)
-		configured := configuredCheck{
-			severity: severity,
-			excludes: ruleConfig.Excludes,
-			config:   ruleConfig,
-		}
-		if meta.Code == "banned-characters" {
-			characters, _ := core.StringsOption(meta, ruleConfig, "characters")
-			configured.characters = make([]rune, 0, len(characters))
-			for _, character := range characters {
-				configured.characters = append(configured.characters, []rune(character)[0])
-			}
-		}
-		registry.settings[meta.Code] = configured
-	}
-	return registry, nil
+// Catalog returns the syntax engine's immutable descriptor catalog.
+func Catalog() []builtinchecks.Check {
+	return builtinchecks.Catalog()
 }
 
-func validateConfiguredCheck(code string, setting config.CheckConfig) error {
-	if setting.Characters != nil && code != "banned-characters" {
-		return fmt.Errorf("check %q does not support characters", code)
+// NewPlan prepares syntax execution from already-selected, schema-bound
+// checks. It deliberately has no selection or configuration policy.
+func NewPlan(selected []SelectedCheck, root string) *Plan {
+	registry := &Plan{
+		settings: make(map[string]configuredCheck, len(selected)),
+		root:     source.ResolveRoot(root),
 	}
-	for _, character := range setting.Characters {
-		if len([]rune(character)) != 1 {
-			return fmt.Errorf("check %q characters must contain exactly one Unicode character each", code)
+	for _, item := range selected {
+		meta := item.Check.Meta()
+		registry.checks = append(registry.checks, item.Check)
+		registry.settings[meta.Code] = configuredCheck{
+			severity: item.Severity,
+			excludes: append([]string(nil), item.Excludes...),
+			options:  item.Options,
 		}
 	}
-	return nil
+	return registry
 }
 
-func (r *Registry) Checks() []builtinchecks.Check {
-	return append([]builtinchecks.Check(nil), r.checks...)
-}
-
-func (r *Registry) Severity(code string) diagnostic.Severity {
+func (r *Plan) Severity(code string) diagnostic.Severity {
 	return r.settings[code].severity
 }
 
-func (r *Registry) bannedCharacters() []rune {
-	return append([]rune(nil), r.settings["banned-characters"].characters...)
-}
-
-func (r *Registry) limits() map[string]int {
-	limits := make(map[string]int)
-	for _, check := range r.checks {
-		code := check.Meta().Code
-		setting := r.settings[code]
-		switch code {
-		case "file-length-limit":
-			limits[code], _ = core.IntOption(check.Meta(), setting.config, "max-lines")
-		case "function-length":
-			limits[code+"-lines"], _ = core.IntOption(check.Meta(), setting.config, "max-lines")
-			limits[code+"-statements"], _ = core.IntOption(check.Meta(), setting.config, "max-statements")
-		case "function-result-limit":
-			limits[code], _ = core.IntOption(check.Meta(), setting.config, "max-results")
-		case "max-parameters":
-			limits[code], _ = core.IntOption(check.Meta(), setting.config, "max-parameters")
-		case "max-public-structs":
-			limits[code], _ = core.IntOption(check.Meta(), setting.config, "max-public-structs")
-		}
-	}
-	return limits
-}
-
-func (r *Registry) blockedImports() []string {
-	for _, check := range r.checks {
-		if check.Meta().Code == "imports-blocklist" {
-			paths, _ := core.StringsOption(check.Meta(), r.settings[check.Meta().Code].config, "blocked-imports")
-			return paths
-		}
-	}
-	return nil
-}
-
-func (r *Registry) activeChecks(filename string) []builtinchecks.Check {
+func (r *Plan) activeChecks(filename string) []builtinchecks.Check {
 	active := make([]builtinchecks.Check, 0, len(r.checks))
 	for _, check := range r.checks {
 		if pathfilter.Excluded(r.root, filename, r.settings[check.Meta().Code].excludes) {
@@ -165,7 +93,7 @@ func (r *Registry) activeChecks(filename string) []builtinchecks.Check {
 
 // Applies reports whether at least one selected concrete-syntax check applies
 // to filename.
-func (r *Registry) Applies(filename string) bool {
+func (r *Plan) Applies(filename string) bool {
 	if r == nil {
 		return false
 	}
@@ -178,7 +106,7 @@ func (r *Registry) Applies(filename string) bool {
 }
 
 // AnalyzeTree runs the selected concrete-syntax checks against a shared tree.
-func AnalyzeTree(filename string, concreteTree *cst.Tree, registry *Registry) []diagnostic.Diagnostic {
+func AnalyzeTree(filename string, concreteTree *cst.Tree, registry *Plan) []diagnostic.Diagnostic {
 	if concreteTree == nil || registry == nil {
 		return nil
 	}
@@ -186,7 +114,7 @@ func AnalyzeTree(filename string, concreteTree *cst.Tree, registry *Registry) []
 	return analyzeTree(filename, concreteTree, activeChecks, registry)
 }
 
-func analyzeTree(filename string, concreteTree *cst.Tree, activeChecks []builtinchecks.Check, registry *Registry) []diagnostic.Diagnostic {
+func analyzeTree(filename string, concreteTree *cst.Tree, activeChecks []builtinchecks.Check, registry *Plan) []diagnostic.Diagnostic {
 	if len(activeChecks) == 0 {
 		return nil
 	}
@@ -199,18 +127,24 @@ func analyzeTree(filename string, concreteTree *cst.Tree, activeChecks []builtin
 	}
 	builtinchecks.AnalyzeCST(
 		builtinchecks.CSTInput{
-			Filename:         filename,
-			Tree:             concreteTree,
-			Checks:           activeChecks,
-			BannedCharacters: registry.bannedCharacters(),
-			Limits:           registry.limits(),
-			BlockedImports:   registry.blockedImports(),
+			Filename: filename,
+			Tree:     concreteTree,
+			Checks:   activeChecks,
+			Options:  registry.boundOptions(activeChecks),
 			Report: func(finding builtinchecks.Finding) {
 				context.reportConcrete(concreteTree, finding, registry.Severity(finding.Code))
 			},
 		},
 	)
 	return context.diagnostics
+}
+
+func (r *Plan) boundOptions(checks []builtinchecks.Check) map[string]catalog.ResolvedOptions {
+	options := make(map[string]catalog.ResolvedOptions, len(checks))
+	for _, check := range checks {
+		options[check.Meta().Code] = r.settings[check.Meta().Code].options
+	}
+	return options
 }
 
 func (c *Context) reportConcrete(tree *cst.Tree, finding builtinchecks.Finding, severity diagnostic.Severity) {

@@ -64,7 +64,8 @@ characters = ["ᐸ", "ᐳ"]
 	if strings.Join(check.Excludes, ",") != "generated/**,legacy/**" {
 		t.Fatalf("effective excludes = %q", check.Excludes)
 	}
-	if got := strings.Join(configuration.EffectiveCheck("banned-characters").Characters, ","); got != "ᐸ,ᐳ" {
+	characters, _ := configuration.EffectiveCheck("banned-characters").Options["characters"].Strings()
+	if got := strings.Join(characters, ","); got != "ᐸ,ᐳ" {
 		t.Fatalf("banned characters = %q", got)
 	}
 	canonicalRoot, err := filepath.EvalSymlinks(root)
@@ -147,7 +148,7 @@ func TestLoadRejectsUnknownAndInvalidSettings(t *testing.T) {
 		},
 		"enabled": {
 			"version = 1\n[checks.no-init]\nenabled = false\n",
-			"unknown configuration key",
+			"must be an integer or string list",
 		},
 		"legacy-linter": {
 			"version = 1\n[linter]\n",
@@ -189,11 +190,24 @@ func TestLoadTracksExplicitZeroValuedCheckOptions(t *testing.T) {
 		t.Fatal(err)
 	}
 	check := configuration.Checks.Settings["no-init"]
-	if check.MaxLines == nil || *check.MaxLines != 0 {
-		t.Fatalf("max-lines = %v, want explicit zero", check.MaxLines)
+	maxLines, ok := check.Options["max-lines"].Int()
+	if !ok || maxLines != 0 {
+		t.Fatalf("max-lines = %d, %t; want explicit zero", maxLines, ok)
 	}
-	if check.MaxMethods != nil {
-		t.Fatalf("max-methods = %v, want unset", check.MaxMethods)
+	if _, exists := check.Options["max-methods"]; exists {
+		t.Fatal("max-methods unexpectedly set")
+	}
+}
+
+func TestLoadRejectsDuplicateCaseFoldedOptions(t *testing.T) {
+	path := filepath.Join(t.TempDir(), Filename)
+	contents := "version = 1\n[checks.file-length-limit]\nmax-lines = 10\nMAX-LINES = 20\n"
+	if err := os.WriteFile(path, []byte(contents), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, err := Load(path, false)
+	if err == nil || !strings.Contains(err.Error(), `"MAX-LINES", "max-lines"`) {
+		t.Fatalf("got %v, want deterministic duplicate-option error", err)
 	}
 }
 
@@ -244,11 +258,15 @@ func TestToolValidationErrorsAreStable(t *testing.T) {
 		MinimumSeverity: "fatal",
 		Settings: map[string]CheckConfig{
 			"z-check": {
-				MaxLines: &negative,
+				Options: map[string]OptionValue{
+					"max-lines": IntValue(negative),
+				},
 				Severity: "fatal",
 			},
 			"a-check": {
-				MaxMethods: &negative,
+				Options: map[string]OptionValue{
+					"max-methods": IntValue(negative),
+				},
 			},
 		},
 	}

@@ -50,8 +50,13 @@ func (a *Pass) checkImport(spec *cst.ImportSpec) {
 		return
 	}
 	state := a.imports()
-	if a.active("imports-blocklist") && a.blockedImports[path] {
-		a.report("imports-blocklist", spec, fmt.Sprintf("import %s is blocked by configuration", path))
+	if a.active("imports-blocklist") {
+		for _, blocked := range a.stringsOption("blocked-imports") {
+			if blocked == path {
+				a.report("imports-blocklist", spec, fmt.Sprintf("import %s is blocked by configuration", path))
+				break
+			}
+		}
 	}
 	if state.seen[path] {
 		if a.active("duplicated-imports") {
@@ -108,7 +113,7 @@ func importHasComment(tree *cst.Tree, spec *cst.ImportSpec) bool {
 
 func (a *Pass) checkLinesAndComments() {
 	lines := bytes.Split(a.content, []byte("\n"))
-	if limit := a.limits["file-length-limit"]; a.active("file-length-limit") && limit > 0 && len(lines) > limit {
+	if limit := a.intOption("max-lines"); a.active("file-length-limit") && limit > 0 && len(lines) > limit {
 		a.reportRange("file-length-limit", 0, len(a.content), fmt.Sprintf("file has %d lines; maximum is %d", len(lines), limit))
 	}
 	if a.active("bidirectional-control-character") {

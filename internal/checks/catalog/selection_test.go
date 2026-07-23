@@ -1,4 +1,4 @@
-package core
+package catalog
 
 import (
 	"reflect"
@@ -25,11 +25,7 @@ func TestSelectContracts(t *testing.T) {
 				Code:            "alpha-check",
 				DefaultSeverity: diagnostic.SeverityWarning,
 				Options: []Option{
-					{
-						Name:       "max-lines",
-						Kind:       OptionInt,
-						DefaultInt: 10,
-					},
+					NonNegativeIntOption("max-lines", 10, "Maximum lines."),
 				},
 			},
 		},
@@ -66,7 +62,9 @@ func TestSelectContracts(t *testing.T) {
 				Settings: map[string]config.CheckConfig{
 					"AlPhA-ChEcK": {
 						Severity: string(diagnostic.SeverityError),
-						MaxLines: &maxLines,
+						Options: map[string]config.OptionValue{
+							"max-lines": config.IntValue(maxLines),
+						},
 					},
 				},
 				MinimumSeverity: diagnostic.SeverityWarning,
@@ -116,11 +114,58 @@ func TestSelectContracts(t *testing.T) {
 				Checks: checks,
 				Settings: map[string]config.CheckConfig{
 					"beta-check": {
-						MaxLines: &maxLines,
+						Options: map[string]config.OptionValue{
+							"max-lines": config.IntValue(maxLines),
+						},
 					},
 				},
 			},
 			err: "does not support max-lines",
+		},
+		{
+			name: "wrong option kind",
+			options: SelectionOptions[selectionCheck]{
+				Checks: checks,
+				Settings: map[string]config.CheckConfig{
+					"alpha-check": {
+						Options: map[string]config.OptionValue{
+							"max-lines": config.StringsValue([]string{
+								"ten",
+							}),
+						},
+					},
+				},
+			},
+			err: "option max-lines must be int",
+		},
+		{
+			name: "option range",
+			options: SelectionOptions[selectionCheck]{
+				Checks: checks,
+				Settings: map[string]config.CheckConfig{
+					"alpha-check": {
+						Options: map[string]config.OptionValue{
+							"max-lines": config.IntValue(-1),
+						},
+					},
+				},
+			},
+			err: "option max-lines must be at least 0",
+		},
+		{
+			name: "duplicate option spellings",
+			options: SelectionOptions[selectionCheck]{
+				Checks: checks,
+				Settings: map[string]config.CheckConfig{
+					"alpha-check": {
+						Options: map[string]config.OptionValue{
+							"MAX-LINES": config.IntValue(11),
+							"max-lines": config.IntValue(12),
+						},
+					},
+				},
+			},
+			err: `duplicate case-insensitive check option(s): "MAX-LINES", "max-lines"`,
 		},
 		{
 			name: "invalid severity",

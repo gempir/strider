@@ -2,16 +2,17 @@
 package checks
 
 import (
-	"github.com/gempir/strider/internal/checks/core"
+	"github.com/gempir/strider/internal/checks/catalog"
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
+// Engine identifies the execution engine behind a catalog descriptor.
+type Engine string
+
 const (
-	CapabilityCST Capability = 1 << iota
-	CapabilityAST
-	CapabilityTypes
-	CapabilityFacts
-	CapabilitySSA
+	EngineFormat   Engine = "format"
+	EngineSyntax   Engine = "syntax"
+	EngineSemantic Engine = "semantic"
 )
 
 var formatMeta = Meta{
@@ -21,24 +22,16 @@ var formatMeta = Meta{
 	GoodExample:     "package main\n\nfunc main() {}",
 	BadExample:      "package main\nfunc main( ){ }",
 	DefaultSeverity: diagnostic.SeverityWarning,
-	Capabilities:    CapabilityCST,
 }
 
-// Capability describes the most expensive program representation required by
-// a check. Capabilities are internal scheduling details, not CLI categories.
-type Capability = uint8
+// Meta describes one user-facing check.
+type Meta = catalog.Meta
 
-// Meta describes one user-facing check. It aliases the shared engine contract;
-// capabilities belong to registry scheduling rather than check metadata.
-type Meta = core.Meta
-
-// Check is the shared metadata contract implemented by every check.
-type Check = core.Check
-
-type catalogCheck struct {
-	meta Meta
+// Descriptor is a unified presentation entry. Execution remains engine
+// specific and is never forced through this interface.
+type Descriptor interface {
+	catalog.Descriptor
+	Engine() Engine
 }
 
-func (check catalogCheck) Meta() Meta {
-	return check.meta
-}
+type Check = Descriptor

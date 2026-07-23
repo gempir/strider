@@ -43,7 +43,7 @@ type fileResult struct {
 	err         error
 }
 
-type analysisRunner func(context.Context, []string, *semantic.Registry) ([]diagnostic.Diagnostic, error)
+type analysisRunner func(context.Context, []string, *semantic.Plan) ([]diagnostic.Diagnostic, error)
 
 type concreteFileRunner func(context.Context, *workspace.File, *Registry, *formatter.Formatter, formatter.Options, bool) fileResult
 
@@ -83,7 +83,7 @@ func Run(ctx context.Context, shared *workspace.Workspace, registry *Registry, o
 }
 
 func appendAnalysis(ctx context.Context, result *Result, shared *workspace.Workspace, registry *Registry, run analysisRunner) error {
-	if registry.semantic == nil || len(registry.semantic.Checks()) == 0 {
+	if registry.semantic == nil {
 		return nil
 	}
 	packageDiagnostics, err := run(ctx, shared.Inputs(), registry.semantic)

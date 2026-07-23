@@ -2,10 +2,9 @@ package rules
 
 import (
 	"fmt"
-	"sort"
-	"strings"
 
-	"github.com/gempir/strider/internal/checks/core"
+	"github.com/gempir/strider/internal/checkconfig"
+	"github.com/gempir/strider/internal/checks/catalog"
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
@@ -13,7 +12,7 @@ import (
 // interests, and options are attached to these same definitions as the
 // execution migration proceeds; examples and severities are intentionally not
 // mirrored in auxiliary maps.
-var catalog = []definition{
+var definitions = []definition{
 	{
 		behavior: functionBehavior,
 		meta: Meta{
@@ -31,12 +30,8 @@ var catalog = []definition{
 			Code:            "max-parameters",
 			Summary:         "limit function parameter count",
 			DefaultSeverity: diagnostic.SeverityWarning,
-			Options: []core.Option{
-				{
-					Name:       "max-parameters",
-					Kind:       core.OptionInt,
-					DefaultInt: 8,
-				},
+			Options: []catalog.Option{
+				catalog.NonNegativeIntOption("max-parameters", 8, "Maximum number of parameters allowed on a function or method."),
 			},
 			Explanation: "Functions with more than eight parameters tend to hide missing domain objects and are difficult to call correctly.",
 			GoodExample: "func Open(path string, flags Flags) error",
@@ -129,15 +124,15 @@ var catalog = []definition{
 			GoodExample:     "var userID string",
 			BadExample:      "var user_id string // when underscore is configured as banned",
 			DefaultSeverity: diagnostic.SeverityError,
-			Options: []core.Option{
-				{
-					Name: "characters",
-					Kind: core.OptionStrings,
-					DefaultStrings: []string{
+			Options: []catalog.Option{
+				func() catalog.Option {
+					option := catalog.StringListOption("characters", []string{
 						"ᐸ",
 						"ᐳ",
-					},
-				},
+					}, "Unicode characters forbidden in identifiers.")
+					option.Validate = validateSingleCharacters
+					return option
+				}(),
 			},
 		},
 	},
@@ -447,12 +442,8 @@ var catalog = []definition{
 			GoodExample:     "// With max = 3 lines:\npackage service\nvar ready bool",
 			BadExample:      "// With max = 2 lines:\npackage service\nvar ready bool",
 			DefaultSeverity: diagnostic.SeverityNote,
-			Options: []core.Option{
-				{
-					Name:       "max-lines",
-					Kind:       core.OptionInt,
-					DefaultInt: 500,
-				},
+			Options: []catalog.Option{
+				catalog.NonNegativeIntOption("max-lines", 500, "Maximum number of lines allowed in a source file; zero disables the limit."),
 			},
 		},
 	},
@@ -487,17 +478,9 @@ var catalog = []definition{
 			GoodExample:     "func run() { load(); process(); save() }",
 			BadExample:      "// With max-statements = 3:\nfunc run() { load(); process(); save(); notify() }",
 			DefaultSeverity: diagnostic.SeverityWarning,
-			Options: []core.Option{
-				{
-					Name:       "max-lines",
-					Kind:       core.OptionInt,
-					DefaultInt: 75,
-				},
-				{
-					Name:       "max-statements",
-					Kind:       core.OptionInt,
-					DefaultInt: 50,
-				},
+			Options: []catalog.Option{
+				catalog.NonNegativeIntOption("max-lines", 75, "Maximum number of lines allowed in a function."),
+				catalog.NonNegativeIntOption("max-statements", 50, "Maximum number of statements allowed in a function."),
 			},
 		},
 	},
@@ -510,12 +493,8 @@ var catalog = []definition{
 			GoodExample:     "func Parse() (Value, error)",
 			BadExample:      "func Parse() (Value, Metadata, Warnings, error)",
 			DefaultSeverity: diagnostic.SeverityWarning,
-			Options: []core.Option{
-				{
-					Name:       "max-results",
-					Kind:       core.OptionInt,
-					DefaultInt: 3,
-				},
+			Options: []catalog.Option{
+				catalog.NonNegativeIntOption("max-results", 3, "Maximum number of result values allowed on a function."),
 			},
 		},
 	},
@@ -638,11 +617,8 @@ var catalog = []definition{
 			GoodExample:     "import \"log/slog\"",
 			BadExample:      "import \"log\" // when log is configured as blocked",
 			DefaultSeverity: diagnostic.SeverityWarning,
-			Options: []core.Option{
-				{
-					Name: "blocked-imports",
-					Kind: core.OptionStrings,
-				},
+			Options: []catalog.Option{
+				catalog.StringListOption("blocked-imports", nil, "Import paths that this check rejects."),
 			},
 		},
 	},
@@ -699,12 +675,8 @@ var catalog = []definition{
 			GoodExample:     "type Request struct{}\ntype Response struct{}",
 			BadExample:      "type One struct{}\ntype Two struct{}\ntype Three struct{}\ntype Four struct{}\ntype Five struct{}\ntype Six struct{}",
 			DefaultSeverity: diagnostic.SeverityNote,
-			Options: []core.Option{
-				{
-					Name:       "max-public-structs",
-					Kind:       core.OptionInt,
-					DefaultInt: 5,
-				},
+			Options: []catalog.Option{
+				catalog.NonNegativeIntOption("max-public-structs", 5, "Maximum number of exported struct declarations allowed per file."),
 			},
 		},
 	},
@@ -1139,48 +1111,21 @@ var catalog = []definition{
 	},
 }
 
-// Select returns every check, or only the explicitly requested checks.
-func Select(only []string) ([]Check, error) {
-	all := allChecks()
-	wanted := make(map[string]bool, len(only))
-	for _, code := range only {
-		wanted[strings.ToLower(code)] = true
-	}
-	for _, check := range all {
-		delete(wanted, strings.ToLower(check.Meta().Code))
-	}
-	if len(wanted) != 0 {
-		unknown := make([]string, 0, len(wanted))
-		for code := range wanted {
-			unknown = append(unknown, code)
-		}
-		sort.Strings(unknown)
-		return nil, fmt.Errorf("unknown check(s): %s", strings.Join(unknown, ", "))
-	}
-
-	selected := make([]Check, 0, len(all))
-	for _, check := range all {
-		if len(only) != 0 && !wantedCode(only, check.Meta().Code) {
-			continue
-		}
-		selected = append(selected, check)
-	}
-	return selected, nil
-}
-
-func allChecks() []Check {
-	checks := make([]Check, len(catalog))
-	for index := range catalog {
-		checks[index] = catalog[index]
+// Catalog returns the immutable syntax descriptor catalog.
+func Catalog() []Check {
+	checks := make([]Check, len(definitions))
+	for index := range definitions {
+		checks[index] = definitions[index]
 	}
 	return checks
 }
 
-func wantedCode(values []string, wanted string) bool {
-	for _, value := range values {
-		if strings.EqualFold(value, wanted) {
-			return true
+func validateSingleCharacters(value checkconfig.Value) error {
+	characters, _ := value.Strings()
+	for _, character := range characters {
+		if len([]rune(character)) != 1 {
+			return fmt.Errorf("must contain exactly one Unicode character per entry")
 		}
 	}
-	return false
+	return nil
 }

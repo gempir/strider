@@ -41,11 +41,11 @@ type Reader interface {
 
 ## Configuration
 
-The default maximum is ten methods, including embedded methods.
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `max-methods` | `int` | `10` | Maximum number of methods allowed on an interface, including embedded methods. |
 
 ```toml
 [checks.interface-method-limit]
-max-methods = 12
+max-methods = 10
 ```
-
-Set `max-methods = 0` to use the built-in maximum of ten.

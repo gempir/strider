@@ -25,11 +25,11 @@ import "log/slog"
 
 ## Configuration
 
-No imports are blocked by default. Paths match exactly.
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `blocked-imports` | `strings` | `[]` | Import paths that this check rejects. |
 
 ```toml
 [checks.imports-blocklist]
-blocked-imports = ["log", "io/ioutil"]
+blocked-imports = []
 ```
-
-Set `blocked-imports = []` to block no imports.

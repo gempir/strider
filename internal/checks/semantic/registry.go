@@ -1,10 +1,7 @@
 package semantic
 
 import (
-	"strings"
-
-	"github.com/gempir/strider/internal/checks/core"
-	"github.com/gempir/strider/internal/config"
+	"github.com/gempir/strider/internal/checks/catalog"
 	"github.com/gempir/strider/internal/diagnostic"
 	"github.com/gempir/strider/internal/pathfilter"
 	"github.com/gempir/strider/internal/source"
@@ -137,8 +134,8 @@ var checkCatalog = []Check{
 	discardedErrorResultCheck{},
 }
 
-// Registry is an immutable selection of analysis checks.
-type Registry struct {
+// Plan is an immutable selection of analysis checks.
+type Plan struct {
 	checks   []Check
 	settings map[string]configuredCheck
 	root     string
@@ -148,15 +145,16 @@ type Registry struct {
 type configuredCheck struct {
 	severity diagnostic.Severity
 	excludes []string
-	config   config.CheckConfig
+	options  catalog.ResolvedOptions
 }
 
-// RegistryOptions selects and configures package-aware checks.
-type RegistryOptions struct {
-	Only            []string
-	Settings        map[string]config.CheckConfig
-	Root            string
-	MinimumSeverity diagnostic.Severity
+// SelectedCheck is a fully bound semantic check produced by the unified
+// selection boundary.
+type SelectedCheck struct {
+	Check    Check
+	Severity diagnostic.Severity
+	Excludes []string
+	Options  catalog.ResolvedOptions
 }
 
 // AnalysisStage is the most expensive program representation needed by a
@@ -214,58 +212,42 @@ func (plan executionPlan) needsSSA() bool {
 	return plan.requirements.Stage == AnalysisStageSSA
 }
 
-func (registry *Registry) executionPlan() executionPlan {
+func (registry *Plan) executionPlan() executionPlan {
 	if registry == nil {
 		return executionPlan{}
 	}
 	return compileExecutionPlan(registry.checks)
 }
 
-// NewRegistry applies project settings and a minimum effective severity.
-// Explicit selection never bypasses the severity threshold.
-func NewRegistry(options RegistryOptions) (*Registry, error) {
-	all := allChecks()
-	selection, err := core.Select(core.SelectionOptions[Check]{
-		Checks:          all,
-		Only:            options.Only,
-		Settings:        options.Settings,
-		MinimumSeverity: options.MinimumSeverity,
-	})
-	if err != nil {
-		return nil, err
-	}
-	registry := &Registry{
-		settings: make(map[string]configuredCheck, len(all)),
-		root:     source.ResolveRoot(options.Root),
-		rootSet:  options.Root != "",
-	}
-	for _, check := range selection.Checks {
-		meta := check.Meta()
-		setting := selection.Settings[strings.ToLower(meta.Code)]
-		severity := selection.Severities[meta.Code]
-		registry.checks = append(registry.checks, check)
-		registry.settings[meta.Code] = configuredCheck{
-			severity: severity,
-			excludes: setting.Excludes,
-			config:   setting,
-		}
-	}
-	return registry, nil
+// Catalog returns the semantic engine's immutable descriptor catalog.
+func Catalog() []Check {
+	return append([]Check(nil), checkCatalog...)
 }
 
-func (registry *Registry) Severity(code string) diagnostic.Severity {
+// NewPlan prepares semantic execution from already-selected, schema-bound
+// checks. It deliberately has no selection or configuration policy.
+func NewPlan(selected []SelectedCheck, root string, rootSet bool) *Plan {
+	registry := &Plan{
+		settings: make(map[string]configuredCheck, len(selected)),
+		root:     source.ResolveRoot(root),
+		rootSet:  rootSet,
+	}
+	for _, item := range selected {
+		meta := item.Check.Meta()
+		registry.checks = append(registry.checks, item.Check)
+		registry.settings[meta.Code] = configuredCheck{
+			severity: item.Severity,
+			excludes: append([]string(nil), item.Excludes...),
+			options:  item.Options,
+		}
+	}
+	return registry
+}
+
+func (registry *Plan) Severity(code string) diagnostic.Severity {
 	return registry.settings[code].severity
 }
 
-func (registry *Registry) Excluded(code, filename string) bool {
+func (registry *Plan) Excluded(code, filename string) bool {
 	return pathfilter.Excluded(registry.root, filename, registry.settings[code].excludes)
-}
-
-// Checks returns a copy of the selected checks.
-func (registry *Registry) Checks() []Check {
-	return append([]Check(nil), registry.checks...)
-}
-
-func allChecks() []Check {
-	return append([]Check(nil), checkCatalog...)
 }

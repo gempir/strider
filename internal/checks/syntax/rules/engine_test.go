@@ -9,9 +9,32 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gempir/strider/internal/checkconfig"
+	"github.com/gempir/strider/internal/checks/catalog"
 	"github.com/gempir/strider/internal/cst"
 	"github.com/gempir/strider/internal/diagnostic"
 )
+
+func Select(only []string) ([]Check, error) {
+	selection, err := catalog.Select(catalog.SelectionOptions[Check]{
+		Checks:          Catalog(),
+		Only:            only,
+		MinimumSeverity: diagnostic.SeverityNote,
+	})
+	return selection.Checks, err
+}
+
+func resolvedTestOptions(checks []Check) map[string]catalog.ResolvedOptions {
+	options := make(map[string]catalog.ResolvedOptions, len(checks))
+	for _, check := range checks {
+		resolved, err := catalog.ResolveOptions(check.Meta(), checkconfig.Setting{})
+		if err != nil {
+			panic(err)
+		}
+		options[check.Meta().Code] = resolved
+	}
+	return options
+}
 
 func benchmarkCSTTree(tb testing.TB) *cst.Tree {
 	tb.Helper()
@@ -117,7 +140,7 @@ func (item) method() {}
 }
 
 func TestSyntaxCatalogDeclaresExecutableInterests(t *testing.T) {
-	for _, check := range catalog {
+	for _, check := range definitions {
 		code := check.Meta().Code
 		if check.behavior.inspect == nil {
 			t.Errorf("%s has no inspect behavior", code)
@@ -542,6 +565,7 @@ func analyzeCSTFindings(filename string, tree *cst.Tree, checks []Check) []Findi
 		Filename: filename,
 		Tree:     tree,
 		Checks:   checks,
+		Options:  resolvedTestOptions(checks),
 		Report: func(finding Finding) {
 			result = append(result, finding)
 		},
@@ -655,6 +679,7 @@ func benchmarkAnalyzeCST(b *testing.B) {
 		Filename: "fixture.go",
 		Tree:     tree,
 		Checks:   checks,
+		Options:  resolvedTestOptions(checks),
 		Report: func(Finding) {
 			reports++
 		},

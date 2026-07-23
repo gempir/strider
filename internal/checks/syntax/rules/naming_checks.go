@@ -19,9 +19,11 @@ func (a *Pass) checkIdentifier(name cst.Token) {
 	}
 	value := name.Src()
 	for _, character := range value {
-		if a.bannedCharacters[character] {
-			a.report("banned-characters", name, fmt.Sprintf("identifier contains banned character %q", character))
-			break
+		for _, banned := range a.stringsOption("characters") {
+			if string(character) == banned {
+				a.report("banned-characters", name, fmt.Sprintf("identifier contains banned character %q", character))
+				return
+			}
 		}
 	}
 	if strings.HasPrefix(value, "_") {

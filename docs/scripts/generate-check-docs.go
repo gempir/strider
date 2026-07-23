@@ -10,9 +10,11 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/gempir/strider/internal/checks"
+	"github.com/gempir/strider/internal/checks/catalog"
 	"github.com/gempir/strider/internal/checks/syntax/rules"
 	"github.com/gempir/strider/internal/diagnostic"
 )
@@ -70,10 +72,7 @@ func generateCatalogStats(docsDirectory string, registry *checks.Registry) {
 }
 
 func generateSyntaxPages(docsDirectory string) {
-	all, err := rules.Select(nil)
-	if err != nil {
-		fatal(err)
-	}
+	all := rules.Catalog()
 	sort.Slice(all, func(i, j int) bool {
 		return all[i].Meta().Code < all[j].Meta().Code
 	})
@@ -164,24 +163,6 @@ sidebar:
 		strings.TrimSpace(page.bad),
 		strings.TrimSpace(page.good),
 	)
-	if page.code == "banned-characters" {
-		content += `
-## Configuration
-
-Set ` + "`characters`" + ` to the Unicode characters that identifiers must not
-contain. Each entry must contain exactly one character. The configured list
-replaces the defaults.
-
-` + "```toml" + `
-[checks.banned-characters]
-characters = ["ᐸ", "ᐳ", "_"]
-` + "```" + `
-
-By default, Strider bans ` + "`ᐸ`" + ` (` + "`U+1438 CANADIAN SYLLABICS PA`" + `) and
-` + "`ᐳ`" + ` (` + "`U+1433 CANADIAN SYLLABICS PO`" + `). Set ` + "`characters = []`" + ` to
-allow every character.
-`
-	}
 	return content
 }
 
@@ -194,13 +175,14 @@ func synchronizeCheckPages(docsDirectory string) *checks.Registry {
 	}
 	for _, rule := range registry.Checks() {
 		meta := rule.Meta()
-		path := checkPagePath(docsDirectory, meta)
+		path := checkPagePath(docsDirectory, rule)
 		contents, readErr := os.ReadFile(path)
 		if readErr != nil {
 			fatal(fmt.Errorf("check %s documentation: %w", meta.Code, readErr))
 		}
 		updated := withSeverityMetadata(string(contents), meta.DefaultSeverity)
 		updated = withExamples(updated, meta)
+		updated = withOptionDocumentation(updated, meta)
 		if updated != string(contents) {
 			if writeErr := os.WriteFile(path, []byte(updated), 0o644); writeErr != nil {
 				fatal(writeErr)
@@ -274,7 +256,7 @@ func validateCheckPages(docsDirectory string, registry *checks.Registry) {
 	expected := make(map[string]bool, len(registry.Checks())-1)
 	for _, rule := range registry.Checks() {
 		meta := rule.Meta()
-		path := checkPagePath(docsDirectory, meta)
+		path := checkPagePath(docsDirectory, rule)
 		contents, err := os.ReadFile(path)
 		if err != nil {
 			fatal(fmt.Errorf("check %s documentation: %w", meta.Code, err))
@@ -335,67 +317,94 @@ func documentedGoExample(contents, heading string) string {
 }
 
 func validateBehaviorConfiguration(docsDirectory string, registry *checks.Registry) {
-	required := map[string][]string{
-		"banned-characters": {
-			"characters",
-		},
-		"file-length-limit": {
-			"max-lines",
-		},
-		"function-length": {
-			"max-lines",
-			"max-statements",
-		},
-		"function-result-limit": {
-			"max-results",
-		},
-		"imports-blocklist": {
-			"blocked-imports",
-		},
-		"interface-method-limit": {
-			"max-methods",
-		},
-		"max-parameters": {
-			"max-parameters",
-		},
-		"max-public-structs": {
-			"max-public-structs",
-		},
-	}
-	byCode := make(map[string]checks.Meta, len(registry.Checks()))
 	for _, rule := range registry.Checks() {
-		byCode[rule.Meta().Code] = rule.Meta()
-	}
-	for code, options := range required {
-		meta, ok := byCode[code]
-		if !ok {
-			fatal(fmt.Errorf("configurable check %s is not registered", code))
+		meta := rule.Meta()
+		if len(meta.Options) == 0 {
+			continue
 		}
-		contents, err := os.ReadFile(checkPagePath(docsDirectory, meta))
+		contents, err := os.ReadFile(checkPagePath(docsDirectory, rule))
 		if err != nil {
 			fatal(err)
 		}
 		page := string(contents)
-		for _, wanted := range append([]string{
+		wantedTokens := []string{
 			"## Configuration",
-			"[checks." + code + "]",
-		}, options...) {
+			"[checks." + meta.Code + "]",
+		}
+		for _, option := range meta.Options {
+			wantedTokens = append(wantedTokens, option.Name, option.Help, renderOptionDefault(option))
+		}
+		for _, wanted := range wantedTokens {
 			if !strings.Contains(page, wanted) {
-				fatal(fmt.Errorf("check %s documentation is missing configuration token %q", code, wanted))
+				fatal(fmt.Errorf("check %s documentation is missing configuration token %q", meta.Code, wanted))
 			}
 		}
 	}
 }
 
-func checkPagePath(docsDirectory string, meta checks.Meta) string {
+func checkPagePath(docsDirectory string, descriptor checks.Descriptor) string {
+	meta := descriptor.Meta()
 	if meta.Code == "format" {
 		return filepath.Join(docsDirectory, "formatter.md")
 	}
 	category := "lints"
-	if meta.Capabilities&checks.CapabilityAST != 0 {
+	if descriptor.Engine() == checks.EngineSemantic {
 		category = "analyzers"
 	}
 	return filepath.Join(docsDirectory, category, meta.Code+".md")
+}
+
+func withOptionDocumentation(contents string, meta checks.Meta) string {
+	if len(meta.Options) == 0 {
+		return contents
+	}
+	section := renderOptionDocumentation(meta)
+	start := strings.Index(contents, "\n## Configuration\n")
+	if start < 0 {
+		return strings.TrimRight(contents, "\n") + "\n\n" + section
+	}
+	start++
+	end := strings.Index(contents[start+1:], "\n## ")
+	if end < 0 {
+		return strings.TrimRight(contents[:start], "\n") + "\n\n" + section
+	}
+	end += start + 1
+	return strings.TrimRight(contents[:start], "\n") + "\n\n" + section + "\n" + strings.TrimLeft(contents[end:], "\n")
+}
+
+func renderOptionDocumentation(meta checks.Meta) string {
+	var result strings.Builder
+	fmt.Fprintf(&result, "## Configuration\n\n")
+	fmt.Fprintf(&result, "| Option | Type | Default | Description |\n")
+	fmt.Fprintf(&result, "| --- | --- | --- | --- |\n")
+	for _, option := range meta.Options {
+		fmt.Fprintf(&result, "| `%s` | `%s` | `%s` | %s |\n", option.Name, option.Kind, renderOptionDefault(option), option.Help)
+	}
+	fmt.Fprintf(&result, "\n```toml\n[checks.%s]\n", meta.Code)
+	for _, option := range meta.Options {
+		fmt.Fprintf(&result, "%s = %s\n", option.Name, renderOptionDefault(option))
+	}
+	fmt.Fprintf(&result, "```\n")
+	return result.String()
+}
+
+func renderOptionDefault(option catalog.OptionSpec) string {
+	switch option.Kind {
+	case catalog.OptionInt:
+		return strconv.Itoa(option.DefaultInt)
+	case catalog.OptionStrings:
+		if option.DefaultStrings == nil {
+			return "[]"
+		}
+		encoded, err := json.Marshal(option.DefaultStrings)
+		if err != nil {
+			fatal(err)
+		}
+		return string(encoded)
+	default:
+		fatal(fmt.Errorf("unsupported option kind %q", option.Kind))
+		return ""
+	}
 }
 
 func withSeverityMetadata(contents string, severity diagnostic.Severity) string {

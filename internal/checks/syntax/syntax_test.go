@@ -10,13 +10,16 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gempir/strider/internal/checks/catalog"
 	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/cst"
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-func intPointer(value int) *int {
-	return &value
+type Registry = Plan
+
+func (r *Plan) Checks() []Check {
+	return append([]Check(nil), r.checks...)
 }
 
 func NewRegistry(only []string) (*Registry, error) {
@@ -30,6 +33,37 @@ func NewRegistryConfigured(only []string, settings map[string]config.CheckConfig
 		Root:            root,
 		MinimumSeverity: diagnostic.SeverityNote,
 	})
+}
+
+type RegistryOptions struct {
+	Only            []string
+	Settings        map[string]config.CheckConfig
+	Root            string
+	MinimumSeverity diagnostic.Severity
+}
+
+func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
+	selection, err := catalog.Select(catalog.SelectionOptions[Check]{
+		Checks:          Catalog(),
+		Only:            options.Only,
+		Settings:        options.Settings,
+		MinimumSeverity: options.MinimumSeverity,
+	})
+	if err != nil {
+		return nil, err
+	}
+	selected := make([]SelectedCheck, 0, len(selection.Checks))
+	for _, check := range selection.Checks {
+		meta := check.Meta()
+		setting := selection.Settings[strings.ToLower(meta.Code)]
+		selected = append(selected, SelectedCheck{
+			Check:    check,
+			Severity: selection.Severities[meta.Code],
+			Excludes: setting.Excludes,
+			Options:  selection.Options[meta.Code],
+		})
+	}
+	return NewPlan(selected, options.Root), nil
 }
 
 // Run is a test-only adapter over the production AnalyzeTree boundary.
@@ -911,7 +945,7 @@ func TestFileLengthLimitDefaultsTo500AndExplicitZeroDisables(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := defaultRegistry.limits()["file-length-limit"]; got != 500 {
+	if got, _ := defaultRegistry.settings["file-length-limit"].options.Int("max-lines"); got != 500 {
 		t.Fatalf("default max lines = %d, want 500", got)
 	}
 	diagnostics, err := Run([]string{
@@ -928,7 +962,9 @@ func TestFileLengthLimitDefaultsTo500AndExplicitZeroDisables(t *testing.T) {
 			},
 			Settings: map[string]config.CheckConfig{
 				"file-length-limit": {
-					MaxLines: intPointer(12),
+					Options: map[string]config.OptionValue{
+						"max-lines": config.IntValue(12),
+					},
 				},
 			},
 		},
@@ -936,7 +972,7 @@ func TestFileLengthLimitDefaultsTo500AndExplicitZeroDisables(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := configuredRegistry.limits()["file-length-limit"]; got != 12 {
+	if got, _ := configuredRegistry.settings["file-length-limit"].options.Int("max-lines"); got != 12 {
 		t.Fatalf("configured max lines = %d, want 12", got)
 	}
 
@@ -958,7 +994,7 @@ func TestFileLengthLimitDefaultsTo500AndExplicitZeroDisables(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := disabledRegistry.limits()["file-length-limit"]; got != 0 {
+	if got, _ := disabledRegistry.settings["file-length-limit"].options.Int("max-lines"); got != 0 {
 		t.Fatalf("explicit max lines = %d, want disabled value 0", got)
 	}
 	diagnostics, err = Run([]string{
@@ -1071,8 +1107,10 @@ func TestBannedCharactersUsesDefaultsAndConfiguration(t *testing.T) {
 		"configured": {
 			settings: map[string]config.CheckConfig{
 				"banned-characters": {
-					Characters: []string{
-						"_",
+					Options: map[string]config.OptionValue{
+						"characters": config.StringsValue([]string{
+							"_",
+						}),
 					},
 				},
 			},
@@ -1113,15 +1151,19 @@ func TestBannedCharactersRejectsInvalidConfiguration(t *testing.T) {
 	for name, settings := range map[string]map[string]config.CheckConfig{
 		"multiple runes": {
 			"banned-characters": {
-				Characters: []string{
-					"ab",
+				Options: map[string]config.OptionValue{
+					"characters": config.StringsValue([]string{
+						"ab",
+					}),
 				},
 			},
 		},
 		"unrelated check": {
 			"no-init": {
-				Characters: []string{
-					"_",
+				Options: map[string]config.OptionValue{
+					"characters": config.StringsValue([]string{
+						"_",
+					}),
 				},
 			},
 		},

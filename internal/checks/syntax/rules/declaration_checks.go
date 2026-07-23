@@ -22,7 +22,7 @@ func (a *Pass) checkTypeDefinition(definition *cst.TypeDef) {
 	if _, ok := definition.TypeNode.(*cst.StructType); ok && token.IsExported(definition.IDENT.Src()) {
 		state := a.declarationState()
 		state.publicStructs++
-		limit := a.limit("max-public-structs")
+		limit := a.intOption("max-public-structs")
 		if state.publicStructs > limit {
 			a.report("max-public-structs", definition.IDENT, fmt.Sprintf("file declares more than %d exported structs", limit))
 		}

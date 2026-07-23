@@ -11,6 +11,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 
+	"github.com/gempir/strider/internal/checkconfig"
 	"github.com/gempir/strider/internal/diagnostic"
 	"github.com/gempir/strider/internal/pathfilter"
 	"github.com/gempir/strider/internal/ui"
@@ -49,17 +50,16 @@ type fileConfig struct {
 	Checks    map[string]toml.Primitive `toml:"checks"`
 }
 
-type CheckConfig struct {
-	Severity         string   `toml:"severity"`
-	Excludes         []string `toml:"excludes"`
-	Characters       []string `toml:"characters"`
-	MaxLines         *int     `toml:"max-lines"`
-	MaxStatements    *int     `toml:"max-statements"`
-	MaxResults       *int     `toml:"max-results"`
-	MaxParameters    *int     `toml:"max-parameters"`
-	MaxPublicStructs *int     `toml:"max-public-structs"`
-	MaxMethods       *int     `toml:"max-methods"`
-	BlockedImports   []string `toml:"blocked-imports"`
+type CheckConfig = checkconfig.Setting
+
+type OptionValue = checkconfig.Value
+
+func IntValue(value int) OptionValue {
+	return checkconfig.IntValue(value)
+}
+
+func StringsValue(value []string) OptionValue {
+	return checkconfig.StringsValue(value)
 }
 
 func Defaults() Config {
@@ -146,63 +146,19 @@ func Load(explicitPath string, disabled bool) (Config, error) {
 // NormalizeCheckCode returns the canonical spelling used by configuration,
 // selection, and lookup APIs.
 func NormalizeCheckCode(code string) string {
-	return strings.ToLower(code)
+	return checkconfig.NormalizeCode(code)
 }
 
 // NormalizeCheckSettings canonicalizes setting keys and rejects ambiguous
 // case-folded spellings.
 func NormalizeCheckSettings(settings map[string]CheckConfig) (map[string]CheckConfig, error) {
-	keys := make([]string, 0, len(settings))
-	for code := range settings {
-		keys = append(keys, code)
-	}
-	sort.Strings(keys)
-	normalized := make(map[string]CheckConfig, len(settings))
-	spellings := make(map[string][]string, len(settings))
-	for _, code := range keys {
-		canonical := NormalizeCheckCode(code)
-		spellings[canonical] = append(spellings[canonical], code)
-		normalized[canonical] = settings[code]
-	}
-	duplicates := duplicateSpellings(spellings)
-	if len(duplicates) != 0 {
-		return nil, fmt.Errorf("duplicate case-insensitive check setting(s): %s", strings.Join(duplicates, "; "))
-	}
-	return normalized, nil
+	return checkconfig.NormalizeSettings(settings)
 }
 
 // NormalizeCheckCodes canonicalizes an explicit selection and rejects
 // ambiguous repeated spellings.
 func NormalizeCheckCodes(codes []string) ([]string, error) {
-	normalized := make([]string, 0, len(codes))
-	spellings := make(map[string][]string, len(codes))
-	for _, code := range codes {
-		canonical := NormalizeCheckCode(code)
-		normalized = append(normalized, canonical)
-		spellings[canonical] = append(spellings[canonical], code)
-	}
-	duplicates := duplicateSpellings(spellings)
-	if len(duplicates) != 0 {
-		return nil, fmt.Errorf("duplicate case-insensitive check selection(s): %s", strings.Join(duplicates, "; "))
-	}
-	return normalized, nil
-}
-
-func duplicateSpellings(spellings map[string][]string) []string {
-	duplicates := make([]string, 0, len(spellings))
-	for _, values := range spellings {
-		if len(values) < 2 {
-			continue
-		}
-		sort.Strings(values)
-		quoted := make([]string, len(values))
-		for index, value := range values {
-			quoted[index] = fmt.Sprintf("%q", value)
-		}
-		duplicates = append(duplicates, strings.Join(quoted, ", "))
-	}
-	sort.Strings(duplicates)
-	return duplicates
+	return checkconfig.NormalizeCodes(codes)
 }
 
 func decodeCheck(destination *ToolConfig, values map[string]toml.Primitive, metadata toml.MetaData) error {
@@ -232,8 +188,8 @@ func decodeChecks(destination *ToolConfig, values map[string]toml.Primitive, met
 		if metadata.Type("checks", code) != "Hash" {
 			return fmt.Errorf("unknown configuration key(s): checks.%s", code)
 		}
-		check := CheckConfig{}
-		if err := metadata.PrimitiveDecode(value, &check); err != nil {
+		check, err := decodeCheckSetting(value, metadata)
+		if err != nil {
 			return err
 		}
 		destination.Settings[code] = check
@@ -241,52 +197,84 @@ func decodeChecks(destination *ToolConfig, values map[string]toml.Primitive, met
 	return nil
 }
 
-// ConfiguredOptions returns behavioral option names explicitly present in the
-// decoded configuration.
-func (check CheckConfig) ConfiguredOptions() []string {
-	configured := make([]string, 0, 8)
-	for _, option := range []struct {
-		name    string
-		present bool
-	}{
-		{
-			name:    "characters",
-			present: check.Characters != nil,
-		},
-		{
-			name:    "max-lines",
-			present: check.MaxLines != nil,
-		},
-		{
-			name:    "max-statements",
-			present: check.MaxStatements != nil,
-		},
-		{
-			name:    "max-results",
-			present: check.MaxResults != nil,
-		},
-		{
-			name:    "max-parameters",
-			present: check.MaxParameters != nil,
-		},
-		{
-			name:    "max-public-structs",
-			present: check.MaxPublicStructs != nil,
-		},
-		{
-			name:    "max-methods",
-			present: check.MaxMethods != nil,
-		},
-		{
-			name:    "blocked-imports",
-			present: check.BlockedImports != nil,
-		},
-	} {
-		if option.present {
-			configured = append(configured, option.name)
+func decodeCheckSetting(value toml.Primitive, metadata toml.MetaData) (CheckConfig, error) {
+	table := make(map[string]any)
+	if err := metadata.PrimitiveDecode(value, &table); err != nil {
+		return CheckConfig{}, err
+	}
+	setting := CheckConfig{
+		Options: make(map[string]OptionValue),
+	}
+	keys := make([]string, 0, len(table))
+	for name := range table {
+		keys = append(keys, name)
+	}
+	sort.Strings(keys)
+	for _, name := range keys {
+		raw := table[name]
+		switch name {
+		case "severity":
+			severity, ok := raw.(string)
+			if !ok {
+				return CheckConfig{}, fmt.Errorf("checks severity must be a string")
+			}
+			setting.Severity = severity
+		case "excludes":
+			excludes, ok := stringList(raw)
+			if !ok {
+				return CheckConfig{}, fmt.Errorf("checks excludes must be a string list")
+			}
+			setting.Excludes = excludes
+		default:
+			option, err := decodeOptionValue(name, raw)
+			if err != nil {
+				return CheckConfig{}, err
+			}
+			setting.Options[name] = option
 		}
 	}
-	return configured
+	if len(setting.Options) == 0 {
+		setting.Options = nil
+	}
+	normalized, err := checkconfig.NormalizeOptions(setting.Options)
+	if err != nil {
+		return CheckConfig{}, err
+	}
+	setting.Options = normalized
+	return setting, nil
+}
+
+func decodeOptionValue(name string, raw any) (OptionValue, error) {
+	switch value := raw.(type) {
+	case int64:
+		return IntValue(int(value)), nil
+	case int:
+		return IntValue(value), nil
+	default:
+		if strings, ok := stringList(raw); ok {
+			return StringsValue(strings), nil
+		}
+		return OptionValue{}, fmt.Errorf("check option %q must be an integer or string list", name)
+	}
+}
+
+func stringList(raw any) ([]string, bool) {
+	switch values := raw.(type) {
+	case []string:
+		return append([]string(nil), values...), true
+	case []any:
+		result := make([]string, len(values))
+		for index, value := range values {
+			stringValue, ok := value.(string)
+			if !ok {
+				return nil, false
+			}
+			result[index] = stringValue
+		}
+		return result, true
+	default:
+		return nil, false
+	}
 }
 
 func discover() (string, error) {
@@ -345,39 +333,6 @@ func validateTool(name string, tool ToolConfig) error {
 		if check.Severity != "" && !diagnostic.ValidSeverity(diagnostic.Severity(check.Severity)) {
 			issues = append(issues, fmt.Sprintf("%s.%s.severity must be none, note, warning, or error", name, code))
 		}
-		for _, option := range []struct {
-			name  string
-			value *int
-		}{
-			{
-				name:  "max-lines",
-				value: check.MaxLines,
-			},
-			{
-				name:  "max-statements",
-				value: check.MaxStatements,
-			},
-			{
-				name:  "max-results",
-				value: check.MaxResults,
-			},
-			{
-				name:  "max-parameters",
-				value: check.MaxParameters,
-			},
-			{
-				name:  "max-public-structs",
-				value: check.MaxPublicStructs,
-			},
-			{
-				name:  "max-methods",
-				value: check.MaxMethods,
-			},
-		} {
-			if option.value != nil && *option.value < 0 {
-				issues = append(issues, fmt.Sprintf("%s.%s.%s must not be negative", name, code, option.name))
-			}
-		}
 		if err := pathfilter.Validate(check.Excludes); err != nil {
 			issues = append(issues, fmt.Sprintf("%s.%s.excludes: %v", name, code, err))
 		}
@@ -406,34 +361,9 @@ func (configuration Config) EffectiveCheck(code string) CheckConfig {
 
 // CloneCheckConfig returns an owned copy of a check setting.
 func CloneCheckConfig(check CheckConfig) CheckConfig {
-	return cloneCheckConfig(check)
+	return check.Clone()
 }
 
 func cloneCheckConfig(check CheckConfig) CheckConfig {
-	cloned := check
-	cloned.Excludes = cloneStrings(check.Excludes)
-	cloned.Characters = cloneStrings(check.Characters)
-	cloned.BlockedImports = cloneStrings(check.BlockedImports)
-	cloned.MaxLines = cloneInt(check.MaxLines)
-	cloned.MaxStatements = cloneInt(check.MaxStatements)
-	cloned.MaxResults = cloneInt(check.MaxResults)
-	cloned.MaxParameters = cloneInt(check.MaxParameters)
-	cloned.MaxPublicStructs = cloneInt(check.MaxPublicStructs)
-	cloned.MaxMethods = cloneInt(check.MaxMethods)
-	return cloned
-}
-
-func cloneStrings(values []string) []string {
-	if values == nil {
-		return nil
-	}
-	return append([]string{}, values...)
-}
-
-func cloneInt(value *int) *int {
-	if value == nil {
-		return nil
-	}
-	cloned := *value
-	return &cloned
+	return check.Clone()
 }

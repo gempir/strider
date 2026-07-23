@@ -4,22 +4,21 @@ import (
 	"fmt"
 	"go/token"
 
+	"github.com/gempir/strider/internal/checks/catalog"
 	"github.com/gempir/strider/internal/cst"
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
 type Pass struct {
-	filename         string
-	tree             *cst.Tree
-	content          []byte
-	reporter         func(Finding)
-	ancestors        []cst.Node
-	current          cst.Node
-	activeCode       string
-	bannedCharacters map[rune]bool
-	limits           map[string]int
-	blockedImports   map[string]bool
-	checkState       map[checkStateKey]any
+	filename   string
+	tree       *cst.Tree
+	content    []byte
+	reporter   func(Finding)
+	ancestors  []cst.Node
+	current    cst.Node
+	activeCode string
+	options    map[string]catalog.ResolvedOptions
+	checkState map[checkStateKey]any
 }
 
 // AnalyzeCST runs selected native CST checks over one lossless source tree.
@@ -28,20 +27,12 @@ func AnalyzeCST(input CSTInput) {
 		return
 	}
 	analyzer := &Pass{
-		filename:         input.Filename,
-		tree:             input.Tree,
-		content:          input.Tree.Bytes(),
-		reporter:         input.Report,
-		limits:           input.Limits,
-		bannedCharacters: make(map[rune]bool, len(input.BannedCharacters)),
-		blockedImports:   make(map[string]bool, len(input.BlockedImports)),
-		checkState:       make(map[checkStateKey]any),
-	}
-	for _, path := range input.BlockedImports {
-		analyzer.blockedImports[path] = true
-	}
-	for _, character := range input.BannedCharacters {
-		analyzer.bannedCharacters[character] = true
+		filename:   input.Filename,
+		tree:       input.Tree,
+		content:    input.Tree.Bytes(),
+		reporter:   input.Report,
+		options:    input.Options,
+		checkState: make(map[checkStateKey]any),
 	}
 	dispatch := make(map[NodeKind][]Check)
 	for _, check := range input.Checks {
@@ -147,7 +138,7 @@ func (a *Pass) checkMethod(method *cst.MethodDecl, facts *functionFacts) {
 func (a *Pass) checkSignature(name cst.Token, parameters *cst.Parameters, complexity int) {
 	if a.active("max-parameters") {
 		count := parameterCount(parameters)
-		limit := a.limit("max-parameters")
+		limit := a.intOption("max-parameters")
 		if count > limit {
 			a.report("max-parameters", name, fmt.Sprintf("function has %d parameters; maximum is %d", count, limit))
 		}
@@ -159,8 +150,14 @@ func (a *Pass) checkSignature(name cst.Token, parameters *cst.Parameters, comple
 	}
 }
 
-func (a *Pass) limit(code string) int {
-	return a.limits[code]
+func (a *Pass) intOption(name string) int {
+	value, _ := a.options[a.activeCode].Int(name)
+	return value
+}
+
+func (a *Pass) stringsOption(name string) []string {
+	value, _ := a.options[a.activeCode].Strings(name)
+	return value
 }
 
 func parameterCount(parameters *cst.Parameters) int {

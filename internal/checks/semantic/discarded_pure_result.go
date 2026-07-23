@@ -105,9 +105,3 @@ func benchmarkHelper(function *ssa.Function) bool {
 func knownPureFunction(function *types.Func) bool {
 	return pureStandardFunctions[function.FullName()]
 }
-
-func (discardedPureResultCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageSSA,
-	}
-}

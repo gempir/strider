@@ -14,9 +14,8 @@ const syntaxFacts = FactCallArguments | FactParents
 const ssaFacts = FactStaticCalls
 
 type packageFactData struct {
-	arguments      map[token.Pos][]ast.Node
-	firstArguments map[token.Pos]ast.Node
-	parents        map[ast.Node]ast.Node
+	arguments map[token.Pos][]ast.Node
+	parents   map[ast.Node]ast.Node
 }
 
 type packageFactBuilder func([]*ast.File, FactSet) packageFactData
@@ -89,13 +88,9 @@ func (facts *packageFacts) requireSSA(functions []*ssa.Function, wanted FactSet)
 func buildPackageFacts(files []*ast.File, required FactSet) packageFactData {
 	result := packageFactData{}
 	wantArguments := required.Has(FactCallArguments)
-	wantFirstArgument := required.Has(FactCallArguments)
 	wantParents := required.Has(FactParents)
 	if wantArguments {
 		result.arguments = make(map[token.Pos][]ast.Node)
-	}
-	if wantFirstArgument {
-		result.firstArguments = make(map[token.Pos]ast.Node)
 	}
 	if wantParents {
 		result.parents = make(map[ast.Node]ast.Node)
@@ -117,7 +112,7 @@ func buildPackageFacts(files []*ast.File, required FactSet) packageFactData {
 					}
 					stack = append(stack, node)
 				}
-				if !wantArguments && !wantFirstArgument {
+				if !wantArguments {
 					return true
 				}
 				call, ok := node.(*ast.CallExpr)
@@ -131,10 +126,6 @@ func buildPackageFacts(files []*ast.File, required FactSet) packageFactData {
 					}
 					result.arguments[call.Pos()] = arguments
 					result.arguments[call.Lparen] = arguments
-				}
-				if wantFirstArgument && len(call.Args) != 0 {
-					result.firstArguments[call.Pos()] = call.Args[0]
-					result.firstArguments[call.Lparen] = call.Args[0]
 				}
 				return true
 			},
@@ -152,11 +143,7 @@ func buildPackageSSAFacts(functions []*ssa.Function, required FactSet, staticCal
 	if !required.Has(FactStaticCalls) {
 		return result
 	}
-	packageCount := 0
-	if len(staticCallPackages) != 0 {
-		packageCount = len(staticCallPackages[0])
-	}
-	counts := make(map[string]int, packageCount)
+	result.staticCallsByPackage = make(map[string][]ssa.CallInstruction)
 	for _, function := range functions {
 		for _, block := range function.Blocks {
 			for _, instruction := range block.Instrs {
@@ -170,29 +157,6 @@ func buildPackageSSAFacts(functions []*ssa.Function, required FactSet, staticCal
 				}
 				packagePath := callee.Object().Pkg().Path()
 				if len(staticCallPackages) != 0 && staticCallPackages[0] != nil && !staticCallPackages[0][packagePath] {
-					continue
-				}
-				counts[packagePath]++
-			}
-		}
-	}
-	result.staticCallsByPackage = make(map[string][]ssa.CallInstruction, len(counts))
-	for packagePath, count := range counts {
-		result.staticCallsByPackage[packagePath] = make([]ssa.CallInstruction, 0, count)
-	}
-	for _, function := range functions {
-		for _, block := range function.Blocks {
-			for _, instruction := range block.Instrs {
-				call, ok := instruction.(ssa.CallInstruction)
-				if !ok {
-					continue
-				}
-				callee := call.Common().StaticCallee()
-				if callee == nil || callee.Object() == nil || callee.Object().Pkg() == nil {
-					continue
-				}
-				packagePath := callee.Object().Pkg().Path()
-				if counts[packagePath] == 0 {
 					continue
 				}
 				result.staticCallsByPackage[packagePath] = append(result.staticCallsByPackage[packagePath], call)
@@ -210,12 +174,12 @@ func (pass *Pass) argumentsByCallPosition() map[token.Pos][]ast.Node {
 	return pass.facts.data.arguments
 }
 
-func (pass *Pass) firstArgumentsByCallPosition() map[token.Pos]ast.Node {
-	if pass.facts == nil {
+func (pass *Pass) firstArgumentByCallPosition(position token.Pos) ast.Node {
+	arguments := pass.argumentsByCallPosition()[position]
+	if len(arguments) == 0 {
 		return nil
 	}
-	pass.facts.require(pass.Files, FactCallArguments)
-	return pass.facts.data.firstArguments
+	return arguments[0]
 }
 
 func (pass *Pass) analysisParents() map[ast.Node]ast.Node {

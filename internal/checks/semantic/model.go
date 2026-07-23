@@ -19,7 +19,6 @@ type Meta = catalog.Meta
 // Check is a package-aware semantic check.
 type Check interface {
 	catalog.Check
-	Requirements() Requirements
 	Run(*Pass)
 }
 

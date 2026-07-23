@@ -168,14 +168,3 @@ func hasCustomSerializationMethod(valueType types.Type, descriptor serialization
 	}
 	return false
 }
-
-func (unexportedSerializationFieldsCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageSSA,
-		Facts: FactCallArguments | FactStaticCalls,
-		staticCallPackages: []string{
-			"encoding/json",
-			"encoding/xml",
-		},
-	}
-}

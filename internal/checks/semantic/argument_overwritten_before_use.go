@@ -112,9 +112,3 @@ func firstAssignmentToObject(pass *Pass, body *ast.BlockStmt, object types.Objec
 	)
 	return found
 }
-
-func (argumentOverwrittenBeforeUseCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageSSA,
-	}
-}

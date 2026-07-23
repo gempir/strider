@@ -23,7 +23,6 @@ func (invalidRegexpCheck) Meta() Meta {
 }
 
 func (invalidRegexpCheck) Run(pass *Pass) {
-	calls := pass.firstArgumentsByCallPosition()
 	for _, call := range pass.staticCallsInPackage("regexp") {
 		if !isRegexpCompileCall(call) || len(call.Common().Args) == 0 {
 			continue
@@ -33,7 +32,7 @@ func (invalidRegexpCheck) Run(pass *Pass) {
 			continue
 		}
 		if _, err := regexp.Compile(constant.StringVal(value.Value)); err != nil {
-			if node := calls[call.Pos()]; node != nil {
+			if node := pass.firstArgumentByCallPosition(call.Pos()); node != nil {
 				pass.Report(node, err.Error())
 			} else {
 				pass.ReportPos(call.Pos(), err.Error())
@@ -73,15 +72,5 @@ func ssaConstant(value ssa.Value) *ssa.Const {
 		return ssaConstant(value.X)
 	default:
 		return nil
-	}
-}
-
-func (invalidRegexpCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageSSA,
-		Facts: FactCallArguments | FactStaticCalls,
-		staticCallPackages: []string{
-			"regexp",
-		},
 	}
 }

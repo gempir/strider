@@ -78,9 +78,3 @@ func sortSliceTypeName(pass *Pass, expression ast.Expr) string {
 		return ""
 	}
 }
-
-func (sortConversionWithoutSortCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

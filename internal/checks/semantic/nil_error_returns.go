@@ -262,15 +262,3 @@ func isExplicitNil(pass *Pass, expression ast.Expr) bool {
 	_, ok = pass.TypesInfo.ObjectOf(identifier).(*types.Nil)
 	return ok
 }
-
-func (nilErrorReturnCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}
-
-func (nilValueWithNilErrorCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

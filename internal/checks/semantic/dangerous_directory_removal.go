@@ -63,13 +63,3 @@ func dangerousDirectorySource(value ssa.Value) (string, string) {
 		return "", ""
 	}
 }
-
-func (dangerousDirectoryRemovalCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageSSA,
-		Facts: FactStaticCalls,
-		staticCallPackages: []string{
-			"os",
-		},
-	}
-}

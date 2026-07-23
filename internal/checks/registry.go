@@ -42,7 +42,7 @@ type catalogEntry struct {
 	meta     Meta
 	engine   Engine
 	syntax   syntax.Check
-	semantic semantic.Check
+	semantic semantic.Descriptor
 }
 
 func (entry catalogEntry) Meta() Meta {

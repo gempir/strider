@@ -190,9 +190,3 @@ func receiverTypeName(valueType types.Type) string {
 	}
 	return named.Obj().Name()
 }
-
-func (ineffectiveValueReceiverAssignmentCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageSSA,
-	}
-}

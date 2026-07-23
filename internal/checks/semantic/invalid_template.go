@@ -86,9 +86,3 @@ func parseTemplate(kind, source string) string {
 	}
 	return err.Error()
 }
-
-func (invalidTemplateCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

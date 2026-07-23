@@ -82,9 +82,3 @@ func syncLockCall(pass *Pass, call *ast.CallExpr) (ast.Expr, string, bool) {
 	}
 	return selector.X, function.Name(), true
 }
-
-func (deferredLockAfterLockCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

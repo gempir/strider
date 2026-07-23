@@ -32,9 +32,3 @@ func (nilMapAssignmentCheck) Run(pass *Pass) {
 		}
 	}
 }
-
-func (nilMapAssignmentCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageSSA,
-	}
-}

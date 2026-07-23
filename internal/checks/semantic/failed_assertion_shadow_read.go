@@ -236,9 +236,3 @@ func expressionIsObject(expression ast.Expr, object types.Object, pass *Pass) bo
 	identifier, ok := unparenExpression(expression).(*ast.Ident)
 	return ok && pass.TypesInfo.ObjectOf(identifier) == object
 }
-
-func (failedAssertionShadowReadCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

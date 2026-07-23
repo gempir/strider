@@ -296,9 +296,3 @@ func statementMutatesSlice(pass *Pass, statement ast.Stmt, variable *types.Var) 
 	)
 	return mutated
 }
-
-func (slicePreallocationCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

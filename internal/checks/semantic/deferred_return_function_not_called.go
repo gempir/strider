@@ -42,9 +42,3 @@ func (deferredReturnFunctionNotCalledCheck) Run(pass *Pass) {
 		},
 	)
 }
-
-func (deferredReturnFunctionNotCalledCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

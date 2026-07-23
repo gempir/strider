@@ -59,9 +59,3 @@ func addressComparedWithNil(pass *Pass, addressExpression, nilExpression ast.Exp
 	_, isNil := pass.TypesInfo.ObjectOf(identifier).(*types.Nil)
 	return isNil
 }
-
-func (addressNilComparisonCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

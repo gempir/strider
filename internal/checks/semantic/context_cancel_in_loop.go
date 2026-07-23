@@ -258,9 +258,3 @@ func calledCancelObject(pass *Pass, expression ast.Expr) types.Object {
 	}
 	return object
 }
-
-func (contextCancelInLoopCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

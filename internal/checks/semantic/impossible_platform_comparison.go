@@ -229,9 +229,3 @@ func knownPlatformTarget(kind, target string) bool {
 	}
 	return knownArchitectures[target]
 }
-
-func (impossiblePlatformComparisonCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

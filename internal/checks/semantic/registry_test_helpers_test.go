@@ -10,8 +10,8 @@ import (
 
 type Registry = Plan
 
-func (registry *Plan) Checks() []Check {
-	return append([]Check(nil), registry.checks...)
+func (registry *Plan) Checks() []Descriptor {
+	return append([]Descriptor(nil), registry.checks...)
 }
 
 type RegistryOptions struct {
@@ -21,17 +21,19 @@ type RegistryOptions struct {
 	MinimumSeverity diagnostic.Severity
 }
 
-func allChecks() []Check {
+func allChecks() []Descriptor {
 	return Catalog()
 }
 
 func NewRegistry(options RegistryOptions) (*Registry, error) {
-	selection, err := catalog.Select(catalog.SelectionOptions[Check]{
-		Checks:          Catalog(),
-		Only:            options.Only,
-		Settings:        options.Settings,
-		MinimumSeverity: options.MinimumSeverity,
-	})
+	selection, err := catalog.Select(
+		catalog.SelectionOptions[Descriptor]{
+			Checks:          Catalog(),
+			Only:            options.Only,
+			Settings:        options.Settings,
+			MinimumSeverity: options.MinimumSeverity,
+		},
+	)
 	if err != nil {
 		return nil, err
 	}

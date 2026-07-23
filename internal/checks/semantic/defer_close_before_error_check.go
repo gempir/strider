@@ -85,9 +85,3 @@ func selectorRootIdentifier(expression ast.Expr) *ast.Ident {
 		return nil
 	}
 }
-
-func (deferCloseBeforeErrorCheckCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

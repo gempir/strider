@@ -211,9 +211,3 @@ func knownCompositeLength(pass *Pass, expression ast.Expr) int {
 	}
 	return len(composite.Elts)
 }
-
-func (oddPairedArgumentsCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

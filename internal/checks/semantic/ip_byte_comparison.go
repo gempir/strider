@@ -41,13 +41,3 @@ func convertedFromNamedType(value ssa.Value, packagePath, name string) bool {
 	}
 	return isNamedType(change.X.Type(), packagePath, name)
 }
-
-func (ipByteComparisonCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageSSA,
-		Facts: FactCallArguments | FactStaticCalls,
-		staticCallPackages: []string{
-			"bytes",
-		},
-	}
-}

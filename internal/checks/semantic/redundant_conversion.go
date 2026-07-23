@@ -41,9 +41,3 @@ func (redundantConversionCheck) Run(pass *Pass) {
 		},
 	)
 }
-
-func (redundantConversionCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

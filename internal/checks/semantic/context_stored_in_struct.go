@@ -39,9 +39,3 @@ func (contextStoredInStructCheck) Run(pass *Pass) {
 		},
 	)
 }
-
-func (contextStoredInStructCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

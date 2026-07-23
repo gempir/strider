@@ -121,9 +121,3 @@ func formatsURLHostAndPort(format string) bool {
 	authority = authority[:end]
 	return strings.Contains(authority, "%s:") || strings.Contains(authority, "%v:")
 }
-
-func (unsafeFormattedURLHostPortCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

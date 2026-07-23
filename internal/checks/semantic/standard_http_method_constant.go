@@ -86,9 +86,3 @@ func standardHTTPMethodObject(pass *Pass, expression ast.Expr) bool {
 	constantObject, _ := object.(*types.Const)
 	return constantObject != nil && constantObject.Pkg() != nil && constantObject.Pkg().Path() == "net/http" && strings.HasPrefix(constantObject.Name(), "Method")
 }
-
-func (standardHTTPMethodConstantCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

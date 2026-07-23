@@ -82,10 +82,3 @@ func unchangedConditionCandidate(pass *Pass, loop *ast.ForStmt) (*ast.BinaryExpr
 	}
 	return condition, true
 }
-
-func (unchangedLoopConditionCheck) Requirements() Requirements {
-	return Requirements{
-		Stage:       AnalysisStageSSA,
-		SSAFeatures: SSAFeatureGlobalDebug,
-	}
-}

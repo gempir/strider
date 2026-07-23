@@ -60,9 +60,3 @@ func isNetURLMethod(pass *Pass, selector *ast.SelectorExpr, name string) bool {
 	function := calledFunction(pass.TypesInfo, selector)
 	return function != nil && function.Pkg() != nil && function.Pkg().Path() == "net/url" && function.Name() == name
 }
-
-func (urlQueryCopyMutationCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

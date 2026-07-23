@@ -65,9 +65,3 @@ func (contradictoryInterfaceAssertionCheck) Run(pass *Pass) {
 		},
 	)
 }
-
-func (contradictoryInterfaceAssertionCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

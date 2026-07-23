@@ -46,9 +46,3 @@ func (suspiciousSleepCheck) Run(pass *Pass) {
 		},
 	)
 }
-
-func (suspiciousSleepCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

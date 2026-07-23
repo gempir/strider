@@ -169,10 +169,3 @@ func ssaValueHasUse(value ssa.Value, switchTags map[ssa.Value]bool, seen map[ssa
 	}
 	return false
 }
-
-func (overwrittenBeforeUseCheck) Requirements() Requirements {
-	return Requirements{
-		Stage:       AnalysisStageSSA,
-		SSAFeatures: SSAFeatureGlobalDebug,
-	}
-}

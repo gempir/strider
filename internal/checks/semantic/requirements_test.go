@@ -37,7 +37,7 @@ func TestCheckRequirementsCoverCatalog(t *testing.T) {
 		}
 		seen[code] = true
 		codes = append(codes, code)
-		requirements := check.Requirements()
+		requirements := check.requirements
 		switch requirements.Stage {
 		case AnalysisStageTypes:
 		case AnalysisStageSSA:
@@ -253,7 +253,10 @@ func TestNamedPackageFactsInitializeOnce(t *testing.T) {
 			case 0:
 				_ = pass.argumentsByCallPosition()
 			case 1:
-				_ = pass.firstArgumentsByCallPosition()
+				for position := range pass.argumentsByCallPosition() {
+					_ = pass.firstArgumentByCallPosition(position)
+					break
+				}
 			default:
 				_ = pass.analysisParents()
 			}
@@ -266,8 +269,14 @@ func TestNamedPackageFactsInitializeOnce(t *testing.T) {
 	if len(pass.argumentsByCallPosition()) != 2 {
 		t.Fatalf("call argument index has %d entries, want 2", len(pass.argumentsByCallPosition()))
 	}
-	if len(pass.firstArgumentsByCallPosition()) != 2 {
-		t.Fatalf("first call argument index has %d entries, want 2", len(pass.firstArgumentsByCallPosition()))
+	firstArguments := 0
+	for position := range pass.argumentsByCallPosition() {
+		if pass.firstArgumentByCallPosition(position) != nil {
+			firstArguments++
+		}
+	}
+	if firstArguments != 2 {
+		t.Fatalf("first call argument index has %d entries, want 2", firstArguments)
 	}
 	if len(pass.analysisParents()) == 0 {
 		t.Fatal("parent index is empty")

@@ -72,9 +72,3 @@ func constantFalse(pass *Pass, expression ast.Expr) bool {
 	value := pass.TypesInfo.Types[expression].Value
 	return value != nil && value.Kind() == constant.Bool && !constant.BoolVal(value)
 }
-
-func (spinningEmptyLoopCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

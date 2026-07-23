@@ -87,9 +87,3 @@ func reportUncheckedRowsErrors(pass *Pass, body *ast.BlockStmt) {
 		pass.Report(node, "sql.Rows iteration does not check Rows.Err; iteration failures are indistinguishable from successful completion")
 	}
 }
-
-func (uncheckedRowsErrorCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

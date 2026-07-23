@@ -30,7 +30,7 @@ type target struct {
 
 type analysisTask struct {
 	pass  *Pass
-	check Check
+	check Descriptor
 }
 
 type ssaBuildResult struct {
@@ -42,8 +42,16 @@ type ssaBuildResult struct {
 type ssaBuildFunc func([]*packages.Package, ssa.BuilderMode) ssaBuildResult
 
 type analysisFinding struct {
-	key        string
+	key        analysisFindingKey
 	diagnostic diagnostic.Diagnostic
+}
+
+type analysisFindingKey struct {
+	filename string
+	start    int
+	end      int
+	code     string
+	message  string
 }
 
 type analysisFileInfo struct {
@@ -200,9 +208,9 @@ func runContext(ctx context.Context, paths []string, registry *Plan, ssaBuilder 
 	}
 
 	taskCount := len(passes) * len(registry.checks)
-	jobs := make(chan analysisTask)
-	results := make(chan []analysisFinding, taskCount)
 	workers := min(runtime.GOMAXPROCS(0), max(1, taskCount))
+	jobs := make(chan analysisTask)
+	results := make(chan []analysisFinding, workers)
 	var group sync.WaitGroup
 	for range workers {
 		group.Add(1)
@@ -221,25 +229,29 @@ func runContext(ctx context.Context, paths []string, registry *Plan, ssaBuilder 
 			}
 		}()
 	}
-dispatch:
-	for _, pass := range passes {
-		for _, check := range registry.checks {
-			select {
-			case <-ctx.Done():
-				break dispatch
-			case jobs <- analysisTask{
-				pass:  pass,
-				check: check,
-			}:
+	go func() {
+	dispatch:
+		for _, pass := range passes {
+			for _, check := range registry.checks {
+				select {
+				case <-ctx.Done():
+					break dispatch
+				case jobs <- analysisTask{
+					pass:  pass,
+					check: check,
+				}:
+				}
 			}
 		}
-	}
-	close(jobs)
-	group.Wait()
-	close(results)
+		close(jobs)
+	}()
+	go func() {
+		group.Wait()
+		close(results)
+	}()
 
 	diagnostics := make([]diagnostic.Diagnostic, 0)
-	seenDiagnostics := make(map[string]bool)
+	seenDiagnostics := make(map[analysisFindingKey]bool)
 	for findings := range results {
 		for _, finding := range findings {
 			if seenDiagnostics[finding.key] {
@@ -338,7 +350,13 @@ func runAnalysisTask(task analysisTask, registry *Plan, fileInfoFor func(string)
 		findings = append(
 			findings,
 			analysisFinding{
-				key: fmt.Sprintf("%s:%d:%d:%s:%s", info.filename, position.Offset, endPosition.Offset, meta.Code, message),
+				key: analysisFindingKey{
+					filename: info.filename,
+					start:    position.Offset,
+					end:      endPosition.Offset,
+					code:     meta.Code,
+					message:  message,
+				},
 				diagnostic: diagnostic.Diagnostic{
 					Code:     meta.Code,
 					Message:  message,

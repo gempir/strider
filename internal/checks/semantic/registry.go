@@ -25,118 +25,303 @@ const (
 	SSAFeatureGlobalDebug SSAFeatureSet = 1 << iota
 )
 
-var checkCatalog = []Check{
-	invalidRegexpCheck{},
-	invalidTemplateCheck{},
-	invalidTimeParseCheck{},
-	unsupportedBinaryWriteCheck{},
-	suspiciousSleepCheck{},
-	invalidExecCommandCheck{},
-	dynamicPrintfCheck{},
-	invalidURLCheck{},
-	nonCanonicalHeaderCheck{},
-	regexpFindAllZeroCheck{},
-	invalidUTF8StringArgumentCheck{},
-	nilContextCheck{},
-	swappedSeekArgumentsCheck{},
-	nonPointerUnmarshalCheck{},
-	leakyTimeTickCheck{},
-	untrappableSignalCheck{},
-	unbufferedSignalChannelCheck{},
-	zeroReplacementLimitCheck{},
-	deprecatedAPIUsageCheck{},
-	invalidListenAddressCheck{},
-	ipByteComparisonCheck{},
-	writerBufferMutationCheck{},
-	duplicateTrimCutsetCheck{},
-	timerResetDrainRaceCheck{},
-	unsupportedMarshalTypeCheck{},
-	misalignedAtomic64Check{},
-	sortNonSliceCheck{},
-	contextKeyTypeCheck{},
-	invalidStrconvArgumentCheck{},
-	overlappingEncodeBuffersCheck{},
-	swappedErrorsIsArgumentsCheck{},
-	waitGroupAddInsideGoroutineCheck{},
-	emptyCriticalSectionCheck{},
-	testingFatalInGoroutineCheck{},
-	deferredLockAfterLockCheck{},
-	testMainMissingExitCheck{},
-	timeValueEqualityCheck{},
-	waitGroupGoForbiddenCallCheck{},
-	rangeValueCaptureCheck{},
-	benchmarkIterationMutationCheck{},
-	identicalBinaryOperandsCheck{},
-	impossibleIntegerComparisonCheck{},
-	singleIterationLoopCheck{},
-	ineffectiveValueReceiverAssignmentCheck{},
-	overwrittenBeforeUseCheck{},
-	unchangedLoopConditionCheck{},
-	argumentOverwrittenBeforeUseCheck{},
-	unusedAppendResultCheck{},
-	nanComparisonCheck{},
-	pointlessIntegerMathCheck{},
-	ineffectiveBitwiseZeroCheck{},
-	discardedPureResultCheck{},
-	selfAssignmentCheck{},
-	unreachableTypeSwitchCaseCheck{},
-	singleArgumentAppendCheck{},
-	addressNilComparisonCheck{},
-	impossibleInterfaceNilComparisonCheck{},
-	negativeLengthCapacityComparisonCheck{},
-	constantNegativeZeroCheck{},
-	urlQueryCopyMutationCheck{},
-	sortConversionWithoutSortCheck{},
-	randomBoundOneCheck{},
-	neverNilComparisonCheck{},
-	impossiblePlatformComparisonCheck{},
-	nilMapAssignmentCheck{},
-	deferCloseBeforeErrorCheckCheck{},
-	spinningEmptyLoopCheck{},
-	finalizerCapturesObjectCheck{},
-	infiniteRecursionCheck{},
-	invalidPrintfCallCheck{},
-	contradictoryInterfaceAssertionCheck{},
-	possibleNilDereferenceCheck{},
-	oddPairedArgumentsCheck{},
-	regexpMatchInLoopCheck{},
-	separateByteStringMapKeyCheck{},
-	nonPointerSyncPoolValueCheck{},
-	caseInsensitiveStringComparisonCheck{},
-	byteStringWriteCheck{},
-	decimalFileModeCheck{},
-	partiallyTypedConstantGroupCheck{},
-	unexportedSerializationFieldsCheck{},
-	oversizedFixedWidthShiftCheck{},
-	dangerousDirectoryRemovalCheck{},
-	failedAssertionShadowReadCheck{},
-	deferredReturnFunctionNotCalledCheck{},
-	durationMultipliedByDurationCheck{},
-	contextStoredInStructCheck{},
-	unsafeFormattedURLHostPortCheck{},
-	uncheckedRowsErrorCheck{},
-	errorTypeNamingCheck{},
-	standardHTTPMethodConstantCheck{},
-	weakCryptographyCheck{},
-	appendToSizedSliceCheck{},
-	redundantConversionCheck{},
-	slicePreallocationCheck{},
-	inefficientSprintfCheck{},
-	interfaceMethodLimitCheck{},
-	constructorInterfaceReturnCheck{},
-	slogArgumentShapeCheck{},
-	nilErrorReturnCheck{},
-	nilValueWithNilErrorCheck{},
-	unclosedHTTPResponseBodyCheck{},
-	unclosedSQLResourceCheck{},
-	contextCancelInLoopCheck{},
-	copyLockValueCheck{},
-	discardedErrorResultCheck{},
+var checkCatalog = []Descriptor{
+	semanticCheck(invalidRegexpCheck{}, Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"regexp",
+		},
+	}),
+	typeCheck(invalidTemplateCheck{}),
+	semanticCheck(invalidTimeParseCheck{}, Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"time",
+		},
+	}),
+	semanticCheck(
+		unsupportedBinaryWriteCheck{},
+		Requirements{
+			Stage: AnalysisStageSSA,
+			Facts: FactCallArguments | FactStaticCalls,
+			staticCallPackages: []string{
+				"encoding/binary",
+			},
+		},
+	),
+	typeCheck(suspiciousSleepCheck{}),
+	typeCheck(invalidExecCommandCheck{}),
+	typeCheck(dynamicPrintfCheck{}),
+	semanticCheck(invalidURLCheck{}, Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"net/url",
+		},
+	}),
+	typeCheck(nonCanonicalHeaderCheck{}),
+	semanticCheck(regexpFindAllZeroCheck{}, Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"regexp",
+		},
+	}),
+	semanticCheck(invalidUTF8StringArgumentCheck{}, Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"strings",
+		},
+	}),
+	typeCheck(nilContextCheck{}),
+	typeCheck(swappedSeekArgumentsCheck{}),
+	semanticCheck(
+		nonPointerUnmarshalCheck{},
+		Requirements{
+			Stage: AnalysisStageSSA,
+			Facts: FactCallArguments | FactStaticCalls,
+			staticCallPackages: []string{
+				"encoding/json",
+				"encoding/xml",
+			},
+		},
+	),
+	ssaCheck(leakyTimeTickCheck{}),
+	typeCheck(untrappableSignalCheck{}),
+	semanticCheck(unbufferedSignalChannelCheck{}, Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"os/signal",
+		},
+	}),
+	semanticCheck(
+		zeroReplacementLimitCheck{},
+		Requirements{
+			Stage: AnalysisStageSSA,
+			Facts: FactCallArguments | FactStaticCalls,
+			staticCallPackages: []string{
+				"bytes",
+				"strings",
+			},
+		},
+	),
+	semanticCheck(deprecatedAPIUsageCheck{}, Requirements{
+		Stage: AnalysisStageTypes,
+		Facts: FactDeprecations,
+	}),
+	semanticCheck(invalidListenAddressCheck{}, Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"net/http",
+		},
+	}),
+	semanticCheck(ipByteComparisonCheck{}, Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"bytes",
+		},
+	}),
+	ssaCheck(writerBufferMutationCheck{}),
+	semanticCheck(duplicateTrimCutsetCheck{}, Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"strings",
+		},
+	}),
+	ssaCheck(timerResetDrainRaceCheck{}),
+	semanticCheck(
+		unsupportedMarshalTypeCheck{},
+		Requirements{
+			Stage: AnalysisStageSSA,
+			Facts: FactCallArguments | FactStaticCalls,
+			staticCallPackages: []string{
+				"encoding/json",
+				"encoding/xml",
+			},
+		},
+	),
+	semanticCheck(misalignedAtomic64Check{}, Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"sync/atomic",
+		},
+	}),
+	semanticCheck(sortNonSliceCheck{}, Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"sort",
+		},
+	}),
+	semanticCheck(contextKeyTypeCheck{}, Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"context",
+		},
+	}),
+	semanticCheck(invalidStrconvArgumentCheck{}, Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"strconv",
+		},
+	}),
+	semanticCheck(
+		overlappingEncodeBuffersCheck{},
+		Requirements{
+			Stage: AnalysisStageSSA,
+			Facts: FactCallArguments | FactStaticCalls,
+			staticCallPackages: []string{
+				"encoding/ascii85",
+				"encoding/base32",
+				"encoding/base64",
+				"encoding/hex",
+			},
+		},
+	),
+	semanticCheck(swappedErrorsIsArgumentsCheck{}, Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactCallArguments | FactStaticCalls,
+		staticCallPackages: []string{
+			"errors",
+		},
+	}),
+	typeCheck(waitGroupAddInsideGoroutineCheck{}),
+	typeCheck(emptyCriticalSectionCheck{}),
+	ssaCheck(testingFatalInGoroutineCheck{}),
+	typeCheck(deferredLockAfterLockCheck{}),
+	typeCheck(testMainMissingExitCheck{}),
+	typeCheck(timeValueEqualityCheck{}),
+	typeCheck(waitGroupGoForbiddenCallCheck{}),
+	semanticCheck(rangeValueCaptureCheck{}, Requirements{
+		Stage: AnalysisStageTypes,
+		Facts: FactParents,
+	}),
+	typeCheck(benchmarkIterationMutationCheck{}),
+	semanticCheck(identicalBinaryOperandsCheck{}, Requirements{
+		Stage: AnalysisStageTypes,
+		Facts: FactParents,
+	}),
+	typeCheck(impossibleIntegerComparisonCheck{}),
+	typeCheck(singleIterationLoopCheck{}),
+	ssaCheck(ineffectiveValueReceiverAssignmentCheck{}),
+	semanticCheck(overwrittenBeforeUseCheck{}, Requirements{
+		Stage:       AnalysisStageSSA,
+		SSAFeatures: SSAFeatureGlobalDebug,
+	}),
+	semanticCheck(unchangedLoopConditionCheck{}, Requirements{
+		Stage:       AnalysisStageSSA,
+		SSAFeatures: SSAFeatureGlobalDebug,
+	}),
+	ssaCheck(argumentOverwrittenBeforeUseCheck{}),
+	ssaCheck(unusedAppendResultCheck{}),
+	ssaCheck(nanComparisonCheck{}),
+	ssaCheck(pointlessIntegerMathCheck{}),
+	typeCheck(ineffectiveBitwiseZeroCheck{}),
+	ssaCheck(discardedPureResultCheck{}),
+	ssaCheck(selfAssignmentCheck{}),
+	typeCheck(unreachableTypeSwitchCaseCheck{}),
+	typeCheck(singleArgumentAppendCheck{}),
+	typeCheck(addressNilComparisonCheck{}),
+	ssaCheck(impossibleInterfaceNilComparisonCheck{}),
+	typeCheck(negativeLengthCapacityComparisonCheck{}),
+	typeCheck(constantNegativeZeroCheck{}),
+	typeCheck(urlQueryCopyMutationCheck{}),
+	typeCheck(sortConversionWithoutSortCheck{}),
+	semanticCheck(randomBoundOneCheck{}, Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactStaticCalls,
+		staticCallPackages: []string{
+			"math/rand",
+			"math/rand/v2",
+		},
+	}),
+	semanticCheck(neverNilComparisonCheck{}, Requirements{
+		Stage:       AnalysisStageSSA,
+		SSAFeatures: SSAFeatureGlobalDebug,
+	}),
+	typeCheck(impossiblePlatformComparisonCheck{}),
+	ssaCheck(nilMapAssignmentCheck{}),
+	typeCheck(deferCloseBeforeErrorCheckCheck{}),
+	typeCheck(spinningEmptyLoopCheck{}),
+	semanticCheck(finalizerCapturesObjectCheck{}, Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactStaticCalls,
+		staticCallPackages: []string{
+			"runtime",
+		},
+	}),
+	ssaCheck(infiniteRecursionCheck{}),
+	typeCheck(invalidPrintfCallCheck{}),
+	typeCheck(contradictoryInterfaceAssertionCheck{}),
+	ssaCheck(possibleNilDereferenceCheck{}),
+	typeCheck(oddPairedArgumentsCheck{}),
+	ssaCheck(regexpMatchInLoopCheck{}),
+	semanticCheck(separateByteStringMapKeyCheck{}, Requirements{
+		Stage: AnalysisStageTypes,
+		Facts: FactParents,
+	}),
+	typeCheck(nonPointerSyncPoolValueCheck{}),
+	typeCheck(caseInsensitiveStringComparisonCheck{}),
+	typeCheck(byteStringWriteCheck{}),
+	typeCheck(decimalFileModeCheck{}),
+	typeCheck(partiallyTypedConstantGroupCheck{}),
+	semanticCheck(
+		unexportedSerializationFieldsCheck{},
+		Requirements{
+			Stage: AnalysisStageSSA,
+			Facts: FactCallArguments | FactStaticCalls,
+			staticCallPackages: []string{
+				"encoding/json",
+				"encoding/xml",
+			},
+		},
+	),
+	typeCheck(oversizedFixedWidthShiftCheck{}),
+	semanticCheck(dangerousDirectoryRemovalCheck{}, Requirements{
+		Stage: AnalysisStageSSA,
+		Facts: FactStaticCalls,
+		staticCallPackages: []string{
+			"os",
+		},
+	}),
+	typeCheck(failedAssertionShadowReadCheck{}),
+	typeCheck(deferredReturnFunctionNotCalledCheck{}),
+	typeCheck(durationMultipliedByDurationCheck{}),
+	typeCheck(contextStoredInStructCheck{}),
+	typeCheck(unsafeFormattedURLHostPortCheck{}),
+	typeCheck(uncheckedRowsErrorCheck{}),
+	typeCheck(errorTypeNamingCheck{}),
+	typeCheck(standardHTTPMethodConstantCheck{}),
+	typeCheck(weakCryptographyCheck{}),
+	ssaCheck(appendToSizedSliceCheck{}),
+	typeCheck(redundantConversionCheck{}),
+	typeCheck(slicePreallocationCheck{}),
+	typeCheck(inefficientSprintfCheck{}),
+	typeCheck(interfaceMethodLimitCheck{}),
+	typeCheck(constructorInterfaceReturnCheck{}),
+	typeCheck(slogArgumentShapeCheck{}),
+	typeCheck(nilErrorReturnCheck{}),
+	typeCheck(nilValueWithNilErrorCheck{}),
+	typeCheck(unclosedHTTPResponseBodyCheck{}),
+	typeCheck(unclosedSQLResourceCheck{}),
+	typeCheck(contextCancelInLoopCheck{}),
+	typeCheck(copyLockValueCheck{}),
+	typeCheck(discardedErrorResultCheck{}),
 }
 
 // Plan is an immutable selection of analysis checks.
 type Plan struct {
-	checks   []Check
+	checks   []Descriptor
 	settings map[string]configuredCheck
 	root     string
 	rootSet  bool
@@ -151,7 +336,7 @@ type configuredCheck struct {
 // SelectedCheck is a fully bound semantic check produced by the unified
 // selection boundary.
 type SelectedCheck struct {
-	Check    Check
+	Check    Descriptor
 	Severity diagnostic.Severity
 	Excludes []string
 	Options  catalog.ResolvedOptions
@@ -179,6 +364,42 @@ type Requirements struct {
 	staticCallPackages []string
 }
 
+// Descriptor binds a semantic implementation to its explicit analysis
+// requirements. Implementations only provide metadata and Run; registration
+// chooses the type or SSA stage so expensive needs cannot be inferred
+// accidentally.
+type Descriptor struct {
+	check        Check
+	requirements Requirements
+}
+
+func typeCheck(check Check) Descriptor {
+	return semanticCheck(check, Requirements{
+		Stage: AnalysisStageTypes,
+	})
+}
+
+func ssaCheck(check Check) Descriptor {
+	return semanticCheck(check, Requirements{
+		Stage: AnalysisStageSSA,
+	})
+}
+
+func semanticCheck(check Check, requirements Requirements) Descriptor {
+	return Descriptor{
+		check:        check,
+		requirements: requirements,
+	}
+}
+
+func (descriptor Descriptor) Meta() Meta {
+	return descriptor.check.Meta()
+}
+
+func (descriptor Descriptor) Run(pass *Pass) {
+	descriptor.check.Run(pass)
+}
+
 type executionPlan struct {
 	requirements       Requirements
 	staticCallPackages map[string]bool
@@ -189,10 +410,10 @@ func (facts FactSet) Has(wanted FactSet) bool {
 	return facts&wanted == wanted
 }
 
-func compileExecutionPlan(checks []Check) executionPlan {
+func compileExecutionPlan(checks []Descriptor) executionPlan {
 	plan := executionPlan{}
 	for _, check := range checks {
-		requirements := check.Requirements()
+		requirements := check.requirements
 		if requirements.Stage > plan.requirements.Stage {
 			plan.requirements.Stage = requirements.Stage
 		}
@@ -220,8 +441,8 @@ func (registry *Plan) executionPlan() executionPlan {
 }
 
 // Catalog returns the semantic engine's immutable descriptor catalog.
-func Catalog() []Check {
-	return append([]Check(nil), checkCatalog...)
+func Catalog() []Descriptor {
+	return append([]Descriptor(nil), checkCatalog...)
 }
 
 // NewPlan prepares semantic execution from already-selected, schema-bound

@@ -181,9 +181,3 @@ func performanceTypeQualifier(current *types.Package) types.Qualifier {
 		return pkg.Name()
 	}
 }
-
-func (constructorInterfaceReturnCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

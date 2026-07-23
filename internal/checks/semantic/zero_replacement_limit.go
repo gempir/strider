@@ -45,14 +45,3 @@ func (zeroReplacementLimitCheck) Run(pass *Pass) {
 func isReplacementCall(call ssa.CallInstruction) bool {
 	return isStaticFunction(call, "strings", "Replace") || isStaticFunction(call, "bytes", "Replace")
 }
-
-func (zeroReplacementLimitCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageSSA,
-		Facts: FactCallArguments | FactStaticCalls,
-		staticCallPackages: []string{
-			"bytes",
-			"strings",
-		},
-	}
-}

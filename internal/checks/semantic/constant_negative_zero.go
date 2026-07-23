@@ -85,9 +85,3 @@ func zeroLiteral(pass *Pass, literal *ast.BasicLit) bool {
 	value := pass.TypesInfo.Types[literal].Value
 	return value != nil && (value.Kind() == constant.Int || value.Kind() == constant.Float) && constant.Sign(value) == 0
 }
-
-func (constantNegativeZeroCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

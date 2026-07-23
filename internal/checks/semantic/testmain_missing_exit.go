@@ -66,9 +66,3 @@ func isTestMainFunction(pass *Pass, function *ast.FuncDecl) bool {
 	}
 	return isPointerToNamedType(pass.TypesInfo.TypeOf(function.Type.Params.List[0].Type), "testing", "M")
 }
-
-func (testMainMissingExitCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

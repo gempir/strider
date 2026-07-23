@@ -54,9 +54,3 @@ func (interfaceMethodLimitCheck) Run(pass *Pass) {
 		},
 	)
 }
-
-func (interfaceMethodLimitCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

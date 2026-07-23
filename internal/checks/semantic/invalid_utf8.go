@@ -52,13 +52,3 @@ func isUTF8StringsCall(call ssa.CallInstruction) bool {
 		return false
 	}
 }
-
-func (invalidUTF8StringArgumentCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageSSA,
-		Facts: FactCallArguments | FactStaticCalls,
-		staticCallPackages: []string{
-			"strings",
-		},
-	}
-}

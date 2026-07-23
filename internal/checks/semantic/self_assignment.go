@@ -95,9 +95,3 @@ func pureBuiltinCall(call *ast.CallExpr) bool {
 		return false
 	}
 }
-
-func (selfAssignmentCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageSSA,
-	}
-}

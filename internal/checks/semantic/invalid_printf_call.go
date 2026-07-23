@@ -386,9 +386,3 @@ func implementsError(valueType types.Type) bool {
 	signature, _ := function.Type().(*types.Signature)
 	return signature != nil && signature.Params().Len() == 0 && signature.Results().Len() == 1 && printfBasicInfo(signature.Results().At(0).Type(), types.IsString)
 }
-
-func (invalidPrintfCallCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

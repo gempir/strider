@@ -92,9 +92,3 @@ func simpleSprintfReplacement(format string, valueType types.Type) string {
 	}
 	return ""
 }
-
-func (inefficientSprintfCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

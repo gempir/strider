@@ -110,9 +110,3 @@ func bitwiseZeroOperand(pass *Pass, expression ast.Expr, iotaConstants map[*type
 	}
 	return true, identifier.Name
 }
-
-func (ineffectiveBitwiseZeroCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

@@ -10,8 +10,8 @@ func runStandaloneAnalysisCheck(t *testing.T, root string, check Check) []diagno
 	t.Helper()
 	meta := check.Meta()
 	registry := &Registry{
-		checks: []Check{
-			check,
+		checks: []Descriptor{
+			typeCheck(check),
 		},
 		settings: map[string]configuredCheck{
 			meta.Code: {

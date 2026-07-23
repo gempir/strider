@@ -71,9 +71,3 @@ func hasSeekerSignature(pass *Pass, selector *ast.SelectorExpr) bool {
 		types.Typ[types.Int64],
 	) && types.Identical(signature.Results().At(1).Type(), types.Universe.Lookup("error").Type())
 }
-
-func (swappedSeekArgumentsCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

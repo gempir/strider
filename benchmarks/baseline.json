@@ -7,7 +7,7 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "be73f56e3ebdcf3a687a737e38a2860012d7569c81da89f7ca7ec6df1e01c5f9",
+          "digest": "a5ab58b8f1debe6020d7f7a91bce7d474b6eb0fe7f12ebae585a5f8060472e1f",
           "findings": 953,
           "by_code": {
             "add-constant": 175,
@@ -71,7 +71,7 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "3b84d0edbc6dcf97f7d79eac6c25f9e33f0c2ddea167318adda02065da34ab78",
+          "digest": "31420cc5608829d5793d75339672d71efc1977a5c6d3fceca6c1f9c3f97af36a",
           "findings": 2202,
           "by_code": {
             "add-constant": 503,
@@ -134,7 +134,7 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "5fa00563ec91b2c3a68d423de24d9e247f0887181c574855059729b909795bb8",
+          "digest": "a512533f99179b7aa4e7020bea23a47200947ec923fd3c712905ab64057be3a2",
           "findings": 720,
           "by_code": {
             "add-constant": 42,
@@ -337,7 +337,7 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "76a0f09548d86f27d0e8c9e0cad599032e188d02e65c4b72d52986bae9472a8c",
+          "digest": "f44f29c0947f23bd771eabac6adde6f75f5f3f6d1597c40cd2a5c3290d707ffc",
           "findings": 519,
           "by_code": {
             "add-constant": 38,
@@ -477,7 +477,7 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "f946da434afb44dadfd8b1fd3475ccecd2186f66e6ca23896f7c02f43186a4e2",
+          "digest": "4f705ce9f552f31ce28b9dc1fdbd0a4c7529ce8b3ec55b9286298431c3a40c75",
           "findings": 531,
           "by_code": {
             "add-constant": 47,
@@ -531,7 +531,7 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "42c1ef59c6e30eda82e9309c51524afca2e291d6b0dc94c62717c87fb7522c07",
+          "digest": "2d29be88549e2b0accdfbfba5785b7f7704357dfef6e181148f76b8ec7eb9d08",
           "findings": 11839,
           "by_code": {
             "add-constant": 1097,

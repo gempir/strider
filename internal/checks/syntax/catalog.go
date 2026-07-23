@@ -1022,7 +1022,7 @@ var definitions = []definition{
 			Explanation:     "detect unused method receivers.",
 			GoodExample:     "func (client *Client) Send() { client.flush() }",
 			BadExample:      "func (client *Client) Version() string { return version }",
-			DefaultSeverity: diagnostic.SeverityWarning,
+			DefaultSeverity: diagnostic.SeverityNote,
 		},
 	},
 	{

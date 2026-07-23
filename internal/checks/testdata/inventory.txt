@@ -184,7 +184,7 @@ unsupported-marshal-type	semantic	error
 untrappable-signal	semantic	warning
 unused-append-result	semantic	error
 unused-parameter	syntax	warning
-unused-receiver	syntax	warning
+unused-receiver	syntax	note
 url-query-copy-mutation	semantic	warning
 use-any	syntax	warning
 use-errors-new	syntax	warning

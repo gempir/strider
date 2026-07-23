@@ -32,12 +32,24 @@ export const benchmarkProject = sftpgoBenchmark.project === 'sftpgo'
   : sftpgoBenchmark.project;
 
 export const checkDemo = `<span class="t-dim">$</span> <span class="t-cmd">strider check</span>
-<span class="t-warn">unused-receiver</span>: <strong>receiver f is unused</strong>
-   <span class="t-path">┌─ tests/ipfilter/main.go:12:7</span>
+<span class="t-warn">format*</span>: <strong>file is not formatted</strong>
+  <span class="t-path">┌─ tests/eventsearcher/main.go:1:1</span>
+  <span class="t-path">│</span>
+1 <span class="t-path">│</span> package main
+2 <span class="t-path">│</span>
+
+<span class="t-warn">no-package-var</span>: <strong>package variables introduce mutable global state</strong>
+   <span class="t-path">┌─ tests/eventsearcher/main.go:12:2</span>
    <span class="t-path">│</span>
-11 <span class="t-path">│</span>
-12 <span class="t-path">│</span> func (f *Filter) CheckIP(ip, protocol string) error {
-13 <span class="t-path">│</span>\tif ip == "192.168.1.12" {
+11 <span class="t-path">│</span> var (
+12 <span class="t-path">│</span>\terrNotSupported = errors.New("unsupported parameter")
+13 <span class="t-path">│</span> )
+
+<span class="t-warn">format*</span>: <strong>file is not formatted</strong>
+  <span class="t-path">┌─ tests/ipfilter/main.go:1:1</span>
+  <span class="t-path">│</span>
+1 <span class="t-path">│</span> package main
+2 <span class="t-path">│</span>
 
 <span class="t-warn">unused-parameter</span>: <strong>parameter protocol is unused</strong>
    <span class="t-path">┌─ tests/ipfilter/main.go:12:30</span>
@@ -48,12 +60,12 @@ export const checkDemo = `<span class="t-dim">$</span> <span class="t-cmd">strid
 
 <span class="t-err">discarded-error-result</span>           <span class="t-err">1689</span>
 <span class="t-err">modifies-parameter</span>               <span class="t-err">924</span>
+<span class="t-warn">cognitive-complexity</span>             <span class="t-warn">819</span>
+<span class="t-warn">redundant-conversion</span>             <span class="t-warn">813</span>
 [...]
-<span class="t-warn">format*</span>                          <span class="t-warn">154</span>
-<span class="t-warn">single-case-switch</span>               <span class="t-warn">153</span>
 
-<span class="t-dim">Checked 246 files in 5030ms. Ran 185 checks.</span>
-<strong>7604 issues:</strong> <span class="t-err">2905 errors</span><strong>,</strong> <span class="t-warn">4699 warnings</span><strong>,</strong> <span class="t-note">154 fixable</span>`;
+<span class="t-dim">Checked 246 files in 3207ms. Ran 184 checks.</span>
+<strong>7385 issues:</strong> <span class="t-err">2905 errors</span><strong>,</strong> <span class="t-warn">4480 warnings</span><strong>,</strong> <span class="t-note">154 fixable</span>`;
 
 <div class="land">
 

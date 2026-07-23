@@ -113,7 +113,7 @@ func TestWriteHomepageStatsExportsMeasuredDurations(t *testing.T) {
 	results := report{
 		Projects: []projectResult{
 			{
-				Name:     "kubernetes",
+				Name:     "sftpgo",
 				Revision: strings.Repeat("a", 40),
 				Operations: []operationResult{
 					{
@@ -128,7 +128,7 @@ func TestWriteHomepageStatsExportsMeasuredDurations(t *testing.T) {
 			},
 		},
 	}
-	if err := writeHomepageStats(path, results, "kubernetes"); err != nil {
+	if err := writeHomepageStats(path, results, "sftpgo"); err != nil {
 		t.Fatal(err)
 	}
 	contents, err := os.ReadFile(path)
@@ -139,7 +139,7 @@ func TestWriteHomepageStatsExportsMeasuredDurations(t *testing.T) {
 	if err := json.Unmarshal(contents, &stats); err != nil {
 		t.Fatal(err)
 	}
-	if stats.Project != "kubernetes" || stats.FormatMS != 458 || stats.CheckMS != 5700 {
+	if stats.Project != "sftpgo" || stats.FormatMS != 458 || stats.CheckMS != 5700 {
 		t.Fatalf("unexpected homepage stats: %+v", stats)
 	}
 }

@@ -3,6 +3,8 @@ package formatter
 import (
 	"bytes"
 	"errors"
+	"fmt"
+	goformat "go/format"
 	"go/token"
 	"slices"
 	"sort"
@@ -23,17 +25,69 @@ func equivalentTrees(originalTree, formattedTree *cst.Tree) error {
 	if !slices.Equal(original.imports, formatted.imports) || !bytes.Equal(original.syntax, formatted.syntax) {
 		return errors.New("formatted output changed the concrete syntax tree")
 	}
-	originalComments := originalTree.Comments()
-	formattedComments := formattedTree.Comments()
+	canonicalOriginal, err := goformat.Source(originalTree.Bytes())
+	if err != nil {
+		return fmt.Errorf("canonicalize original comments: %w", err)
+	}
+	canonicalTree, err := cst.Parse("formatter-safety.go", canonicalOriginal)
+	if err != nil {
+		return fmt.Errorf("parse canonical comments: %w", err)
+	}
+	originalComments := commentContentsForSafety(canonicalTree.Comments())
+	formattedComments := commentContentsForSafety(formattedTree.Comments())
 	if len(originalComments) != len(formattedComments) {
 		return errors.New("formatted output changed comment contents")
 	}
 	for index, comment := range originalComments {
-		if normalizeLineComment(comment.Text) != formattedComments[index].Text {
+		if comment != formattedComments[index] {
 			return errors.New("formatted output changed comment contents")
 		}
 	}
 	return nil
+}
+
+func commentContentsForSafety(comments []cst.Comment) []string {
+	result := make([]string, 0, len(comments))
+	for _, comment := range comments {
+		normalized := normalizeCommentForSafety(comment.Text)
+		if strings.HasPrefix(normalized, "//") {
+			body := strings.TrimSpace(strings.TrimPrefix(normalized, "//"))
+			body = strings.TrimPrefix(body, "# ")
+			if body == "" {
+				continue
+			}
+			normalized = "// " + body
+		}
+		result = append(result, normalized)
+	}
+	return result
+}
+
+func normalizeCommentForSafety(comment string) string {
+	if strings.HasPrefix(comment, "//") {
+		return normalizeLineComment(comment)
+	}
+	lines := strings.Split(strings.ReplaceAll(comment, "\r\n", "\n"), "\n")
+	if len(lines) < 2 {
+		return comment
+	}
+	commonIndent := -1
+	for _, line := range lines[1:] {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		indent := len(line) - len(strings.TrimLeft(line, " \t"))
+		if commonIndent < 0 || indent < commonIndent {
+			commonIndent = indent
+		}
+	}
+	if commonIndent <= 0 {
+		return strings.Join(lines, "\n")
+	}
+	for index := 1; index < len(lines); index++ {
+		lines[index] = lines[index][min(commonIndent, len(lines[index])):]
+	}
+	return strings.Join(lines, "\n")
 }
 
 func fingerprintTree(tree *cst.Tree) syntaxFingerprint {

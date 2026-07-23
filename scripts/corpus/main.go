@@ -251,7 +251,7 @@ func run(options options) error {
 		return errors.New("behavior or performance regression detected; inspect the report above")
 	}
 	if options.homepageStatsPath != "" {
-		if err := writeHomepageStats(options.homepageStatsPath, results, "kubernetes"); err != nil {
+		if err := writeHomepageStats(options.homepageStatsPath, results, "sftpgo"); err != nil {
 			return err
 		}
 	}

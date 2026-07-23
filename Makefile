@@ -37,4 +37,4 @@ corpus-update: build
 	go run ./scripts/corpus --mode update --strider "$(STRIDER)" \
 		--html target/corpus/index.html \
 		--project-html docs/public/benchmark-report/projects \
-		--homepage-stats docs/src/generated/kubernetes-benchmark.json $(CORPUS_FLAGS)
+		--homepage-stats docs/src/generated/sftpgo-benchmark.json $(CORPUS_FLAGS)

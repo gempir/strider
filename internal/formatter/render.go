@@ -178,7 +178,12 @@ func (l *layout) renderCommentsBefore(writer *writer, comments []cst.Comment, co
 		}
 		writer.preserveEmptyLines(source, *sourceEnd, comment.Start, previousBuildConstraint)
 		writer.write(normalizeLineComment(comment.Text), -1)
-		writer.requestNewlines(1)
+		inlineBlock := inline && strings.HasPrefix(comment.Text, "/*") && !strings.Contains(comment.Text, "\n") && countNewlines(source, comment.End, beforeOffset) == 0
+		if inlineBlock {
+			writer.forceSpace = true
+		} else {
+			writer.requestNewlines(1)
+		}
 		*sourceEnd = comment.End
 		previousBuildConstraint = isBuildConstraint(comment.Text)
 		*commentIndex++

@@ -44,3 +44,25 @@ func TestEquivalentTreesRejectsSyntaxAndCommentChanges(t *testing.T) {
 		t.Fatal("comment change passed the formatter safety check")
 	}
 }
+
+func TestCommentContentsForSafetyIgnoresDocFormattingMarkers(t *testing.T) {
+	comments := []cst.Comment{
+		{
+			Text: "//",
+		},
+		{
+			Text: "// # Heading",
+		},
+		{
+			Text: "//   indented detail",
+		},
+	}
+	got := commentContentsForSafety(comments)
+	want := []string{
+		"// Heading",
+		"// indented detail",
+	}
+	if !slices.Equal(got, want) {
+		t.Fatalf("comment contents = %q, want %q", got, want)
+	}
+}

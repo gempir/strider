@@ -102,6 +102,41 @@ func F() {
 	}
 }
 
+func TestFormatPreservesInlineBlockCommentsWithinSyntaxLine(t *testing.T) {
+	input := []byte(`package p
+
+func f(firstCondition, secondCondition bool) {
+	call(firstCondition, secondCondition /* final argument */)
+	call(firstCondition, false /* middle argument */, secondCondition)
+	if firstCondition /* condition */ && secondCondition {
+	}
+	if firstCondition /* condition */ {
+	}
+}
+
+func value(firstCondition, secondCondition bool) bool {
+	return firstCondition /* required */ && secondCondition
+}
+`)
+	result, err := FormatWithOptions("inline_comment.go", input, Options{
+		PrintWidth: 80,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, wanted := range []string{
+		"secondCondition, /* final argument */",
+		"false, /* middle argument */",
+		"firstCondition /* condition */ &&",
+		"firstCondition /* condition */ {",
+		"firstCondition /* required */ &&",
+	} {
+		if !strings.Contains(string(result.Source), wanted) {
+			t.Fatalf("formatted source missing %q:\n%s", wanted, result.Source)
+		}
+	}
+}
+
 func TestFormatOwnsIfInitializerLineLayout(t *testing.T) {
 	input := []byte("package p\nfunc f() error {\nif value, err :=\nload(); err != nil { return err }; _ = value; return nil\n}\n")
 	result, err := Format("if-init.go", input)

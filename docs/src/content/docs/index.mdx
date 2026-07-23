@@ -23,12 +23,13 @@ hero:
 
 import Terminal from '../../components/Terminal.astro';
 import catalog from '../../generated/catalog.json';
-import kubernetesBenchmark from '../../generated/kubernetes-benchmark.json';
+import sftpgoBenchmark from '../../generated/sftpgo-benchmark.json';
 
-export const kubernetesFormat = kubernetesBenchmark.format_ms.toLocaleString('en-US');
-export const kubernetesCheck = kubernetesBenchmark.check_ms.toLocaleString('en-US');
-export const benchmarkProject = kubernetesBenchmark.project.charAt(0).toUpperCase()
-  + kubernetesBenchmark.project.slice(1);
+export const sftpgoFormat = sftpgoBenchmark.format_ms.toLocaleString('en-US');
+export const sftpgoCheck = sftpgoBenchmark.check_ms.toLocaleString('en-US');
+export const benchmarkProject = sftpgoBenchmark.project === 'sftpgo'
+  ? 'SFTPGo'
+  : sftpgoBenchmark.project;
 
 export const checkDemo = `<span class="t-dim">$</span> <span class="t-cmd">strider check ./...</span>
 <span class="t-warn">no-defer-in-loop</span>: <strong>avoid defer inside loops</strong>
@@ -54,8 +55,8 @@ export const checkDemo = `<span class="t-dim">$</span> <span class="t-cmd">strid
 <div class="land-stats">
   <div class="land-stat"><strong>1</strong><span>static binary, zero deps</span></div>
   <div class="land-stat"><strong>{catalog.checks}</strong><span>checks</span></div>
-  <div class="land-stat"><strong><em>{kubernetesFormat}</em> ms</strong><span>to format {benchmarkProject}</span></div>
-  <div class="land-stat"><strong><em>{kubernetesCheck}</em> ms</strong><span>to check {benchmarkProject}</span></div>
+  <div class="land-stat"><strong><em>{sftpgoFormat}</em> ms</strong><span>to format {benchmarkProject}</span></div>
+  <div class="land-stat"><strong><em>{sftpgoCheck}</em> ms</strong><span>to check {benchmarkProject}</span></div>
 </div>
 
 <h2 class="land-heading"><span class="land-kicker">One command</span>Diagnostics with the code that caused them</h2>

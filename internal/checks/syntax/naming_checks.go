@@ -1,4 +1,4 @@
-package rules
+package syntax
 
 import (
 	"fmt"
@@ -7,36 +7,57 @@ import (
 	"github.com/gempir/strider/internal/cst"
 )
 
-func (a *Pass) checkIdentifierList(list *cst.IdentifierList) {
-	for _, name := range identifierTokens(list) {
-		a.checkIdentifier(name)
-	}
-}
-
-func (a *Pass) checkIdentifier(name cst.Token) {
+func (a *Pass) checkBannedCharacters(name cst.Token) {
 	if !name.IsValid() || name.Src() == "_" {
 		return
 	}
-	value := name.Src()
-	for _, character := range value {
+	for _, character := range name.Src() {
 		for _, banned := range a.stringsOption("characters") {
 			if string(character) == banned {
-				a.report("banned-characters", name, fmt.Sprintf("identifier contains banned character %q", character))
+				a.Report(name, fmt.Sprintf("identifier contains banned character %q", character))
 				return
 			}
 		}
 	}
+}
+
+func (a *Pass) checkUnexportedNaming(name cst.Token) {
+	if !name.IsValid() || name.Src() == "_" {
+		return
+	}
+	value := name.Src()
 	if strings.HasPrefix(value, "_") {
-		a.report("unexported-naming", name, "unexported identifier should not begin with an underscore")
+		a.Report(name, "unexported identifier should not begin with an underscore")
 	}
+}
+
+func (a *Pass) checkVarNaming(name cst.Token) {
+	if !name.IsValid() || name.Src() == "_" {
+		return
+	}
+	value := name.Src()
 	if strings.Contains(value, "_") && !strings.HasPrefix(value, "Test") && !strings.HasPrefix(value, "Benchmark") && !strings.HasPrefix(value, "Example") {
-		a.report("var-naming", name, "identifier should use MixedCaps rather than underscores")
+		a.Report(name, "identifier should use MixedCaps rather than underscores")
 	}
+}
+
+func (a *Pass) checkRedefinesBuiltin(name cst.Token) {
+	if !name.IsValid() || name.Src() == "_" {
+		return
+	}
+	value := name.Src()
 	if builtinIdentifiers[value] {
-		a.report("redefines-builtin-id", name, fmt.Sprintf("identifier %s shadows a predeclared identifier", value))
+		a.Report(name, fmt.Sprintf("identifier %s shadows a predeclared identifier", value))
 	}
+}
+
+func (a *Pass) checkImportShadowing(name cst.Token) {
+	if !name.IsValid() || name.Src() == "_" {
+		return
+	}
+	value := name.Src()
 	if a.imports().names[value] {
-		a.report("import-shadowing", name, fmt.Sprintf("identifier %s shadows an imported package", value))
+		a.Report(name, fmt.Sprintf("identifier %s shadows an imported package", value))
 	}
 }
 
@@ -50,7 +71,6 @@ func (a *Pass) checkMethodName(method *cst.MethodDecl) {
 }
 
 func (a *Pass) checkFieldNames(field *cst.FieldDecl) {
-	a.checkIdentifierList(field.IdentifierList)
 	owner := ""
 	for index := len(a.ancestors) - 1; index >= 0; index-- {
 		if definition, ok := a.ancestors[index].(*cst.TypeDef); ok {
@@ -76,7 +96,7 @@ func (a *Pass) checkFoldedName(owner string, name cst.Token) {
 	}
 	key := strings.ToLower(name.Src())
 	if first := state.foldedNames[owner][key]; first != "" && first != name.Src() {
-		a.report("confusing-naming", name, fmt.Sprintf("name %s differs from %s only by capitalization", name.Src(), first))
+		a.Report(name, fmt.Sprintf("name %s differs from %s only by capitalization", name.Src(), first))
 	} else {
 		state.foldedNames[owner][key] = name.Src()
 	}

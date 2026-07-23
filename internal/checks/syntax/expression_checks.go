@@ -1,4 +1,4 @@
-package rules
+package syntax
 
 import (
 	"bytes"
@@ -9,22 +9,31 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-func (a *Pass) checkBinaryExpression(binary *cst.BinaryExpression) {
+func (a *Pass) checkModuloOne(binary *cst.BinaryExpression) {
 	if moduloOne(binary) {
-		a.report("modulo-one", binary, "remainder modulo one is always zero")
+		a.Report(binary, "remainder modulo one is always zero")
 	}
+}
+
+func (a *Pass) checkZeroIntegerDivision(binary *cst.BinaryExpression) {
 	if zeroIntegerLiteralDivision(binary) {
-		a.report("zero-integer-division", binary, "integer literal division truncates to zero")
+		a.Report(binary, "integer literal division truncates to zero")
 	}
+}
+
+func (a *Pass) checkBooleanLiteralComparison(binary *cst.BinaryExpression) {
 	if binary.Op.Ch() == token.EQL || binary.Op.Ch() == token.NEQ {
 		if booleanLiteral(binary.LHS) || booleanLiteral(binary.RHS) {
-			a.report("boolean-literal-comparison", binary, "omit the boolean literal from the logical expression")
+			a.Report(binary, "omit the boolean literal from the logical expression")
 		}
 	}
+}
+
+func (a *Pass) checkConstantLogicalExpression(binary *cst.BinaryExpression) {
 	if binary.Op.Ch() == token.LAND || binary.Op.Ch() == token.LOR {
 		if value, ok := staticBool(binary.LHS); ok {
 			if (binary.Op.Ch() == token.LAND && !value) || (binary.Op.Ch() == token.LOR && value) {
-				a.report("constant-logical-expr", binary, "logical expression always has the same value")
+				a.Report(binary, "logical expression always has the same value")
 			}
 		}
 	}
@@ -85,54 +94,59 @@ func booleanLiteral(node cst.Node) bool {
 	return spelling == "true" || spelling == "false"
 }
 
-func (a *Pass) checkUnaryExpression(expression *cst.UnaryExpr) {
+func (a *Pass) checkDoubleNegation(expression *cst.UnaryExpr) {
+	inner, ok := expression.UnaryExpr.(*cst.UnaryExpr)
+	if !ok || expression.Op.Ch() != token.NOT || inner.Op.Ch() != token.NOT {
+		return
+	}
+	message := "double boolean negation has no effect and should be removed"
+	outerStart := expression.Op.Position().Offset
+	outerEnd := outerStart + len(expression.Op.Src())
+	innerStart := inner.Op.Position().Offset
+	innerEnd := innerStart + len(inner.Op.Src())
+	operandStart, _ := cst.Range(inner.UnaryExpr)
+	unsafeTrivia := automaticFixWouldJoinToken(a.content, outerStart) || unsafeAutomaticFixTrivia(a.content, outerEnd, innerStart) || unsafeAutomaticFixTrivia(
+		a.content,
+		innerEnd,
+		operandStart,
+	)
+	if a.hasNegatingParent(expression) || unsafeTrivia {
+		a.Report(expression, message)
+		return
+	}
+	a.ReportFix(
+		expression,
+		message,
+		diagnostic.Fix{
+			Message:   "remove the double negation",
+			Safety:    diagnostic.Safe,
+			Automatic: true,
+			Edits: []diagnostic.TextEdit{
+				{
+					Start:   expression.Op.Position().Offset,
+					End:     expression.Op.Position().Offset + len(expression.Op.Src()),
+					OldText: expression.Op.Src(),
+				},
+				{
+					Start:   inner.Op.Position().Offset,
+					End:     inner.Op.Position().Offset + len(inner.Op.Src()),
+					OldText: inner.Op.Src(),
+				},
+			},
+		},
+	)
+}
+
+func (a *Pass) checkIneffectivePointerCopy(expression *cst.UnaryExpr) {
 	inner, ok := expression.UnaryExpr.(*cst.UnaryExpr)
 	if !ok {
 		return
 	}
 	switch {
-	case expression.Op.Ch() == token.NOT && inner.Op.Ch() == token.NOT:
-		message := "double boolean negation has no effect and should be removed"
-		outerStart := expression.Op.Position().Offset
-		outerEnd := outerStart + len(expression.Op.Src())
-		innerStart := inner.Op.Position().Offset
-		innerEnd := innerStart + len(inner.Op.Src())
-		operandStart, _ := cst.Range(inner.UnaryExpr)
-		unsafeTrivia := automaticFixWouldJoinToken(a.content, outerStart) || unsafeAutomaticFixTrivia(a.content, outerEnd, innerStart) || unsafeAutomaticFixTrivia(
-			a.content,
-			innerEnd,
-			operandStart,
-		)
-		if a.hasNegatingParent(expression) || unsafeTrivia {
-			a.report("double-negation", expression, message)
-			return
-		}
-		a.reportFix(
-			"double-negation",
-			expression,
-			message,
-			diagnostic.Fix{
-				Message:   "remove the double negation",
-				Safety:    diagnostic.Safe,
-				Automatic: true,
-				Edits: []diagnostic.TextEdit{
-					{
-						Start:   expression.Op.Position().Offset,
-						End:     expression.Op.Position().Offset + len(expression.Op.Src()),
-						OldText: expression.Op.Src(),
-					},
-					{
-						Start:   inner.Op.Position().Offset,
-						End:     inner.Op.Position().Offset + len(inner.Op.Src()),
-						OldText: inner.Op.Src(),
-					},
-				},
-			},
-		)
 	case expression.Op.Ch() == token.AND && inner.Op.Ch() == token.MUL && !cgoPointerIdentifier.MatchString(cst.Spelling(inner.UnaryExpr)):
-		a.report("ineffective-pointer-copy", expression, "&*value simplifies to value and does not copy the pointed-to data")
+		a.Report(expression, "&*value simplifies to value and does not copy the pointed-to data")
 	case expression.Op.Ch() == token.MUL && inner.Op.Ch() == token.AND:
-		a.report("ineffective-pointer-copy", expression, "*&value simplifies to value and does not make a copy")
+		a.Report(expression, "*&value simplifies to value and does not make a copy")
 	}
 }
 
@@ -162,7 +176,7 @@ func (a *Pass) hasNegatingParent(expression *cst.UnaryExpr) bool {
 
 func (a *Pass) checkInterfaceType(iface *cst.InterfaceType) {
 	if iface.InterfaceElemList == nil {
-		a.report("use-any", iface, "use any instead of interface{}")
+		a.Report(iface, "use any instead of interface{}")
 	}
 }
 
@@ -189,5 +203,5 @@ func (a *Pass) checkIncrementParts(statement, left, right cst.Node) {
 	if !ok || literal.Ch() != token.INT || literal.Src() != "1" {
 		return
 	}
-	a.report("increment-decrement", statement, "use ++ or -- instead of assigning an addition or subtraction of one")
+	a.Report(statement, "use ++ or -- instead of assigning an addition or subtraction of one")
 }

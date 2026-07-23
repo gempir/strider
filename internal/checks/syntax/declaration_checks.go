@@ -1,4 +1,4 @@
-package rules
+package syntax
 
 import (
 	"fmt"
@@ -12,19 +12,18 @@ import (
 func (a *Pass) finishRepeatedLiterals() {
 	for literal, nodes := range a.repeatedLiteralState().literals {
 		if len(nodes) > 2 {
-			a.report("add-constant", nodes[2], fmt.Sprintf("string literal %s appears more than twice; define a constant", literal))
+			a.Report(nodes[2], fmt.Sprintf("string literal %s appears more than twice; define a constant", literal))
 		}
 	}
 }
 
-func (a *Pass) checkTypeDefinition(definition *cst.TypeDef) {
-	a.checkExportedDeclaration(definition.IDENT, definition)
+func (a *Pass) checkMaxPublicStructs(definition *cst.TypeDef) {
 	if _, ok := definition.TypeNode.(*cst.StructType); ok && token.IsExported(definition.IDENT.Src()) {
 		state := a.declarationState()
 		state.publicStructs++
 		limit := a.intOption("max-public-structs")
 		if state.publicStructs > limit {
-			a.report("max-public-structs", definition.IDENT, fmt.Sprintf("file declares more than %d exported structs", limit))
+			a.Report(definition.IDENT, fmt.Sprintf("file declares more than %d exported structs", limit))
 		}
 	}
 }
@@ -46,7 +45,7 @@ func (a *Pass) checkExportedFunction(name cst.Token, node cst.Node, method bool)
 		}
 	}
 	if !a.hasDocumentation(name.Src(), node) {
-		a.report("exported-declaration-comment", name, "exported function or method should have a comment beginning with its name")
+		a.Report(name, "exported function or method should have a comment beginning with its name")
 	}
 }
 
@@ -76,7 +75,7 @@ func (a *Pass) checkExportedDeclaration(name cst.Token, node cst.Node) {
 	if _, ok := node.(*cst.TypeDef); ok {
 		message = "exported type should have a comment beginning with its name"
 	}
-	a.report("exported-declaration-comment", name, message)
+	a.Report(name, message)
 }
 
 func (a *Pass) checkExportedList(list *cst.IdentifierList, node cst.Node) {
@@ -104,23 +103,29 @@ func (a *Pass) hasDocumentation(name string, node cst.Node) bool {
 	return false
 }
 
-func (a *Pass) checkVarSpec(name cst.Token, typeNode cst.Node, values *cst.ExpressionList) {
-	a.checkExportedDeclaration(name, name)
+func (a *Pass) checkErrorNaming(name cst.Token, typeNode cst.Node, values *cst.ExpressionList) {
 	typeName := cst.Spelling(typeNode)
 	if a.packageDeclaration() && valueIsError(typeName, values) && !strings.HasPrefix(name.Src(), "err") && !strings.HasPrefix(name.Src(), "Err") {
-		a.report("error-naming", name, "package error variable should be named errFoo or ErrFoo")
-	}
-	if typeNode != nil && values != nil && values.Len() == 1 && zeroValue(values.Expression) {
-		a.report("var-declaration", values.Expression, "omit the explicit zero value from the variable declaration")
-	}
-	if typeName == "time.Duration" && hasTimeUnitSuffix(name.Src()) {
-		a.report("time-naming", name, "time.Duration name should not include a unit suffix")
+		a.Report(name, "package error variable should be named errFoo or ErrFoo")
 	}
 }
 
-func (a *Pass) checkVarSpecList(names *cst.IdentifierList, typeNode cst.Node, values *cst.ExpressionList) {
+func (a *Pass) checkVarDeclaration(_ cst.Token, typeNode cst.Node, values *cst.ExpressionList) {
+	if typeNode != nil && values != nil && values.Len() == 1 && zeroValue(values.Expression) {
+		a.Report(values.Expression, "omit the explicit zero value from the variable declaration")
+	}
+}
+
+func (a *Pass) checkTimeVariableNaming(name cst.Token, typeNode cst.Node, _ *cst.ExpressionList) {
+	typeName := cst.Spelling(typeNode)
+	if typeName == "time.Duration" && hasTimeUnitSuffix(name.Src()) {
+		a.Report(name, "time.Duration name should not include a unit suffix")
+	}
+}
+
+func (a *Pass) inspectVarSpecList(names *cst.IdentifierList, typeNode cst.Node, values *cst.ExpressionList, inspect func(*Pass, cst.Token, cst.Node, *cst.ExpressionList)) {
 	for _, name := range identifierTokens(names) {
-		a.checkVarSpec(name, typeNode, values)
+		inspect(a, name, typeNode, values)
 	}
 }
 

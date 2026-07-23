@@ -1,4 +1,4 @@
-package rules
+package syntax
 
 import (
 	"path/filepath"

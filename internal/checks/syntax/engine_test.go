@@ -1,4 +1,4 @@
-package rules
+package syntax
 
 import (
 	"bytes"
@@ -142,12 +142,29 @@ func (item) method() {}
 func TestSyntaxCatalogDeclaresExecutableInterests(t *testing.T) {
 	for _, check := range definitions {
 		code := check.Meta().Code
-		if check.behavior.inspect == nil {
+		if check.behavior.start == nil && check.behavior.inspect == nil && check.behavior.finish == nil {
 			t.Errorf("%s has no inspect behavior", code)
 		}
-		if len(check.Interests()) == 0 {
+		if len(check.Interests()) == 0 && check.behavior.start == nil && check.behavior.finish == nil {
 			t.Errorf("%s has no CST interests", code)
 		}
+	}
+}
+
+func TestFunctionFactsAreBuiltOncePerDeclaration(t *testing.T) {
+	tree, err := cst.Parse("sample.go", []byte("package sample\ntype item struct{}\nfunc run() {}\nfunc (item) method() {}\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	checks := Catalog()
+	stats := analyzeCST(CSTInput{
+		Filename: "sample.go",
+		Tree:     tree,
+		Checks:   checks,
+		Options:  resolvedTestOptions(checks),
+	})
+	if stats.functionFacts != 2 {
+		t.Fatalf("function facts built %d times; want once for each of 2 declarations", stats.functionFacts)
 	}
 }
 

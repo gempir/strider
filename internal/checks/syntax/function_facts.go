@@ -1,4 +1,4 @@
-package rules
+package syntax
 
 import (
 	"go/token"
@@ -19,6 +19,19 @@ type functionFacts struct {
 }
 
 func (a *Pass) functionFacts(node cst.Node) *functionFacts {
+	if a.functions == nil {
+		a.functions = make(map[cst.Node]*functionFacts)
+	}
+	if facts, ok := a.functions[node]; ok {
+		return facts
+	}
+	facts := deriveFunctionFacts(node)
+	a.functions[node] = facts
+	a.stats.functionFacts++
+	return facts
+}
+
+func deriveFunctionFacts(node cst.Node) *functionFacts {
 	var facts functionFacts
 	switch current := node.(type) {
 	case *cst.FunctionDecl:

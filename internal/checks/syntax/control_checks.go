@@ -1,4 +1,4 @@
-package rules
+package syntax
 
 import (
 	"strings"
@@ -15,53 +15,57 @@ type conditional struct {
 	elseClause cst.Node
 }
 
-func (a *Pass) checkIf(statement *cst.IfStmt) {
+func conditionalFromIf(statement *cst.IfStmt) (conditional, bool) {
 	if statement == nil {
-		return
+		return conditional{}, false
 	}
-	a.checkConditional(conditional{
+	return conditional{
 		node:      statement,
 		init:      statement.SimpleStmt,
 		condition: statement.Expression,
 		body:      statement.Block,
-	})
+	}, true
 }
 
-func (a *Pass) checkIfElse(statement *cst.IfElseStmt) {
+func conditionalFromIfElse(statement *cst.IfElseStmt) (conditional, bool) {
 	if statement == nil {
-		return
+		return conditional{}, false
 	}
-	a.checkConditional(
-		conditional{
-			node:       statement,
-			init:       statement.SimpleStmt,
-			condition:  statement.Expression,
-			body:       statement.Block,
-			elseToken:  statement.ELSE,
-			elseClause: statement.ElseClause,
-		},
-	)
+	return conditional{
+		node:       statement,
+		init:       statement.SimpleStmt,
+		condition:  statement.Expression,
+		body:       statement.Block,
+		elseToken:  statement.ELSE,
+		elseClause: statement.ElseClause,
+	}, true
 }
 
-func (a *Pass) checkConditional(statement conditional) {
-	a.checkMapLookup(statement)
+func (a *Pass) checkEarlyReturn(statement conditional) {
 	if elseBlock, ok := statement.elseClause.(*cst.Block); ok {
 		if blockTerminates(elseBlock) && !blockTerminates(statement.body) {
-			a.report("early-return", statement.node, "invert the condition and return early to reduce nesting")
+			a.Report(statement.node, "invert the condition and return early to reduce nesting")
 		}
-		if cst.Spelling(statement.body) == cst.Spelling(elseBlock) {
-			a.report("identical-branches", elseBlock, "if and else branches are identical")
-		}
+	}
+}
+
+func (a *Pass) checkIdenticalBranches(statement conditional) {
+	if elseBlock, ok := statement.elseClause.(*cst.Block); ok && cst.Spelling(statement.body) == cst.Spelling(elseBlock) {
+		a.Report(elseBlock, "if and else branches are identical")
+	}
+}
+
+func (a *Pass) checkUnnecessaryIf(statement conditional) {
+	if elseBlock, ok := statement.elseClause.(*cst.Block); ok {
 		if left, leftOK := booleanBlock(statement.body); leftOK {
 			if right, rightOK := booleanBlock(elseBlock); rightOK && left != right {
-				a.report("unnecessary-if", statement.node, "return the condition directly instead of branching on it")
+				a.Report(statement.node, "return the condition directly instead of branching on it")
 			}
 		}
 	}
-	a.checkIfChain(statement)
 }
 
-func (a *Pass) checkMapLookup(statement conditional) {
+func (a *Pass) checkInefficientMapLookup(statement conditional) {
 	declaration, ok := statement.init.(*cst.ShortVarDecl)
 	if !ok || declaration.IdentifierList == nil || declaration.IdentifierList.Len() != 2 || declaration.ExpressionList == nil || declaration.ExpressionList.Len() != 1 || statement.body == nil {
 		return
@@ -79,7 +83,7 @@ func (a *Pass) checkMapLookup(statement conditional) {
 		statement.body,
 		func(node cst.Node) bool {
 			if cst.Spelling(node) == lookup {
-				a.report("inefficient-map-lookup", node, "reuse the map value obtained by the comma-ok lookup")
+				a.Report(node, "reuse the map value obtained by the comma-ok lookup")
 				return false
 			}
 			return true
@@ -87,36 +91,46 @@ func (a *Pass) checkMapLookup(statement conditional) {
 	)
 }
 
-func (a *Pass) checkIfChain(first conditional) {
+func (a *Pass) ifChain(first conditional) []conditional {
 	if len(a.ancestors) != 0 {
 		if parent, ok := a.ancestors[len(a.ancestors)-1].(*cst.IfElseStmt); ok && parent.ElseClause == first.node {
-			return
+			return nil
 		}
 	}
 	if first.init != nil || hasSideEffects(first.condition) {
-		return
+		return nil
 	}
-	conditions := map[string]bool{}
-	branches := map[string]bool{}
+	result := []conditional{}
 	current := first
 	for {
-		condition := cst.Spelling(current.condition)
-		if conditions[condition] {
-			a.report("identical-if-chain-conditions", current.condition, "if-else-if chain repeats a condition")
-		} else {
-			conditions[condition] = true
-		}
-		branch := cst.Spelling(current.body)
-		if branches[branch] {
-			a.report("identical-if-chain-branches", current.body, "if-else-if chain repeats a branch body")
-		} else {
-			branches[branch] = true
-		}
+		result = append(result, current)
 		next, ok := ifFromNode(current.elseClause)
 		if !ok || next.init != nil || hasSideEffects(next.condition) {
-			return
+			return result
 		}
 		current = next
+	}
+}
+
+func (a *Pass) checkIdenticalIfChainConditions(first conditional) {
+	seen := map[string]bool{}
+	for _, current := range a.ifChain(first) {
+		condition := cst.Spelling(current.condition)
+		if seen[condition] {
+			a.Report(current.condition, "if-else-if chain repeats a condition")
+		}
+		seen[condition] = true
+	}
+}
+
+func (a *Pass) checkIdenticalIfChainBranches(first conditional) {
+	seen := map[string]bool{}
+	for _, current := range a.ifChain(first) {
+		branch := cst.Spelling(current.body)
+		if seen[branch] {
+			a.Report(current.body, "if-else-if chain repeats a branch body")
+		}
+		seen[branch] = true
 	}
 }
 
@@ -175,17 +189,27 @@ func booleanBlock(block *cst.Block) (bool, bool) {
 	return value == "true", value == "true" || value == "false"
 }
 
-func (a *Pass) checkBlock(block *cst.Block) {
+func (a *Pass) checkEmptyConditionalBlock(block *cst.Block) {
 	statements := blockStatements(block)
 	if len(statements) == 0 && a.parentIsConditional() {
-		a.report("empty-conditional-block", block, "empty block should be removed or documented")
+		a.Report(block, "empty block should be removed or documented")
 	}
+}
+
+func (a *Pass) checkRedundantErrorReturn(block *cst.Block) {
+	statements := blockStatements(block)
 	for index, statement := range statements {
 		if index+1 < len(statements) {
 			a.checkIfReturn(statement, statements[index+1])
 		}
+	}
+}
+
+func (a *Pass) checkUnreachableCode(block *cst.Block) {
+	statements := blockStatements(block)
+	for index, statement := range statements {
 		if index > 0 && statementTerminates(statements[index-1]) {
-			a.report("unreachable-code", statement, "statement is unreachable after unconditional control flow")
+			a.Report(statement, "statement is unreachable after unconditional control flow")
 		}
 	}
 }
@@ -241,7 +265,7 @@ func (a *Pass) checkControlNesting(node cst.Node) {
 		}
 	}
 	if depth >= 5 {
-		a.report("max-control-nesting", node, "control-flow nesting exceeds 5 levels")
+		a.Report(node, "control-flow nesting exceeds 5 levels")
 	}
 }
 
@@ -267,7 +291,7 @@ search:
 			break search
 		}
 	}
-	a.report("unchecked-type-assertion", assertion, "use the checked two-result form of the type assertion")
+	a.Report(assertion, "use the checked two-result form of the type assertion")
 }
 
 func (a *Pass) assertionIsSoleExpression(assertion *cst.TypeAssertion, expressions *cst.ExpressionList) bool {

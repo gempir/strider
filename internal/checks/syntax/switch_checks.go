@@ -1,4 +1,4 @@
-package rules
+package syntax
 
 import (
 	"sort"
@@ -14,37 +14,51 @@ type switchCase struct {
 	isDefault  bool
 }
 
-func (a *Pass) checkSwitch(node cst.Node) {
+func (a *Pass) checkSingleCaseSwitch(node cst.Node) {
 	cases := switchCases(node)
 	if len(cases) == 1 && len(cases[0].conditions) <= 1 {
-		a.report("single-case-switch", node, "switch with one case can be replaced by an if statement")
+		a.Report(node, "switch with one case can be replaced by an if statement")
 	}
+}
+
+func (a *Pass) checkIdenticalSwitchConditions(node cst.Node) {
 	conditions := map[string]bool{}
-	branches := map[string]bool{}
-	defaultIndex := -1
-	for index, clause := range cases {
-		if clause.isDefault {
-			defaultIndex = index
-		}
+	for _, clause := range switchCases(node) {
 		for _, condition := range clause.conditions {
 			text := cst.Spelling(condition)
 			if conditions[text] {
-				a.report("identical-switch-conditions", condition, "switch repeats a case condition")
+				a.Report(condition, "switch repeats a case condition")
 			} else {
 				conditions[text] = true
 			}
 		}
+	}
+}
+
+func (a *Pass) checkIdenticalSwitchBranches(node cst.Node) {
+	branches := map[string]bool{}
+	for _, clause := range switchCases(node) {
 		body := statementListSpelling(clause.body)
 		if body != "" {
 			if branches[body] {
-				a.report("identical-switch-branches", clause.node, "switch repeats a case body")
+				a.Report(clause.node, "switch repeats a case body")
 			} else {
 				branches[body] = true
 			}
 		}
 	}
+}
+
+func (a *Pass) checkSwitchDefaultLast(node cst.Node) {
+	cases := switchCases(node)
+	defaultIndex := -1
+	for index, clause := range cases {
+		if clause.isDefault {
+			defaultIndex = index
+		}
+	}
 	if defaultIndex >= 0 && defaultIndex != len(cases)-1 {
-		a.report("enforce-switch-style", cases[defaultIndex].node, "default clause should be the last switch clause")
+		a.Report(cases[defaultIndex].node, "default clause should be the last switch clause")
 	}
 }
 

@@ -1,4 +1,4 @@
-package rules
+package syntax
 
 import (
 	"fmt"
@@ -16,7 +16,7 @@ func (a *Pass) checkStruct(structure *cst.StructType) {
 		return
 	}
 	if _, named := a.ancestors[len(a.ancestors)-1].(*cst.TypeDef); !named {
-		a.report("nested-structs", structure, "move nested anonymous struct types to named declarations")
+		a.Report(structure, "move nested anonymous struct types to named declarations")
 	}
 }
 
@@ -41,7 +41,7 @@ func (a *Pass) checkStringLiteral(literal *cst.BasicLit) {
 		"ftp://",
 	} {
 		if strings.HasPrefix(lower, scheme) {
-			a.report("insecure-url-scheme", literal, fmt.Sprintf("URL uses insecure %s scheme", strings.TrimSuffix(scheme, "://")))
+			a.Report(literal, fmt.Sprintf("URL uses insecure %s scheme", strings.TrimSuffix(scheme, "://")))
 			return
 		}
 	}
@@ -50,12 +50,12 @@ func (a *Pass) checkStringLiteral(literal *cst.BasicLit) {
 func (a *Pass) checkStructTag(literal cst.Token) {
 	value, err := strconv.Unquote(literal.Src())
 	if err != nil {
-		a.report("invalid-struct-tag", literal, "struct tag is not a valid quoted string")
+		a.Report(literal, "struct tag is not a valid quoted string")
 		return
 	}
 	tags, valid := parseStructTagValues(value)
 	if !valid {
-		a.report("invalid-struct-tag", literal, "struct tag has invalid key:value syntax")
+		a.Report(literal, "struct tag has invalid key:value syntax")
 		return
 	}
 	keys := make([]string, 0, len(tags))
@@ -65,7 +65,7 @@ func (a *Pass) checkStructTag(literal cst.Token) {
 	sort.Strings(keys)
 	for _, key := range keys {
 		if len(tags[key]) > 1 {
-			a.report("invalid-struct-tag", literal, fmt.Sprintf("duplicate struct tag %q", key))
+			a.Report(literal, fmt.Sprintf("duplicate struct tag %q", key))
 		}
 	}
 	tag := reflect.StructTag(value)
@@ -83,7 +83,7 @@ func (a *Pass) checkStructTag(literal cst.Token) {
 		}
 		name := strings.Split(raw, ",")[0]
 		if strings.ContainsAny(name, " \t\n\r\"") {
-			a.report("invalid-struct-tag", literal, fmt.Sprintf("%s tag contains invalid whitespace or quoting", key))
+			a.Report(literal, fmt.Sprintf("%s tag contains invalid whitespace or quoting", key))
 		}
 		switch key {
 		case "json":
@@ -100,16 +100,16 @@ func (a *Pass) checkJSONTagOptions(literal cst.Token, tag string) {
 	for index, option := range parts[1:] {
 		if option == "" {
 			if index == len(parts[1:])-1 {
-				a.report("invalid-struct-tag", literal, "json tag has an empty trailing option")
+				a.Report(literal, "json tag has an empty trailing option")
 			}
 			continue
 		}
 		if seen[option] {
-			a.report("invalid-struct-tag", literal, fmt.Sprintf("json tag has duplicate option %q", option))
+			a.Report(literal, fmt.Sprintf("json tag has duplicate option %q", option))
 		}
 		seen[option] = true
 		if !validJSONTagOption(option) {
-			a.report("invalid-struct-tag", literal, fmt.Sprintf("json tag has unknown option %q", option))
+			a.Report(literal, fmt.Sprintf("json tag has unknown option %q", option))
 		}
 	}
 }
@@ -122,11 +122,11 @@ func (a *Pass) checkXMLTagOptions(literal cst.Token, tag string) {
 			continue
 		}
 		if seen[option] {
-			a.report("invalid-struct-tag", literal, fmt.Sprintf("xml tag has duplicate option %q", option))
+			a.Report(literal, fmt.Sprintf("xml tag has duplicate option %q", option))
 		}
 		seen[option] = true
 		if !validXMLTagOption(option) {
-			a.report("invalid-struct-tag", literal, fmt.Sprintf("xml tag has unknown option %q", option))
+			a.Report(literal, fmt.Sprintf("xml tag has unknown option %q", option))
 		}
 	}
 }

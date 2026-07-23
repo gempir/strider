@@ -15,7 +15,7 @@ import (
 
 	"github.com/gempir/strider/internal/checks"
 	"github.com/gempir/strider/internal/checks/catalog"
-	"github.com/gempir/strider/internal/checks/syntax/rules"
+	"github.com/gempir/strider/internal/checks/syntax"
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
@@ -72,7 +72,7 @@ func generateCatalogStats(docsDirectory string, registry *checks.Registry) {
 }
 
 func generateSyntaxPages(docsDirectory string) {
-	all := rules.Catalog()
+	all := syntax.Catalog()
 	sort.Slice(all, func(i, j int) bool {
 		return all[i].Meta().Code < all[j].Meta().Code
 	})

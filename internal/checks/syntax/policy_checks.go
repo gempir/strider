@@ -1,4 +1,4 @@
-package rules
+package syntax
 
 import (
 	"fmt"
@@ -30,28 +30,54 @@ func (a *Pass) checkAssignedCall(statement, left, right cst.Node) {
 	if strings.HasPrefix(name, "atomic.") {
 		arguments := callArguments(call.Postfix)
 		if len(arguments) > 0 && strings.TrimPrefix(cst.Spelling(arguments[0]), "&") == cst.Spelling(left) {
-			a.report("redundant-atomic-result-assignment", statement, "do not assign an atomic operation result back to the same value")
+			a.Report(statement, "do not assign an atomic operation result back to the same value")
 		}
 	}
 }
 
-func (a *Pass) checkFunctionMutation(parameters *cst.Parameters, receiver *cst.Parameters, body cst.Node) {
+func (a *Pass) checkParameterMutation(parameters *cst.Parameters, body cst.Node) {
 	if body == nil {
 		return
 	}
 	parameterSet := parameterNames(parameters)
+	a.inspectMutationTargets(
+		body,
+		func(target cst.Node) {
+			root := rootIdentifier(target)
+			if root.IsValid() && parameterSet[root.Src()] {
+				a.Report(target, fmt.Sprintf("assignment modifies parameter %s", root.Src()))
+			}
+		},
+	)
+}
+
+func (a *Pass) checkValueReceiverMutation(receiver *cst.Parameters, body cst.Node) {
+	if body == nil || receiver == nil || !valueReceiver(receiver) {
+		return
+	}
 	receiverSet := parameterNames(receiver)
-	valueReceiver := receiver != nil && valueReceiver(receiver)
+	a.inspectMutationTargets(
+		body,
+		func(target cst.Node) {
+			root := rootIdentifier(target)
+			if root.IsValid() && receiverSet[root.Src()] {
+				a.Report(target, fmt.Sprintf("assignment modifies value receiver %s", root.Src()))
+			}
+		},
+	)
+}
+
+func (a *Pass) inspectMutationTargets(body cst.Node, inspect func(cst.Node)) {
 	cst.Walk(
 		body,
 		func(node cst.Node) bool {
 			switch current := node.(type) {
 			case *cst.Assignment:
 				for list := current.ExpressionList; list != nil; list = list.List {
-					a.reportMutation(list.Expression, parameterSet, receiverSet, valueReceiver)
+					inspect(list.Expression)
 				}
 			case *cst.IncDecStmt:
-				a.reportMutation(current.Expression, parameterSet, receiverSet, valueReceiver)
+				inspect(current.Expression)
 			}
 			return true
 		},
@@ -71,19 +97,6 @@ func parameterNames(parameters *cst.Parameters) map[string]bool {
 func valueReceiver(receiver *cst.Parameters) bool {
 	declarations := parameterDecls(receiver)
 	return len(declarations) != 0 && !strings.HasPrefix(cst.Spelling(declarations[0].TypeNode), "*")
-}
-
-func (a *Pass) reportMutation(target cst.Node, parameters, receivers map[string]bool, valueReceiver bool) {
-	root := rootIdentifier(target)
-	if !root.IsValid() {
-		return
-	}
-	if parameters[root.Src()] {
-		a.report("modifies-parameter", target, fmt.Sprintf("assignment modifies parameter %s", root.Src()))
-	}
-	if valueReceiver && receivers[root.Src()] {
-		a.report("modifies-value-receiver", target, fmt.Sprintf("assignment modifies value receiver %s", root.Src()))
-	}
 }
 
 func rootIdentifier(node cst.Node) cst.Token {

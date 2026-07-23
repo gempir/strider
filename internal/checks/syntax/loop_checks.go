@@ -1,4 +1,4 @@
-package rules
+package syntax
 
 import (
 	"fmt"
@@ -7,12 +7,8 @@ import (
 	"github.com/gempir/strider/internal/cst"
 )
 
-func (a *Pass) checkFor(statement *cst.ForStmt) {
-	if statement == nil {
-		return
-	}
-	if statement.RangeClause != nil {
-		a.checkRange(statement.RangeClause, statement.Block)
+func (a *Pass) checkSpinningSelectDefault(statement *cst.ForStmt) {
+	if statement == nil || statement.RangeClause != nil {
 		return
 	}
 	if statement.ForClause != nil || statement.Condition != nil || statement.Block == nil {
@@ -29,31 +25,42 @@ func (a *Pass) checkFor(statement *cst.ForStmt) {
 	for list := selection.CommClauseList; list != nil; list = list.List {
 		clause := list.CommClause
 		if clause != nil && clause.CommCase != nil && clause.CommCase.DEFAULT.IsValid() && len(statementsFromList(clause.StatementList)) == 0 {
-			a.report("spinning-select-default", clause, "empty default prevents the select loop from blocking and causes it to spin")
+			a.Report(clause, "empty default prevents the select loop from blocking and causes it to spin")
 			return
 		}
 	}
 }
 
-func (a *Pass) checkRange(clause *cst.RangeClause, body *cst.Block) {
+func (a *Pass) checkSimplifyRange(statement *cst.ForStmt) {
+	if statement == nil || statement.RangeClause == nil {
+		return
+	}
+	clause := statement.RangeClause
 	variables := rangeVariables(clause)
 	if rangeIndexDiscarded(clause) && strings.HasPrefix(cst.Spelling(clause.Expression), "[]rune(") {
-		a.report("simplify-range", clause.Expression, "range directly over the string to avoid allocating a rune slice")
+		a.Report(clause.Expression, "range directly over the string to avoid allocating a rune slice")
 	}
 	if len(variables) > 1 && variables[1].Src() == "_" {
-		a.report("simplify-range", variables[1], "omit the blank range value")
+		a.Report(variables[1], "omit the blank range value")
 	}
+}
+
+func (a *Pass) checkRangeValueAddress(statement *cst.ForStmt) {
+	if statement == nil || statement.RangeClause == nil {
+		return
+	}
+	variables := rangeVariables(statement.RangeClause)
 	for _, variable := range variables {
 		name := variable.Src()
 		if name == "" || name == "_" {
 			continue
 		}
 		cst.Walk(
-			body,
+			statement.Block,
 			func(node cst.Node) bool {
 				if current, ok := node.(*cst.UnaryExpr); ok {
 					if current.Op.Src() == "&" && containsIdentifier(current.UnaryExpr, name) {
-						a.report("range-value-address", current, fmt.Sprintf("taking the address of range value %s can be misleading", name))
+						a.Report(current, fmt.Sprintf("taking the address of range value %s can be misleading", name))
 					}
 				}
 				return true

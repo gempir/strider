@@ -1,7 +1,6 @@
-package rules
+package syntax
 
 import (
-	"fmt"
 	"go/token"
 
 	"github.com/gempir/strider/internal/checks/catalog"
@@ -10,37 +9,49 @@ import (
 )
 
 type Pass struct {
-	filename   string
-	tree       *cst.Tree
-	content    []byte
-	reporter   func(Finding)
-	ancestors  []cst.Node
-	current    cst.Node
-	activeCode string
-	options    map[string]catalog.ResolvedOptions
-	checkState map[checkStateKey]any
+	filename  string
+	tree      *cst.Tree
+	content   []byte
+	reporter  func(Finding)
+	ancestors []cst.Node
+	current   cst.Node
+	check     Check
+	options   map[string]catalog.ResolvedOptions
+	states    checkStates
+	functions map[cst.Node]*functionFacts
+	calls     map[*cst.PrimaryExpr]callFacts
+	stats     executionStats
+}
+
+type executionStats struct {
+	functionFacts int
 }
 
 // AnalyzeCST runs selected native CST checks over one lossless source tree.
 func AnalyzeCST(input CSTInput) {
+	analyzeCST(input)
+}
+
+func analyzeCST(input CSTInput) executionStats {
 	if len(input.Checks) == 0 || input.Tree == nil {
-		return
+		return executionStats{}
 	}
 	analyzer := &Pass{
-		filename:   input.Filename,
-		tree:       input.Tree,
-		content:    input.Tree.Bytes(),
-		reporter:   input.Report,
-		options:    input.Options,
-		checkState: make(map[checkStateKey]any),
+		filename:  input.Filename,
+		tree:      input.Tree,
+		content:   input.Tree.Bytes(),
+		reporter:  input.Report,
+		options:   input.Options,
+		functions: make(map[cst.Node]*functionFacts),
+		calls:     make(map[*cst.PrimaryExpr]callFacts),
 	}
 	dispatch := make(map[NodeKind][]Check)
 	for _, check := range input.Checks {
 		for _, interest := range check.Interests() {
 			dispatch[interest] = append(dispatch[interest], check)
 		}
+		analyzer.run(check, check.Start)
 	}
-	analyzer.dispatch(dispatch[fileNodeKind], nil)
 	cst.WalkProductionsWithAncestors(
 		input.Tree.Root(),
 		func(node cst.Node, ancestors []cst.Node) bool {
@@ -50,39 +61,53 @@ func AnalyzeCST(input CSTInput) {
 			return true
 		},
 	)
-	analyzer.dispatch(dispatch[finishNodeKind], nil)
+	for _, check := range input.Checks {
+		analyzer.run(check, check.Finish)
+	}
+	return analyzer.stats
 }
 
 func (a *Pass) dispatch(checks []Check, node cst.Node) {
 	for _, check := range checks {
-		a.activeCode = check.Meta().Code
-		check.Inspect(a, node)
+		a.run(check, func(pass *Pass) {
+			check.Inspect(pass, node)
+		})
 	}
-	a.activeCode = ""
 }
 
-func (a *Pass) active(code string) bool {
-	return a.activeCode == code
+func (a *Pass) run(check Check, execute func(*Pass)) {
+	a.check = check
+	execute(a)
+	a.check = nil
 }
 
-func (a *Pass) report(code string, node cst.Node, message string) {
-	if code != a.activeCode || node == nil || a.reporter == nil {
+func (a *Pass) currentCode() string {
+	if a.check == nil {
+		return ""
+	}
+	return a.check.Meta().Code
+}
+
+// Report emits a finding owned by the currently executing descriptor.
+func (a *Pass) Report(node cst.Node, message string) {
+	if a.check == nil || node == nil || a.reporter == nil {
 		return
 	}
 	a.reporter(Finding{
 		Node:    node,
-		Code:    code,
+		Code:    a.check.Meta().Code,
 		Message: message,
 	})
 }
 
-func (a *Pass) reportFix(code string, node cst.Node, message string, fix diagnostic.Fix) {
-	if code != a.activeCode || node == nil || a.reporter == nil {
+// ReportFix emits a finding and fix owned by the current descriptor.
+func (a *Pass) ReportFix(node cst.Node, message string, fix diagnostic.Fix) {
+	if a.check == nil || node == nil || a.reporter == nil {
 		return
 	}
 	a.reporter(Finding{
 		Node:    node,
-		Code:    code,
+		Code:    a.check.Meta().Code,
 		Message: message,
 		Fixes: []diagnostic.Fix{
 			fix,
@@ -90,15 +115,16 @@ func (a *Pass) reportFix(code string, node cst.Node, message string, fix diagnos
 	})
 }
 
-func (a *Pass) reportRange(code string, start, end int, message string) {
-	if code != a.activeCode || a.reporter == nil {
+// ReportRange emits an offset finding owned by the current descriptor.
+func (a *Pass) ReportRange(start, end int, message string) {
+	if a.check == nil || a.reporter == nil {
 		return
 	}
 	a.reporter(Finding{
 		Start:    start,
 		End:      end,
 		HasRange: true,
-		Code:     code,
+		Code:     a.check.Meta().Code,
 		Message:  message,
 	})
 }
@@ -113,50 +139,19 @@ func (a *Pass) packageNameToken() cst.Token {
 	return cst.Token{}
 }
 
-func (a *Pass) checkFunction(function *cst.FunctionDecl, facts *functionFacts) {
-	if function.FunctionName == nil || function.Signature == nil {
-		return
-	}
-	name := function.FunctionName.IDENT
-	a.checkSignature(name, function.Signature.Parameters, facts.complexity)
-	a.checkFunctionChecks(name, function.Signature, function.FunctionBody, nil, facts)
-	if a.active("modifies-parameter") {
-		a.checkFunctionMutation(function.Signature.Parameters, nil, function.FunctionBody)
-	}
-}
-
-func (a *Pass) checkMethod(method *cst.MethodDecl, facts *functionFacts) {
-	if method.Signature != nil {
-		a.checkSignature(method.MethodName, method.Signature.Parameters, facts.complexity)
-		a.checkFunctionChecks(method.MethodName, method.Signature, method.FunctionBody, method.Receiver, facts)
-		if a.active("modifies-parameter") || a.active("modifies-value-receiver") {
-			a.checkFunctionMutation(method.Signature.Parameters, method.Receiver, method.FunctionBody)
-		}
-	}
-}
-
-func (a *Pass) checkSignature(name cst.Token, parameters *cst.Parameters, complexity int) {
-	if a.active("max-parameters") {
-		count := parameterCount(parameters)
-		limit := a.intOption("max-parameters")
-		if count > limit {
-			a.report("max-parameters", name, fmt.Sprintf("function has %d parameters; maximum is %d", count, limit))
-		}
-	}
-	if a.active("cyclomatic-complexity") {
-		if complexity > 10 {
-			a.report("cyclomatic-complexity", name, fmt.Sprintf("function complexity is %d; maximum is 10", complexity))
-		}
-	}
-}
-
 func (a *Pass) intOption(name string) int {
-	value, _ := a.options[a.activeCode].Int(name)
+	if a.check == nil {
+		return 0
+	}
+	value, _ := a.options[a.check.Meta().Code].Int(name)
 	return value
 }
 
 func (a *Pass) stringsOption(name string) []string {
-	value, _ := a.options[a.activeCode].Strings(name)
+	if a.check == nil {
+		return nil
+	}
+	value, _ := a.options[a.check.Meta().Code].Strings(name)
 	return value
 }
 
@@ -180,7 +175,7 @@ func (a *Pass) checkNakedReturn(statement *cst.ReturnStmt) {
 	if statement.ExpressionList != nil || !enclosingFunctionHasNamedResults(a.ancestors) {
 		return
 	}
-	a.report("no-naked-return", statement, "return values must be explicit")
+	a.Report(statement, "return values must be explicit")
 }
 
 func enclosingFunctionHasNamedResults(ancestors []cst.Node) bool {
@@ -215,7 +210,7 @@ func enclosingFunctionHasNamedResults(ancestors []cst.Node) bool {
 	return false
 }
 
-func (a *Pass) checkDefer(statement *cst.DeferStmt) {
+func (a *Pass) checkDeferInLoop(statement *cst.DeferStmt) {
 	insideLoop := false
 	for index := len(a.ancestors) - 1; index >= 0; index-- {
 		switch a.ancestors[index].(type) {
@@ -227,19 +222,23 @@ func (a *Pass) checkDefer(statement *cst.DeferStmt) {
 		}
 	}
 	if insideLoop {
-		a.report("no-defer-in-loop", statement, "defer inside a loop runs at function exit, not iteration exit")
+		a.Report(statement, "defer inside a loop runs at function exit, not iteration exit")
 	}
-	if !a.active("deferred-recover-call") && !a.active("discarded-deferred-result") {
-		return
-	}
+}
+
+func (a *Pass) checkDeferredRecoverCall(statement *cst.DeferStmt) {
 	call, ok := statement.Expression.(*cst.PrimaryExpr)
 	if !ok {
 		return
 	}
-	if a.active("deferred-recover-call") && callName(call) == "recover" {
-		a.report("deferred-recover-call", statement, "defer recover() evaluates recover immediately")
+	if callName(call) == "recover" {
+		a.Report(statement, "defer recover() evaluates recover immediately")
 	}
-	if !a.active("discarded-deferred-result") {
+}
+
+func (a *Pass) checkDiscardedDeferredResult(statement *cst.DeferStmt) {
+	call, ok := statement.Expression.(*cst.PrimaryExpr)
+	if !ok {
 		return
 	}
 	cst.Walk(
@@ -250,7 +249,7 @@ func (a *Pass) checkDefer(statement *cst.DeferStmt) {
 				return true
 			}
 			if declCount(resultDecls(literal.Signature.Result)) > 0 {
-				a.report("discarded-deferred-result", statement, "return values from a deferred function are ignored")
+				a.Report(statement, "return values from a deferred function are ignored")
 			}
 			return false
 		},
@@ -261,7 +260,7 @@ func (a *Pass) checkElseAfterReturn(statement *cst.IfElseStmt) {
 	if !statement.ELSE.IsValid() || statement.Block == nil || !statementListEndsInReturn(statement.Block.StatementList) {
 		return
 	}
-	a.report("no-else-after-return", statement.ELSE, "remove else and unindent its body after the return")
+	a.Report(statement.ELSE, "remove else and unindent its body after the return")
 }
 
 func statementListEndsInReturn(list *cst.StatementList) bool {
@@ -288,13 +287,13 @@ func (a *Pass) checkPackageVar(declaration *cst.VarDecl) {
 			switch spec := node.(type) {
 			case *cst.VarSpec:
 				if spec.IDENT.Src() != "_" {
-					a.report("no-package-var", spec.IDENT, "package variables introduce mutable global state")
+					a.Report(spec.IDENT, "package variables introduce mutable global state")
 				}
 				return false
 			case *cst.VarSpec2:
 				for names := spec.IdentifierList; names != nil; names = names.List {
 					if names.IDENT.Src() != "_" {
-						a.report("no-package-var", names.IDENT, "package variables introduce mutable global state")
+						a.Report(names.IDENT, "package variables introduce mutable global state")
 					}
 				}
 				return false

@@ -7,18 +7,14 @@ import (
 	"strings"
 
 	"github.com/gempir/strider/internal/checks/catalog"
-	builtinchecks "github.com/gempir/strider/internal/checks/syntax/rules"
 	"github.com/gempir/strider/internal/cst"
 	"github.com/gempir/strider/internal/diagnostic"
 	"github.com/gempir/strider/internal/pathfilter"
 	"github.com/gempir/strider/internal/source"
 )
 
-// Check is a concrete-syntax catalog descriptor and executable rule.
-type Check = builtinchecks.Check
-
 type Plan struct {
-	checks   []builtinchecks.Check
+	checks   []Check
 	settings map[string]configuredCheck
 	root     string
 }
@@ -32,7 +28,7 @@ type configuredCheck struct {
 // SelectedCheck is a fully bound syntax check produced by the unified
 // selection boundary.
 type SelectedCheck struct {
-	Check    builtinchecks.Check
+	Check    Check
 	Severity diagnostic.Severity
 	Excludes []string
 	Options  catalog.ResolvedOptions
@@ -50,11 +46,6 @@ type concreteSuppression struct {
 	start int
 	end   int
 	codes map[string]bool
-}
-
-// Catalog returns the syntax engine's immutable descriptor catalog.
-func Catalog() []builtinchecks.Check {
-	return builtinchecks.Catalog()
 }
 
 // NewPlan prepares syntax execution from already-selected, schema-bound
@@ -80,8 +71,8 @@ func (r *Plan) Severity(code string) diagnostic.Severity {
 	return r.settings[code].severity
 }
 
-func (r *Plan) activeChecks(filename string) []builtinchecks.Check {
-	active := make([]builtinchecks.Check, 0, len(r.checks))
+func (r *Plan) activeChecks(filename string) []Check {
+	active := make([]Check, 0, len(r.checks))
 	for _, check := range r.checks {
 		if pathfilter.Excluded(r.root, filename, r.settings[check.Meta().Code].excludes) {
 			continue
@@ -114,7 +105,7 @@ func AnalyzeTree(filename string, concreteTree *cst.Tree, registry *Plan) []diag
 	return analyzeTree(filename, concreteTree, activeChecks, registry)
 }
 
-func analyzeTree(filename string, concreteTree *cst.Tree, activeChecks []builtinchecks.Check, registry *Plan) []diagnostic.Diagnostic {
+func analyzeTree(filename string, concreteTree *cst.Tree, activeChecks []Check, registry *Plan) []diagnostic.Diagnostic {
 	if len(activeChecks) == 0 {
 		return nil
 	}
@@ -125,13 +116,13 @@ func analyzeTree(filename string, concreteTree *cst.Tree, activeChecks []builtin
 		concreteIgnores: concreteIgnores,
 		concreteNodes:   concreteNodes,
 	}
-	builtinchecks.AnalyzeCST(
-		builtinchecks.CSTInput{
+	AnalyzeCST(
+		CSTInput{
 			Filename: filename,
 			Tree:     concreteTree,
 			Checks:   activeChecks,
 			Options:  registry.boundOptions(activeChecks),
-			Report: func(finding builtinchecks.Finding) {
+			Report: func(finding Finding) {
 				context.reportConcrete(concreteTree, finding, registry.Severity(finding.Code))
 			},
 		},
@@ -139,7 +130,7 @@ func analyzeTree(filename string, concreteTree *cst.Tree, activeChecks []builtin
 	return context.diagnostics
 }
 
-func (r *Plan) boundOptions(checks []builtinchecks.Check) map[string]catalog.ResolvedOptions {
+func (r *Plan) boundOptions(checks []Check) map[string]catalog.ResolvedOptions {
 	options := make(map[string]catalog.ResolvedOptions, len(checks))
 	for _, check := range checks {
 		options[check.Meta().Code] = r.settings[check.Meta().Code].options
@@ -147,7 +138,7 @@ func (r *Plan) boundOptions(checks []builtinchecks.Check) map[string]catalog.Res
 	return options
 }
 
-func (c *Context) reportConcrete(tree *cst.Tree, finding builtinchecks.Finding, severity diagnostic.Severity) {
+func (c *Context) reportConcrete(tree *cst.Tree, finding Finding, severity diagnostic.Severity) {
 	startOffset, endOffset := cst.Range(finding.Node)
 	if finding.HasRange {
 		startOffset, endOffset = finding.Start, finding.End

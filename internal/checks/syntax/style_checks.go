@@ -1,4 +1,4 @@
-package rules
+package syntax
 
 import (
 	"bytes"
@@ -16,7 +16,7 @@ type documentationPeriodState struct {
 func (a *Pass) checkTaskComments() {
 	for _, comment := range a.tree.Comments() {
 		if marker := taskMarker(comment.Text); marker != "" {
-			a.reportRange("task-comment", comment.Start, comment.End, marker+" comment should be resolved or linked to an owned work item")
+			a.ReportRange(comment.Start, comment.End, marker+" comment should be resolved or linked to an owned work item")
 		}
 	}
 }
@@ -66,7 +66,7 @@ func (a *Pass) checkDocumentationComment(node cst.Node) {
 }
 
 func (a *Pass) reportDocumentationComment(comment cst.Comment) {
-	state := checkState(a, func() *documentationPeriodState {
+	state := stateFor(&a.states.documentation, a.currentCode(), func() *documentationPeriodState {
 		return &documentationPeriodState{
 			reported: make(map[int]bool),
 		}
@@ -84,7 +84,7 @@ func (a *Pass) reportDocumentationComment(comment cst.Comment) {
 	case '.', '!', '?', ':':
 		return
 	}
-	a.reportRange("doc-comment-period", comment.Start, comment.End, "documentation comment should end with punctuation")
+	a.ReportRange(comment.Start, comment.End, "documentation comment should end with punctuation")
 }
 
 func (a *Pass) attachedComment(node cst.Node) (cst.Comment, bool) {
@@ -141,7 +141,7 @@ func (a *Pass) checkTopLevelDeclarationOrder(file *cst.SourceFile) {
 	for list := file.TopLevelDeclList; list != nil; list = list.List {
 		rank := syntaxDeclarationRank(list.TopLevelDecl)
 		if rank < highest {
-			a.report("top-level-declaration-order", list.TopLevelDecl, "top-level declarations should be ordered as const, var, type, then func")
+			a.Report(list.TopLevelDecl, "top-level declarations should be ordered as const, var, type, then func")
 			return
 		}
 		if rank > highest {
@@ -182,6 +182,6 @@ func (a *Pass) checkExcessiveBlankIdentifiers(node cst.Node) {
 		}
 	}
 	if blanks >= 3 {
-		a.report("excessive-blank-identifiers", node, "assignment discards three or more results; name meaningful results or simplify the return contract")
+		a.Report(node, "assignment discards three or more results; name meaningful results or simplify the return contract")
 	}
 }

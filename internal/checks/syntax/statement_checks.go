@@ -1,4 +1,4 @@
-package rules
+package syntax
 
 import (
 	"bytes"
@@ -27,7 +27,7 @@ func (a *Pass) checkIfReturn(current, next cst.Node) {
 	}
 	final, ok := next.(*cst.ReturnStmt)
 	if ok && final.ExpressionList != nil && final.ExpressionList.Len() == 1 && cst.Spelling(final.ExpressionList.Expression) == "nil" {
-		a.report("redundant-error-return-check", statement, "return the error directly instead of checking it before returning")
+		a.Report(statement, "return the error directly instead of checking it before returning")
 	}
 }
 
@@ -57,8 +57,7 @@ func (a *Pass) checkBreak(statement *cst.BreakStmt) {
 		if len(statements) != 0 && statements[len(statements)-1] == statement {
 			start, end := cst.Range(statement)
 			edit := a.redundantBreakEdit(start, end)
-			a.reportFix(
-				"redundant-switch-break",
+			a.ReportFix(
 				statement,
 				"omit unnecessary break at the end of a case clause",
 				diagnostic.Fix{

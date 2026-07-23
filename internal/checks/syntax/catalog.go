@@ -1,4 +1,4 @@
-package rules
+package syntax
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ import (
 // mirrored in auxiliary maps.
 var definitions = []definition{
 	{
-		behavior: functionBehavior,
+		behavior: functionCheck((*Pass).checkCyclomaticComplexity),
 		meta: Meta{
 			Code:            "cyclomatic-complexity",
 			Summary:         "limit branching complexity",
@@ -25,7 +25,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: functionBehavior,
+		behavior: functionCheck((*Pass).checkMaxParameters),
 		meta: Meta{
 			Code:            "max-parameters",
 			Summary:         "limit function parameter count",
@@ -72,7 +72,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: deferBehavior,
+		behavior: deferCheck((*Pass).checkDeferInLoop),
 		meta: Meta{
 			Code:            "no-defer-in-loop",
 			Summary:         "avoid accumulating defers in loops",
@@ -116,7 +116,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: identifierBehavior,
+		behavior: identifierCheck((*Pass).checkBannedCharacters),
 		meta: Meta{
 			Code:            "banned-characters",
 			Summary:         "reject configured characters in identifiers",
@@ -137,7 +137,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: commentBehavior,
+		behavior: startBehavior((*Pass).checkBidirectionalControlCharacters),
 		meta: Meta{
 			Code:            "bidirectional-control-character",
 			Summary:         "reject invisible bidirectional source controls",
@@ -148,7 +148,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: importBehavior,
+		behavior: importCheck((*Pass).checkBlankImports),
 		meta: Meta{
 			Code:            "blank-imports",
 			Summary:         "require explanatory comments on blank imports outside main and test files",
@@ -181,7 +181,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: commentBehavior,
+		behavior: startBehavior((*Pass).checkTaskComments),
 		meta: Meta{
 			Code:            "task-comment",
 			Summary:         "surface TODO, FIXME, and BUG comments",
@@ -203,7 +203,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: binaryBehavior,
+		behavior: binaryCheck((*Pass).checkBooleanLiteralComparison),
 		meta: Meta{
 			Code:            "boolean-literal-comparison",
 			Summary:         "simplify comparisons between booleans and literals",
@@ -214,7 +214,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: callBehavior,
+		behavior: callCheck((*Pass).checkCallToGC),
 		meta: Meta{
 			Code:            "call-to-gc",
 			Summary:         "discourage explicit garbage collection",
@@ -225,7 +225,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: functionBehavior,
+		behavior: functionCheck((*Pass).checkCognitiveComplexity),
 		meta: Meta{
 			Code:            "cognitive-complexity",
 			Summary:         "limit nested control-flow complexity",
@@ -236,7 +236,11 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: identifierBehavior,
+		behavior: behavior([]NodeKind{
+			nodeFunctionDecl,
+			nodeMethodDecl,
+			nodeFieldDecl,
+		}, inspectConfusingNamingCheck),
 		meta: Meta{
 			Code:            "confusing-naming",
 			Summary:         "reject declarations whose names differ only by capitalization",
@@ -247,7 +251,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: functionBehavior,
+		behavior: functionCheck((*Pass).checkConfusingResults),
 		meta: Meta{
 			Code:            "confusing-results",
 			Summary:         "name consecutive unnamed results that have the same type",
@@ -258,7 +262,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: binaryBehavior,
+		behavior: binaryCheck((*Pass).checkConstantLogicalExpression),
 		meta: Meta{
 			Code:            "constant-logical-expr",
 			Summary:         "detect constant logical expressions",
@@ -269,7 +273,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: functionBehavior,
+		behavior: functionCheck((*Pass).checkContextAsArgument),
 		meta: Meta{
 			Code:            "context-as-argument",
 			Summary:         "require context.Context to be the first parameter",
@@ -280,7 +284,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: callBehavior,
+		behavior: callCheck((*Pass).checkDeepExit),
 		meta: Meta{
 			Code:            "deep-exit",
 			Summary:         "keep process-terminating calls in main or init",
@@ -291,7 +295,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: deferBehavior,
+		behavior: deferCheck((*Pass).checkDeferredRecoverCall),
 		meta: Meta{
 			Code:            "deferred-recover-call",
 			Summary:         "defer recover through a function closure",
@@ -302,7 +306,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: deferBehavior,
+		behavior: deferCheck((*Pass).checkDiscardedDeferredResult),
 		meta: Meta{
 			Code:            "discarded-deferred-result",
 			Summary:         "avoid return values discarded by deferred calls",
@@ -313,7 +317,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: importBehavior,
+		behavior: importCheck((*Pass).checkDotImports),
 		meta: Meta{
 			Code:            "dot-imports",
 			Summary:         "discourage dot imports",
@@ -324,7 +328,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: unaryBehavior,
+		behavior: unaryCheck((*Pass).checkDoubleNegation),
 		meta: Meta{
 			Code:            "double-negation",
 			Summary:         "remove redundant double boolean negation",
@@ -335,7 +339,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: importBehavior,
+		behavior: importCheck((*Pass).checkDuplicatedImports),
 		meta: Meta{
 			Code:            "duplicated-imports",
 			Summary:         "reject importing the same package more than once",
@@ -346,7 +350,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: conditionalBehavior,
+		behavior: conditionalCheck((*Pass).checkEarlyReturn),
 		meta: Meta{
 			Code:            "early-return",
 			Summary:         "prefer early returns that reduce nesting",
@@ -357,7 +361,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: blockBehavior,
+		behavior: blockCheck((*Pass).checkEmptyConditionalBlock),
 		meta: Meta{
 			Code:            "empty-conditional-block",
 			Summary:         "detect empty conditional blocks",
@@ -368,7 +372,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: switchBehavior,
+		behavior: switchCheck((*Pass).checkSwitchDefaultLast),
 		meta: Meta{
 			Code:            "enforce-switch-style",
 			Summary:         "require default clauses to be last",
@@ -379,7 +383,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: varSpecBehavior,
+		behavior: varSpecCheck((*Pass).checkErrorNaming),
 		meta: Meta{
 			Code:            "error-naming",
 			Summary:         "name package errors with an Err prefix",
@@ -390,7 +394,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: functionBehavior,
+		behavior: functionCheck((*Pass).checkErrorLastResult),
 		meta: Meta{
 			Code:            "error-last-result",
 			Summary:         "place error last in result lists",
@@ -401,7 +405,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: callBehavior,
+		behavior: callCheck((*Pass).checkErrorStringCall),
 		meta: Meta{
 			Code:            "error-strings",
 			Summary:         "use lower-case unpunctuated error messages",
@@ -412,7 +416,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: callBehavior,
+		behavior: callCheck((*Pass).checkPreferFmtErrorf),
 		meta: Meta{
 			Code:            "prefer-fmt-errorf",
 			Summary:         "replace errors.New around fmt.Sprintf",
@@ -434,7 +438,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: commentBehavior,
+		behavior: startBehavior((*Pass).checkFileLength),
 		meta: Meta{
 			Code:            "file-length-limit",
 			Summary:         "limit source-file length",
@@ -448,7 +452,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: filenameBehavior,
+		behavior: startBehavior((*Pass).checkFilenameFormat),
 		meta: Meta{
 			Code:            "filename-format",
 			Summary:         "enforce Go source filename format",
@@ -459,7 +463,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: functionBehavior,
+		behavior: functionCheck((*Pass).checkFlagParameter),
 		meta: Meta{
 			Code:            "flag-parameter",
 			Summary:         "detect boolean control parameters",
@@ -470,7 +474,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: functionBehavior,
+		behavior: functionCheck((*Pass).checkFunctionLength),
 		meta: Meta{
 			Code:            "function-length",
 			Summary:         "limit function statements and lines",
@@ -485,7 +489,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: functionBehavior,
+		behavior: functionCheck((*Pass).checkFunctionResultLimit),
 		meta: Meta{
 			Code:            "function-result-limit",
 			Summary:         "limit function result count",
@@ -499,7 +503,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: functionBehavior,
+		behavior: functionCheck((*Pass).checkGetFunctionReturnValue),
 		meta: Meta{
 			Code:            "get-function-return-value",
 			Summary:         "require Get-prefixed functions to return values",
@@ -510,7 +514,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: conditionalBehavior,
+		behavior: conditionalCheck((*Pass).checkIdenticalBranches),
 		meta: Meta{
 			Code:            "identical-branches",
 			Summary:         "detect identical if branches",
@@ -521,7 +525,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: conditionalBehavior,
+		behavior: conditionalCheck((*Pass).checkIdenticalIfChainBranches),
 		meta: Meta{
 			Code:            "identical-if-chain-branches",
 			Summary:         "detect repeated if-chain branches",
@@ -532,7 +536,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: conditionalBehavior,
+		behavior: conditionalCheck((*Pass).checkIdenticalIfChainConditions),
 		meta: Meta{
 			Code:            "identical-if-chain-conditions",
 			Summary:         "detect repeated if-chain conditions",
@@ -543,7 +547,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: switchBehavior,
+		behavior: switchCheck((*Pass).checkIdenticalSwitchBranches),
 		meta: Meta{
 			Code:            "identical-switch-branches",
 			Summary:         "detect repeated switch branches",
@@ -554,7 +558,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: switchBehavior,
+		behavior: switchCheck((*Pass).checkIdenticalSwitchConditions),
 		meta: Meta{
 			Code:            "identical-switch-conditions",
 			Summary:         "detect repeated switch conditions",
@@ -565,7 +569,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: blockBehavior,
+		behavior: blockCheck((*Pass).checkRedundantErrorReturn),
 		meta: Meta{
 			Code:            "redundant-error-return-check",
 			Summary:         "simplify redundant error checks before returning",
@@ -576,7 +580,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: unaryBehavior,
+		behavior: unaryCheck((*Pass).checkIneffectivePointerCopy),
 		meta: Meta{
 			Code:            "ineffective-pointer-copy",
 			Summary:         "detect pointer round trips that do not copy values",
@@ -587,7 +591,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: importBehavior,
+		behavior: importCheck((*Pass).checkImportAliasNaming),
 		meta: Meta{
 			Code:            "import-alias-naming",
 			Summary:         "enforce conventional import aliases",
@@ -609,7 +613,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: importBehavior,
+		behavior: importCheck((*Pass).checkImportsBlocklist),
 		meta: Meta{
 			Code:            "imports-blocklist",
 			Summary:         "reject configured imports",
@@ -634,7 +638,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: conditionalBehavior,
+		behavior: conditionalCheck((*Pass).checkInefficientMapLookup),
 		meta: Meta{
 			Code:            "inefficient-map-lookup",
 			Summary:         "avoid repeated map lookups",
@@ -645,7 +649,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: functionBehavior,
+		behavior: functionCheck((*Pass).checkMarshalReceiver),
 		meta: Meta{
 			Code:            "marshal-receiver",
 			Summary:         "keep marshal receiver types consistent",
@@ -681,7 +685,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: functionBehavior,
+		behavior: functionCheck((*Pass).checkModifiesParameter),
 		meta: Meta{
 			Code:            "modifies-parameter",
 			Summary:         "detect parameter mutation",
@@ -692,7 +696,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: functionBehavior,
+		behavior: functionCheck((*Pass).checkModifiesValueReceiver),
 		meta: Meta{
 			Code:            "modifies-value-receiver",
 			Summary:         "detect value receiver mutation",
@@ -703,7 +707,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: binaryBehavior,
+		behavior: binaryCheck((*Pass).checkModuloOne),
 		meta: Meta{
 			Code:            "modulo-one",
 			Summary:         "detect remainder operations that are always zero",
@@ -725,7 +729,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: commentBehavior,
+		behavior: startBehavior((*Pass).checkPackageComment),
 		meta: Meta{
 			Code:            "package-comments",
 			Summary:         "require package documentation",
@@ -736,7 +740,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: filenameBehavior,
+		behavior: startBehavior((*Pass).checkPackageDirectoryMismatch),
 		meta: Meta{
 			Code:            "package-directory-mismatch",
 			Summary:         "match package and directory names",
@@ -747,7 +751,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: filenameBehavior,
+		behavior: startBehavior((*Pass).checkPackageNaming),
 		meta: Meta{
 			Code:            "package-naming",
 			Summary:         "enforce conventional package names",
@@ -758,7 +762,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: loopBehavior,
+		behavior: forCheck((*Pass).checkRangeValueAddress),
 		meta: Meta{
 			Code:            "range-value-address",
 			Summary:         "avoid taking addresses of range values",
@@ -769,7 +773,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: loopBehavior,
+		behavior: forCheck((*Pass).checkSimplifyRange),
 		meta: Meta{
 			Code:            "simplify-range",
 			Summary:         "simplify range statements",
@@ -780,7 +784,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: functionBehavior,
+		behavior: functionCheck((*Pass).checkReceiverNaming),
 		meta: Meta{
 			Code:            "receiver-naming",
 			Summary:         "enforce consistent receiver names",
@@ -791,7 +795,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: identifierBehavior,
+		behavior: identifierCheck((*Pass).checkRedefinesBuiltin),
 		meta: Meta{
 			Code:            "redefines-builtin-id",
 			Summary:         "avoid redefining predeclared identifiers",
@@ -802,7 +806,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: commentBehavior,
+		behavior: startBehavior((*Pass).checkBuildTags),
 		meta: Meta{
 			Code:            "redundant-build-tag",
 			Summary:         "remove redundant legacy build tags",
@@ -813,7 +817,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: importBehavior,
+		behavior: importCheck((*Pass).checkRedundantImportAlias),
 		meta: Meta{
 			Code:            "redundant-import-alias",
 			Summary:         "remove aliases equal to package names",
@@ -824,7 +828,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: functionBehavior,
+		behavior: functionCheck((*Pass).checkRedundantFinalReturn),
 		meta: Meta{
 			Code:            "redundant-final-return",
 			Summary:         "remove final returns from resultless functions",
@@ -846,7 +850,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: switchBehavior,
+		behavior: switchCheck((*Pass).checkSingleCaseSwitch),
 		meta: Meta{
 			Code:            "single-case-switch",
 			Summary:         "replace single-case switches with if statements",
@@ -857,7 +861,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: callBehavior,
+		behavior: callCheck((*Pass).checkStringOfInt),
 		meta: Meta{
 			Code:            "string-of-int",
 			Summary:         "make integer-to-string intent explicit",
@@ -868,7 +872,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: commentBehavior,
+		behavior: startBehavior((*Pass).checkCompilerDirectiveSpacing),
 		meta: Meta{
 			Code:            "spaced-compiler-directive",
 			Summary:         "detect compiler directives disabled by leading whitespace",
@@ -879,7 +883,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: loopBehavior,
+		behavior: forCheck((*Pass).checkSpinningSelectDefault),
 		meta: Meta{
 			Code:            "spinning-select-default",
 			Summary:         "detect select loops that spin on an empty default",
@@ -901,7 +905,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: callBehavior,
+		behavior: callCheck((*Pass).checkTimeDateCall),
 		meta: Meta{
 			Code:            "time-date",
 			Summary:         "detect suspicious time.Date arguments",
@@ -934,7 +938,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: identifierBehavior,
+		behavior: identifierCheck((*Pass).checkUnexportedNaming),
 		meta: Meta{
 			Code:            "unexported-naming",
 			Summary:         "avoid leading underscores in private names",
@@ -945,7 +949,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: functionBehavior,
+		behavior: functionCheck((*Pass).checkUnexportedReturn),
 		meta: Meta{
 			Code:            "unexported-return",
 			Summary:         "avoid exported APIs returning private types",
@@ -956,7 +960,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: conditionalBehavior,
+		behavior: conditionalCheck((*Pass).checkUnnecessaryIf),
 		meta: Meta{
 			Code:            "unnecessary-if",
 			Summary:         "replace boolean-returning if chains",
@@ -967,7 +971,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: callBehavior,
+		behavior: callCheck((*Pass).checkUnnecessaryFormat),
 		meta: Meta{
 			Code:            "unnecessary-format",
 			Summary:         "avoid formatting calls without directives",
@@ -978,7 +982,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: blockBehavior,
+		behavior: blockCheck((*Pass).checkUnreachableCode),
 		meta: Meta{
 			Code:            "unreachable-code",
 			Summary:         "detect statements after unconditional flow",
@@ -1000,7 +1004,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: functionBehavior,
+		behavior: functionCheck((*Pass).checkUnusedParameter),
 		meta: Meta{
 			Code:            "unused-parameter",
 			Summary:         "detect unused function parameters",
@@ -1011,7 +1015,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: functionBehavior,
+		behavior: functionCheck((*Pass).checkUnusedReceiver),
 		meta: Meta{
 			Code:            "unused-receiver",
 			Summary:         "detect unused method receivers",
@@ -1033,7 +1037,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: callBehavior,
+		behavior: callCheck((*Pass).checkUseErrorsNew),
 		meta: Meta{
 			Code:            "use-errors-new",
 			Summary:         "prefer errors.New for static errors",
@@ -1044,7 +1048,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: callBehavior,
+		behavior: callCheck((*Pass).checkUseFmtPrint),
 		meta: Meta{
 			Code:            "use-fmt-print",
 			Summary:         "prefer fmt.Print over builtin print",
@@ -1055,7 +1059,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: callBehavior,
+		behavior: callCheck((*Pass).checkUseSlicesSort),
 		meta: Meta{
 			Code:            "use-slices-sort",
 			Summary:         "prefer slices.Sort over sort.Slice",
@@ -1066,7 +1070,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: varSpecBehavior,
+		behavior: varSpecCheck((*Pass).checkVarDeclaration),
 		meta: Meta{
 			Code:            "var-declaration",
 			Summary:         "simplify zero-value declarations",
@@ -1077,7 +1081,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: identifierBehavior,
+		behavior: identifierCheck((*Pass).checkVarNaming),
 		meta: Meta{
 			Code:            "var-naming",
 			Summary:         "enforce idiomatic identifier naming",
@@ -1088,7 +1092,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: functionBehavior,
+		behavior: functionCheck((*Pass).checkWaitgroupByValue),
 		meta: Meta{
 			Code:            "waitgroup-by-value",
 			Summary:         "pass sync.WaitGroup by pointer",
@@ -1099,7 +1103,7 @@ var definitions = []definition{
 		},
 	},
 	{
-		behavior: binaryBehavior,
+		behavior: binaryCheck((*Pass).checkZeroIntegerDivision),
 		meta: Meta{
 			Code:            "zero-integer-division",
 			Summary:         "detect literal integer division that truncates to zero",

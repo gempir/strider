@@ -1,4 +1,4 @@
-package rules
+package syntax
 
 import (
 	"fmt"
@@ -10,44 +10,94 @@ import (
 	"github.com/gempir/strider/internal/cst"
 )
 
-func (a *Pass) checkCall(call *cst.PrimaryExpr) {
+type callFacts struct {
+	node      *cst.PrimaryExpr
+	name      string
+	arguments []cst.Node
+}
+
+func (a *Pass) callFacts(call *cst.PrimaryExpr) callFacts {
+	if facts, ok := a.calls[call]; ok {
+		return facts
+	}
+	facts := callFacts{
+		node: call,
+	}
 	if call == nil || !cst.IsArguments(call.Postfix) {
+		return facts
+	}
+	facts.name = cst.Spelling(call.PrimaryExpr)
+	facts.arguments = callArguments(call.Postfix)
+	if a.calls == nil {
+		a.calls = make(map[*cst.PrimaryExpr]callFacts)
+	}
+	a.calls[call] = facts
+	return facts
+}
+
+func (a *Pass) checkCallToGC(call callFacts) {
+	if call.name == "runtime.GC" {
+		a.Report(call.node, "avoid explicit garbage collection")
+	}
+}
+
+func (a *Pass) checkPreferFmtErrorf(call callFacts) {
+	if call.name != "errors.New" || len(call.arguments) != 1 {
 		return
 	}
-	name := cst.Spelling(call.PrimaryExpr)
-	arguments := callArguments(call.Postfix)
-	switch name {
-	case "runtime.GC":
-		a.report("call-to-gc", call, "avoid explicit garbage collection")
-	case "errors.New":
-		if len(arguments) == 1 {
-			if inner, ok := arguments[0].(*cst.PrimaryExpr); ok && callName(inner) == "fmt.Sprintf" {
-				a.report("prefer-fmt-errorf", call, "replace errors.New(fmt.Sprintf(...)) with fmt.Errorf(...)")
-			}
-		}
-	case "fmt.Errorf":
-		if len(arguments) > 0 && literalWithoutFormatting(arguments[0]) {
-			a.report("use-errors-new", call, "replace fmt.Errorf with errors.New for a static message")
-		}
+	if inner, ok := call.arguments[0].(*cst.PrimaryExpr); ok && callName(inner) == "fmt.Sprintf" {
+		a.Report(call.node, "replace errors.New(fmt.Sprintf(...)) with fmt.Errorf(...)")
+	}
+}
+
+func (a *Pass) checkUseErrorsNew(call callFacts) {
+	if call.name == "fmt.Errorf" && len(call.arguments) > 0 && literalWithoutFormatting(call.arguments[0]) {
+		a.Report(call.node, "replace fmt.Errorf with errors.New for a static message")
+	}
+}
+
+func (a *Pass) checkUnnecessaryFormat(call callFacts) {
+	switch call.name {
 	case "fmt.Sprintf", "fmt.Fprintf", "fmt.Printf":
-		if len(arguments) > 0 && literalWithoutFormatting(arguments[0]) {
-			a.report("unnecessary-format", call, "formatting call has no formatting directive")
+		if len(call.arguments) > 0 && literalWithoutFormatting(call.arguments[0]) {
+			a.Report(call.node, "formatting call has no formatting directive")
 		}
-	case "print", "println":
-		a.report("use-fmt-print", call, "use fmt.Print or fmt.Println instead of the builtin")
-	case "sort.Slice", "sort.SliceStable":
-		a.report("use-slices-sort", call, "use slices.Sort or slices.SortFunc when possible")
-	case "time.Date":
-		a.checkTimeDate(arguments)
 	}
-	if isDeepExit(name) && !a.insideMainOrInit() {
-		a.report("deep-exit", call, "process-exit calls should be confined to main or init")
+}
+
+func (a *Pass) checkUseFmtPrint(call callFacts) {
+	if call.name == "print" || call.name == "println" {
+		a.Report(call.node, "use fmt.Print or fmt.Println instead of the builtin")
 	}
-	if name == "string" && len(arguments) == 1 && integerLooking(arguments[0]) {
-		a.report("string-of-int", call, "integer-to-string conversion yields one rune; use string(rune(value)) or strconv.Itoa")
+}
+
+func (a *Pass) checkUseSlicesSort(call callFacts) {
+	if call.name == "sort.Slice" || call.name == "sort.SliceStable" {
+		a.Report(call.node, "use slices.Sort or slices.SortFunc when possible")
 	}
-	if isErrorConstructor(name) {
-		a.checkErrorMessage(arguments)
+}
+
+func (a *Pass) checkTimeDateCall(call callFacts) {
+	if call.name == "time.Date" {
+		a.checkTimeDate(call.arguments)
+	}
+}
+
+func (a *Pass) checkDeepExit(call callFacts) {
+	if isDeepExit(call.name) && !a.insideMainOrInit() {
+		a.Report(call.node, "process-exit calls should be confined to main or init")
+	}
+}
+
+func (a *Pass) checkStringOfInt(call callFacts) {
+	if call.name == "string" && len(call.arguments) == 1 && integerLooking(call.arguments[0]) {
+		a.Report(call.node, "integer-to-string conversion yields one rune; use string(rune(value)) or strconv.Itoa")
+	}
+}
+
+func (a *Pass) checkErrorStringCall(call callFacts) {
+	if isErrorConstructor(call.name) {
+		a.checkErrorMessage(call.arguments)
 	}
 }
 
@@ -115,7 +165,7 @@ func (a *Pass) checkTimeDate(arguments []cst.Node) {
 		}
 		value, err := strconv.Atoi(literal.Src())
 		if err == nil && (value < limit.minimum || value > limit.maximum) {
-			a.report("time-date", literal, fmt.Sprintf("time.Date %s argument %d is outside %d..%d", limit.label, value, limit.minimum, limit.maximum))
+			a.Report(literal, fmt.Sprintf("time.Date %s argument %d is outside %d..%d", limit.label, value, limit.minimum, limit.maximum))
 		}
 	}
 }
@@ -175,7 +225,7 @@ func (a *Pass) checkErrorMessage(arguments []cst.Node) {
 	first, _ := utf8Decode(value)
 	badEnd := strings.HasSuffix(value, ".") || strings.HasSuffix(value, ":") || strings.HasSuffix(value, "!") || strings.HasSuffix(value, "\n")
 	if unicode.IsUpper(first) || badEnd {
-		a.report("error-strings", literal, "error string should not be capitalized or end with punctuation")
+		a.Report(literal, "error string should not be capitalized or end with punctuation")
 	}
 }
 

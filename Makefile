@@ -2,6 +2,7 @@
 
 STRIDER ?= ./strider
 CORPUS_FLAGS ?=
+CHECKSCAFFOLD_FLAGS ?=
 
 build:
 	CGO_ENABLED=0 go build -trimpath -o strider ./cmd/strider
@@ -19,24 +20,15 @@ golden-update:
 
 check-update: golden-update
 	cd docs && bun run generate:checks
-	go run ./scripts/catalogreview
+
+check-scaffold:
+	go run ./scripts/checkscaffold $(CHECKSCAFFOLD_FLAGS)
 
 vet:
 	go vet ./...
 
 check:
 	go run cmd/strider/main.go check
-
-unused-check:
-	@output="$$(go run golang.org/x/tools/cmd/deadcode@v0.48.0 -test ./...)"; \
-	status="$$?"; \
-	if [ "$$status" -ne 0 ]; then \
-		exit "$$status"; \
-	fi; \
-	if [ -n "$$output" ]; then \
-		printf '%s\n' "$$output"; \
-		exit 1; \
-	fi
 
 dependency-check:
 	go mod verify
@@ -50,6 +42,3 @@ corpus-update: build
 		--html target/corpus/index.html \
 		--project-html docs/public/benchmark-report/projects \
 		--homepage-stats docs/src/generated/kubernetes-benchmark.json $(CORPUS_FLAGS)
-
-catalog-review:
-	go run ./scripts/catalogreview

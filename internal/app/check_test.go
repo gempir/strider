@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/gempir/strider/internal/checks"
+	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/ui"
 	"github.com/gempir/strider/internal/workspace"
 )
@@ -262,6 +263,13 @@ func TestCheckFixRejectsIncompatibleModes(t *testing.T) {
 			},
 			want: "cannot update a baseline",
 		},
+		"no package loading": {
+			args: []string{
+				"--fix",
+				"--no-package-loading",
+			},
+			want: "requires package loading",
+		},
 	} {
 		t.Run(
 			name,
@@ -277,6 +285,78 @@ func TestCheckFixRejectsIncompatibleModes(t *testing.T) {
 				}
 			},
 		)
+	}
+}
+
+func TestCheckCanSkipPackageLoading(t *testing.T) {
+	root := t.TempDir()
+	filename := filepath.Join(root, "main.go")
+	if err := os.WriteFile(filename, []byte("package sample\nimport \"regexp\"\nfunc init() { regexp.MustCompile(\"[\") }\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	code := runCLIFrom(
+		root,
+		[]string{
+			"--no-config",
+			"check",
+			"--no-package-loading",
+			"--format",
+			"json",
+			"--minimum-severity",
+			"note",
+			"--only",
+			"no-init,invalid-regexp",
+			filename,
+		},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitFindings || stderr.Len() != 0 {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stdout.String(), `"code": "no-init"`) {
+		t.Fatalf("syntax finding missing: %s", stdout.String())
+	}
+	if strings.Contains(stdout.String(), `"code": "invalid-regexp"`) {
+		t.Fatalf("package-aware finding was not skipped: %s", stdout.String())
+	}
+}
+
+func TestCheckConfigurationCanSkipPackageLoading(t *testing.T) {
+	root := t.TempDir()
+	configurationPath := filepath.Join(root, config.Filename)
+	if err := os.WriteFile(configurationPath, []byte("version = 1\n[check]\npackage-loading = false\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	filename := filepath.Join(root, "main.go")
+	if err := os.WriteFile(filename, []byte("package sample\nimport \"regexp\"\nfunc init() { regexp.MustCompile(\"[\") }\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	code := runCLI(
+		[]string{
+			"--config",
+			configurationPath,
+			"check",
+			"--format",
+			"json",
+			"--minimum-severity",
+			"note",
+			"--only",
+			"no-init,invalid-regexp",
+			filename,
+		},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitFindings || stderr.Len() != 0 {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	if strings.Contains(stdout.String(), `"code": "invalid-regexp"`) {
+		t.Fatalf("package-aware finding was not skipped: %s", stdout.String())
 	}
 }
 

@@ -42,6 +42,7 @@ type ToolConfig struct {
 	Excludes        []string               `toml:"excludes"`
 	Baseline        string                 `toml:"baseline"`
 	MinimumSeverity string                 `toml:"minimum-severity"`
+	PackageLoading  bool                   `toml:"package-loading"`
 	Settings        map[string]CheckConfig `toml:"-"`
 }
 
@@ -79,6 +80,7 @@ func Defaults() Config {
 func defaultToolConfig() ToolConfig {
 	return ToolConfig{
 		MinimumSeverity: string(diagnostic.SeverityWarning),
+		PackageLoading:  true,
 		Settings:        make(map[string]CheckConfig),
 	}
 }
@@ -179,6 +181,10 @@ func decodeCheck(destination *ToolConfig, values map[string]toml.Primitive, meta
 			}
 		case "minimum-severity":
 			if err := metadata.PrimitiveDecode(value, &destination.MinimumSeverity); err != nil {
+				return err
+			}
+		case "package-loading":
+			if err := metadata.PrimitiveDecode(value, &destination.PackageLoading); err != nil {
 				return err
 			}
 		default:

@@ -23,6 +23,9 @@ type RunOptions struct {
 	Formatter formatter.Options
 	Root      string
 	Excludes  []string
+	// SkipPackageLoading omits package-aware checks and avoids invoking the Go
+	// package loader. Concrete-syntax checks and formatting still run.
+	SkipPackageLoading bool
 	// CollectCandidates retains complete formatted files for a future write or
 	// fix operation. Read-only check callers should leave it disabled.
 	CollectCandidates bool
@@ -71,8 +74,10 @@ func Run(ctx context.Context, shared *workspace.Workspace, registry *Registry, o
 	if err != nil {
 		return Result{}, err
 	}
-	if err := appendAnalysis(ctx, &result, shared, registry, semantic.RunContext); err != nil {
-		return Result{}, err
+	if !options.SkipPackageLoading {
+		if err := appendAnalysis(ctx, &result, shared, registry, semantic.RunContext); err != nil {
+			return Result{}, err
+		}
 	}
 	filterExcludedResults(&result, options.Root, options.Excludes)
 	diagnostic.Sort(result.Diagnostics)

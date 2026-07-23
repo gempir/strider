@@ -18,6 +18,9 @@ func TestDefaultsUseVersionOneAndWideFormatting(t *testing.T) {
 	if defaults.Checks.MinimumSeverity != "warning" {
 		t.Fatalf("default minimum severity = %q, want warning", defaults.Checks.MinimumSeverity)
 	}
+	if !defaults.Checks.PackageLoading {
+		t.Fatal("package loading is disabled by default")
+	}
 }
 
 func TestLoadDiscoversVersionOneChecks(t *testing.T) {
@@ -35,6 +38,7 @@ excludes = ["internal/generated/**"]
 excludes = ["generated/**"]
 baseline = "strider-baseline.toml"
 minimum-severity = "warning"
+package-loading = false
 [checks.no-init]
 severity = "none"
 excludes = ["legacy/**"]
@@ -56,6 +60,9 @@ characters = ["ᐸ", "ᐳ"]
 	}
 	if configuration.Checks.Baseline != "strider-baseline.toml" || configuration.Checks.MinimumSeverity != "warning" {
 		t.Fatalf("unexpected checks config: %#v", configuration.Checks)
+	}
+	if configuration.Checks.PackageLoading {
+		t.Fatal("package loading configuration was not disabled")
 	}
 	check := configuration.EffectiveCheck("no-init")
 	if check.Severity != "none" {

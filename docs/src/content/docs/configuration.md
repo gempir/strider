@@ -20,6 +20,7 @@ excludes = ["internal/generated/**"]
 excludes = ["testdata/**"]
 baseline = "strider-baseline.toml"
 minimum-severity = "warning"
+package-loading = true
 
 [checks.format]
 severity = "warning"
@@ -174,6 +175,7 @@ Tool-wide settings live under `[check]`.
 | `excludes` | string list | `[]` | Suppress diagnostics and fixes in matching files for all checks while retaining them for package analysis. |
 | `baseline` | string | unset | Apply this baseline unless the CLI overrides or ignores it. Relative paths resolve from `strider.toml`. |
 | `minimum-severity` | string | `"warning"` | Run only checks whose effective severity is at least `"none"`, `"note"`, `"warning"`, or `"error"`. |
+| `package-loading` | boolean | `true` | When `false`, skip package-aware checks that require Go package loading; formatting and syntax checks still run. |
 The default warning floor runs checks whose effective severity is warning or
 error. `strider check --minimum-severity note`
 also runs note checks, while `strider check --minimum-severity none` additionally

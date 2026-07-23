@@ -167,7 +167,9 @@ func stringOption(flags *flag.FlagSet, long, short, fallback, usage string) *str
 func boolOption(flags *flag.FlagSet, long, short, usage string) *bool {
 	value := false
 	flags.BoolVar(&value, long, false, usage)
-	flags.BoolVar(&value, short, false, "alias for --"+long)
+	if short != "" {
+		flags.BoolVar(&value, short, false, "alias for --"+long)
+	}
 	return &value
 }
 

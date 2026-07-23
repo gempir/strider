@@ -121,6 +121,7 @@ func runCheckCommand(ctx context.Context, args []string, configuration config.Co
 	removeOutdated := boolOption(flags, "remove-outdated-baseline-entries", "r", "remove baseline entries that no longer match")
 	fixSafe := boolOption(flags, "fix", "x", "apply safe automatic fixes")
 	fixUnsafe := boolOption(flags, "fix-unsafe", "u", "apply all automatic fixes, including unsafe fixes")
+	noPackageLoading := boolOption(flags, "no-package-loading", "", "skip package-aware checks")
 	var only stringList
 	varOption(flags, &only, "only", "o", "run only these check codes (repeatable or comma-separated)")
 	flags.Usage = func() {
@@ -149,6 +150,10 @@ func runCheckCommand(ctx context.Context, args []string, configuration config.Co
 	}
 
 	checkConfig := configuration.Checks
+	packageLoading := checkConfig.PackageLoading && !*noPackageLoading
+	if fixMode && !packageLoading {
+		return exitError, fmt.Errorf("fix mode requires package loading")
+	}
 	minimumSeverity, ok := resolveMinimumSeverity(flags, *minimumSeverityFlag, checkConfig.MinimumSeverity, "check", colorMode, stderr)
 	if !ok {
 		return exitError, nil
@@ -197,9 +202,10 @@ func runCheckCommand(ctx context.Context, args []string, configuration config.Co
 		Formatter: formatter.Options{
 			PrintWidth: configuration.Formatter.PrintWidth,
 		},
-		Root:              configuration.Root,
-		Excludes:          checkConfig.Excludes,
-		CollectCandidates: fixMode,
+		Root:               configuration.Root,
+		Excludes:           checkConfig.Excludes,
+		SkipPackageLoading: !packageLoading,
+		CollectCandidates:  fixMode,
 	}
 	if *watch {
 		if err := runCheckWatch(ctx, flags.Args(), workspaceOptions, registry, runOptions, baselineConfig, *summaryOnly, colorMode, stdout, stderr); err != nil {

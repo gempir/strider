@@ -38,6 +38,8 @@ Usage: strider check [OPTIONS] [FILE|DIR]...
       apply safe automatic fixes
   -u, --fix-unsafe
       apply all automatic fixes, including unsafe fixes
+  --no-package-loading
+      skip package-aware checks
   -f, --format VALUE
       report format: text, json, or html (default "text")
   -g, --generate-baseline
@@ -55,6 +57,12 @@ Usage: strider check [OPTIONS] [FILE|DIR]...
   -w, --watch
       rerun checks when source changes
 ```
+
+The first `strider check` run in a Go module can take longer while Go loads
+packages and downloads dependencies. Later runs are usually faster because Go
+reuses its module and build caches. Use `--no-package-loading` to run only
+formatting and syntax checks when package metadata or dependencies are
+unavailable.
 
 ## Configuration
 

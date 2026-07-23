@@ -23,8 +23,8 @@ the current directory when no path is provided.
 
 Global options must precede the command.
 
-Long options always use two dashes. Every option also has a one-character alias
-with one dash; aliases are scoped to their command.
+Long options always use two dashes. Options with aliases also accept their
+one-character form with one dash; aliases are scoped to their command.
 
 | Flag | Description |
 | --- | --- |
@@ -66,6 +66,7 @@ warning floor runs warning and error checks. `--minimum-severity note` also incl
 | `-w, --watch` | Keep a text-mode session open and rerun checks for each polled generation. |
 | `-x, --fix` | Apply explicitly safe automatic fixes, then rerun the checks once. |
 | `-u, --fix-unsafe` | Apply all automatic fixes, including potentially unsafe and unsafe fixes, then rerun once. |
+| `--no-package-loading` | Skip package-aware checks that require Go package loading. Formatting and syntax checks still run. |
 
 An unknown code supplied by configuration, `--only`, or `--explain` is an
 exit-code `2` error. Explicit CLI selection preserves configured severity, the
@@ -75,6 +76,15 @@ the threshold, and `--only` does not bypass it.
 Use `--only format` to check formatting without writing. Add `--fix` to apply
 the validated result, use `strider fmt` for the focused write workflow, or use
 `strider fmt --diff` to inspect it.
+
+Use `--no-package-loading` when package metadata or dependencies are unavailable:
+
+```sh
+strider check --no-package-loading ./...
+```
+
+The same policy can be enabled persistently with `[check].package-loading = false`.
+Package loading is required by fix mode because safe fixes are type-validated.
 
 Watch mode prints a numbered full report for the initial generation and when
 selected source or the resulting findings change. Package-aware checks run

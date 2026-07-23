@@ -65,6 +65,7 @@ type checkWatcher struct {
 	colorMode        ui.ColorMode
 	stdout           io.Writer
 	stderr           io.Writer
+	startedAt        time.Time
 
 	iteration       uint64
 	hasDiagnostics  bool
@@ -85,6 +86,7 @@ type checkExecution struct {
 	colorMode        ui.ColorMode
 	stdout           io.Writer
 	stderr           io.Writer
+	startedAt        time.Time
 }
 
 type checkConflict struct {
@@ -93,8 +95,8 @@ type checkConflict struct {
 	message string
 }
 
-func runCheck(ctx context.Context, args []string, configuration config.Config, colorMode ui.ColorMode, stdout, stderr io.Writer) int {
-	exitCode, err := runCheckCommand(ctx, args, configuration, colorMode, stdout, stderr)
+func runCheck(ctx context.Context, args []string, configuration config.Config, colorMode ui.ColorMode, stdout, stderr io.Writer, startedAt time.Time) int {
+	exitCode, err := runCheckCommand(ctx, args, configuration, colorMode, stdout, stderr, startedAt)
 	if err != nil {
 		printCommandError(stderr, colorMode, "strider check", "%v", err)
 		return exitError
@@ -102,7 +104,7 @@ func runCheck(ctx context.Context, args []string, configuration config.Config, c
 	return exitCode
 }
 
-func runCheckCommand(ctx context.Context, args []string, configuration config.Config, colorMode ui.ColorMode, stdout, stderr io.Writer) (int, error) {
+func runCheckCommand(ctx context.Context, args []string, configuration config.Config, colorMode ui.ColorMode, stdout, stderr io.Writer, startedAt time.Time) (int, error) {
 	if err := ctx.Err(); err != nil {
 		return exitError, err
 	}
@@ -208,7 +210,7 @@ func runCheckCommand(ctx context.Context, args []string, configuration config.Co
 		CollectCandidates:  fixMode,
 	}
 	if *watch {
-		if err := runCheckWatch(ctx, flags.Args(), workspaceOptions, registry, runOptions, baselineConfig, *summaryOnly, colorMode, stdout, stderr); err != nil {
+		if err := runCheckWatch(ctx, flags.Args(), workspaceOptions, registry, runOptions, baselineConfig, *summaryOnly, colorMode, stdout, stderr, startedAt); err != nil {
 			return exitError, err
 		}
 		return exitSuccess, nil
@@ -233,6 +235,7 @@ func runCheckCommand(ctx context.Context, args []string, configuration config.Co
 			colorMode:        colorMode,
 			stdout:           stdout,
 			stderr:           stderr,
+			startedAt:        startedAt,
 		},
 	)
 }
@@ -255,6 +258,7 @@ func runCheckOnce(ctx context.Context, execution checkExecution) (int, error) {
 		return exitError, err
 	}
 	defer shared.Close()
+	fileCount := len(shared.Files())
 	if err := ctx.Err(); err != nil {
 		return exitError, err
 	}
@@ -289,7 +293,12 @@ func runCheckOnce(ctx context.Context, execution checkExecution) (int, error) {
 			return exitSuccess, nil
 		}
 	}
-	err = reportCheckDiagnostics(execution.stdout, diagnostics, execution.reportFormat, execution.summaryOnly, execution.colorMode)
+	statistics := report.RunStatistics{
+		Files:    fileCount,
+		Checks:   executedCheckCount(execution.registry, execution.runOptions),
+		Duration: time.Since(execution.startedAt),
+	}
+	err = reportCheckDiagnostics(execution.stdout, diagnostics, execution.reportFormat, execution.summaryOnly, execution.colorMode, &statistics)
 	if err != nil {
 		return exitError, err
 	}
@@ -366,6 +375,7 @@ func runCheckWatch(
 	colorMode ui.ColorMode,
 	stdout,
 	stderr io.Writer,
+	startedAt time.Time,
 ) error {
 	watcher := &checkWatcher{
 		paths:            append([]string(nil), paths...),
@@ -378,6 +388,7 @@ func runCheckWatch(
 		colorMode:        colorMode,
 		stdout:           stdout,
 		stderr:           stderr,
+		startedAt:        startedAt,
 	}
 	defer watcher.cache.Close()
 	ticker := time.NewTicker(checkWatchInterval)
@@ -401,6 +412,11 @@ func runCheckWatch(
 }
 
 func (watcher *checkWatcher) run(ctx context.Context) error {
+	startedAt := watcher.startedAt
+	watcher.startedAt = time.Time{}
+	if startedAt.IsZero() {
+		startedAt = time.Now()
+	}
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -431,7 +447,12 @@ func (watcher *checkWatcher) run(ctx context.Context) error {
 	watcher.hasDiagnostics = true
 	watcher.iteration++
 	fmt.Fprintf(watcher.stdout, "== strider check #%d ==\n", watcher.iteration)
-	if err := reportCheckDiagnostics(watcher.stdout, diagnostics, "text", watcher.summaryOnly, watcher.colorMode); err != nil {
+	statistics := report.RunStatistics{
+		Files:    len(shared.Files()),
+		Checks:   executedCheckCount(watcher.registry, watcher.runOptions),
+		Duration: time.Since(startedAt),
+	}
+	if err := reportCheckDiagnostics(watcher.stdout, diagnostics, "text", watcher.summaryOnly, watcher.colorMode, &statistics); err != nil {
 		return err
 	}
 	if len(diagnostics) == 0 && !watcher.summaryOnly {
@@ -447,19 +468,35 @@ func prepareCheckDiagnostics(diagnostics []diagnostic.Diagnostic, baselineConfig
 	return applyBaseline("check", diagnostics, baselineConfig, colorMode, stderr)
 }
 
-func reportCheckDiagnostics(stdout io.Writer, diagnostics []diagnostic.Diagnostic, reportFormat string, summaryOnly bool, colorMode ui.ColorMode) error {
+func reportCheckDiagnostics(
+	stdout io.Writer,
+	diagnostics []diagnostic.Diagnostic,
+	reportFormat string,
+	summaryOnly bool,
+	colorMode ui.ColorMode,
+	statistics *report.RunStatistics,
+) error {
 	if reportFormat == "json" {
 		return report.JSON(stdout, diagnostics)
 	}
 	if reportFormat == "html" {
 		return report.HTML(stdout, "Strider check report", diagnostics)
 	}
-	if summaryOnly {
-		return report.TextWithOptions(stdout, diagnostics, colorMode, report.TextOptions{
-			SummaryOnly: true,
-		})
+	return report.TextWithOptions(stdout, diagnostics, colorMode, report.TextOptions{
+		SummaryOnly: summaryOnly,
+		Statistics:  statistics,
+	})
+}
+
+func executedCheckCount(registry *checks.Registry, options checks.RunOptions) int {
+	count := 0
+	for _, check := range registry.Checks() {
+		if options.SkipPackageLoading && check.Engine() == checks.EngineSemantic {
+			continue
+		}
+		count++
 	}
-	return report.Text(stdout, diagnostics, colorMode)
+	return count
 }
 
 func listChecksInRegistry(registry *checks.Registry, colorMode ui.ColorMode, stdout io.Writer) int {

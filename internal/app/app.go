@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"time"
 
 	"github.com/gempir/strider/internal/baseline"
 	"github.com/gempir/strider/internal/config"
@@ -71,13 +72,14 @@ func runFrom(ctx context.Context, directory string, args []string, stdin io.Read
 	}
 	switch args[0] {
 	case "check":
+		startedAt := time.Now()
 		configuration, err := config.Load(directory, globals.configPath, globals.noConfig)
 		if err != nil {
 			printError(stderr, colorMode, "strider", err)
 			return exitError
 		}
 		colorMode = configuredColor(configuration, globals)
-		return runCheck(ctx, args[1:], configuration, colorMode, stdout, stderr)
+		return runCheck(ctx, args[1:], configuration, colorMode, stdout, stderr, startedAt)
 	case "fmt", "format":
 		configuration, err := config.Load(directory, globals.configPath, globals.noConfig)
 		if err != nil {

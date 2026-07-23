@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/gempir/strider/internal/diagnostic"
@@ -22,6 +23,14 @@ const (
 // TextOptions controls which parts of a text report are emitted.
 type TextOptions struct {
 	SummaryOnly bool
+	Statistics  *RunStatistics
+}
+
+// RunStatistics describes the work represented by one text report.
+type RunStatistics struct {
+	Files    int
+	Checks   int
+	Duration time.Duration
 }
 
 type checkCount struct {
@@ -54,6 +63,9 @@ func TextWithOptions(writer io.Writer, diagnostics []diagnostic.Diagnostic, colo
 				return err
 			}
 		}
+		if err := writeRunStatistics(writer, options.Statistics, palette); err != nil {
+			return err
+		}
 		_, err := fmt.Fprintln(writer, summary(diagnostics, counts, fixCounts, palette))
 		return err
 	}
@@ -69,13 +81,36 @@ func TextWithOptions(writer io.Writer, diagnostics []diagnostic.Diagnostic, colo
 		}
 	}
 	if len(diagnostics) == 0 {
+		if err := writeRunStatistics(writer, options.Statistics, palette); err != nil {
+			return err
+		}
 		_, err := fmt.Fprintln(writer, summary(diagnostics, counts, fixCounts, palette))
 		return err
 	}
 	if err := writeCheckCounts(writer, diagnostics, palette, true); err != nil {
 		return err
 	}
+	if err := writeRunStatistics(writer, options.Statistics, palette); err != nil {
+		return err
+	}
 	_, err := fmt.Fprintln(writer, summary(diagnostics, counts, fixCounts, palette))
+	return err
+}
+
+func writeRunStatistics(writer io.Writer, statistics *RunStatistics, palette ui.Palette) error {
+	if statistics == nil {
+		return nil
+	}
+	duration := statistics.Duration.Round(time.Millisecond).Milliseconds()
+	line := fmt.Sprintf(
+		"Checked %d %s in %dms. Ran %d %s.",
+		statistics.Files,
+		plural("file", statistics.Files),
+		duration,
+		statistics.Checks,
+		plural("check", statistics.Checks),
+	)
+	_, err := fmt.Fprintln(writer, palette.Muted(line))
 	return err
 }
 

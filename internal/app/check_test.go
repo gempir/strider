@@ -88,8 +88,11 @@ func TestCheckFixFormatsAndReruns(t *testing.T) {
 					&stdout,
 					&stderr,
 				)
-				if code != exitSuccess || stdout.String() != "0 issues\n" || stderr.Len() != 0 {
+				if code != exitSuccess || withoutRunStatistics(stdout.String()) != "0 issues\n" || stderr.Len() != 0 {
 					t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+				}
+				if !strings.Contains(stdout.String(), "Checked 1 file in ") || !strings.Contains(stdout.String(), ". Ran 1 check.") {
+					t.Fatalf("run statistics missing from fix output: %q", stdout.String())
 				}
 				contents, err := os.ReadFile(filename)
 				if err != nil {
@@ -156,7 +159,7 @@ func clean(ready bool, values []int, mode int) ([]int, bool) {
 		&stdout,
 		&stderr,
 	)
-	if code != exitSuccess || stdout.String() != "0 issues\n" || stderr.Len() != 0 {
+	if code != exitSuccess || withoutRunStatistics(stdout.String()) != "0 issues\n" || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 	contents, err := os.ReadFile(filename)
@@ -218,7 +221,7 @@ func TestCheckFixHonorsFormatterExclusionsForGranularEdits(t *testing.T) {
 		"--fix",
 		filename,
 	}, strings.NewReader(""), &stdout, &stderr)
-	if code != exitSuccess || stdout.String() != "0 issues\n" || stderr.Len() != 0 {
+	if code != exitSuccess || withoutRunStatistics(stdout.String()) != "0 issues\n" || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 	contents, err := os.ReadFile(filename)
@@ -493,8 +496,41 @@ func TestCheckSummaryOnly(t *testing.T) {
 		"-q",
 		filename,
 	}, strings.NewReader(""), &stdout, &stderr)
-	if code != exitFindings || stdout.String() != "no-init  1\n1 issue: 1 note\n" || stderr.Len() != 0 {
+	if code != exitFindings || withoutRunStatistics(stdout.String()) != "no-init  1\n1 issue: 1 note\n" || stderr.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "no-init  1\nChecked 1 file in ") || !strings.Contains(stdout.String(), ". Ran 1 check.\n1 issue: 1 note\n") {
+		t.Fatalf("summary-only statistics are misplaced: %q", stdout.String())
+	}
+}
+
+func TestCheckTextStatisticsCountOnlyExecutedChecks(t *testing.T) {
+	root := t.TempDir()
+	filename := filepath.Join(root, "sample.go")
+	if err := os.WriteFile(filename, []byte("package sample\nfunc init() {}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	code := runCLI(
+		[]string{
+			"--no-config",
+			"check",
+			"--no-package-loading",
+			"--minimum-severity",
+			"note",
+			"--only",
+			"no-init,invalid-regexp",
+			filename,
+		},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
+	if code != exitFindings || stderr.Len() != 0 {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "Checked 1 file in ") || !strings.Contains(stdout.String(), ". Ran 1 check.\n1 issue: 1 note\n") {
+		t.Fatalf("executed-check statistics = %q", stdout.String())
 	}
 }
 
@@ -575,6 +611,9 @@ func TestCheckWatcherReportsOnlyChangedGenerations(t *testing.T) {
 	firstOutput := stdout.String()
 	if !strings.Contains(firstOutput, "strider check #1") || !strings.Contains(firstOutput, "no-init") {
 		t.Fatalf("initial output = %q", firstOutput)
+	}
+	if !strings.Contains(firstOutput, "Checked 1 file in ") || !strings.Contains(firstOutput, ". Ran 1 check.") {
+		t.Fatalf("initial watch statistics missing: %q", firstOutput)
 	}
 	if err := watcher.run(context.Background()); err != nil {
 		t.Fatal(err)
@@ -732,7 +771,7 @@ func TestMinimumSeverityNoneExecutesSuppressedCheck(t *testing.T) {
 		"no-init",
 		filename,
 	}, strings.NewReader(""), &stdout, &stderr)
-	if code != exitSuccess || stdout.String() != "0 issues\n" || stderr.Len() != 0 {
+	if code != exitSuccess || withoutRunStatistics(stdout.String()) != "0 issues\n" || stderr.Len() != 0 {
 		t.Fatalf("ordinary run: exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 	stdout.Reset()

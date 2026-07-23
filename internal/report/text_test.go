@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gempir/strider/internal/diagnostic"
 	"github.com/gempir/strider/internal/ui"
@@ -162,6 +163,67 @@ func TestTextSummaryOnlySuppressesDetailsAndCheckCounts(t *testing.T) {
 	want := "error-rule  1\nnote-rule   1\n2 issues: 1 error, 1 note\n"
 	if output.String() != want {
 		t.Fatalf("summary-only output = %q", output.String())
+	}
+}
+
+func TestTextRunStatisticsAppearBeforeIssueSummary(t *testing.T) {
+	diagnostics := []diagnostic.Diagnostic{
+		{
+			Code:     "error-rule",
+			Message:  "detail",
+			Severity: diagnostic.SeverityError,
+		},
+	}
+	var output bytes.Buffer
+	if err := TextWithOptions(&output, diagnostics, ui.ColorNever, TextOptions{
+		Statistics: &RunStatistics{
+			Files:    50,
+			Checks:   202,
+			Duration: 7500 * time.Microsecond,
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	want := "error-rule  1\nChecked 50 files in 8ms. Ran 202 checks.\n1 issue: 1 error\n"
+	if !strings.HasSuffix(output.String(), want) {
+		t.Fatalf("statistics output = %q, want suffix %q", output.String(), want)
+	}
+}
+
+func TestTextRunStatisticsSupportSummaryOnlyAndSingularCounts(t *testing.T) {
+	var output bytes.Buffer
+	if err := TextWithOptions(&output, nil, ui.ColorNever, TextOptions{
+		SummaryOnly: true,
+		Statistics: &RunStatistics{
+			Files:    1,
+			Checks:   1,
+			Duration: 400 * time.Microsecond,
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	want := "Checked 1 file in 0ms. Ran 1 check.\n0 issues\n"
+	if output.String() != want {
+		t.Fatalf("summary-only statistics = %q, want %q", output.String(), want)
+	}
+}
+
+func TestTextRunStatisticsAreMutedWhenColorIsEnabled(t *testing.T) {
+	t.Setenv("FORCE_COLOR", "")
+	t.Setenv("NO_COLOR", "")
+	var output bytes.Buffer
+	if err := TextWithOptions(&output, nil, ui.ColorAlways, TextOptions{
+		Statistics: &RunStatistics{
+			Files:    2,
+			Checks:   3,
+			Duration: time.Millisecond,
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	want := "\x1b[2mChecked 2 files in 1ms. Ran 3 checks.\x1b[0m\n"
+	if !strings.HasPrefix(output.String(), want) {
+		t.Fatalf("colored statistics = %q, want prefix %q", output.String(), want)
 	}
 }
 

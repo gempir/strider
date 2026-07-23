@@ -48,3 +48,14 @@ func stripTerminalStyles(output string) string {
 	}
 	return output
 }
+
+func withoutRunStatistics(output string) string {
+	var result strings.Builder
+	for _, line := range strings.SplitAfter(output, "\n") {
+		if strings.HasPrefix(line, "Checked ") && strings.Contains(line, ". Ran ") {
+			continue
+		}
+		result.WriteString(line)
+	}
+	return result.String()
+}

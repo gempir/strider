@@ -399,7 +399,7 @@ severity = "none"
 		"invalid-regexp",
 		filename,
 	}, strings.NewReader(""), &stdout, &stderr)
-	if code != exitSuccess || stdout.String() != "0 issues\n" {
+	if code != exitSuccess || withoutRunStatistics(stdout.String()) != "0 issues\n" {
 		t.Fatalf("semantic exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 	stdout.Reset()

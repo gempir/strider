@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Place error last in result lists. Default: enabled.
+Place error last in result lists..
 
 ## Bad
 

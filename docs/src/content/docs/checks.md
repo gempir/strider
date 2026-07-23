@@ -134,9 +134,8 @@ strider check --minimum-severity none --list-checks
 strider check --explain invalid-regexp
 ```
 
-Strider includes one reserved `format` check, 94 style and maintainability
-checks, and 112 correctness and data-flow checks. Individual check pages are
-grouped by purpose in the documentation sidebar.
+The generated catalog statistics report the current inventory. Individual
+check pages are grouped by purpose in the documentation sidebar.
 
 ## Configure checks
 
@@ -157,7 +156,7 @@ severity = "error"
 max-lines = 800
 excludes = ["testdata/golden/**"]
 
-[checks.possible-nil-dereference]
+[checks.unclosed-http-response-body]
 severity = "error"
 
 [checks.no-init]

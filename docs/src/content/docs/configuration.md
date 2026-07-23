@@ -32,7 +32,7 @@ severity = "error"
 max-lines = 800
 excludes = ["cmd/migrations/**"]
 
-[checks.possible-nil-dereference]
+[checks.unclosed-http-response-body]
 severity = "error"
 ```
 

@@ -23,15 +23,6 @@ func TestCatalogIsCompleteDocumentedAndRunnable(t *testing.T) {
 	_, testFile, _, _ := runtime.Caller(0)
 	docsDirectory := filepath.Join(filepath.Dir(testFile), "..", "..", "..", "docs", "src", "content", "docs", "lints")
 	fixture := writeFixture(t, "// Package p is a fixture.\npackage p\n")
-	coreCodes := map[string]bool{
-		"cyclomatic-complexity": true,
-		"max-parameters":        true,
-		"no-defer-in-loop":      true,
-		"no-else-after-return":  true,
-		"no-init":               true,
-		"no-naked-return":       true,
-		"no-package-var":        true,
-	}
 	for _, check := range checks {
 		meta := check.Meta()
 		if seen[meta.Code] {
@@ -45,8 +36,8 @@ func TestCatalogIsCompleteDocumentedAndRunnable(t *testing.T) {
 		if strings.HasPrefix(meta.GoodExample, "See the check reference") || strings.HasPrefix(meta.BadExample, "See the check reference") {
 			t.Errorf("check %s still has placeholder examples", meta.Code)
 		}
-		if !coreCodes[meta.Code] && (meta.Explanation == meta.Summary+"." || !strings.Contains(meta.Explanation, "Default:")) {
-			t.Errorf("extended check %s explanation does not add its default contract: %q", meta.Code, meta.Explanation)
+		if strings.Contains(meta.Explanation, "Default: enabled") {
+			t.Errorf("check %s explanation repeats filler default metadata: %q", meta.Code, meta.Explanation)
 		}
 		if _, err := os.Stat(filepath.Join(docsDirectory, meta.Code+".md")); err != nil {
 			t.Errorf("check %s has no documentation: %v", meta.Code, err)

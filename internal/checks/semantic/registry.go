@@ -261,9 +261,7 @@ var checkCatalog = []Descriptor{
 		},
 	}),
 	ssaCheck(infiniteRecursionCheck{}),
-	typeCheck(invalidPrintfCallCheck{}),
 	typeCheck(contradictoryInterfaceAssertionCheck{}),
-	ssaCheck(possibleNilDereferenceCheck{}),
 	typeCheck(oddPairedArgumentsCheck{}),
 	ssaCheck(regexpMatchInLoopCheck{}),
 	semanticCheck(separateByteStringMapKeyCheck{}, Requirements{
@@ -294,7 +292,6 @@ var checkCatalog = []Descriptor{
 			"os",
 		},
 	}),
-	typeCheck(failedAssertionShadowReadCheck{}),
 	typeCheck(deferredReturnFunctionNotCalledCheck{}),
 	typeCheck(durationMultipliedByDurationCheck{}),
 	typeCheck(contextStoredInStructCheck{}),

@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Detect value receiver mutation. Default: enabled.
+Detect value receiver mutation..
 
 ## Bad
 

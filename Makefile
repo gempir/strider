@@ -39,3 +39,6 @@ corpus-update: build
 		--html target/corpus/index.html \
 		--project-html docs/public/benchmark-report/projects \
 		--homepage-stats docs/src/generated/kubernetes-benchmark.json $(CORPUS_FLAGS)
+
+catalog-review:
+	go run ./scripts/catalogreview

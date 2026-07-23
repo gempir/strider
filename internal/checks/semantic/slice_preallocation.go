@@ -24,7 +24,7 @@ func (slicePreallocationCheck) Meta() Meta {
 		Explanation:     "A slice grown once per iteration of a range over a slice, array, map, or string has a useful capacity bound. Initializing it as make([]T, 0, len(source)) avoids repeated growth and copying while preserving its zero length.",
 		GoodExample:     "result := make([]Item, 0, len(source))\nfor _, item := range source { result = append(result, convert(item)) }",
 		BadExample:      "var result []Item\nfor _, item := range source { result = append(result, convert(item)) }",
-		DefaultSeverity: diagnostic.SeverityWarning,
+		DefaultSeverity: diagnostic.SeverityNote,
 	}
 }
 

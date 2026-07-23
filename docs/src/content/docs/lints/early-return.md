@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Prefer early returns that reduce nesting. Default: enabled.
+Prefer early returns that reduce nesting..
 
 ## Bad
 

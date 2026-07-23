@@ -38,7 +38,7 @@ export const checkDemo = `<span class="t-dim">$</span> <span class="t-cmd">strid
 88 <span class="t-path">│</span>         <span class="t-warn">defer rows.Close()</span>
 89 <span class="t-path">│</span>     }
 
-<span class="t-err">possible-nil-dereference</span>: <strong>conn may be nil on this path</strong>
+<span class="t-err">unclosed-http-response-body</span>: <strong>response body is not closed</strong>
    <span class="t-path">┌─ internal/server/pool.go:41:2</span>
    <span class="t-path">│</span>
 40 <span class="t-path">│</span>  }
@@ -46,7 +46,7 @@ export const checkDemo = `<span class="t-dim">$</span> <span class="t-cmd">strid
 42 <span class="t-path">│</span>  return nil
 
 <span class="t-warn">no-defer-in-loop</span>          <span class="t-warn">1</span>
-<span class="t-err">possible-nil-dereference</span>  <span class="t-err">1</span>
+<span class="t-err">unclosed-http-response-body</span>  <span class="t-err">1</span>
 <strong>2 issues:</strong> <span class="t-err">1 error</span><strong>,</strong> <span class="t-warn">1 warning</span>`;
 
 <div class="land">

@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Require package documentation. Default: enabled.
+Require package documentation..
 
 ## Bad
 

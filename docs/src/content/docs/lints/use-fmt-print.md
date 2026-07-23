@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Prefer fmt.Print over builtin print. Default: enabled.
+Prefer fmt.Print over builtin print..
 
 ## Bad
 

@@ -7,7 +7,7 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "9fc3634c65ca7b8da3b03c28948e55eb7ef55f3e76d0e1d4d9dd6d1a1016357a",
+          "digest": "be73f56e3ebdcf3a687a737e38a2860012d7569c81da89f7ca7ec6df1e01c5f9",
           "findings": 953,
           "by_code": {
             "add-constant": 175,
@@ -134,8 +134,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "b00a358cdecee2c30804f16c9657dcc683ac0df34b1b89572625e8de4874d1f3",
-          "findings": 725,
+          "digest": "5fa00563ec91b2c3a68d423de24d9e247f0887181c574855059729b909795bb8",
+          "findings": 720,
           "by_code": {
             "add-constant": 42,
             "byte-string-write": 1,
@@ -161,7 +161,6 @@
             "no-package-var": 61,
             "overwritten-before-use": 1,
             "package-comments": 19,
-            "possible-nil-dereference": 5,
             "range-value-address": 2,
             "range-value-capture": 7,
             "redefines-builtin-id": 1,
@@ -191,8 +190,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "1895a676a5c9b61158e32ebb95c78bec65971167ab7079fe099cd2dcba822798",
-          "findings": 193,
+          "digest": "6ee9d38f66c64268bbff6204af8dd73b4ca0398a9088b22944a4e137f3d831b3",
+          "findings": 192,
           "by_code": {
             "add-constant": 22,
             "cognitive-complexity": 9,
@@ -211,7 +210,6 @@
             "nil-error-return": 1,
             "no-package-var": 11,
             "package-comments": 3,
-            "possible-nil-dereference": 1,
             "range-value-address": 1,
             "redefines-builtin-id": 14,
             "redundant-build-tag": 2,
@@ -239,7 +237,7 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "3f3a86be54d51139e3e4b5f02ca0651a51c0f68999fad48742001f94f4a8d250",
+          "digest": "db91924cb56408ed9111712f89dea2ace30f379cf100b7c5fb0166ad4957ce3e",
           "findings": 239,
           "by_code": {
             "add-constant": 8,
@@ -432,7 +430,7 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "2ba2272d3fe77d2ce065b1aab36b3b51d29032601aecae9b7d0f1c518f35da96",
+          "digest": "6eca1a5966beee8efedef52ef11ecb5fce4c5597bf793fc226c4d70b6b5cfc14",
           "findings": 329,
           "by_code": {
             "add-constant": 35,
@@ -479,8 +477,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "db104ee0531968bc008b1fca657df74efb61ced18ffe9febe46256f1c838338f",
-          "findings": 532,
+          "digest": "f946da434afb44dadfd8b1fd3475ccecd2186f66e6ca23896f7c02f43186a4e2",
+          "findings": 531,
           "by_code": {
             "add-constant": 47,
             "boolean-literal-comparison": 1,
@@ -506,7 +504,6 @@
             "no-naked-return": 15,
             "no-package-var": 8,
             "package-comments": 2,
-            "possible-nil-dereference": 1,
             "range-value-address": 2,
             "redundant-conversion": 3,
             "single-case-switch": 2,
@@ -534,8 +531,8 @@
       "operations": {
         "check": {
           "exit_code": 1,
-          "digest": "55098b27393f57a139dbbc68dd559a6177a83fe49f8463cbb561736314f05b52",
-          "findings": 22161,
+          "digest": "af9567086f4d3c291320f37e9db83c66413af33301627bba3ac6131a16ea2ad9",
+          "findings": 22137,
           "by_code": {
             "add-constant": 3608,
             "blank-imports": 1,
@@ -588,7 +585,6 @@
             "overwritten-before-use": 12,
             "package-comments": 468,
             "package-directory-mismatch": 8,
-            "possible-nil-dereference": 24,
             "range-value-address": 406,
             "receiver-naming": 21,
             "redefines-builtin-id": 89,

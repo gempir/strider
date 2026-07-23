@@ -63,7 +63,7 @@ minimum-severity = "warning"
 severity = "warning"
 max-lines = 800
 
-[checks.possible-nil-dereference]
+[checks.unclosed-http-response-body]
 severity = "error"
 ```
 

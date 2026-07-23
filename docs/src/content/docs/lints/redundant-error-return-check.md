@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Simplify redundant error checks before returning. Default: enabled.
+Simplify redundant error checks before returning..
 
 ## Bad
 

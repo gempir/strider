@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Replace errors.New around fmt.Sprintf. Default: enabled.
+Replace errors.New around fmt.Sprintf..
 
 ## Bad
 

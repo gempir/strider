@@ -30,6 +30,21 @@ func isPackageFunction(info *types.Info, expression ast.Expr, packagePath, name 
 	return function != nil && function.Pkg() != nil && function.Pkg().Path() == packagePath && function.Name() == name
 }
 
+func unparenExpression(expression ast.Expr) ast.Expr {
+	for {
+		parenthesized, ok := expression.(*ast.ParenExpr)
+		if !ok {
+			return expression
+		}
+		expression = parenthesized.X
+	}
+}
+
+func isByteType(valueType types.Type) bool {
+	basic, ok := valueType.Underlying().(*types.Basic)
+	return ok && basic.Kind() == types.Byte
+}
+
 func isNamedType(valueType types.Type, packagePath, name string) bool {
 	named, _ := types.Unalias(valueType).(*types.Named)
 	return named != nil && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == packagePath && named.Obj().Name() == name

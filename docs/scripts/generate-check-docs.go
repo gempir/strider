@@ -46,9 +46,17 @@ func main() {
 
 func generateCatalogStats(docsDirectory string, registry *checks.Registry) {
 	stats := struct {
-		Checks int `json:"checks"`
+		Checks            int            `json:"checks"`
+		ByEngine          map[string]int `json:"by_engine"`
+		ByDefaultSeverity map[string]int `json:"by_default_severity"`
 	}{
-		Checks: len(registry.Checks()),
+		Checks:            len(registry.Checks()),
+		ByEngine:          make(map[string]int),
+		ByDefaultSeverity: make(map[string]int),
+	}
+	for _, descriptor := range registry.Checks() {
+		stats.ByEngine[string(descriptor.Engine())]++
+		stats.ByDefaultSeverity[string(descriptor.Meta().DefaultSeverity)]++
 	}
 	contents, err := json.MarshalIndent(stats, "", "  ")
 	if err != nil {

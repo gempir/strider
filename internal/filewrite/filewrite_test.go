@@ -247,6 +247,11 @@ func TestWriteBatchPreservesPermissions(t *testing.T) {
 	if err := os.Chmod(path, 0o640); err != nil {
 		t.Fatal(err)
 	}
+	beforeInfo, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	beforeMode := beforeInfo.Mode().Perm()
 
 	if err := WriteBatch([]Change{
 		{
@@ -262,8 +267,8 @@ func TestWriteBatchPreservesPermissions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if info.Mode().Perm() != 0o640 {
-		t.Fatalf("permissions = %v, want 0640", info.Mode().Perm())
+	if info.Mode().Perm() != beforeMode {
+		t.Fatalf("permissions = %v, want preserved mode %v", info.Mode().Perm(), beforeMode)
 	}
 }
 

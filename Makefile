@@ -2,7 +2,6 @@
 
 STRIDER ?= ./strider
 CORPUS_FLAGS ?=
-CHECKSCAFFOLD_FLAGS ?=
 
 build:
 	CGO_ENABLED=0 go build -trimpath -o strider ./cmd/strider
@@ -20,9 +19,6 @@ golden-update:
 
 check-update: golden-update
 	cd docs && bun run generate:checks
-
-check-scaffold:
-	go run ./scripts/checkscaffold $(CHECKSCAFFOLD_FLAGS)
 
 vet:
 	go vet ./...

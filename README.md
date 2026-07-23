@@ -93,7 +93,15 @@ Use the scaffold command to start a built-in check with its metadata, registry
 entry, test, and documentation page:
 
 ```sh
-make check-scaffold CHECKSCAFFOLD_FLAGS='-engine semantic -stage types -code missing-package-context -summary "detect package operations without context" -explanation "Package operations should use a caller-owned context; uncertain forms are ignored." -good "load(ctx, name)" -bad "load(context.Background(), name)" -severity warning'
+go run ./scripts/checkscaffold \
+  -engine semantic \
+  -stage types \
+  -code missing-package-context \
+  -summary "detect package operations without context" \
+  -explanation "Package operations should use a caller-owned context; uncertain forms are ignored." \
+  -good 'load(ctx, name)' \
+  -bad 'load(context.Background(), name)' \
+  -severity warning
 ```
 
 Use `-engine syntax` for CST checks, or choose `-stage ssa` for an SSA-based

@@ -236,9 +236,3 @@ func traceSizedSliceOrigin(value ssa.Value, visiting map[ssa.Value]bool) sizedSl
 		return sizedSliceTrace{}
 	}
 }
-
-func (appendToSizedSliceCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageSSA,
-	}
-}

@@ -44,9 +44,3 @@ func (invalidExecCommandCheck) Run(pass *Pass) {
 		},
 	)
 }
-
-func (invalidExecCommandCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

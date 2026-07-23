@@ -65,9 +65,3 @@ func isBuiltinCall(info *types.Info, call *ast.CallExpr, name string) bool {
 	builtin, ok := info.Uses[identifier].(*types.Builtin)
 	return ok && builtin.Name() == name
 }
-
-func (waitGroupGoForbiddenCallCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

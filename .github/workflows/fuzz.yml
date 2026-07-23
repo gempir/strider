@@ -1,0 +1,26 @@
+name: bounded fuzzing
+
+on:
+    schedule:
+        - cron: "43 3 * * 2"
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+jobs:
+    fuzz:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+            - uses: actions/setup-go@v6
+              with:
+                  go-version-file: go.mod
+            - name: Formatter round trip
+              run: go test ./internal/formatter -run=^$ -fuzz=FuzzFormatRoundTrip -fuzztime=30s
+            - name: Fix normalization and application
+              run: go test ./internal/fix -run=^$ -fuzz=FuzzNormalizeAndApplyEdits -fuzztime=30s
+            - name: Line diff reconstruction
+              run: go test ./internal/app -run=^$ -fuzz=FuzzLineDiffReconstructsSource -fuzztime=30s
+            - name: CST losslessness
+              run: go test ./internal/cst -run=^$ -fuzz=FuzzParseIsLossless -fuzztime=30s

@@ -70,9 +70,3 @@ func dynamicPrintfFormatIndex(pass *Pass, call *ast.CallExpr) (int, bool) {
 	}
 	return 0, false
 }
-
-func (dynamicPrintfCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

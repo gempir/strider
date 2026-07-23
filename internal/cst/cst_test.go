@@ -29,6 +29,34 @@ func TestParseIsLossless(t *testing.T) {
 	}
 }
 
+func FuzzParseIsLossless(f *testing.F) {
+	f.Add("package p\n")
+	f.Add("// Package p documents p.\npackage p\n\nfunc F[T any](value T) T { return value }\n")
+	f.Add("package p\r\n\r\nvar value = `raw`\r\n")
+	f.Fuzz(
+		func(t *testing.T, sourceText string) {
+			if len(sourceText) > 64*1024 {
+				return
+			}
+			tree, err := Parse("fuzz.go", []byte(sourceText))
+			if err != nil {
+				return
+			}
+			if got := string(tree.Bytes()); got != sourceText {
+				t.Fatalf("Tree.Bytes reconstructed %q, want %q", got, sourceText)
+			}
+			var rebuilt strings.Builder
+			for _, current := range tree.Tokens() {
+				rebuilt.WriteString(current.Sep())
+				rebuilt.WriteString(current.Src())
+			}
+			if got := rebuilt.String(); got != sourceText {
+				t.Fatalf("tokens reconstructed %q, want %q", got, sourceText)
+			}
+		},
+	)
+}
+
 func TestWalkIncludesProductionsAndTokens(t *testing.T) {
 	tree, err := Parse("fixture.go", []byte("package p\nfunc F(ok bool) { if ok { return } else { panic(ok) } }\n"))
 	if err != nil {

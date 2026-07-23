@@ -38,9 +38,3 @@ func (timeValueEqualityCheck) Run(pass *Pass) {
 		},
 	)
 }
-
-func (timeValueEqualityCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

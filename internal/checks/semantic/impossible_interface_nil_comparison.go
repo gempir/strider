@@ -182,9 +182,3 @@ func copyValueSet(values map[ssa.Value]bool) map[ssa.Value]bool {
 	}
 	return copy
 }
-
-func (impossibleInterfaceNilComparisonCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageSSA,
-	}
-}

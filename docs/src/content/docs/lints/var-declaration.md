@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Simplify zero-value declarations. Default: enabled.
+Simplify zero-value declarations.
 
 ## Bad
 

@@ -3,7 +3,7 @@ package semantic
 import "testing"
 
 func TestNilErrorReturnReportsContradictoryReturns(t *testing.T) {
-	reports := runResearchCorrectnessCheck(
+	reports := runCheckFixture(
 		t,
 		nilErrorReturnCheck{},
 		`package fixture
@@ -50,6 +50,6 @@ func reassignedAfterBadReturn(err error, cond bool) (*int, error) {
 }
 `,
 	)
-	assertResearchReportCount(t, reports, 3)
-	assertResearchMessagesContain(t, reports, "proves an error is non-nil")
+	assertReportCount(t, reports, 3)
+	assertMessagesContain(t, reports, "proves an error is non-nil")
 }

@@ -1,11 +1,12 @@
 package formatter
 
 import (
-	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"golang.org/x/mod/modfile"
 )
 
 type modulePathCache struct {
@@ -59,19 +60,5 @@ func modulePathIn(directory string) (string, bool) {
 	if err != nil {
 		return "", false
 	}
-	for len(content) != 0 {
-		lineEnd := bytes.IndexByte(content, '\n')
-		if lineEnd < 0 {
-			lineEnd = len(content)
-		}
-		fields := bytes.Fields(content[:lineEnd])
-		if len(fields) == 2 && bytes.Equal(fields[0], []byte("module")) {
-			return string(fields[1]), true
-		}
-		if lineEnd == len(content) {
-			break
-		}
-		content = content[lineEnd+1:]
-	}
-	return "", true
+	return modfile.ModulePath(content), true
 }

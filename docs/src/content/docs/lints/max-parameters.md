@@ -47,11 +47,11 @@ into a struct purely to bypass the rule.
 
 ## Configuration
 
-The default maximum is eight.
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `max-parameters` | `int` | `8` | Maximum number of parameters allowed on a function or method. |
 
 ```toml
 [checks.max-parameters]
-max-parameters = 10
+max-parameters = 8
 ```
-
-Set `max-parameters = 0` to use the built-in maximum of eight.

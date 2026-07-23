@@ -102,9 +102,3 @@ func untrappableSignalName(info *types.Info, expression ast.Expr) string {
 		return ""
 	}
 }
-
-func (untrappableSignalCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

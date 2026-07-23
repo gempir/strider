@@ -99,10 +99,3 @@ func usedOnlyAsStringMapKey(pass *Pass, parents map[ast.Node]ast.Node, object ty
 	}
 	return uses != 0
 }
-
-func (separateByteStringMapKeyCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-		Facts: FactParents,
-	}
-}

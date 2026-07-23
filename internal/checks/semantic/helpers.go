@@ -30,6 +30,21 @@ func isPackageFunction(info *types.Info, expression ast.Expr, packagePath, name 
 	return function != nil && function.Pkg() != nil && function.Pkg().Path() == packagePath && function.Name() == name
 }
 
+func unparenExpression(expression ast.Expr) ast.Expr {
+	for {
+		parenthesized, ok := expression.(*ast.ParenExpr)
+		if !ok {
+			return expression
+		}
+		expression = parenthesized.X
+	}
+}
+
+func isByteType(valueType types.Type) bool {
+	basic, ok := valueType.Underlying().(*types.Basic)
+	return ok && basic.Kind() == types.Byte
+}
+
 func isNamedType(valueType types.Type, packagePath, name string) bool {
 	named, _ := types.Unalias(valueType).(*types.Named)
 	return named != nil && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == packagePath && named.Obj().Name() == name
@@ -38,11 +53,6 @@ func isNamedType(valueType types.Type, packagePath, name string) bool {
 func isPointerToNamedType(valueType types.Type, packagePath, name string) bool {
 	pointer, _ := types.Unalias(valueType).(*types.Pointer)
 	return pointer != nil && isNamedType(pointer.Elem(), packagePath, name)
-}
-
-func isNamedReceiverType(valueType types.Type, packagePath, name string) bool {
-	named := namedType(valueType)
-	return named != nil && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == packagePath && named.Obj().Name() == name
 }
 
 func calledMethod(info *types.Info, expression ast.Expr) (*types.Func, *types.Named) {

@@ -48,9 +48,3 @@ func isNilIdentifier(expression ast.Expr) bool {
 	identifier, ok := expression.(*ast.Ident)
 	return ok && identifier.Name == "nil"
 }
-
-func (nilContextCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

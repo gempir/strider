@@ -15,10 +15,6 @@ import (
 // ErrStale reports that a file no longer has the contents that were analyzed.
 var ErrStale = errors.New("file changed since analysis")
 
-var createTemporary = os.CreateTemp
-
-var renameFile = os.Rename
-
 // Change describes one complete file replacement. Before is the exact source
 // that was analyzed and After is the source that should replace it.
 type Change struct {
@@ -53,6 +49,18 @@ type stagedFile struct {
 	planned   plannedFile
 }
 
+type fileOperations struct {
+	createTemporary func(string, string) (*os.File, error)
+	rename          func(string, string) error
+}
+
+func defaultFileOperations() fileOperations {
+	return fileOperations{
+		createTemporary: os.CreateTemp,
+		rename:          os.Rename,
+	}
+}
+
 // WriteBatch verifies, stages, and replaces a batch of files. Guards are
 // verified with the changes but are never written. Every changed file is staged
 // before the first replacement. Paths that contain symlinks are resolved to
@@ -62,6 +70,10 @@ type stagedFile struct {
 // output has been staged. A concurrent change detected at either point returns
 // an error wrapping ErrStale without replacing any target.
 func WriteBatch(changes []Change, guards ...Guard) error {
+	return writeBatch(defaultFileOperations(), changes, guards...)
+}
+
+func writeBatch(operations fileOperations, changes []Change, guards ...Guard) error {
 	planned, err := planFiles(changes, guards)
 	if err != nil || len(planned) == 0 {
 		return err
@@ -79,7 +91,7 @@ func WriteBatch(changes []Change, guards ...Guard) error {
 		if !change.write {
 			continue
 		}
-		file, stageErr := stage(change)
+		file, stageErr := stage(operations, change)
 		if stageErr != nil {
 			return errors.Join(stageErr, cleanup(staged))
 		}
@@ -94,7 +106,7 @@ func WriteBatch(changes []Change, guards ...Guard) error {
 		if _, validateErr := validateCurrent(file.planned, file.planned.mode, true); validateErr != nil {
 			return errors.Join(validateErr, cleanup(staged[index:]))
 		}
-		if renameErr := renameFile(file.temporary, file.target); renameErr != nil {
+		if renameErr := operations.rename(file.temporary, file.target); renameErr != nil {
 			return errors.Join(renameErr, cleanup(staged[index:]))
 		}
 	}
@@ -262,8 +274,8 @@ func staleError(path, reason string) error {
 	return fmt.Errorf("%s: %w (%s)", path, ErrStale, reason)
 }
 
-func stage(change plannedFile) (stagedFile, error) {
-	temporary, err := createTemporary(filepath.Dir(change.target), ".strider-*")
+func stage(operations fileOperations, change plannedFile) (stagedFile, error) {
+	temporary, err := operations.createTemporary(filepath.Dir(change.target), ".strider-*")
 	if err != nil {
 		return stagedFile{}, fmt.Errorf("stage %s: %w", change.target, err)
 	}

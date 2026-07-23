@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Name consecutive unnamed results that have the same type. Default: enabled.
+Name consecutive unnamed results that have the same type.
 
 ## Bad
 

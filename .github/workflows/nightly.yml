@@ -12,7 +12,18 @@ concurrency:
     cancel-in-progress: true
 
 jobs:
+    test:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+            - uses: actions/setup-go@v6
+              with:
+                  go-version-file: go.mod
+            - name: Run canonical verification
+              run: make verify
+
     build:
+        needs: test
         name: ${{ matrix.goos }}-${{ matrix.goarch }}
         runs-on: ubuntu-latest
         strategy:

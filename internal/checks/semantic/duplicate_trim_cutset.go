@@ -55,13 +55,3 @@ func duplicateRune(value string) (rune, bool) {
 	}
 	return 0, false
 }
-
-func (duplicateTrimCutsetCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageSSA,
-		Facts: FactCallArguments | FactStaticCalls,
-		staticCallPackages: []string{
-			"strings",
-		},
-	}
-}

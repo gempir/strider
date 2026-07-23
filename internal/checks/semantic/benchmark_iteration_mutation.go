@@ -41,9 +41,3 @@ func (benchmarkIterationMutationCheck) Run(pass *Pass) {
 		},
 	)
 }
-
-func (benchmarkIterationMutationCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

@@ -16,6 +16,7 @@ import (
 // Options controls source discovery for a workspace.
 type Options struct {
 	SkipGenerated bool
+	Directory     string
 	Root          string
 	Excludes      []string
 }
@@ -23,8 +24,9 @@ type Options struct {
 // Workspace is an immutable set of input paths and source files. File contents
 // and CSTs are loaded lazily and are safe to request concurrently.
 type Workspace struct {
-	inputs []string
-	files  []*File
+	inputs    []string
+	files     []*File
+	closeOnce sync.Once
 }
 
 // File owns the cached source and CST for one Go file.
@@ -52,7 +54,7 @@ func Open(paths []string, options Options) (*Workspace, error) {
 			".",
 		}
 	}
-	filenames, err := source.Discover(inputs, source.Options{
+	filenames, err := source.DiscoverFrom(options.Directory, inputs, source.Options{
 		SkipGenerated: options.SkipGenerated,
 	})
 	if err != nil {
@@ -89,6 +91,21 @@ func (workspace *Workspace) Files() []*File {
 		return nil
 	}
 	return append([]*File(nil), workspace.files...)
+}
+
+// Close releases the generation's source and CST caches. It is safe to call
+// repeatedly. Files obtained before closure remain valid handles, but their
+// cached contents cannot be loaded after Close returns.
+func (workspace *Workspace) Close() error {
+	if workspace == nil {
+		return nil
+	}
+	workspace.closeOnce.Do(func() {
+		for _, file := range workspace.files {
+			file.release()
+		}
+	})
+	return nil
 }
 
 // Path returns the absolute source filename.
@@ -185,6 +202,12 @@ func (file *File) Identity() (ContentIdentity, error) {
 		return ContentIdentity{}, fmt.Errorf("identify workspace file: nil file")
 	}
 	if file.snapshot != nil {
+		file.bytesMu.RLock()
+		released := file.bytesReleased
+		file.bytesMu.RUnlock()
+		if released {
+			return ContentIdentity{}, fmt.Errorf("identify workspace file %s: source cache released", file.path)
+		}
 		return file.snapshot.identity, nil
 	}
 	contents, err := file.Bytes()
@@ -194,10 +217,7 @@ func (file *File) Identity() (ContentIdentity, error) {
 	return sha256.Sum256(contents), nil
 }
 
-// ReleaseCST drops the heavyweight concrete syntax tree after all consumers of
-// this file have completed. Source bytes remain cached. A released CST cannot
-// be requested again from this immutable workspace generation.
-func (file *File) ReleaseCST() {
+func (file *File) releaseCST() {
 	if file == nil {
 		return
 	}
@@ -207,14 +227,11 @@ func (file *File) ReleaseCST() {
 	file.treeMu.Unlock()
 }
 
-// Release drops all heavyweight per-file caches after a completed batch job.
-// Any byte slices or trees already returned to callers remain valid, but this
-// immutable File cannot load them again.
-func (file *File) Release() {
+func (file *File) release() {
 	if file == nil {
 		return
 	}
-	file.ReleaseCST()
+	file.releaseCST()
 	file.bytesMu.Lock()
 	file.bytes = nil
 	file.bytesReleased = true

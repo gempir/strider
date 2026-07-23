@@ -25,11 +25,11 @@ func Parse() (Value, error)
 
 ## Configuration
 
-The default maximum is three results.
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `max-results` | `int` | `3` | Maximum number of result values allowed on a function. |
 
 ```toml
 [checks.function-result-limit]
-max-results = 4
+max-results = 3
 ```
-
-Set `max-results = 0` to use the built-in maximum of three.

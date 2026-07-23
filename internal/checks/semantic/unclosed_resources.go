@@ -362,15 +362,3 @@ func namedResultEvents(signature *types.Signature, position token.Pos) []resourc
 	}
 	return result
 }
-
-func (unclosedHTTPResponseBodyCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}
-
-func (unclosedSQLResourceCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

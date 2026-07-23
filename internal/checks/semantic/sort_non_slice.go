@@ -64,13 +64,3 @@ func isNilSSAConstant(value ssa.Value) bool {
 	constant, ok := value.(*ssa.Const)
 	return ok && constant.IsNil()
 }
-
-func (sortNonSliceCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageSSA,
-		Facts: FactCallArguments | FactStaticCalls,
-		staticCallPackages: []string{
-			"sort",
-		},
-	}
-}

@@ -157,9 +157,3 @@ func comparisonFixedByBounds(operator token.Token, bound, minimum, maximum const
 	}
 	return false, false
 }
-
-func (impossibleIntegerComparisonCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

@@ -2,6 +2,7 @@ package pathfilter
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -27,6 +28,28 @@ func TestMatchesPrefixesAndDoublestarGlobs(t *testing.T) {
 		"cmd/**",
 	}) {
 		t.Fatal("unrelated glob matched")
+	}
+}
+
+func TestValidateRejectsMalformedGlobsDeterministically(t *testing.T) {
+	err := Validate([]string{
+		"z/[",
+		"a/{",
+	})
+	if err == nil {
+		t.Fatal("malformed globs were accepted")
+	}
+	if got, want := err.Error(), `malformed exclusion glob(s): "a/{", "z/["`; got != want {
+		t.Fatalf("got %q, want %q", got, want)
+	}
+	if err := Validate([]string{
+		"internal/**",
+		"literal/path",
+	}); err != nil {
+		t.Fatalf("valid patterns were rejected: %v", err)
+	}
+	if !strings.Contains(err.Error(), "a/{") {
+		t.Fatalf("error did not identify malformed pattern: %v", err)
 	}
 }
 

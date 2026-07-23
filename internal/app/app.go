@@ -2,16 +2,17 @@
 package app
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"sort"
 
 	"github.com/gempir/strider/internal/baseline"
 	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/diagnostic"
-	"github.com/gempir/strider/internal/pathfilter"
 	"github.com/gempir/strider/internal/report"
 	"github.com/gempir/strider/internal/ui"
 )
@@ -39,7 +40,23 @@ type checkListEntry struct {
 	summary  string
 }
 
-func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+	directory, err := os.Getwd()
+	if err != nil {
+		printError(stderr, ui.ColorAuto, "strider", err)
+		return exitError
+	}
+	return runFrom(ctx, directory, args, stdin, stdout, stderr)
+}
+
+func runFrom(ctx context.Context, directory string, args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if err := ctx.Err(); err != nil {
+		printError(stderr, ui.ColorAuto, "strider", err)
+		return exitError
+	}
 	args, globals, ok := parseGlobalOptions(args, stderr)
 	if !ok {
 		return exitError
@@ -54,21 +71,21 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	}
 	switch args[0] {
 	case "check":
-		configuration, err := config.Load(globals.configPath, globals.noConfig)
+		configuration, err := config.Load(directory, globals.configPath, globals.noConfig)
 		if err != nil {
 			printError(stderr, colorMode, "strider", err)
 			return exitError
 		}
 		colorMode = configuredColor(configuration, globals)
-		return runCheck(args[1:], configuration, colorMode, stdout, stderr)
+		return runCheck(ctx, args[1:], configuration, colorMode, stdout, stderr)
 	case "fmt", "format":
-		configuration, err := config.Load(globals.configPath, globals.noConfig)
+		configuration, err := config.Load(directory, globals.configPath, globals.noConfig)
 		if err != nil {
 			printError(stderr, colorMode, "strider", err)
 			return exitError
 		}
 		colorMode = configuredColor(configuration, globals)
-		return runFormat(args[1:], configuration, colorMode, stdin, stdout, stderr)
+		return runFormat(ctx, args[1:], configuration, colorMode, stdin, stdout, stderr)
 	case "help", "-h", "--help":
 		usage(stdout, colorMode)
 		return exitSuccess
@@ -219,14 +236,4 @@ func applyBaseline(command string, diagnostics []diagnostic.Diagnostic, options 
 		)
 	}
 	return result.Diagnostics, false, nil
-}
-
-func filterDiagnostics(diagnostics []diagnostic.Diagnostic, root string, excludes []string) []diagnostic.Diagnostic {
-	filtered := make([]diagnostic.Diagnostic, 0, len(diagnostics))
-	for _, item := range diagnostics {
-		if !pathfilter.Excluded(root, item.File, excludes) {
-			filtered = append(filtered, item)
-		}
-	}
-	return filtered
 }

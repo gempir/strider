@@ -98,14 +98,3 @@ func isPointerOrInterface(valueType types.Type) bool {
 		return false
 	}
 }
-
-func (nonPointerUnmarshalCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageSSA,
-		Facts: FactCallArguments | FactStaticCalls,
-		staticCallPackages: []string{
-			"encoding/json",
-			"encoding/xml",
-		},
-	}
-}

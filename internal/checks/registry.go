@@ -1,11 +1,10 @@
 package checks
 
 import (
-	"fmt"
 	"sort"
 	"strings"
 
-	"github.com/gempir/strider/internal/checks/core"
+	"github.com/gempir/strider/internal/checks/catalog"
 	"github.com/gempir/strider/internal/checks/semantic"
 	"github.com/gempir/strider/internal/checks/syntax"
 	"github.com/gempir/strider/internal/config"
@@ -21,17 +20,18 @@ type RegistryOptions struct {
 	MinimumSeverity diagnostic.Severity
 	FormatExcludes  []string
 	Root            string
+	Directory       string
 }
 
-// Registry is an immutable, capability-aware selection of checks.
+// Registry is an immutable unified selection and prepared execution plan.
 type Registry struct {
-	checks     []Check
+	checks     []Descriptor
 	settings   map[string]configuredCheck
 	knownCodes map[string]bool
 	root       string
 	format     bool
-	syntax     *syntax.Registry
-	semantic   *semantic.Registry
+	syntax     *syntax.Plan
+	semantic   *semantic.Plan
 }
 
 type configuredCheck struct {
@@ -39,24 +39,47 @@ type configuredCheck struct {
 	excludes []string
 }
 
+type catalogEntry struct {
+	meta     Meta
+	engine   Engine
+	syntax   syntax.Check
+	semantic semantic.Descriptor
+}
+
+func (entry catalogEntry) Meta() Meta {
+	return catalog.CloneMeta(entry.meta)
+}
+
+func (entry catalogEntry) Engine() Engine {
+	return entry.engine
+}
+
 // NewRegistry builds one namespace across formatting, CST, AST, type, and SSA
 // checks. Codes are case-insensitive and globally unique.
 func NewRegistry(options RegistryOptions) (*Registry, error) {
+	rootSet := options.Root != ""
 	options.Root = source.ResolveRoot(options.Root)
-	available, syntaxCodes, semanticCodes, err := availableChecks()
-	if err != nil {
-		return nil, err
-	}
+	available := availableChecks()
 	settings := make(map[string]config.CheckConfig, len(options.Settings)+1)
+	settingCodes := make([]string, 0, len(options.Settings))
 	for code, setting := range options.Settings {
-		settings[strings.ToLower(code)] = setting
+		settings[code] = config.CloneCheckConfig(setting)
+		settingCodes = append(settingCodes, code)
 	}
-	formatSetting := settings[formatMeta.Code]
+	sort.Strings(settingCodes)
+	formatCode := formatMeta.Code
+	for _, code := range settingCodes {
+		if strings.EqualFold(code, formatMeta.Code) {
+			formatCode = code
+			break
+		}
+	}
+	formatSetting := settings[formatCode]
 	formatSetting.Excludes = append(append([]string(nil), options.FormatExcludes...), formatSetting.Excludes...)
 	if len(formatSetting.Excludes) != 0 || formatSetting.Severity != "" {
-		settings[formatMeta.Code] = formatSetting
+		settings[formatCode] = formatSetting
 	}
-	selection, err := core.Select(core.SelectionOptions[Check]{
+	selection, err := catalog.Select(catalog.SelectionOptions[catalogEntry]{
 		Checks:          available,
 		Only:            options.Only,
 		Settings:        settings,
@@ -66,139 +89,92 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 		return nil, err
 	}
 
-	syntaxOnly := selectedCheckCodes(selection.Checks, syntaxCodes)
-	semanticOnly := selectedCheckCodes(selection.Checks, semanticCodes)
-
 	registry := &Registry{
-		checks:     append([]Check(nil), selection.Checks...),
+		checks:     make([]Descriptor, 0, len(selection.Checks)),
 		settings:   make(map[string]configuredCheck, len(selection.Checks)),
 		knownCodes: selection.KnownCodes,
 		root:       options.Root,
 	}
+	syntaxPlan := make([]syntax.SelectedCheck, 0)
+	semanticPlan := make([]semantic.SelectedCheck, 0)
 	for _, selected := range selection.Checks {
 		meta := selected.Meta()
 		setting := selection.Settings[strings.ToLower(meta.Code)]
+		registry.checks = append(registry.checks, selected)
 		registry.settings[meta.Code] = configuredCheck{
 			severity: selection.Severities[meta.Code],
 			excludes: append([]string(nil), setting.Excludes...),
 		}
-		registry.format = registry.format || meta.Code == formatMeta.Code
-	}
-	if len(syntaxOnly) != 0 {
-		registry.syntax, err = syntax.NewRegistryWithOptions(
-			syntax.RegistryOptions{
-				Only:            syntaxOnly,
-				Settings:        selectedSettings(selection.Settings, syntaxCodes),
-				Root:            options.Root,
-				MinimumSeverity: options.MinimumSeverity,
-			},
-		)
-		if err != nil {
-			return nil, err
+		switch selected.engine {
+		case EngineFormat:
+			registry.format = true
+		case EngineSyntax:
+			syntaxPlan = append(
+				syntaxPlan,
+				syntax.SelectedCheck{
+					Check:    selected.syntax,
+					Severity: selection.Severities[meta.Code],
+					Excludes: setting.Excludes,
+					Options:  selection.Options[meta.Code],
+				},
+			)
+		case EngineSemantic:
+			semanticPlan = append(
+				semanticPlan,
+				semantic.SelectedCheck{
+					Check:    selected.semantic,
+					Severity: selection.Severities[meta.Code],
+					Excludes: setting.Excludes,
+					Options:  selection.Options[meta.Code],
+				},
+			)
 		}
 	}
-	if len(semanticOnly) != 0 {
-		registry.semantic, err = semantic.NewRegistry(
-			semantic.RegistryOptions{
-				Only:            semanticOnly,
-				Settings:        selectedSettings(selection.Settings, semanticCodes),
-				Root:            options.Root,
-				MinimumSeverity: options.MinimumSeverity,
-			},
-		)
-		if err != nil {
-			return nil, err
-		}
+	if len(syntaxPlan) != 0 {
+		registry.syntax = syntax.NewPlan(syntaxPlan, options.Root)
+	}
+	if len(semanticPlan) != 0 {
+		registry.semantic = semantic.NewPlan(semanticPlan, options.Root, rootSet, options.Directory)
 	}
 
 	return registry, nil
 }
 
-func availableChecks() ([]Check, map[string]bool, map[string]bool, error) {
-	available := []Check{
-		catalogCheck{
-			meta: formatMeta,
+func availableChecks() []catalogEntry {
+	available := []catalogEntry{
+		{
+			meta:   formatMeta,
+			engine: EngineFormat,
 		},
 	}
-	known := map[string]bool{
-		formatMeta.Code: true,
-	}
-	syntaxCodes := make(map[string]bool)
-	semanticCodes := make(map[string]bool)
-	syntaxRegistry, err := syntax.NewRegistryWithOptions(syntax.RegistryOptions{})
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	for _, check := range syntaxRegistry.Checks() {
+	for _, check := range syntax.Catalog() {
 		meta := check.Meta()
-		code := strings.ToLower(meta.Code)
-		if known[code] {
-			return nil, nil, nil, fmt.Errorf("duplicate check code %q", meta.Code)
-		}
-		meta.Capabilities = CapabilityCST
-		available = append(available, catalogCheck{
-			meta: meta,
+		available = append(available, catalogEntry{
+			meta:   meta,
+			engine: EngineSyntax,
+			syntax: check,
 		})
-		known[code] = true
-		syntaxCodes[code] = true
 	}
-	semanticRegistry, err := semantic.NewRegistry(semantic.RegistryOptions{})
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	for _, check := range semanticRegistry.Checks() {
+	for _, check := range semantic.Catalog() {
 		meta := check.Meta()
-		code := strings.ToLower(meta.Code)
-		if known[code] {
-			return nil, nil, nil, fmt.Errorf("duplicate check code %q", meta.Code)
-		}
-		capabilities := CapabilityAST | CapabilityTypes
-		requirements := check.Requirements()
-		if requirements.Facts != 0 {
-			capabilities |= CapabilityFacts
-		}
-		if requirements.Stage == semantic.AnalysisStageSSA {
-			capabilities |= CapabilitySSA
-		}
-		meta.Capabilities = capabilities
-		available = append(available, catalogCheck{
-			meta: meta,
+		available = append(available, catalogEntry{
+			meta:     meta,
+			engine:   EngineSemantic,
+			semantic: check,
 		})
-		known[code] = true
-		semanticCodes[code] = true
 	}
 	sort.Slice(available, func(left, right int) bool {
 		return available[left].Meta().Code < available[right].Meta().Code
 	})
-	return available, syntaxCodes, semanticCodes, nil
-}
-
-func selectedCheckCodes(selected []Check, category map[string]bool) []string {
-	result := make([]string, 0)
-	for _, check := range selected {
-		code := strings.ToLower(check.Meta().Code)
-		if category[code] {
-			result = append(result, code)
-		}
-	}
-	sort.Strings(result)
-	return result
-}
-
-func selectedSettings(settings map[string]config.CheckConfig, category map[string]bool) map[string]config.CheckConfig {
-	result := make(map[string]config.CheckConfig, len(category))
-	for code := range category {
-		result[code] = settings[code]
-	}
-	return result
+	return available
 }
 
 // Checks returns the selected checks in code order.
-func (registry *Registry) Checks() []Check {
+func (registry *Registry) Checks() []Descriptor {
 	if registry == nil {
 		return nil
 	}
-	return append([]Check(nil), registry.checks...)
+	return append([]Descriptor(nil), registry.checks...)
 }
 
 // KnownCodes returns every unified check code, including checks that are
@@ -212,18 +188,6 @@ func (registry *Registry) KnownCodes() map[string]bool {
 		result[code] = true
 	}
 	return result
-}
-
-// Capabilities returns the union required by the selected checks.
-func (registry *Registry) Capabilities() Capability {
-	if registry == nil {
-		return 0
-	}
-	var capabilities Capability
-	for _, check := range registry.checks {
-		capabilities |= check.Meta().Capabilities
-	}
-	return capabilities
 }
 
 func (registry *Registry) Severity(code string) diagnostic.Severity {

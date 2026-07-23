@@ -11,7 +11,9 @@ import (
 
 	"github.com/BurntSushi/toml"
 
+	"github.com/gempir/strider/internal/checkconfig"
 	"github.com/gempir/strider/internal/diagnostic"
+	"github.com/gempir/strider/internal/pathfilter"
 	"github.com/gempir/strider/internal/ui"
 )
 
@@ -26,6 +28,9 @@ type Config struct {
 
 	Path string `toml:"-"`
 	Root string `toml:"-"`
+	// Directory is the caller-owned starting directory for relative inputs and
+	// upward configuration discovery.
+	Directory string `toml:"-"`
 }
 
 type FormatterConfig struct {
@@ -48,17 +53,16 @@ type fileConfig struct {
 	Checks    map[string]toml.Primitive `toml:"checks"`
 }
 
-type CheckConfig struct {
-	Severity         string   `toml:"severity"`
-	Excludes         []string `toml:"excludes"`
-	Characters       []string `toml:"characters"`
-	MaxLines         *int     `toml:"max-lines"`
-	MaxStatements    *int     `toml:"max-statements"`
-	MaxResults       *int     `toml:"max-results"`
-	MaxParameters    *int     `toml:"max-parameters"`
-	MaxPublicStructs *int     `toml:"max-public-structs"`
-	MaxMethods       *int     `toml:"max-methods"`
-	BlockedImports   []string `toml:"blocked-imports"`
+type CheckConfig = checkconfig.Setting
+
+type OptionValue = checkconfig.Value
+
+func IntValue(value int) OptionValue {
+	return checkconfig.IntValue(value)
+}
+
+func StringsValue(value []string) OptionValue {
+	return checkconfig.StringsValue(value)
 }
 
 func Defaults() Config {
@@ -79,23 +83,31 @@ func defaultToolConfig() ToolConfig {
 	}
 }
 
-// Load reads an explicit path or discovers strider.toml from the working
-// directory upward. With no discovered file it returns built-in defaults.
-func Load(explicitPath string, disabled bool) (Config, error) {
+// Load reads an explicit path or discovers strider.toml upward from directory.
+// With no discovered file it returns built-in defaults rooted at directory.
+func Load(directory, explicitPath string, disabled bool) (Config, error) {
 	configuration := Defaults()
+	start, err := filepath.Abs(directory)
+	if err != nil {
+		return Config{}, fmt.Errorf("configuration directory: %w", err)
+	}
+	configuration.Directory = start
+	configuration.Root = start
 	if disabled {
 		return configuration, nil
 	}
 	path := explicitPath
 	if path == "" {
-		var err error
-		path, err = discover()
+		path, err = discover(start)
 		if err != nil {
 			return Config{}, err
 		}
 		if path == "" {
 			return configuration, nil
 		}
+	}
+	if !filepath.IsAbs(path) {
+		path = filepath.Join(start, path)
 	}
 	absolute, err := filepath.Abs(path)
 	if err != nil {
@@ -130,12 +142,28 @@ func Load(explicitPath string, disabled bool) (Config, error) {
 		sort.Strings(keys)
 		return Config{}, fmt.Errorf("%s: unknown configuration key(s): %s", absolute, strings.Join(keys, ", "))
 	}
+	configuration.Checks.Settings, err = NormalizeCheckSettings(configuration.Checks.Settings)
+	if err != nil {
+		return Config{}, fmt.Errorf("read %s: %w", absolute, err)
+	}
 	configuration.Path = absolute
 	configuration.Root = filepath.Dir(absolute)
 	if err := configuration.validate(); err != nil {
 		return Config{}, fmt.Errorf("%s: %w", absolute, err)
 	}
 	return configuration, nil
+}
+
+// NormalizeCheckCode returns the canonical spelling used by configuration,
+// selection, and lookup APIs.
+func NormalizeCheckCode(code string) string {
+	return checkconfig.NormalizeCode(code)
+}
+
+// NormalizeCheckSettings canonicalizes setting keys and rejects ambiguous
+// case-folded spellings.
+func NormalizeCheckSettings(settings map[string]CheckConfig) (map[string]CheckConfig, error) {
+	return checkconfig.NormalizeSettings(settings)
 }
 
 func decodeCheck(destination *ToolConfig, values map[string]toml.Primitive, metadata toml.MetaData) error {
@@ -165,8 +193,8 @@ func decodeChecks(destination *ToolConfig, values map[string]toml.Primitive, met
 		if metadata.Type("checks", code) != "Hash" {
 			return fmt.Errorf("unknown configuration key(s): checks.%s", code)
 		}
-		check := CheckConfig{}
-		if err := metadata.PrimitiveDecode(value, &check); err != nil {
+		check, err := decodeCheckSetting(value, metadata)
+		if err != nil {
 			return err
 		}
 		destination.Settings[code] = check
@@ -174,59 +202,87 @@ func decodeChecks(destination *ToolConfig, values map[string]toml.Primitive, met
 	return nil
 }
 
-// ConfiguredOptions returns behavioral option names explicitly present in the
-// decoded configuration.
-func (check CheckConfig) ConfiguredOptions() []string {
-	configured := make([]string, 0, 8)
-	for _, option := range []struct {
-		name    string
-		present bool
-	}{
-		{
-			name:    "characters",
-			present: check.Characters != nil,
-		},
-		{
-			name:    "max-lines",
-			present: check.MaxLines != nil,
-		},
-		{
-			name:    "max-statements",
-			present: check.MaxStatements != nil,
-		},
-		{
-			name:    "max-results",
-			present: check.MaxResults != nil,
-		},
-		{
-			name:    "max-parameters",
-			present: check.MaxParameters != nil,
-		},
-		{
-			name:    "max-public-structs",
-			present: check.MaxPublicStructs != nil,
-		},
-		{
-			name:    "max-methods",
-			present: check.MaxMethods != nil,
-		},
-		{
-			name:    "blocked-imports",
-			present: check.BlockedImports != nil,
-		},
-	} {
-		if option.present {
-			configured = append(configured, option.name)
+func decodeCheckSetting(value toml.Primitive, metadata toml.MetaData) (CheckConfig, error) {
+	table := make(map[string]any)
+	if err := metadata.PrimitiveDecode(value, &table); err != nil {
+		return CheckConfig{}, err
+	}
+	setting := CheckConfig{
+		Options: make(map[string]OptionValue),
+	}
+	keys := make([]string, 0, len(table))
+	for name := range table {
+		keys = append(keys, name)
+	}
+	sort.Strings(keys)
+	for _, name := range keys {
+		raw := table[name]
+		switch name {
+		case "severity":
+			severity, ok := raw.(string)
+			if !ok {
+				return CheckConfig{}, fmt.Errorf("checks severity must be a string")
+			}
+			setting.Severity = severity
+		case "excludes":
+			excludes, ok := stringList(raw)
+			if !ok {
+				return CheckConfig{}, fmt.Errorf("checks excludes must be a string list")
+			}
+			setting.Excludes = excludes
+		default:
+			option, err := decodeOptionValue(name, raw)
+			if err != nil {
+				return CheckConfig{}, err
+			}
+			setting.Options[name] = option
 		}
 	}
-	return configured
+	if len(setting.Options) == 0 {
+		setting.Options = nil
+	}
+	normalized, err := checkconfig.NormalizeOptions(setting.Options)
+	if err != nil {
+		return CheckConfig{}, err
+	}
+	setting.Options = normalized
+	return setting, nil
 }
 
-func discover() (string, error) {
-	directory, err := os.Getwd()
-	if err != nil {
-		return "", err
+func decodeOptionValue(name string, raw any) (OptionValue, error) {
+	switch value := raw.(type) {
+	case int64:
+		return IntValue(int(value)), nil
+	case int:
+		return IntValue(value), nil
+	default:
+		if strings, ok := stringList(raw); ok {
+			return StringsValue(strings), nil
+		}
+		return OptionValue{}, fmt.Errorf("check option %q must be an integer or string list", name)
 	}
+}
+
+func stringList(raw any) ([]string, bool) {
+	switch values := raw.(type) {
+	case []string:
+		return append([]string(nil), values...), true
+	case []any:
+		result := make([]string, len(values))
+		for index, value := range values {
+			stringValue, ok := value.(string)
+			if !ok {
+				return nil, false
+			}
+			result[index] = stringValue
+		}
+		return result, true
+	default:
+		return nil, false
+	}
+}
+
+func discover(directory string) (string, error) {
 	for {
 		candidate := filepath.Join(directory, Filename)
 		_, err := os.Stat(candidate)
@@ -254,29 +310,37 @@ func (configuration Config) validate() error {
 	if configuration.Formatter.PrintWidth < 40 || configuration.Formatter.PrintWidth > 500 {
 		return fmt.Errorf("formatter.print-width must be between 40 and 500")
 	}
+	if err := pathfilter.Validate(configuration.Formatter.Excludes); err != nil {
+		return fmt.Errorf("formatter.excludes: %w", err)
+	}
 	return validateTool("check", configuration.Checks)
 }
 
 func validateTool(name string, tool ToolConfig) error {
+	issues := make([]string, 0)
 	if !diagnostic.ValidSeverity(diagnostic.Severity(tool.MinimumSeverity)) {
-		return fmt.Errorf("%s.minimum-severity must be none, note, warning, or error", name)
+		issues = append(issues, fmt.Sprintf("%s.minimum-severity must be none, note, warning, or error", name))
 	}
-	for code, check := range tool.Settings {
+	if err := pathfilter.Validate(tool.Excludes); err != nil {
+		issues = append(issues, fmt.Sprintf("%s.excludes: %v", name, err))
+	}
+	codes := make([]string, 0, len(tool.Settings))
+	for code := range tool.Settings {
+		codes = append(codes, code)
+	}
+	sort.Strings(codes)
+	for _, code := range codes {
+		check := tool.Settings[code]
 		if check.Severity != "" && !diagnostic.ValidSeverity(diagnostic.Severity(check.Severity)) {
-			return fmt.Errorf("%s.%s.severity must be none, note, warning, or error", name, code)
+			issues = append(issues, fmt.Sprintf("%s.%s.severity must be none, note, warning, or error", name, code))
 		}
-		for option, value := range map[string]*int{
-			"max-lines":          check.MaxLines,
-			"max-statements":     check.MaxStatements,
-			"max-results":        check.MaxResults,
-			"max-parameters":     check.MaxParameters,
-			"max-public-structs": check.MaxPublicStructs,
-			"max-methods":        check.MaxMethods,
-		} {
-			if value != nil && *value < 0 {
-				return fmt.Errorf("%s.%s.%s must not be negative", name, code, option)
-			}
+		if err := pathfilter.Validate(check.Excludes); err != nil {
+			issues = append(issues, fmt.Sprintf("%s.%s.excludes: %v", name, code, err))
 		}
+	}
+	sort.Strings(issues)
+	if len(issues) != 0 {
+		return errors.New(strings.Join(issues, "; "))
 	}
 	return nil
 }
@@ -291,29 +355,16 @@ func (configuration Config) Resolve(path string) string {
 // EffectiveCheck returns one check setting with the tool-wide exclusions
 // appended.
 func (configuration Config) EffectiveCheck(code string) CheckConfig {
-	check := cloneCheckConfig(configuration.Checks.Settings[code])
+	check := cloneCheckConfig(configuration.Checks.Settings[NormalizeCheckCode(code)])
 	check.Excludes = append(append([]string(nil), configuration.Checks.Excludes...), check.Excludes...)
 	return check
 }
 
-func cloneCheckConfig(check CheckConfig) CheckConfig {
-	cloned := check
-	cloned.Excludes = append([]string(nil), check.Excludes...)
-	cloned.Characters = append([]string(nil), check.Characters...)
-	cloned.BlockedImports = append([]string(nil), check.BlockedImports...)
-	cloned.MaxLines = cloneInt(check.MaxLines)
-	cloned.MaxStatements = cloneInt(check.MaxStatements)
-	cloned.MaxResults = cloneInt(check.MaxResults)
-	cloned.MaxParameters = cloneInt(check.MaxParameters)
-	cloned.MaxPublicStructs = cloneInt(check.MaxPublicStructs)
-	cloned.MaxMethods = cloneInt(check.MaxMethods)
-	return cloned
+// CloneCheckConfig returns an owned copy of a check setting.
+func CloneCheckConfig(check CheckConfig) CheckConfig {
+	return check.Clone()
 }
 
-func cloneInt(value *int) *int {
-	if value == nil {
-		return nil
-	}
-	cloned := *value
-	return &cloned
+func cloneCheckConfig(check CheckConfig) CheckConfig {
+	return check.Clone()
 }

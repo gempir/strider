@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Detect repeated if-chain conditions. Default: enabled.
+Detect repeated if-chain conditions.
 
 ## Bad
 

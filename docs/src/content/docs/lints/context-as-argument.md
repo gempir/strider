@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Require context.Context to be the first parameter. Default: enabled.
+Require context.Context to be the first parameter.
 
 ## Bad
 

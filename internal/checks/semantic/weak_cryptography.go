@@ -41,9 +41,3 @@ func (weakCryptographyCheck) Run(pass *Pass) {
 		},
 	)
 }
-
-func (weakCryptographyCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

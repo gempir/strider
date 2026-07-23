@@ -24,7 +24,6 @@ func (invalidTimeParseCheck) Meta() Meta {
 }
 
 func (invalidTimeParseCheck) Run(pass *Pass) {
-	calls := pass.firstArgumentsByCallPosition()
 	for _, call := range pass.staticCallsInPackage("time") {
 		if !isStaticFunction(call, "time", "Parse") || len(call.Common().Args) == 0 {
 			continue
@@ -37,7 +36,7 @@ func (invalidTimeParseCheck) Run(pass *Pass) {
 		layout = strings.ReplaceAll(layout, "_", " ")
 		layout = strings.ReplaceAll(layout, "Z", "-")
 		if _, err := time.Parse(layout, layout); err != nil {
-			if node := calls[call.Pos()]; node != nil {
+			if node := pass.firstArgumentByCallPosition(call.Pos()); node != nil {
 				pass.Report(node, err.Error())
 			} else {
 				pass.ReportPos(call.Pos(), err.Error())
@@ -53,14 +52,4 @@ func isStaticFunction(call ssa.CallInstruction, packagePath, name string) bool {
 	}
 	function := callee.Object()
 	return function != nil && function.Pkg() != nil && function.Pkg().Path() == packagePath && function.Name() == name
-}
-
-func (invalidTimeParseCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageSSA,
-		Facts: FactCallArguments | FactStaticCalls,
-		staticCallPackages: []string{
-			"time",
-		},
-	}
 }

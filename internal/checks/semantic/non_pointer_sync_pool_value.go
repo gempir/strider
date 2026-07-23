@@ -70,9 +70,3 @@ func poolPointerLike(valueType types.Type) bool {
 		return false
 	}
 }
-
-func (nonPointerSyncPoolValueCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

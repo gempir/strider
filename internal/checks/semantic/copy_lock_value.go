@@ -320,9 +320,3 @@ func analysisTypeName(valueType types.Type) string {
 		return pkg.Name()
 	})
 }
-
-func (copyLockValueCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

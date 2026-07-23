@@ -96,10 +96,3 @@ func isComparableAssertion(binary *ast.BinaryExpr, parents map[ast.Node]ast.Node
 	}
 	return false
 }
-
-func (identicalBinaryOperandsCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-		Facts: FactParents,
-	}
-}

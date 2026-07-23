@@ -50,9 +50,3 @@ func (byteStringWriteCheck) Run(pass *Pass) {
 		},
 	)
 }
-
-func (byteStringWriteCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

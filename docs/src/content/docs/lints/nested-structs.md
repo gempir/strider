@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
-Discourage anonymous nested struct types. Default: enabled.
+Discourage anonymous nested struct types.
 
 ## Bad
 

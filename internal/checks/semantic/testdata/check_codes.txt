@@ -24,7 +24,6 @@ duration-multiplied-by-duration
 dynamic-printf
 empty-critical-section
 error-type-naming
-failed-assertion-shadow-read
 finalizer-captures-object
 identical-binary-operands
 impossible-integer-comparison
@@ -37,7 +36,6 @@ infinite-recursion
 interface-method-limit
 invalid-exec-command
 invalid-listen-address
-invalid-printf-call
 invalid-regexp
 invalid-strconv-argument
 invalid-template
@@ -63,7 +61,6 @@ oversized-fixed-width-shift
 overwritten-before-use
 partially-typed-constant-group
 pointless-integer-math
-possible-nil-dereference
 random-bound-one
 range-value-capture
 redundant-conversion

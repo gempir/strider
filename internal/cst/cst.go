@@ -200,14 +200,6 @@ func (t *Tree) Comments() []Comment {
 	return t.comments
 }
 
-// Text reconstructs a node with all of its original whitespace and comments.
-func Text(node Node) string {
-	if isNilNode(node) {
-		return ""
-	}
-	return node.Source(true)
-}
-
 // Spelling returns only the lexical spelling of a node, without comments or
 // whitespace trivia.
 func Spelling(node Node) string {

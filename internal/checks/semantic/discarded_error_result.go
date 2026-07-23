@@ -161,9 +161,3 @@ func reportDiscardedErrorResult(pass *Pass, call *ast.CallExpr) {
 	}
 	pass.Report(call, fmt.Sprintf("error result returned by %s is discarded", name))
 }
-
-func (discardedErrorResultCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

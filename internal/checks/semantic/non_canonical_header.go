@@ -56,9 +56,3 @@ func (nonCanonicalHeaderCheck) Run(pass *Pass) {
 		},
 	)
 }
-
-func (nonCanonicalHeaderCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

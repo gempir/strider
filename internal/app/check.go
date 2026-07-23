@@ -5,14 +5,11 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"os"
-	"os/signal"
 	"reflect"
 	"strings"
 	"time"
 
 	"github.com/gempir/strider/internal/checks"
-	"github.com/gempir/strider/internal/checks/semantic"
 	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/diagnostic"
 	"github.com/gempir/strider/internal/fix"
@@ -61,7 +58,8 @@ type checkWatcher struct {
 	paths            []string
 	workspaceOptions workspace.Options
 	cache            *workspace.Cache
-	session          *checks.Session
+	registry         *checks.Registry
+	runOptions       checks.RunOptions
 	baseline         baselineOptions
 	summaryOnly      bool
 	colorMode        ui.ColorMode
@@ -95,8 +93,8 @@ type checkConflict struct {
 	message string
 }
 
-func runCheck(args []string, configuration config.Config, colorMode ui.ColorMode, stdout, stderr io.Writer) int {
-	exitCode, err := runCheckCommand(args, configuration, colorMode, stdout, stderr)
+func runCheck(ctx context.Context, args []string, configuration config.Config, colorMode ui.ColorMode, stdout, stderr io.Writer) int {
+	exitCode, err := runCheckCommand(ctx, args, configuration, colorMode, stdout, stderr)
 	if err != nil {
 		printCommandError(stderr, colorMode, "strider check", "%v", err)
 		return exitError
@@ -104,22 +102,25 @@ func runCheck(args []string, configuration config.Config, colorMode ui.ColorMode
 	return exitCode
 }
 
-func runCheckCommand(args []string, configuration config.Config, colorMode ui.ColorMode, stdout, stderr io.Writer) (int, error) {
+func runCheckCommand(ctx context.Context, args []string, configuration config.Config, colorMode ui.ColorMode, stdout, stderr io.Writer) (int, error) {
+	if err := ctx.Err(); err != nil {
+		return exitError, err
+	}
 	flags := flag.NewFlagSet("check", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	aliases := commandOptionAliases["check"]
 	reportFormat := stringOption(flags, "format", "f", "text", "report format: text, json, or html")
 	minimumSeverityFlag := stringOption(flags, "minimum-severity", "s", "", "minimum effective severity: none, note, warning, or error")
-	summaryOnly := boolOption(flags, "summary-only", "q", false, "only print per-check counts and the aggregate issue summary")
-	watch := boolOption(flags, "watch", "w", false, "rerun checks when source changes")
-	listChecks := boolOption(flags, "list-checks", "l", false, "list checks admitted by the severity floor")
+	summaryOnly := boolOption(flags, "summary-only", "q", "only print per-check counts and the aggregate issue summary")
+	watch := boolOption(flags, "watch", "w", "rerun checks when source changes")
+	listChecks := boolOption(flags, "list-checks", "l", "list checks admitted by the severity floor")
 	flags.BoolVar(listChecks, "list-rules", false, "alias for --list-checks")
 	explain := stringOption(flags, "explain", "e", "", "explain a check")
 	baselinePath := stringOption(flags, "baseline", "b", "", "path to the check baseline")
-	generateBaseline := boolOption(flags, "generate-baseline", "g", false, "replace the baseline with all current findings")
-	removeOutdated := boolOption(flags, "remove-outdated-baseline-entries", "r", false, "remove baseline entries that no longer match")
-	fixSafe := boolOption(flags, "fix", "x", false, "apply safe automatic fixes")
-	fixUnsafe := boolOption(flags, "fix-unsafe", "u", false, "apply all automatic fixes, including unsafe fixes")
+	generateBaseline := boolOption(flags, "generate-baseline", "g", "replace the baseline with all current findings")
+	removeOutdated := boolOption(flags, "remove-outdated-baseline-entries", "r", "remove baseline entries that no longer match")
+	fixSafe := boolOption(flags, "fix", "x", "apply safe automatic fixes")
+	fixUnsafe := boolOption(flags, "fix-unsafe", "u", "apply all automatic fixes, including unsafe fixes")
 	var only stringList
 	varOption(flags, &only, "only", "o", "run only these check codes (repeatable or comma-separated)")
 	flags.Usage = func() {
@@ -166,6 +167,7 @@ func runCheckCommand(args []string, configuration config.Config, colorMode ui.Co
 			MinimumSeverity: minimumSeverity,
 			FormatExcludes:  configuration.Formatter.Excludes,
 			Root:            configuration.Root,
+			Directory:       configuration.Directory,
 		},
 	)
 	if err != nil {
@@ -189,6 +191,7 @@ func runCheckCommand(args []string, configuration config.Config, colorMode ui.Co
 	baselineConfig.knownCodes = registry.KnownCodes()
 	workspaceOptions := workspace.Options{
 		SkipGenerated: true,
+		Directory:     configuration.Directory,
 	}
 	runOptions := checks.RunOptions{
 		Formatter: formatter.Options{
@@ -199,7 +202,7 @@ func runCheckCommand(args []string, configuration config.Config, colorMode ui.Co
 		CollectCandidates: fixMode,
 	}
 	if *watch {
-		if err := runCheckWatch(flags.Args(), workspaceOptions, registry, runOptions, baselineConfig, *summaryOnly, colorMode, stdout, stderr); err != nil {
+		if err := runCheckWatch(ctx, flags.Args(), workspaceOptions, registry, runOptions, baselineConfig, *summaryOnly, colorMode, stdout, stderr); err != nil {
 			return exitError, err
 		}
 		return exitSuccess, nil
@@ -209,6 +212,7 @@ func runCheckCommand(args []string, configuration config.Config, colorMode ui.Co
 		mode = fix.IncludeUnsafe
 	}
 	return runCheckOnce(
+		ctx,
 		checkExecution{
 			paths:            flags.Args(),
 			workspaceOptions: workspaceOptions,
@@ -236,9 +240,16 @@ func validateCheckConflicts(active map[string]bool) error {
 	return nil
 }
 
-func runCheckOnce(execution checkExecution) (int, error) {
+func runCheckOnce(ctx context.Context, execution checkExecution) (int, error) {
+	if err := ctx.Err(); err != nil {
+		return exitError, err
+	}
 	shared, err := workspace.Open(execution.paths, execution.workspaceOptions)
 	if err != nil {
+		return exitError, err
+	}
+	defer shared.Close()
+	if err := ctx.Err(); err != nil {
 		return exitError, err
 	}
 	var snapshot fix.Snapshot
@@ -248,7 +259,7 @@ func runCheckOnce(execution checkExecution) (int, error) {
 			return exitError, err
 		}
 	}
-	result, err := checks.Run(shared, execution.registry, execution.runOptions)
+	result, err := checks.Run(ctx, shared, execution.registry, execution.runOptions)
 	if err != nil {
 		return exitError, err
 	}
@@ -264,7 +275,7 @@ func runCheckOnce(execution checkExecution) (int, error) {
 		return exitSuccess, nil
 	}
 	if execution.fix {
-		diagnostics, handled, err = applyCheckFixes(execution, snapshot, diagnostics, result.Candidates)
+		diagnostics, handled, err = applyCheckFixes(ctx, execution, snapshot, diagnostics, result.Candidates)
 		if err != nil {
 			return exitError, err
 		}
@@ -282,11 +293,14 @@ func runCheckOnce(execution checkExecution) (int, error) {
 	return exitSuccess, nil
 }
 
-func applyCheckFixes(execution checkExecution, snapshot fix.Snapshot, diagnostics []diagnostic.Diagnostic, candidates map[string]formatter.Result) (
+func applyCheckFixes(ctx context.Context, execution checkExecution, snapshot fix.Snapshot, diagnostics []diagnostic.Diagnostic, candidates map[string]formatter.Result) (
 	[]diagnostic.Diagnostic,
 	bool,
 	error,
 ) {
+	if err := ctx.Err(); err != nil {
+		return nil, false, err
+	}
 	formatCheck := execution.configuration.EffectiveCheck("format")
 	formatExcludes := append(append([]string(nil), execution.configuration.Formatter.Excludes...), formatCheck.Excludes...)
 	fixed, err := fix.Plan(
@@ -298,10 +312,13 @@ func applyCheckFixes(execution checkExecution, snapshot fix.Snapshot, diagnostic
 			Formatter:      execution.runOptions.Formatter,
 			Root:           execution.configuration.Root,
 			FormatExcludes: formatExcludes,
-			Validate:       semantic.ValidateOverlay,
+			Validate:       checks.ValidateOverlay,
 		},
 	)
 	if err != nil {
+		return nil, false, err
+	}
+	if err := ctx.Err(); err != nil {
 		return nil, false, err
 	}
 	palette := ui.NewPalette(execution.stderr, execution.colorMode)
@@ -322,9 +339,10 @@ func applyCheckFixes(execution checkExecution, snapshot fix.Snapshot, diagnostic
 	if err != nil {
 		return nil, false, err
 	}
+	defer shared.Close()
 	runOptions := execution.runOptions
 	runOptions.CollectCandidates = false
-	result, err := checks.Run(shared, execution.registry, runOptions)
+	result, err := checks.Run(ctx, shared, execution.registry, runOptions)
 	if err != nil {
 		return nil, false, err
 	}
@@ -332,6 +350,7 @@ func applyCheckFixes(execution checkExecution, snapshot fix.Snapshot, diagnostic
 }
 
 func runCheckWatch(
+	ctx context.Context,
 	paths []string,
 	workspaceOptions workspace.Options,
 	registry *checks.Registry,
@@ -342,28 +361,24 @@ func runCheckWatch(
 	stdout,
 	stderr io.Writer,
 ) error {
-	session, err := checks.NewSession(registry, runOptions)
-	if err != nil {
-		return err
-	}
 	watcher := &checkWatcher{
 		paths:            append([]string(nil), paths...),
 		workspaceOptions: workspaceOptions,
 		cache:            workspace.NewCache(workspace.CacheOptions{}),
-		session:          session,
+		registry:         registry,
+		runOptions:       runOptions,
 		baseline:         baselineConfig,
 		summaryOnly:      summaryOnly,
 		colorMode:        colorMode,
 		stdout:           stdout,
 		stderr:           stderr,
 	}
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer stop()
+	defer watcher.cache.Close()
 	ticker := time.NewTicker(checkWatchInterval)
 	defer ticker.Stop()
 	lastError := ""
 	for {
-		if err := watcher.run(); err != nil {
+		if err := watcher.run(ctx); err != nil {
 			if err.Error() != lastError {
 				printCommandError(stderr, colorMode, "strider check", "%v", err)
 				lastError = err.Error()
@@ -379,18 +394,22 @@ func runCheckWatch(
 	}
 }
 
-func (watcher *checkWatcher) run() error {
+func (watcher *checkWatcher) run(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	shared, err := watcher.cache.Open(watcher.paths, watcher.workspaceOptions)
 	if err != nil {
 		return err
 	}
-	before := watcher.session.Stats()
-	result, err := watcher.session.Run(shared)
+	defer shared.Close()
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	result, err := checks.Run(ctx, shared, watcher.registry, watcher.runOptions)
 	if err != nil {
 		return err
 	}
-	after := watcher.session.Stats()
-	concreteChanged := after.ConcreteMisses > before.ConcreteMisses
 	diagnostics, handled, err := prepareCheckDiagnostics(result.Diagnostics, watcher.baseline, watcher.colorMode, watcher.stderr)
 	if err != nil {
 		return err
@@ -399,7 +418,7 @@ func (watcher *checkWatcher) run() error {
 		return fmt.Errorf("watch mode cannot update a baseline")
 	}
 	diagnosticsChanged := !watcher.hasDiagnostics || !reflect.DeepEqual(watcher.lastDiagnostics, diagnostics)
-	if watcher.iteration != 0 && !concreteChanged && !diagnosticsChanged {
+	if watcher.iteration != 0 && !diagnosticsChanged {
 		return nil
 	}
 	watcher.lastDiagnostics = diagnostics

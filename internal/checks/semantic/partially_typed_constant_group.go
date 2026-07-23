@@ -66,9 +66,3 @@ func constantLiteral(expression ast.Expr) bool {
 		return false
 	}
 }
-
-func (partiallyTypedConstantGroupCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

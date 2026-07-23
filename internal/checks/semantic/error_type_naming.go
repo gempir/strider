@@ -44,9 +44,3 @@ func (errorTypeNamingCheck) Run(pass *Pass) {
 		},
 	)
 }
-
-func (errorTypeNamingCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

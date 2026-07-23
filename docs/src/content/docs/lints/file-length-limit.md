@@ -37,9 +37,11 @@ const third = 3
 
 ## Configuration
 
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `max-lines` | `int` | `500` | Maximum number of lines allowed in a source file; zero disables the limit. |
+
 ```toml
 [checks.file-length-limit]
-max-lines = 800
+max-lines = 500
 ```
-
-Set `max-lines = 0` to disable this check explicitly.

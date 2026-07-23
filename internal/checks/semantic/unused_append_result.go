@@ -154,9 +154,3 @@ func appendValueEscapes(value ssa.Value, allowed map[ssa.Instruction]bool, visit
 	}
 	return false
 }
-
-func (unusedAppendResultCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageSSA,
-	}
-}

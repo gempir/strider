@@ -1,10 +1,31 @@
 package app
 
 import (
-	"os"
+	"bytes"
+	"context"
+	"io"
 	"strings"
 	"testing"
 )
+
+func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+	return Run(context.Background(), args, stdin, stdout, stderr)
+}
+
+func runCLIFrom(directory string, args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+	return runFrom(context.Background(), directory, args, stdin, stdout, stderr)
+}
+
+func TestRunRejectsPreCanceledContext(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	var stdout, stderr bytes.Buffer
+	if code := Run(ctx, []string{
+		"check",
+	}, strings.NewReader(""), &stdout, &stderr); code != exitError || !strings.Contains(stderr.String(), context.Canceled.Error()) {
+		t.Fatalf("exit = %d, stderr = %q; want canceled error", code, stderr.String())
+	}
+}
 
 func listedSeverity(output, code string) (string, bool) {
 	for _, line := range strings.Split(output, "\n") {
@@ -26,11 +47,4 @@ func stripTerminalStyles(output string) string {
 		output = strings.ReplaceAll(output, sequence, "")
 	}
 	return output
-}
-
-func restoreWorkingDirectory(t *testing.T, directory string) {
-	t.Helper()
-	if err := os.Chdir(directory); err != nil {
-		t.Errorf("restore working directory: %v", err)
-	}
 }

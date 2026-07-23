@@ -120,9 +120,3 @@ func isUnitlessDurationConversion(pass *Pass, expression ast.Expr) bool {
 	}
 	return semanticDurationFactors(pass, call.Args[0]) == 0
 }
-
-func (durationMultipliedByDurationCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

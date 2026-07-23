@@ -17,7 +17,7 @@ import (
 func TestFormatStdin(t *testing.T) {
 	stdin := strings.NewReader("package p\nfunc F( ){return}\n")
 	var stdout, stderr bytes.Buffer
-	if code := Run([]string{
+	if code := runCLI([]string{
 		"fmt",
 		"--stdin",
 	}, stdin, &stdout, &stderr); code != exitSuccess {
@@ -34,18 +34,8 @@ func TestFormatWithoutPathsScansCurrentDirectory(t *testing.T) {
 	if err := os.WriteFile(filename, []byte("package p\nfunc F( ){return}\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	previous, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir(root); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		restoreWorkingDirectory(t, previous)
-	})
 	var stdout, stderr bytes.Buffer
-	if code := Run([]string{
+	if code := runCLIFrom(root, []string{
 		"fmt",
 		"--check",
 	}, strings.NewReader("ignored stdin"), &stdout, &stderr); code != exitFindings {
@@ -68,7 +58,7 @@ func TestFormatBatchDoesNotWriteWhenAnyFileDoesNotParse(t *testing.T) {
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	if code := Run([]string{
+	if code := runCLI([]string{
 		"fmt",
 		"--write",
 		root,
@@ -95,7 +85,7 @@ func TestFormatBatchReportsFirstFilenameError(t *testing.T) {
 		}
 	}
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{
+	code := runCLI([]string{
 		"fmt",
 		"--check",
 		root,
@@ -119,7 +109,7 @@ func TestFormatBatchReportsChangesInFilenameOrder(t *testing.T) {
 		}
 	}
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{
+	code := runCLI([]string{
 		"fmt",
 		"--check",
 		root,
@@ -161,7 +151,7 @@ func TestFormatCheckDiffAndWrite(t *testing.T) {
 		assertFormatReadOnly(t, filename, original, test.flag, test.text)
 	}
 	var stdout, stderr bytes.Buffer
-	if code := Run([]string{
+	if code := runCLI([]string{
 		"fmt",
 		"--write",
 		filename,
@@ -265,6 +255,45 @@ func TestLineDiffReconstructsBothInputs(t *testing.T) {
 	}
 }
 
+func FuzzLineDiffReconstructsSource(f *testing.F) {
+	f.Add("first\nsecond\n", "first\nchanged\n")
+	f.Add("first\r\n", "first\n")
+	f.Add("", "content")
+	f.Fuzz(
+		func(t *testing.T, beforeText, afterText string) {
+			if len(beforeText)+len(afterText) > 16_384 {
+				return
+			}
+			before := splitSourceLines([]byte(beforeText))
+			after := splitSourceLines([]byte(afterText))
+			operations := lineDiff(before, after)
+			reconstructed := make([]sourceLine, 0, len(after))
+			for _, operation := range operations {
+				if operation.kind != diffRemove {
+					reconstructed = append(reconstructed, operation.line)
+				}
+			}
+			if got := joinSourceLines(reconstructed); got != afterText {
+				t.Fatalf("operations reconstruct %q, want %q", got, afterText)
+			}
+		},
+	)
+}
+
+func joinSourceLines(lines []sourceLine) string {
+	var result strings.Builder
+	for _, line := range lines {
+		result.WriteString(line.text)
+		if line.carriage {
+			result.WriteByte('\r')
+		}
+		if line.newline {
+			result.WriteByte('\n')
+		}
+	}
+	return result.String()
+}
+
 func TestFormatWriterRejectsStaleSource(t *testing.T) {
 	filename := filepath.Join(t.TempDir(), "sample.go")
 	original := []byte("package sample\nfunc F( ){return}\n")
@@ -302,7 +331,7 @@ func TestFormatWriterRejectsStaleSource(t *testing.T) {
 func assertFormatReadOnly(t *testing.T, filename string, original []byte, flag, expected string) {
 	t.Helper()
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{
+	code := runCLI([]string{
 		"fmt",
 		flag,
 		filename,

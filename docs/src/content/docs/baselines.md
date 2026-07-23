@@ -89,7 +89,7 @@ variant = "strict"
 
 [[issues]]
 file = "internal/server/server.go"
-code = "possible-nil-dereference"
+code = "unclosed-http-response-body"
 start-line = 42
 end-line = 42
 ```

@@ -86,9 +86,3 @@ func renderAnalysisExpression(pass *Pass, expression ast.Expr) string {
 	}
 	return output.String()
 }
-
-func (emptyCriticalSectionCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

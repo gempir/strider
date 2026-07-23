@@ -134,10 +134,3 @@ func languageGoVersion(value string) string {
 	}
 	return "go" + parts[0] + "." + parts[1]
 }
-
-func (deprecatedAPIUsageCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-		Facts: FactDeprecations,
-	}
-}

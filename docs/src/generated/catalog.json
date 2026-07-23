@@ -1,3 +1,13 @@
 {
-  "checks": 207
+  "checks": 201,
+  "by_engine": {
+    "format": 1,
+    "semantic": 103,
+    "syntax": 97
+  },
+  "by_default_severity": {
+    "error": 58,
+    "note": 16,
+    "warning": 127
+  }
 }

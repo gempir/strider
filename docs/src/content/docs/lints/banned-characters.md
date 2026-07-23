@@ -27,15 +27,11 @@ var userID string
 
 ## Configuration
 
-Set `characters` to the Unicode characters that identifiers must not
-contain. Each entry must contain exactly one character. The configured list
-replaces the defaults.
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `characters` | `strings` | `["ᐸ","ᐳ"]` | Unicode characters forbidden in identifiers. |
 
 ```toml
 [checks.banned-characters]
-characters = ["ᐸ", "ᐳ", "_"]
+characters = ["ᐸ","ᐳ"]
 ```
-
-By default, Strider bans `ᐸ` (`U+1438 CANADIAN SYLLABICS PA`) and
-`ᐳ` (`U+1433 CANADIAN SYLLABICS PO`). Set `characters = []` to
-allow every character.

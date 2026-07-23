@@ -52,9 +52,3 @@ func (caseInsensitiveStringComparisonCheck) Run(pass *Pass) {
 		},
 	)
 }
-
-func (caseInsensitiveStringComparisonCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

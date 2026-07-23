@@ -129,10 +129,3 @@ func immediatelyInvokedClosure(closure *ast.FuncLit, parents map[ast.Node]ast.No
 		return true
 	}
 }
-
-func (rangeValueCaptureCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-		Facts: FactParents,
-	}
-}

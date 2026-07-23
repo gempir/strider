@@ -66,9 +66,3 @@ func looksLikeDecimalMode(value string) bool {
 	}
 	return true
 }
-
-func (decimalFileModeCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

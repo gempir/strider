@@ -120,9 +120,3 @@ func isTimeChannel(valueType types.Type) bool {
 	}
 	return isNamedType(channel.Elem(), "time", "Time")
 }
-
-func (timerResetDrainRaceCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageSSA,
-	}
-}

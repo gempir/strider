@@ -107,9 +107,3 @@ func subsumingCaseTypes(earlier, later []types.Type) (types.Type, types.Type, bo
 	}
 	return nil, nil, false
 }
-
-func (unreachableTypeSwitchCaseCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

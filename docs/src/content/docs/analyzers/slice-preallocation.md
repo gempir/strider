@@ -3,11 +3,11 @@ title: slice-preallocation
 description: Detect slices that can use range-source capacity.
 sidebar:
   badge:
-    text: warning
-    class: severity-indicator severity-warning
+    text: note
+    class: severity-indicator severity-note
 ---
 
-**Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
+**Default severity:** <span class="severity-indicator severity-note" aria-hidden="true"></span> `note`
 
 Conservatively reports an empty slice followed by exactly one direct append per
 iteration of a range with a useful `len`. Preallocating that capacity avoids

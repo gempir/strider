@@ -21,6 +21,7 @@ func TestDefaultsUseVersionOneAndWideFormatting(t *testing.T) {
 }
 
 func TestLoadDiscoversVersionOneChecks(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	child := filepath.Join(root, "a", "b")
 	if err := os.MkdirAll(child, 0o755); err != nil {
@@ -43,8 +44,7 @@ characters = ["ᐸ", "ᐳ"]
 	if err := os.WriteFile(filepath.Join(root, Filename), []byte(contents), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	chdir(t, child)
-	configuration, err := Load("", false)
+	configuration, err := Load(child, "", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,7 +64,8 @@ characters = ["ᐸ", "ᐳ"]
 	if strings.Join(check.Excludes, ",") != "generated/**,legacy/**" {
 		t.Fatalf("effective excludes = %q", check.Excludes)
 	}
-	if got := strings.Join(configuration.EffectiveCheck("banned-characters").Characters, ","); got != "ᐸ,ᐳ" {
+	characters, _ := configuration.EffectiveCheck("banned-characters").Options["characters"].Strings()
+	if got := strings.Join(characters, ","); got != "ᐸ,ᐳ" {
 		t.Fatalf("banned characters = %q", got)
 	}
 	canonicalRoot, err := filepath.EvalSymlinks(root)
@@ -147,7 +148,7 @@ func TestLoadRejectsUnknownAndInvalidSettings(t *testing.T) {
 		},
 		"enabled": {
 			"version = 1\n[checks.no-init]\nenabled = false\n",
-			"unknown configuration key",
+			"must be an integer or string list",
 		},
 		"legacy-linter": {
 			"version = 1\n[linter]\n",
@@ -169,7 +170,7 @@ func TestLoadRejectsUnknownAndInvalidSettings(t *testing.T) {
 				if err := os.WriteFile(path, []byte(test.contents), 0o600); err != nil {
 					t.Fatal(err)
 				}
-				_, err := Load(path, false)
+				_, err := Load(filepath.Dir(path), path, false)
 				if err == nil || !strings.Contains(err.Error(), test.wanted) {
 					t.Fatalf("got %v, want error containing %q", err, test.wanted)
 				}
@@ -179,36 +180,111 @@ func TestLoadRejectsUnknownAndInvalidSettings(t *testing.T) {
 }
 
 func TestLoadTracksExplicitZeroValuedCheckOptions(t *testing.T) {
+	t.Parallel()
 	path := filepath.Join(t.TempDir(), Filename)
 	contents := "version = 1\n[checks.no-init]\nmax-lines = 0\n"
 	if err := os.WriteFile(path, []byte(contents), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	configuration, err := Load(path, false)
+	configuration, err := Load(filepath.Dir(path), path, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	check := configuration.Checks.Settings["no-init"]
-	if check.MaxLines == nil || *check.MaxLines != 0 {
-		t.Fatalf("max-lines = %v, want explicit zero", check.MaxLines)
+	maxLines, ok := check.Options["max-lines"].Int()
+	if !ok || maxLines != 0 {
+		t.Fatalf("max-lines = %d, %t; want explicit zero", maxLines, ok)
 	}
-	if check.MaxMethods != nil {
-		t.Fatalf("max-methods = %v, want unset", check.MaxMethods)
+	if _, exists := check.Options["max-methods"]; exists {
+		t.Fatal("max-methods unexpectedly set")
 	}
 }
 
-func chdir(t *testing.T, directory string) {
-	t.Helper()
-	previous, err := os.Getwd()
+func TestLoadRejectsDuplicateCaseFoldedOptions(t *testing.T) {
+	t.Parallel()
+	path := filepath.Join(t.TempDir(), Filename)
+	contents := "version = 1\n[checks.file-length-limit]\nmax-lines = 10\nMAX-LINES = 20\n"
+	if err := os.WriteFile(path, []byte(contents), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, err := Load(filepath.Dir(path), path, false)
+	if err == nil || !strings.Contains(err.Error(), `"MAX-LINES", "max-lines"`) {
+		t.Fatalf("got %v, want deterministic duplicate-option error", err)
+	}
+}
+
+func TestLoadNormalizesCheckCodesAndRejectsDuplicateSpellings(t *testing.T) {
+	t.Parallel()
+	path := filepath.Join(t.TempDir(), Filename)
+	if err := os.WriteFile(path, []byte("version = 1\n[checks.NO-INIT]\nseverity = \"error\"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	configuration, err := Load(filepath.Dir(path), path, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Chdir(directory); err != nil {
+	if got := configuration.EffectiveCheck("No-InIt").Severity; got != "error" {
+		t.Fatalf("case-insensitive effective severity = %q, want error", got)
+	}
+
+	duplicatePath := filepath.Join(t.TempDir(), Filename)
+	duplicate := "version = 1\n[checks.format]\nseverity = \"warning\"\n[checks.FORMAT]\nseverity = \"error\"\n"
+	if err := os.WriteFile(duplicatePath, []byte(duplicate), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() {
-		if err := os.Chdir(previous); err != nil {
-			t.Errorf("restore working directory: %v", err)
+	_, err = Load(filepath.Dir(duplicatePath), duplicatePath, false)
+	if err == nil || !strings.Contains(err.Error(), `duplicate case-insensitive check setting(s): "FORMAT", "format"`) {
+		t.Fatalf("got %v, want deterministic duplicate-spelling error", err)
+	}
+}
+
+func TestLoadRejectsMalformedExclusionGlobs(t *testing.T) {
+	tests := []string{
+		"version = 1\n[formatter]\nexcludes = [\"broken/[\"]\n",
+		"version = 1\n[check]\nexcludes = [\"broken/[\"]\n",
+		"version = 1\n[checks.no-init]\nexcludes = [\"broken/[\"]\n",
+	}
+	for index, contents := range tests {
+		path := filepath.Join(t.TempDir(), Filename)
+		if err := os.WriteFile(path, []byte(contents), 0o600); err != nil {
+			t.Fatal(err)
 		}
-	})
+		if _, err := Load(filepath.Dir(path), path, false); err == nil || !strings.Contains(err.Error(), "malformed exclusion glob") {
+			t.Errorf("case %d: got %v, want malformed-glob error", index, err)
+		}
+	}
+}
+
+func TestToolValidationErrorsAreStable(t *testing.T) {
+	negative := -1
+	tool := ToolConfig{
+		MinimumSeverity: "fatal",
+		Settings: map[string]CheckConfig{
+			"z-check": {
+				Options: map[string]OptionValue{
+					"max-lines": IntValue(negative),
+				},
+				Severity: "fatal",
+			},
+			"a-check": {
+				Options: map[string]OptionValue{
+					"max-methods": IntValue(negative),
+				},
+			},
+		},
+	}
+	first := ""
+	for range 20 {
+		err := validateTool("check", tool)
+		if err == nil {
+			t.Fatal("invalid tool configuration was accepted")
+		}
+		if first == "" {
+			first = err.Error()
+			continue
+		}
+		if got := err.Error(); got != first {
+			t.Fatalf("validation order changed:\nfirst: %s\nnext:  %s", first, got)
+		}
+	}
 }

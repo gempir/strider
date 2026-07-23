@@ -16,14 +16,14 @@ changing its public code.
 
 ## Run checks
 
-Run every check at or above the configured severity floor. The default warning
-floor runs 191 checks:
+Run every check at or above the configured severity floor. By default this runs
+warning and error checks:
 
 ```sh
 strider check [PATH]...
 ```
 
-Run all 207 checks whose effective severity is note or higher:
+Run checks whose effective severity is note or higher:
 
 ```sh
 strider check --minimum-severity note [PATH]...
@@ -63,11 +63,10 @@ strider check --watch ./...
 ```
 
 Watch mode reports the initial generation, then emits a fresh complete report
-when selected source or the resulting findings change. It reuses unchanged
-CST results but deliberately runs package-aware checks fresh instead of doing
-extra package loads to prove a cached analysis reusable. Baseline generation
-and pruning, JSON, and HTML are one-shot operations and cannot be combined
-with `--watch`.
+when the resulting findings change. It reuses unchanged source snapshots and
+parsed CSTs, but runs every selected check on each generation so dependency
+changes are always observed. Baseline generation and pruning, JSON, and HTML
+are one-shot operations and cannot be combined with `--watch`.
 
 ## Apply automatic fixes
 
@@ -134,9 +133,8 @@ strider check --minimum-severity none --list-checks
 strider check --explain invalid-regexp
 ```
 
-Strider includes one reserved `format` check, 94 style and maintainability
-checks, and 112 correctness and data-flow checks. Individual check pages are
-grouped by purpose in the documentation sidebar.
+The generated catalog statistics report the current inventory. Individual
+check pages are grouped by purpose in the documentation sidebar.
 
 ## Configure checks
 
@@ -157,7 +155,7 @@ severity = "error"
 max-lines = 800
 excludes = ["testdata/golden/**"]
 
-[checks.possible-nil-dereference]
+[checks.unclosed-http-response-body]
 severity = "error"
 
 [checks.no-init]

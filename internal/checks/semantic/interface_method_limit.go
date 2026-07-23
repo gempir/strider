@@ -5,8 +5,7 @@ import (
 	"go/ast"
 	"go/types"
 
-	"github.com/gempir/strider/internal/checks/core"
-	"github.com/gempir/strider/internal/config"
+	"github.com/gempir/strider/internal/checks/catalog"
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
@@ -20,26 +19,14 @@ func (interfaceMethodLimitCheck) Meta() Meta {
 		GoodExample:     "type Reader interface { Read([]byte) (int, error) }",
 		BadExample:      "type Service interface { Start(); Stop(); Pause(); Resume(); Reload(); Status(); Health(); Metrics(); Configure(); Validate(); Reset() }",
 		DefaultSeverity: diagnostic.SeverityWarning,
-		Options: []core.Option{
-			{
-				Name:       "max-methods",
-				Kind:       core.OptionInt,
-				DefaultInt: 10,
-			},
+		Options: []catalog.Option{
+			catalog.NonNegativeIntOption("max-methods", 10, "Maximum number of methods allowed on an interface, including embedded methods."),
 		},
 	}
 }
 
 func (interfaceMethodLimitCheck) Run(pass *Pass) {
-	interfaceMethodLimitCheck{}.RunConfigured(pass, config.CheckConfig{})
-}
-
-func (interfaceMethodLimitCheck) RunConfigured(pass *Pass, setting config.CheckConfig) {
-	limit, _ := core.IntOption(interfaceMethodLimitCheck{}.Meta(), setting, "max-methods")
-	interfaceMethodLimitCheck{}.run(pass, limit)
-}
-
-func (interfaceMethodLimitCheck) run(pass *Pass, limit int) {
+	limit := pass.IntOption("max-methods")
 	pass.Inspect(
 		[]ast.Node{
 			(*ast.InterfaceType)(nil),
@@ -66,10 +53,4 @@ func (interfaceMethodLimitCheck) run(pass *Pass, limit int) {
 			return true
 		},
 	)
-}
-
-func (interfaceMethodLimitCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
 }

@@ -80,13 +80,3 @@ func atomicFieldAddress(value ssa.Value) (int, *types.Struct, bool) {
 		}
 	}
 }
-
-func (misalignedAtomic64Check) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageSSA,
-		Facts: FactCallArguments | FactStaticCalls,
-		staticCallPackages: []string{
-			"sync/atomic",
-		},
-	}
-}

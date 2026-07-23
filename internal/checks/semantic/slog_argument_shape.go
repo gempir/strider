@@ -95,9 +95,3 @@ func exactSlogStringKey(valueType types.Type) bool {
 	basic, ok := types.Unalias(valueType).(*types.Basic)
 	return ok && basic.Info()&types.IsString != 0
 }
-
-func (slogArgumentShapeCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

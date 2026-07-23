@@ -5,6 +5,8 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"reflect"
+	"slices"
 	"strings"
 	"testing"
 
@@ -15,6 +17,89 @@ import (
 	"github.com/gempir/strider/internal/source"
 	"github.com/gempir/strider/internal/workspace"
 )
+
+func FuzzNormalizeAndApplyEdits(f *testing.F) {
+	f.Add("package sample\n", []byte{
+		0,
+		7,
+		'P',
+	})
+	f.Add("abcdef", []byte{
+		0,
+		1,
+		'A',
+		3,
+		5,
+		'Z',
+	})
+	f.Add("", []byte{
+		0,
+		0,
+		'x',
+	})
+	f.Fuzz(
+		func(t *testing.T, sourceText string, raw []byte) {
+			source := []byte(sourceText)
+			if len(raw) > 96 {
+				raw = raw[:96]
+			}
+			edits := make([]diagnostic.TextEdit, 0, len(raw)/3)
+			for index := 0; index+2 < len(raw); index += 3 {
+				start := int(raw[index]) % (len(source) + 1)
+				end := int(raw[index+1]) % (len(source) + 1)
+				if end < start {
+					start, end = end, start
+				}
+				edits = append(edits, diagnostic.TextEdit{
+					Start:   start,
+					End:     end,
+					OldText: string(source[start:end]),
+					NewText: string([]byte{
+						raw[index+2],
+					}),
+				})
+			}
+			item := diagnostic.Diagnostic{
+				Code: "fuzz",
+				File: "fuzz.go",
+			}
+			normalized, err := normalizeEdits(item, diagnostic.Fix{
+				Edits: edits,
+			}, source)
+			reversedInput := append([]diagnostic.TextEdit(nil), edits...)
+			slices.Reverse(reversedInput)
+			reversed, reversedErr := normalizeEdits(item, diagnostic.Fix{
+				Edits: reversedInput,
+			}, source)
+			if (err == nil) != (reversedErr == nil) || err != nil && err.Error() != reversedErr.Error() {
+				t.Fatalf("overlap policy changed with permutation: %v vs %v", err, reversedErr)
+			}
+			if err != nil {
+				return
+			}
+			if !reflect.DeepEqual(normalized, reversed) {
+				t.Fatalf("normalization changed with permutation:\n%#v\n%#v", normalized, reversed)
+			}
+			got := applyEdits(source, []proposal{
+				{
+					edits: normalized,
+				},
+			})
+			want := append([]byte(nil), source...)
+			for index := len(normalized) - 1; index >= 0; index-- {
+				edit := normalized[index]
+				next := make([]byte, 0, len(want)-(edit.End-edit.Start)+len(edit.NewText))
+				next = append(next, want[:edit.Start]...)
+				next = append(next, edit.NewText...)
+				next = append(next, want[edit.End:]...)
+				want = next
+			}
+			if !bytes.Equal(got, want) {
+				t.Fatalf("applied source = %q, reference = %q", got, want)
+			}
+		},
+	)
+}
 
 func planForTest(snapshot Snapshot, diagnostics []diagnostic.Diagnostic, candidates map[string]formatter.Result, options Options) (Result, error) {
 	options.Validate = semantic.ValidateOverlay

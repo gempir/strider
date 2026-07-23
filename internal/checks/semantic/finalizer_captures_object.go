@@ -62,13 +62,3 @@ func closureCapturesFinalizerObject(closure *ssa.MakeClosure, object ssa.Value) 
 	}
 	return false
 }
-
-func (finalizerCapturesObjectCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageSSA,
-		Facts: FactStaticCalls,
-		staticCallPackages: []string{
-			"runtime",
-		},
-	}
-}

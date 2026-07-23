@@ -114,10 +114,3 @@ func ssaValueNeverNil(value ssa.Value, seen map[ssa.Value]bool) bool {
 		return false
 	}
 }
-
-func (neverNilComparisonCheck) Requirements() Requirements {
-	return Requirements{
-		Stage:       AnalysisStageSSA,
-		SSAFeatures: SSAFeatureGlobalDebug,
-	}
-}

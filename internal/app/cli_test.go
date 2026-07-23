@@ -12,7 +12,7 @@ import (
 
 func TestVersion(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	if code := Run([]string{
+	if code := runCLI([]string{
 		"version",
 	}, strings.NewReader(""), &stdout, &stderr); code != exitSuccess {
 		t.Fatalf("exit %d, stderr %q", code, stderr.String())
@@ -36,7 +36,7 @@ func TestShortOptionAliases(t *testing.T) {
 			arguments[1],
 			func(t *testing.T) {
 				var stdout, stderr bytes.Buffer
-				if code := Run(arguments, strings.NewReader(""), &stdout, &stderr); code != exitSuccess {
+				if code := runCLI(arguments, strings.NewReader(""), &stdout, &stderr); code != exitSuccess {
 					t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 				}
 				if stderr.Len() != 0 {
@@ -47,7 +47,7 @@ func TestShortOptionAliases(t *testing.T) {
 	}
 
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{
+	code := runCLI([]string{
 		"-n",
 		"fmt",
 		"-s",
@@ -60,7 +60,7 @@ func TestShortOptionAliases(t *testing.T) {
 
 	stdout.Reset()
 	stderr.Reset()
-	code = Run([]string{
+	code = runCLI([]string{
 		"-n",
 		"check",
 		"-w",
@@ -95,7 +95,7 @@ func TestLongOptionsRequireTwoDashes(t *testing.T) {
 			name,
 			func(t *testing.T) {
 				var stdout, stderr bytes.Buffer
-				code := Run(arguments, strings.NewReader(""), &stdout, &stderr)
+				code := runCLI(arguments, strings.NewReader(""), &stdout, &stderr)
 				if code != exitError || !strings.Contains(stderr.String(), "must use two dashes") {
 					t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 				}
@@ -120,7 +120,7 @@ func TestGlobalConfigFlagsConflictAfterConsumingAllArguments(t *testing.T) {
 		},
 	} {
 		var stdout, stderr bytes.Buffer
-		code := Run(arguments, strings.NewReader(""), &stdout, &stderr)
+		code := runCLI(arguments, strings.NewReader(""), &stdout, &stderr)
 		if code != exitError || !strings.Contains(stderr.String(), "--config and --no-config are mutually exclusive") {
 			t.Fatalf("arguments %q: exit %d, stdout %q, stderr %q", arguments, code, stdout.String(), stderr.String())
 		}
@@ -129,7 +129,7 @@ func TestGlobalConfigFlagsConflictAfterConsumingAllArguments(t *testing.T) {
 
 func TestCommandUsageShowsShortAndLongOptions(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{
+	code := runCLI([]string{
 		"-n",
 		"fmt",
 		"--unknown",
@@ -161,7 +161,7 @@ func TestCommandUsageColorsOptionsAndHidesLegacyCheckFlags(t *testing.T) {
 			command,
 			func(t *testing.T) {
 				var stdout, stderr bytes.Buffer
-				code := Run([]string{
+				code := runCLI([]string{
 					"--color",
 					"always",
 					"--no-config",
@@ -207,7 +207,7 @@ func TestColorFlagRendersRichDiagnosticsAndLeavesJSONPlain(t *testing.T) {
 	}
 
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{
+	code := runCLI([]string{
 		"--color",
 		"always",
 		"check",
@@ -232,17 +232,22 @@ func TestColorFlagRendersRichDiagnosticsAndLeavesJSONPlain(t *testing.T) {
 	}
 
 	stdout.Reset()
-	code = Run([]string{
-		"--color=always",
-		"check",
-		"--format",
-		"json",
-		"--minimum-severity",
-		"note",
-		"--only",
-		"no-init",
-		filename,
-	}, strings.NewReader(""), &stdout, &stderr)
+	code = runCLI(
+		[]string{
+			"--color=always",
+			"check",
+			"--format",
+			"json",
+			"--minimum-severity",
+			"note",
+			"--only",
+			"no-init",
+			filename,
+		},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
 	if code != exitFindings || strings.Contains(stdout.String(), "\x1b[") {
 		t.Fatalf("JSON output should remain unstyled: exit %d, stdout %q", code, stdout.String())
 	}
@@ -262,7 +267,7 @@ func TestConfiguredColorAndCLIOverride(t *testing.T) {
 	}
 
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{
+	code := runCLI([]string{
 		"--config",
 		filepath.Join(root, "strider.toml"),
 		"check",
@@ -276,16 +281,21 @@ func TestConfiguredColorAndCLIOverride(t *testing.T) {
 
 	stdout.Reset()
 	stderr.Reset()
-	code = Run([]string{
-		"--config",
-		filepath.Join(root, "strider.toml"),
-		"--color",
-		"never",
-		"check",
-		"--only",
-		"no-init",
-		filename,
-	}, strings.NewReader(""), &stdout, &stderr)
+	code = runCLI(
+		[]string{
+			"--config",
+			filepath.Join(root, "strider.toml"),
+			"--color",
+			"never",
+			"check",
+			"--only",
+			"no-init",
+			filename,
+		},
+		strings.NewReader(""),
+		&stdout,
+		&stderr,
+	)
 	if code != exitFindings || strings.Contains(stdout.String(), "\x1b[") {
 		t.Fatalf("CLI color override not applied: exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
@@ -346,7 +356,7 @@ func TestAllFlagsAreRemoved(t *testing.T) {
 		},
 	} {
 		var stdout, stderr bytes.Buffer
-		code := Run(args, strings.NewReader(""), &stdout, &stderr)
+		code := runCLI(args, strings.NewReader(""), &stdout, &stderr)
 		if code != exitError || !strings.Contains(stderr.String(), "flag provided but not defined") {
 			t.Fatalf("args %v: exit %d, stdout %q, stderr %q", args, code, stdout.String(), stderr.String())
 		}
@@ -371,41 +381,30 @@ severity = "none"
 	if err := os.WriteFile(filename, []byte("package p\nimport \"regexp\"\nfunc init() { regexp.MustCompile(\"[\") }\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	previous, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir(root); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		restoreWorkingDirectory(t, previous)
-	})
-
 	var stdout, stderr bytes.Buffer
-	code := Run([]string{
+	code := runCLIFrom(root, []string{
 		"check",
 		"--only",
 		"no-init",
 		filename,
 	}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitFindings || !strings.Contains(stdout.String(), "no-init:") {
-		t.Fatalf("lint exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+		t.Fatalf("check exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 	stdout.Reset()
 	stderr.Reset()
-	code = Run([]string{
+	code = runCLIFrom(root, []string{
 		"check",
 		"--only",
 		"invalid-regexp",
 		filename,
 	}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitSuccess || stdout.String() != "0 issues\n" {
-		t.Fatalf("analyze exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+		t.Fatalf("semantic exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 	stdout.Reset()
 	stderr.Reset()
-	code = Run([]string{
+	code = runCLI([]string{
 		"fmt",
 		"--stdin",
 	}, strings.NewReader("package p\nfunc f( ){return}\n"), &stdout, &stderr)

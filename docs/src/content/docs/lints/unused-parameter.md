@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Detect unused function parameters. Default: enabled.
+Detect unused function parameters.
 
 ## Bad
 

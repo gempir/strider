@@ -1,6 +1,8 @@
 package semantic
 
 import (
+	"context"
+	"errors"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -17,6 +19,14 @@ import (
 	"golang.org/x/tools/go/ssa"
 )
 
+func TestRunContextRejectsPreCanceledContext(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := RunContext(ctx, nil, nil); !errors.Is(err, context.Canceled) {
+		t.Fatalf("RunContext error = %v, want context.Canceled", err)
+	}
+}
+
 func TestCheckRequirementsCoverCatalog(t *testing.T) {
 	seen := make(map[string]bool, len(checkCatalog))
 	codes := make([]string, 0, len(checkCatalog))
@@ -27,18 +37,12 @@ func TestCheckRequirementsCoverCatalog(t *testing.T) {
 		}
 		seen[code] = true
 		codes = append(codes, code)
-		requirements, ok := RequirementsFor(code)
-		if !ok {
-			t.Fatalf("check %q has no requirements", code)
-		}
+		requirements := check.requirements
 		switch requirements.Stage {
 		case AnalysisStageTypes:
 		case AnalysisStageSSA:
 		default:
 			t.Fatalf("check %q has invalid stage %d", code, requirements.Stage)
-		}
-		if UsesSSA(code) != (requirements.Stage == AnalysisStageSSA) {
-			t.Fatalf("UsesSSA(%q) disagrees with its requirements", code)
 		}
 		if requirements.Facts.Has(FactStaticCalls) != (len(requirements.staticCallPackages) != 0) {
 			t.Fatalf("check %q has inconsistent static-call requirements", code)
@@ -46,11 +50,18 @@ func TestCheckRequirementsCoverCatalog(t *testing.T) {
 	}
 	sort.Strings(codes)
 	_, testFile, _, _ := runtime.Caller(0)
-	want, err := os.ReadFile(filepath.Join(filepath.Dir(testFile), "testdata", "check_codes.txt"))
+	goldenPath := filepath.Join(filepath.Dir(testFile), "testdata", "check_codes.txt")
+	got := strings.Join(codes, "\n") + "\n"
+	if os.Getenv("STRIDER_UPDATE_GOLDEN") == "1" {
+		if err := os.WriteFile(goldenPath, []byte(got), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	want, err := os.ReadFile(goldenPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := strings.Join(codes, "\n") + "\n"; got != string(want) {
+	if got != string(want) {
 		t.Errorf("check catalog differs from testdata/check_codes.txt\ngot:\n%s\nwant:\n%s", got, want)
 	}
 }
@@ -249,7 +260,10 @@ func TestNamedPackageFactsInitializeOnce(t *testing.T) {
 			case 0:
 				_ = pass.argumentsByCallPosition()
 			case 1:
-				_ = pass.firstArgumentsByCallPosition()
+				for position := range pass.argumentsByCallPosition() {
+					_ = pass.firstArgumentByCallPosition(position)
+					break
+				}
 			default:
 				_ = pass.analysisParents()
 			}
@@ -262,8 +276,14 @@ func TestNamedPackageFactsInitializeOnce(t *testing.T) {
 	if len(pass.argumentsByCallPosition()) != 2 {
 		t.Fatalf("call argument index has %d entries, want 2", len(pass.argumentsByCallPosition()))
 	}
-	if len(pass.firstArgumentsByCallPosition()) != 2 {
-		t.Fatalf("first call argument index has %d entries, want 2", len(pass.firstArgumentsByCallPosition()))
+	firstArguments := 0
+	for position := range pass.argumentsByCallPosition() {
+		if pass.firstArgumentByCallPosition(position) != nil {
+			firstArguments++
+		}
+	}
+	if firstArguments != 2 {
+		t.Fatalf("first call argument index has %d entries, want 2", firstArguments)
 	}
 	if len(pass.analysisParents()) == 0 {
 		t.Fatal("parent index is empty")

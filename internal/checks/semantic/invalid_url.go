@@ -22,7 +22,6 @@ func (invalidURLCheck) Meta() Meta {
 }
 
 func (invalidURLCheck) Run(pass *Pass) {
-	calls := pass.firstArgumentsByCallPosition()
 	for _, call := range pass.staticCallsInPackage("net/url") {
 		if !isStaticFunction(call, "net/url", "Parse") || len(call.Common().Args) == 0 {
 			continue
@@ -34,21 +33,11 @@ func (invalidURLCheck) Run(pass *Pass) {
 		rawURL := constant.StringVal(value.Value)
 		if _, err := url.Parse(rawURL); err != nil {
 			message := fmt.Sprintf("%q is not a valid URL: %s", rawURL, err)
-			if node := calls[call.Pos()]; node != nil {
+			if node := pass.firstArgumentByCallPosition(call.Pos()); node != nil {
 				pass.Report(node, message)
 			} else {
 				pass.ReportPos(call.Pos(), message)
 			}
 		}
-	}
-}
-
-func (invalidURLCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageSSA,
-		Facts: FactCallArguments | FactStaticCalls,
-		staticCallPackages: []string{
-			"net/url",
-		},
 	}
 }

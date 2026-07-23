@@ -72,9 +72,3 @@ func integerZero(pass *Pass, expression ast.Expr) bool {
 	value := pass.TypesInfo.Types[expression].Value
 	return value != nil && value.Kind() == constant.Int && constant.Sign(value) == 0
 }
-
-func (negativeLengthCapacityComparisonCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

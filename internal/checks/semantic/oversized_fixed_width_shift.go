@@ -73,9 +73,3 @@ func fixedWidthInteger(kind types.BasicKind) bool {
 		return false
 	}
 }
-
-func (oversizedFixedWidthShiftCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

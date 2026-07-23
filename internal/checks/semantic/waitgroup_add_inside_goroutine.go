@@ -52,9 +52,3 @@ func (waitGroupAddInsideGoroutineCheck) Run(pass *Pass) {
 		},
 	)
 }
-
-func (waitGroupAddInsideGoroutineCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

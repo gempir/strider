@@ -76,9 +76,3 @@ func hasCommentBetween(groups []*ast.CommentGroup, start, end token.Pos) bool {
 	}
 	return false
 }
-
-func (singleArgumentAppendCheck) Requirements() Requirements {
-	return Requirements{
-		Stage: AnalysisStageTypes,
-	}
-}

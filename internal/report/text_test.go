@@ -184,7 +184,7 @@ func TestTextRunStatisticsAppearBeforeIssueSummary(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	want := "error-rule  1\nChecked 50 files in 8ms. Ran 202 checks.\n1 issue: 1 error\n"
+	want := "error-rule  1\n\nChecked 50 files in 8ms. Ran 202 checks.\n1 issue: 1 error\n"
 	if !strings.HasSuffix(output.String(), want) {
 		t.Fatalf("statistics output = %q, want suffix %q", output.String(), want)
 	}

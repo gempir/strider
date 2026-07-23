@@ -90,6 +90,9 @@ func TextWithOptions(writer io.Writer, diagnostics []diagnostic.Diagnostic, colo
 	if err := writeCheckCounts(writer, diagnostics, palette, true); err != nil {
 		return err
 	}
+	if _, err := fmt.Fprintln(writer); err != nil {
+		return err
+	}
 	if err := writeRunStatistics(writer, options.Statistics, palette); err != nil {
 		return err
 	}

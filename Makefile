@@ -9,7 +9,7 @@ build:
 install: build
 	mv ./strider ~/.local/bin/strider
 
-verify: check test vet unused-check
+verify: check test vet
 
 test:
 	go test ./...

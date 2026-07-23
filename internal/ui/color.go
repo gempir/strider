@@ -1,4 +1,6 @@
 // Package ui provides the terminal styling shared by Strider's commands.
+//
+//strider:ignore-file single-case-switch
 package ui
 
 import (

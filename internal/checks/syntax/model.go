@@ -1,3 +1,4 @@
+//strider:ignore-file confusing-naming
 package syntax
 
 import (

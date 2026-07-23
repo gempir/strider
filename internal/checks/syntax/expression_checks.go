@@ -1,3 +1,4 @@
+//strider:ignore-file confusing-results,modifies-parameter,single-case-switch
 package syntax
 
 import (

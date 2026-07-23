@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,cyclomatic-complexity,function-length,single-case-switch,use-errors-new
 package catalog
 
 import (

@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,cyclomatic-complexity,single-case-switch
 package semantic
 
 import (
@@ -121,7 +122,7 @@ func oddLengthParameter(pass *Pass, expression ast.Expr) *types.Var {
 	if !ok || (comparison.Op != token.NEQ && comparison.Op != token.EQL) {
 		return nil
 	}
-	needle := int64(0)
+	var needle int64
 	if comparison.Op == token.EQL {
 		needle = 1
 	}

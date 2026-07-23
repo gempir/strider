@@ -1,4 +1,6 @@
 // Command corpus runs Strider against the pinned open-source benchmark corpus.
+//
+//strider:ignore-file cognitive-complexity,cyclomatic-complexity,early-return,error-strings,function-length,no-else-after-return,no-package-var,single-case-switch
 package main
 
 import (

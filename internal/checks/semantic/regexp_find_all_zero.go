@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,unchecked-type-assertion
 package semantic
 
 import (

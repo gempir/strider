@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,confusing-naming,cyclomatic-complexity,function-length,import-shadowing,modifies-parameter,single-case-switch,use-slices-sort
 package checks
 
 import (

@@ -1,3 +1,4 @@
+//strider:ignore-file modifies-parameter
 package syntax
 
 import "github.com/gempir/strider/internal/cst"

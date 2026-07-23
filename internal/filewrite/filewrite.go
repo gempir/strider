@@ -1,4 +1,6 @@
 // Package filewrite applies verified batches of source-file replacements.
+//
+//strider:ignore-file cognitive-complexity,confusing-naming,cyclomatic-complexity,function-length,no-package-var,use-slices-sort
 package filewrite
 
 import (

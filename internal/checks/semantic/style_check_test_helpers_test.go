@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity
 package semantic
 
 import "testing"

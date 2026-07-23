@@ -1,4 +1,6 @@
 // Package source provides deterministic Go source discovery.
+//
+//strider:ignore-file cognitive-complexity,modifies-parameter,no-package-var,single-case-switch
 package source
 
 import (

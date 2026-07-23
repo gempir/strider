@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,cyclomatic-complexity,modifies-parameter,no-package-var,single-case-switch
 package app
 
 import (

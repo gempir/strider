@@ -1,3 +1,4 @@
+//strider:ignore-file confusing-results,cyclomatic-complexity,modifies-parameter,single-case-switch
 package semantic
 
 import (

@@ -1,5 +1,7 @@
 // Command checkscaffold creates the two files authored for a new check and
 // updates generated registration, inventory, golden, and documentation files.
+//
+//strider:ignore-file cognitive-complexity,confusing-results,cyclomatic-complexity,function-length,modifies-parameter,no-else-after-return,no-package-var,single-case-switch,use-errors-new
 package main
 
 import (

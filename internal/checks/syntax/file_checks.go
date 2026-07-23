@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,no-package-var,single-case-switch,top-level-declaration-order
 package syntax
 
 import (

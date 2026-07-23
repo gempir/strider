@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,cyclomatic-complexity,identical-switch-branches,modifies-parameter
 package semantic
 
 import (

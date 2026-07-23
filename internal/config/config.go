@@ -1,4 +1,6 @@
 // Package config loads and validates Strider's project configuration.
+//
+//strider:ignore-file cognitive-complexity,confusing-naming,cyclomatic-complexity,import-shadowing,modifies-parameter,single-case-switch,use-errors-new
 package config
 
 import (

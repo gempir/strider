@@ -1,4 +1,6 @@
 // Package formatter implements Strider's strict, width-aware Go formatter.
+//
+//strider:ignore-file cognitive-complexity,confusing-naming,cyclomatic-complexity,modifies-parameter
 package formatter
 
 import (

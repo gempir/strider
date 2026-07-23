@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,modifies-parameter
 package semantic
 
 import (

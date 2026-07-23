@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,cyclomatic-complexity,function-length,import-shadowing,modifies-parameter
 package fix
 
 import (

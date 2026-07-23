@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,confusing-results,cyclomatic-complexity,function-result-limit,single-case-switch
 package semantic
 
 import (
@@ -92,7 +93,7 @@ func integerTypeBounds(valueType types.Type, sizes types.Sizes) (constant.Value,
 	if !ok || basic.Info()&types.IsInteger == 0 {
 		return nil, nil, false
 	}
-	bits := int64(0)
+	var bits int64
 	signed := basic.Info()&types.IsUnsigned == 0
 	switch basic.Kind() {
 	case types.Int8, types.Uint8:

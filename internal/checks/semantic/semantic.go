@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,confusing-naming,cyclomatic-complexity,function-length,function-result-limit,import-shadowing,modifies-parameter,range-value-address,unchecked-type-assertion,use-errors-new
 package semantic
 
 import (

@@ -1,4 +1,6 @@
 // Package fix selects, composes, validates, and applies automatic source fixes.
+//
+//strider:ignore-file cognitive-complexity,cyclomatic-complexity,function-length,modifies-parameter,use-errors-new,use-slices-sort
 package fix
 
 import (

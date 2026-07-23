@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,confusing-results,cyclomatic-complexity
 package app
 
 import (

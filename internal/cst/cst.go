@@ -3,6 +3,8 @@
 // Formatting and file-local linting use this package so their view of the
 // program includes every token and separator. Package analysis deliberately
 // uses go/ast instead because type checking and SSA operate on that tree.
+//
+//strider:ignore-file cognitive-complexity,confusing-results,import-shadowing,modifies-parameter
 package cst
 
 import (

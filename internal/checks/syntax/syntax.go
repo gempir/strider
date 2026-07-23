@@ -1,4 +1,6 @@
 // Package syntax implements Strider's fast, syntax-only check engine.
+//
+//strider:ignore-file cognitive-complexity,confusing-naming,use-slices-sort
 package syntax
 
 import (

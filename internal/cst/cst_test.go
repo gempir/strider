@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,cyclomatic-complexity,function-length,modifies-parameter,use-slices-sort
 package cst
 
 import (

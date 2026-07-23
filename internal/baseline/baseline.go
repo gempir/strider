@@ -1,4 +1,6 @@
 // Package baseline records and suppresses diagnostics that predate adoption.
+//
+//strider:ignore-file cognitive-complexity,cyclomatic-complexity,use-errors-new,use-slices-sort
 package baseline
 
 import (

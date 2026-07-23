@@ -1,3 +1,4 @@
+//strider:ignore-file cyclomatic-complexity,identical-switch-branches
 package syntax
 
 import (

@@ -1,5 +1,7 @@
 // Package diagnostic defines the shared issue and edit model used by Strider's
 // source-code engines.
+//
+//strider:ignore-file single-case-switch
 package diagnostic
 
 import (

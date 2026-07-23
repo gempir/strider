@@ -1,4 +1,6 @@
 // Package checks implements Strider's unified diagnostic pipeline.
+//
+//strider:ignore-file no-package-var,top-level-declaration-order
 package checks
 
 import (

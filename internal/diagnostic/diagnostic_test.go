@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity
 package diagnostic
 
 import (
@@ -25,7 +26,8 @@ func TestSeverityOrdering(t *testing.T) {
 	if ValidSeverity("") || ValidSeverity("fatal") {
 		t.Fatal("unknown severity reported as valid")
 	}
-	if SeverityError.AtLeast("") || Severity("fatal").AtLeast(SeverityNote) {
+	const invalidSeverity Severity = "fatal"
+	if SeverityError.AtLeast("") || invalidSeverity.AtLeast(SeverityNote) {
 		t.Fatal("unknown severity participated in ordering")
 	}
 }

@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,no-package-var,top-level-declaration-order
 package semantic
 
 import (

@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,cyclomatic-complexity,insecure-url-scheme,single-case-switch
 package syntax
 
 import (

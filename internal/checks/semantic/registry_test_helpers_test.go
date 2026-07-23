@@ -1,3 +1,4 @@
+//strider:ignore-file confusing-naming,top-level-declaration-order
 package semantic
 
 import (

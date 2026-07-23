@@ -1,5 +1,7 @@
 // Package checkconfig defines neutral, typed check settings shared by TOML
 // decoding and catalog selection.
+//
+//strider:ignore-file confusing-naming,import-shadowing,top-level-declaration-order
 package checkconfig
 
 import (

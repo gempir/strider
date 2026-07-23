@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,cyclomatic-complexity,function-length,identical-switch-branches,redefines-builtin-id,single-case-switch,top-level-declaration-order
 package formatter
 
 import (

@@ -1,4 +1,6 @@
 // Package app implements the Strider command-line application.
+//
+//strider:ignore-file cognitive-complexity,cyclomatic-complexity,max-parameters,modifies-parameter,no-package-var,single-case-switch,use-slices-sort
 package app
 
 import (

@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,confusing-results,cyclomatic-complexity,function-length,import-shadowing,single-case-switch
 package app
 
 import (

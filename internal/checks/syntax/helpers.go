@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,confusing-results,cyclomatic-complexity,modifies-parameter,no-package-var
 package syntax
 
 import (

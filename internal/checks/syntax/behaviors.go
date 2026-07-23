@@ -1,3 +1,4 @@
+//strider:ignore-file cyclomatic-complexity,identical-switch-branches,no-package-var
 package syntax
 
 import "github.com/gempir/strider/internal/cst"

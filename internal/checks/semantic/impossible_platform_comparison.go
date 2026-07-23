@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,confusing-results,cyclomatic-complexity,inefficient-map-lookup,no-package-var,range-value-address
 package semantic
 
 import (

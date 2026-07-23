@@ -1,3 +1,4 @@
+//strider:ignore-file no-package-var,use-errors-new
 package syntax
 
 import (

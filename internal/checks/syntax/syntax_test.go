@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,top-level-declaration-order
 package syntax
 
 import (

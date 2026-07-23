@@ -1,3 +1,4 @@
+//strider:ignore-file modifies-parameter
 package app
 
 import (

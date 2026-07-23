@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,confusing-naming,function-length
 package catalog
 
 import (

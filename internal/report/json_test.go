@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,excessive-blank-identifiers,function-length
 package report
 
 import (

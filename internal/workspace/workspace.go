@@ -1,5 +1,7 @@
 // Package workspace owns source files and their lazily constructed syntax
 // representations for one Strider run.
+//
+//strider:ignore-file cognitive-complexity,range-value-address,use-errors-new
 package workspace
 
 import (

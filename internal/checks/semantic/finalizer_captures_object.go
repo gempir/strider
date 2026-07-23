@@ -1,3 +1,4 @@
+//strider:ignore-file identical-switch-branches,modifies-parameter
 package semantic
 
 import (

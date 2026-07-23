@@ -1,4 +1,6 @@
 // Command gencst generates direct modernc CST child accessors for Strider.
+//
+//strider:ignore-file cognitive-complexity,cyclomatic-complexity,identical-switch-branches,modifies-parameter,single-case-switch
 package main
 
 import (

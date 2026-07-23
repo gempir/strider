@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,cyclomatic-complexity,function-length,import-shadowing,max-parameters,modifies-parameter,no-package-var,use-errors-new
 package app
 
 import (

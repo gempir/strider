@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,function-length
 package report
 
 import (

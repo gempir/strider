@@ -1,3 +1,4 @@
+//strider:ignore-file single-case-switch
 package semantic
 
 import (

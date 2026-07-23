@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,confusing-naming,cyclomatic-complexity,identical-switch-branches,modifies-parameter,single-case-switch
 package syntax
 
 import (

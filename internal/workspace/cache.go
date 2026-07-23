@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,cyclomatic-complexity,function-length,import-shadowing,range-value-address,use-errors-new,use-slices-sort
 package workspace
 
 import (

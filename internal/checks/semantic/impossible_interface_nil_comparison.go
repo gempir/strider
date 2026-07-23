@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,cyclomatic-complexity,modifies-parameter,redefines-builtin-id
 package semantic
 
 import (

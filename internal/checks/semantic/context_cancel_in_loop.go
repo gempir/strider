@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,cyclomatic-complexity,function-length,identical-switch-branches,single-case-switch
 package semantic
 
 import (

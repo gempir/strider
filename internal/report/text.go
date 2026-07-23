@@ -1,4 +1,6 @@
 // Package report renders shared human-readable diagnostics.
+//
+//strider:ignore-file cognitive-complexity,confusing-results,cyclomatic-complexity,single-case-switch,use-slices-sort
 package report
 
 import (

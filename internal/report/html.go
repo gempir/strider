@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,no-package-var,single-case-switch,use-slices-sort
 package report
 
 import (

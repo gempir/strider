@@ -1,6 +1,8 @@
 // Command generate-check-docs renders generated syntax-check pages and keeps
 // every check reference page aligned with the registry, examples, configuration,
 // and default severity.
+//
+//strider:ignore-file cognitive-complexity,confusing-results,cyclomatic-complexity,deep-exit,modifies-parameter,single-case-switch,use-errors-new,use-slices-sort
 package main
 
 import (

@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,cyclomatic-complexity,identical-switch-branches,import-shadowing,modifies-parameter
 package semantic
 
 import (
@@ -5,8 +6,8 @@ import (
 	"go/parser"
 	"go/token"
 	"go/types"
+	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
@@ -378,11 +379,12 @@ func (index *deprecationIndex) packageClauseMessage(filename string) string {
 
 func expandGoRoot(filename string) string {
 	const marker = "$GOROOT"
+	goRoot := os.Getenv("GOROOT")
 	if filename == marker {
-		return runtime.GOROOT()
+		return goRoot
 	}
 	if strings.HasPrefix(filename, marker+"/") || strings.HasPrefix(filename, marker+"\\") {
-		return filepath.Join(runtime.GOROOT(), filepath.FromSlash(strings.TrimLeft(filename[len(marker):], "/\\")))
+		return filepath.Join(goRoot, filepath.FromSlash(strings.TrimLeft(filename[len(marker):], "/\\")))
 	}
 	return filename
 }

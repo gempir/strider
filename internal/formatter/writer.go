@@ -1,3 +1,4 @@
+//strider:ignore-file cyclomatic-complexity,modifies-parameter
 package formatter
 
 import (

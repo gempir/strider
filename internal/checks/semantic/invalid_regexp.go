@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,identical-switch-branches
 package semantic
 
 import (

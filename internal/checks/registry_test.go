@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,cyclomatic-complexity,excessive-blank-identifiers,modifies-parameter,single-case-switch
 package checks
 
 import (

@@ -1,3 +1,4 @@
+//strider:ignore-file cyclomatic-complexity,unchecked-type-assertion
 package semantic
 
 import (

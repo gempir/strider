@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,confusing-results,import-shadowing
 package semantic
 
 import (

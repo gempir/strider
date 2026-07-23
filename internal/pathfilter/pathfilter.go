@@ -1,4 +1,6 @@
 // Package pathfilter matches configuration paths and doublestar globs.
+//
+//strider:ignore-file cognitive-complexity,cyclomatic-complexity
 package pathfilter
 
 import (

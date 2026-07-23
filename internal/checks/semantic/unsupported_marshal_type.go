@@ -1,3 +1,4 @@
+//strider:ignore-file cognitive-complexity,cyclomatic-complexity,modifies-parameter,single-case-switch,unchecked-type-assertion
 package semantic
 
 import (

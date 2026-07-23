@@ -20,6 +20,7 @@ type RegistryOptions struct {
 	MinimumSeverity diagnostic.Severity
 	FormatExcludes  []string
 	Root            string
+	Directory       string
 }
 
 // Registry is an immutable unified selection and prepared execution plan.
@@ -133,7 +134,7 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 		registry.syntax = syntax.NewPlan(syntaxPlan, options.Root)
 	}
 	if len(semanticPlan) != 0 {
-		registry.semantic = semantic.NewPlan(semanticPlan, options.Root, rootSet)
+		registry.semantic = semantic.NewPlan(semanticPlan, options.Root, rootSet, options.Directory)
 	}
 
 	return registry, nil

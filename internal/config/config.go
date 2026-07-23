@@ -28,6 +28,9 @@ type Config struct {
 
 	Path string `toml:"-"`
 	Root string `toml:"-"`
+	// Directory is the caller-owned starting directory for relative inputs and
+	// upward configuration discovery.
+	Directory string `toml:"-"`
 }
 
 type FormatterConfig struct {
@@ -80,23 +83,31 @@ func defaultToolConfig() ToolConfig {
 	}
 }
 
-// Load reads an explicit path or discovers strider.toml from the working
-// directory upward. With no discovered file it returns built-in defaults.
-func Load(explicitPath string, disabled bool) (Config, error) {
+// Load reads an explicit path or discovers strider.toml upward from directory.
+// With no discovered file it returns built-in defaults rooted at directory.
+func Load(directory, explicitPath string, disabled bool) (Config, error) {
 	configuration := Defaults()
+	start, err := filepath.Abs(directory)
+	if err != nil {
+		return Config{}, fmt.Errorf("configuration directory: %w", err)
+	}
+	configuration.Directory = start
+	configuration.Root = start
 	if disabled {
 		return configuration, nil
 	}
 	path := explicitPath
 	if path == "" {
-		var err error
-		path, err = discover()
+		path, err = discover(start)
 		if err != nil {
 			return Config{}, err
 		}
 		if path == "" {
 			return configuration, nil
 		}
+	}
+	if !filepath.IsAbs(path) {
+		path = filepath.Join(start, path)
 	}
 	absolute, err := filepath.Abs(path)
 	if err != nil {
@@ -277,11 +288,7 @@ func stringList(raw any) ([]string, bool) {
 	}
 }
 
-func discover() (string, error) {
-	directory, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
+func discover(directory string) (string, error) {
 	for {
 		candidate := filepath.Join(directory, Filename)
 		_, err := os.Stat(candidate)

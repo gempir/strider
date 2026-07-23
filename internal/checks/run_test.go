@@ -27,6 +27,40 @@ func TestRunRejectsPreCanceledContext(t *testing.T) {
 	}
 }
 
+func TestRunDoesNotConsumeWorkspace(t *testing.T) {
+	directory := t.TempDir()
+	if err := os.WriteFile(filepath.Join(directory, "main.go"), []byte("package sample\nfunc init() {}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	shared, err := workspace.Open([]string{
+		directory,
+	}, workspace.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer shared.Close()
+	registry, err := NewRegistry(RegistryOptions{
+		Only: []string{
+			"no-init",
+		},
+		MinimumSeverity: diagnostic.SeverityNote,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	first, err := Run(context.Background(), shared, registry, RunOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := Run(context.Background(), shared, registry, RunOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(first, second) {
+		t.Fatalf("repeated Run changed result:\nfirst:  %#v\nsecond: %#v", first, second)
+	}
+}
+
 func TestConcreteWorkersCancelOnFirstErrorAndJoin(t *testing.T) {
 	previous := runtime.GOMAXPROCS(4)
 	t.Cleanup(func() {

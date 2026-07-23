@@ -3,7 +3,7 @@ package semantic
 import "testing"
 
 func TestCopyLockValueReportsConservativeCopySites(t *testing.T) {
-	reports := runResearchCorrectnessCheck(
+	reports := runCheckFixture(
 		t,
 		copyLockValueCheck{},
 		`package fixture
@@ -39,6 +39,6 @@ func fresh() State { return State{} }
 func good(source *State) { pointer(source) }
 `,
 	)
-	assertResearchReportCount(t, reports, 12)
-	assertResearchMessagesContain(t, reports, "sync.Mutex")
+	assertReportCount(t, reports, 12)
+	assertMessagesContain(t, reports, "sync.Mutex")
 }

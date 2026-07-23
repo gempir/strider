@@ -109,7 +109,7 @@ func TestWorkspaceFiltersGeneratedAndExcludedFiles(t *testing.T) {
 	}
 }
 
-func TestReleaseCSTDropsImmutableGenerationCache(t *testing.T) {
+func TestCloseReleasesImmutableGenerationCaches(t *testing.T) {
 	directory := t.TempDir()
 	filename := filepath.Join(directory, "main.go")
 	if err := os.WriteFile(filename, []byte("package main\n"), 0o600); err != nil {
@@ -125,12 +125,20 @@ func TestReleaseCSTDropsImmutableGenerationCache(t *testing.T) {
 	if _, err := file.CST(); err != nil {
 		t.Fatal(err)
 	}
-	file.ReleaseCST()
-	if _, err := file.CST(); err == nil {
-		t.Fatal("released CST was unexpectedly reusable")
+	if err := shared.Close(); err != nil {
+		t.Fatal(err)
 	}
-	if contents, err := file.Bytes(); err != nil || string(contents) != "package main\n" {
-		t.Fatalf("source cache after CST release = %q, %v", contents, err)
+	if err := shared.Close(); err != nil {
+		t.Fatalf("second Close: %v", err)
+	}
+	if _, err := file.CST(); err == nil {
+		t.Fatal("closed CST was unexpectedly reusable")
+	}
+	if contents, err := file.Bytes(); err == nil {
+		t.Fatalf("closed source cache was unexpectedly reusable: %q", contents)
+	}
+	if identity, err := file.Identity(); err == nil {
+		t.Fatalf("closed identity was unexpectedly reusable: %x", identity)
 	}
 }
 
@@ -160,7 +168,12 @@ func TestCacheReusesImmutableSnapshotAcrossGenerations(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	firstFile.Release()
+	if err := first.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := firstFile.Identity(); err == nil {
+		t.Fatal("closed cached generation identity was unexpectedly reusable")
+	}
 
 	second, err := cache.Open([]string{
 		directory,

@@ -35,6 +35,7 @@ func TestWriteBatchRejectsStaleSameSizeContent(t *testing.T) {
 }
 
 func TestWriteBatchStaleGuardPreventsAllWrites(t *testing.T) {
+	t.Parallel()
 	directory := t.TempDir()
 	target := filepath.Join(directory, "a.go")
 	guarded := filepath.Join(directory, "z.go")
@@ -51,17 +52,14 @@ func TestWriteBatchStaleGuardPreventsAllWrites(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	originalCreateTemporary := createTemporary
 	createCalls := 0
-	createTemporary = func(directory, pattern string) (*os.File, error) {
+	operations := defaultFileOperations()
+	operations.createTemporary = func(directory, pattern string) (*os.File, error) {
 		createCalls++
 		return os.CreateTemp(directory, pattern)
 	}
-	t.Cleanup(func() {
-		createTemporary = originalCreateTemporary
-	})
 
-	err := WriteBatch([]Change{
+	err := writeBatch(operations, []Change{
 		{
 			Path:   target,
 			Before: targetBefore,
@@ -82,6 +80,7 @@ func TestWriteBatchStaleGuardPreventsAllWrites(t *testing.T) {
 }
 
 func TestWriteBatchRechecksGuardAfterStaging(t *testing.T) {
+	t.Parallel()
 	directory := t.TempDir()
 	target := filepath.Join(directory, "a.go")
 	guarded := filepath.Join(directory, "z.go")
@@ -98,8 +97,8 @@ func TestWriteBatchRechecksGuardAfterStaging(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	originalCreateTemporary := createTemporary
-	createTemporary = func(directory, pattern string) (*os.File, error) {
+	operations := defaultFileOperations()
+	operations.createTemporary = func(directory, pattern string) (*os.File, error) {
 		file, err := os.CreateTemp(directory, pattern)
 		if err != nil {
 			return nil, err
@@ -109,11 +108,7 @@ func TestWriteBatchRechecksGuardAfterStaging(t *testing.T) {
 		}
 		return file, nil
 	}
-	t.Cleanup(func() {
-		createTemporary = originalCreateTemporary
-	})
-
-	err := WriteBatch([]Change{
+	err := writeBatch(operations, []Change{
 		{
 			Path:   target,
 			Before: targetBefore,
@@ -312,6 +307,7 @@ func TestWriteBatchPreservesSymlink(t *testing.T) {
 }
 
 func TestWriteBatchStagesEveryFileBeforeReplacingTargets(t *testing.T) {
+	t.Parallel()
 	directory := t.TempDir()
 	first := filepath.Join(directory, "a.go")
 	second := filepath.Join(directory, "z.go")
@@ -325,20 +321,16 @@ func TestWriteBatchStagesEveryFileBeforeReplacingTargets(t *testing.T) {
 		}
 	}
 
-	originalCreateTemporary := createTemporary
 	calls := 0
-	createTemporary = func(directory, pattern string) (*os.File, error) {
+	operations := defaultFileOperations()
+	operations.createTemporary = func(directory, pattern string) (*os.File, error) {
 		calls++
 		if calls == 2 {
 			return nil, errors.New("injected staging failure")
 		}
 		return os.CreateTemp(directory, pattern)
 	}
-	t.Cleanup(func() {
-		createTemporary = originalCreateTemporary
-	})
-
-	err := WriteBatch([]Change{
+	err := writeBatch(operations, []Change{
 		{
 			Path:   second,
 			Before: before,
@@ -362,6 +354,7 @@ func TestWriteBatchStagesEveryFileBeforeReplacingTargets(t *testing.T) {
 }
 
 func TestWriteBatchRechecksContentsAfterStaging(t *testing.T) {
+	t.Parallel()
 	directory := t.TempDir()
 	first := filepath.Join(directory, "a.go")
 	second := filepath.Join(directory, "z.go")
@@ -379,9 +372,9 @@ func TestWriteBatchRechecksContentsAfterStaging(t *testing.T) {
 		}
 	}
 
-	originalCreateTemporary := createTemporary
 	calls := 0
-	createTemporary = func(directory, pattern string) (*os.File, error) {
+	operations := defaultFileOperations()
+	operations.createTemporary = func(directory, pattern string) (*os.File, error) {
 		file, err := os.CreateTemp(directory, pattern)
 		if err != nil {
 			return nil, err
@@ -394,11 +387,7 @@ func TestWriteBatchRechecksContentsAfterStaging(t *testing.T) {
 		}
 		return file, nil
 	}
-	t.Cleanup(func() {
-		createTemporary = originalCreateTemporary
-	})
-
-	err := WriteBatch([]Change{
+	err := writeBatch(operations, []Change{
 		{
 			Path:   first,
 			Before: before,
@@ -419,6 +408,7 @@ func TestWriteBatchRechecksContentsAfterStaging(t *testing.T) {
 }
 
 func TestWriteBatchRechecksEachTargetImmediatelyBeforeRename(t *testing.T) {
+	t.Parallel()
 	directory := t.TempDir()
 	first := filepath.Join(directory, "a.go")
 	second := filepath.Join(directory, "z.go")
@@ -433,9 +423,9 @@ func TestWriteBatchRechecksEachTargetImmediatelyBeforeRename(t *testing.T) {
 		}
 	}
 
-	originalRenameFile := renameFile
 	renames := 0
-	renameFile = func(oldPath, newPath string) error {
+	operations := defaultFileOperations()
+	operations.rename = func(oldPath, newPath string) error {
 		if err := os.Rename(oldPath, newPath); err != nil {
 			return err
 		}
@@ -445,11 +435,7 @@ func TestWriteBatchRechecksEachTargetImmediatelyBeforeRename(t *testing.T) {
 		}
 		return nil
 	}
-	t.Cleanup(func() {
-		renameFile = originalRenameFile
-	})
-
-	err := WriteBatch([]Change{
+	err := writeBatch(operations, []Change{
 		{
 			Path:   first,
 			Before: before,
@@ -534,6 +520,7 @@ func TestWriteBatchRejectsDuplicateFilesystemIdentity(t *testing.T) {
 }
 
 func TestWriteBatchUsesDeterministicTargetOrder(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	firstDirectory := filepath.Join(root, "a")
 	secondDirectory := filepath.Join(root, "z")
@@ -557,28 +544,27 @@ func TestWriteBatchUsesDeterministicTargetOrder(t *testing.T) {
 		}
 	}
 
-	originalCreateTemporary := createTemporary
 	order := []string{}
-	createTemporary = func(directory, pattern string) (*os.File, error) {
+	operations := defaultFileOperations()
+	operations.createTemporary = func(directory, pattern string) (*os.File, error) {
 		order = append(order, directory)
 		return os.CreateTemp(directory, pattern)
 	}
-	t.Cleanup(func() {
-		createTemporary = originalCreateTemporary
-	})
-
-	if err := WriteBatch([]Change{
-		{
-			Path:   second,
-			Before: before,
-			After:  []byte("package second\n"),
+	if err := writeBatch(
+		operations,
+		[]Change{
+			{
+				Path:   second,
+				Before: before,
+				After:  []byte("package second\n"),
+			},
+			{
+				Path:   first,
+				Before: before,
+				After:  []byte("package first\n"),
+			},
 		},
-		{
-			Path:   first,
-			Before: before,
-			After:  []byte("package first\n"),
-		},
-	}); err != nil {
+	); err != nil {
 		t.Fatal(err)
 	}
 	resolvedRoot, err := filepath.EvalSymlinks(root)

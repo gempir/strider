@@ -19,7 +19,9 @@ type Options struct {
 	SkipGenerated bool
 }
 
-func Discover(paths []string, opts Options) ([]string, error) {
+// DiscoverFrom resolves relative inputs against directory and returns
+// deterministic absolute Go source paths.
+func DiscoverFrom(directory string, paths []string, opts Options) ([]string, error) {
 	if len(paths) == 0 {
 		paths = []string{
 			".",
@@ -27,7 +29,7 @@ func Discover(paths []string, opts Options) ([]string, error) {
 	}
 	seen := make(map[string]struct{})
 	for _, input := range paths {
-		if err := discoverPath(seen, input, opts); err != nil {
+		if err := discoverPath(seen, directory, input, opts); err != nil {
 			return nil, err
 		}
 	}
@@ -39,8 +41,11 @@ func Discover(paths []string, opts Options) ([]string, error) {
 	return files, nil
 }
 
-func discoverPath(seen map[string]struct{}, input string, opts Options) error {
+func discoverPath(seen map[string]struct{}, directory, input string, opts Options) error {
 	path := cleanPattern(input)
+	if !filepath.IsAbs(path) {
+		path = filepath.Join(directory, path)
+	}
 	info, err := os.Stat(path)
 	if err != nil {
 		return fmt.Errorf("discover %q: %w", input, err)

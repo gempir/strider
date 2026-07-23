@@ -1,67 +1,15 @@
 package syntax
 
 import (
+	"go/types"
 	"path/filepath"
 	"regexp"
 	"slices"
 	"strconv"
 	"strings"
-	"unicode"
-	"unicode/utf8"
 )
 
 var cgoPointerIdentifier = regexp.MustCompile(`^_C(func|var)_.+$`)
-
-var builtinIdentifiers = map[string]bool{
-	"any":        true,
-	"append":     true,
-	"bool":       true,
-	"byte":       true,
-	"cap":        true,
-	"clear":      true,
-	"close":      true,
-	"comparable": true,
-	"complex":    true,
-	"complex128": true,
-	"complex64":  true,
-	"copy":       true,
-	"delete":     true,
-	"error":      true,
-	"false":      true,
-	"float32":    true,
-	"float64":    true,
-	"imag":       true,
-	"int":        true,
-	"int16":      true,
-	"int32":      true,
-	"int64":      true,
-	"int8":       true,
-	"iota":       true,
-	"len":        true,
-	"make":       true,
-	"max":        true,
-	"min":        true,
-	"new":        true,
-	"nil":        true,
-	"panic":      true,
-	"print":      true,
-	"println":    true,
-	"real":       true,
-	"recover":    true,
-	"rune":       true,
-	"string":     true,
-	"true":       true,
-	"uint":       true,
-	"uint16":     true,
-	"uint32":     true,
-	"uint64":     true,
-	"uint8":      true,
-	"uintptr":    true,
-}
-
-func utf8Decode(value string) (rune, int) {
-	return utf8.DecodeRuneInString(value)
-}
 
 func isDeepExit(name string) bool {
 	return name == "os.Exit" || strings.HasPrefix(name, "log.Fatal") || strings.HasPrefix(name, "log.Panic")
@@ -95,20 +43,8 @@ func hasTimeUnitSuffix(name string) bool {
 	return false
 }
 
-func identifierName(value string) bool {
-	for index, current := range value {
-		if index == 0 && !unicode.IsLetter(current) && current != '_' {
-			return false
-		}
-		if index > 0 && !unicode.IsLetter(current) && !unicode.IsDigit(current) && current != '_' {
-			return false
-		}
-	}
-	return value != ""
-}
-
-func builtinType(value string) bool {
-	return builtinIdentifiers[value]
+func predeclaredIdentifier(value string) bool {
+	return types.Universe.Lookup(value) != nil
 }
 
 func marshalMethod(name string) bool {

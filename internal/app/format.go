@@ -29,6 +29,7 @@ type formatOptions struct {
 	paths         []string
 	formatter     formatter.Options
 	root          string
+	directory     string
 	excludes      []string
 	colorMode     ui.ColorMode
 }
@@ -62,6 +63,7 @@ func runFormat(ctx context.Context, args []string, configuration config.Config, 
 		PrintWidth: configuration.Formatter.PrintWidth,
 	}
 	options.root = configuration.Root
+	options.directory = configuration.Directory
 	options.excludes = configuration.Formatter.Excludes
 	options.colorMode = colorMode
 	if options.stdin {
@@ -159,6 +161,7 @@ func formatPaths(ctx context.Context, options formatOptions, stdout, stderr io.W
 	}
 	shared, err := workspace.Open(options.paths, workspace.Options{
 		SkipGenerated: true,
+		Directory:     options.directory,
 		Root:          options.root,
 		Excludes:      options.excludes,
 	})
@@ -166,6 +169,7 @@ func formatPaths(ctx context.Context, options formatOptions, stdout, stderr io.W
 		printCommandError(stderr, options.colorMode, "strider fmt", "%v", err)
 		return exitError
 	}
+	defer shared.Close()
 	if err := ctx.Err(); err != nil {
 		printCommandError(stderr, options.colorMode, "strider fmt", "%v", err)
 		return exitError

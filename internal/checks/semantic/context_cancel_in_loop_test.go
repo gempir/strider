@@ -3,7 +3,7 @@ package semantic
 import "testing"
 
 func TestContextCancelInLoopRequiresIterationBoundedCancel(t *testing.T) {
-	reports := runResearchCorrectnessCheck(
+	reports := runCheckFixture(
 		t,
 		contextCancelInLoopCheck{},
 		`package fixture
@@ -69,5 +69,5 @@ func goodHelper(ctx context.Context, items []int) {
 }
 `,
 	)
-	assertResearchReportCount(t, reports, 5)
+	assertReportCount(t, reports, 5)
 }

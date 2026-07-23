@@ -166,6 +166,7 @@ func runCheckCommand(ctx context.Context, args []string, configuration config.Co
 			MinimumSeverity: minimumSeverity,
 			FormatExcludes:  configuration.Formatter.Excludes,
 			Root:            configuration.Root,
+			Directory:       configuration.Directory,
 		},
 	)
 	if err != nil {
@@ -189,6 +190,7 @@ func runCheckCommand(ctx context.Context, args []string, configuration config.Co
 	baselineConfig.knownCodes = registry.KnownCodes()
 	workspaceOptions := workspace.Options{
 		SkipGenerated: true,
+		Directory:     configuration.Directory,
 	}
 	runOptions := checks.RunOptions{
 		Formatter: formatter.Options{
@@ -245,6 +247,7 @@ func runCheckOnce(ctx context.Context, execution checkExecution) (int, error) {
 	if err != nil {
 		return exitError, err
 	}
+	defer shared.Close()
 	if err := ctx.Err(); err != nil {
 		return exitError, err
 	}
@@ -335,6 +338,7 @@ func applyCheckFixes(ctx context.Context, execution checkExecution, snapshot fix
 	if err != nil {
 		return nil, false, err
 	}
+	defer shared.Close()
 	runOptions := execution.runOptions
 	runOptions.CollectCandidates = false
 	result, err := checks.Run(ctx, shared, execution.registry, runOptions)
@@ -399,6 +403,7 @@ func (watcher *checkWatcher) run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	defer shared.Close()
 	before := watcher.session.Stats()
 	if err := ctx.Err(); err != nil {
 		return err

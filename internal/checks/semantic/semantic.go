@@ -93,7 +93,7 @@ func runContext(ctx context.Context, paths []string, registry *Plan, ssaBuilder 
 	if registry == nil {
 		return nil, fmt.Errorf("analysis registry is nil")
 	}
-	loadDirectory, patterns, targets, err := loadInputs(paths)
+	loadDirectory, patterns, targets, err := loadInputs(registry.directory, paths)
 	if err != nil {
 		return nil, err
 	}
@@ -419,17 +419,14 @@ func collectPackageFunctions(program *ssa.Program, ssaPackages []*ssa.Package) m
 	return functions
 }
 
-func loadInputs(paths []string) (string, []string, []target, error) {
+func loadInputs(directory string, paths []string) (string, []string, []target, error) {
 	if len(paths) == 0 {
 		paths = []string{
 			".",
 		}
 	}
-	cwd, err := os.Getwd()
+	cwd, err := canonicalPath(directory)
 	if err != nil {
-		return "", nil, nil, err
-	}
-	if cwd, err = canonicalPath(cwd); err != nil {
 		return "", nil, nil, err
 	}
 	type inputTarget struct {
@@ -447,6 +444,9 @@ func loadInputs(paths []string) (string, []string, []target, error) {
 				root = "."
 			}
 			path = filepath.FromSlash(root)
+		}
+		if !filepath.IsAbs(path) {
+			path = filepath.Join(cwd, path)
 		}
 		info, err := os.Stat(path)
 		if err != nil {

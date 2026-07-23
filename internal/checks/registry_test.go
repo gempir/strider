@@ -536,7 +536,7 @@ func TestUnifiedRegistryRejectsExplicitZeroOptionOnWrongCheck(t *testing.T) {
 	if err := os.WriteFile(path, []byte(contents), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	configuration, err := config.Load(path, false)
+	configuration, err := config.Load(filepath.Dir(path), path, false)
 	if err != nil {
 		t.Fatal(err)
 	}

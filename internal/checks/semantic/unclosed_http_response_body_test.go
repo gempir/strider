@@ -3,7 +3,7 @@ package semantic
 import "testing"
 
 func TestUnclosedHTTPResponseBodyChecksDirectOwnership(t *testing.T) {
-	reports := runResearchCorrectnessCheck(
+	reports := runCheckFixture(
 		t,
 		unclosedHTTPResponseBodyCheck{},
 		`package fixture
@@ -37,12 +37,12 @@ func replaced() {
 }
 `,
 	)
-	assertResearchReportCount(t, reports, 2)
-	assertResearchMessagesContain(t, reports, "HTTP response body")
+	assertReportCount(t, reports, 2)
+	assertMessagesContain(t, reports, "HTTP response body")
 }
 
 func TestUnclosedHTTPResponseBodyLeavesAliasesToOwnershipAnalysis(t *testing.T) {
-	reports := runResearchCorrectnessCheck(
+	reports := runCheckFixture(
 		t,
 		unclosedHTTPResponseBodyCheck{},
 		`package fixture
@@ -58,11 +58,11 @@ func alias(url string) error {
 }
 `,
 	)
-	assertResearchReportCount(t, reports, 0)
+	assertReportCount(t, reports, 0)
 }
 
 func TestUnclosedHTTPResponseBodyTracksNamedResultOwnership(t *testing.T) {
-	reports := runResearchCorrectnessCheck(
+	reports := runCheckFixture(
 		t,
 		unclosedHTTPResponseBodyCheck{},
 		`package fixture
@@ -81,6 +81,6 @@ func replaced(url string) (response *http.Response, err error) {
 }
 `,
 	)
-	assertResearchReportCount(t, reports, 1)
-	assertResearchMessagesContain(t, reports, "HTTP response body")
+	assertReportCount(t, reports, 1)
+	assertMessagesContain(t, reports, "HTTP response body")
 }

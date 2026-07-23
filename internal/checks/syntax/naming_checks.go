@@ -46,7 +46,7 @@ func (a *Pass) checkRedefinesBuiltin(name cst.Token) {
 		return
 	}
 	value := name.Src()
-	if builtinIdentifiers[value] {
+	if predeclaredIdentifier(value) {
 		a.Report(name, fmt.Sprintf("identifier %s shadows a predeclared identifier", value))
 	}
 }

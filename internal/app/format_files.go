@@ -48,7 +48,6 @@ func formatFiles(ctx context.Context, files []*workspace.File, options formatter
 				}
 				file := files[index]
 				func() {
-					defer file.Release()
 					if err := workerContext.Err(); err != nil {
 						return
 					}

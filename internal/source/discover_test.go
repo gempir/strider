@@ -30,7 +30,7 @@ func TestDiscoverSkipsGeneratedAndVendor(t *testing.T) {
 	write(".cache/cached.go", "package cache\n")
 	write("_scratch/scratch.go", "package scratch\n")
 	write("notes.txt", "not go")
-	files, err := Discover([]string{
+	files, err := DiscoverFrom(root, []string{
 		root + string(filepath.Separator) + "...",
 	}, Options{
 		SkipGenerated: true,
@@ -57,7 +57,7 @@ func TestDiscoverAllowsExplicitHiddenDirectory(t *testing.T) {
 	if err := os.WriteFile(filename, []byte("package main\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	files, err := Discover([]string{
+	files, err := DiscoverFrom(root, []string{
 		hidden,
 	}, Options{})
 	if err != nil {
@@ -71,6 +71,29 @@ func TestDiscoverAllowsExplicitHiddenDirectory(t *testing.T) {
 		absolute,
 	}) {
 		t.Fatalf("got %v, want explicit hidden source %s", files, absolute)
+	}
+}
+
+func TestDiscoverFromResolvesRelativeInputsWithoutChangingProcessDirectory(t *testing.T) {
+	root := t.TempDir()
+	nested := filepath.Join(root, "nested")
+	if err := os.MkdirAll(nested, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	filename := filepath.Join(nested, "main.go")
+	if err := os.WriteFile(filename, []byte("package nested\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	files, err := DiscoverFrom(root, []string{
+		"nested",
+	}, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(files, []string{
+		filename,
+	}) {
+		t.Fatalf("DiscoverFrom returned %#v, want %q", files, filename)
 	}
 }
 

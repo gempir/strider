@@ -157,7 +157,6 @@ func TestSessionRunsPackageChecksFreshWhenDependencyChanges(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(directory, "go.mod"), []byte("module example.com/session\n\ngo 1.24\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	t.Chdir(directory)
 	dependency := filepath.Join(dependencyDirectory, "dep.go")
 	if err := os.WriteFile(dependency, []byte("package dep\ntype Value struct{}\n"), 0o600); err != nil {
 		t.Fatal(err)
@@ -170,6 +169,7 @@ func TestSessionRunsPackageChecksFreshWhenDependencyChanges(t *testing.T) {
 		Only: []string{
 			"copy-lock-value",
 		},
+		Directory: directory,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -205,6 +205,7 @@ func runCachedSession(t testingTB, cache *workspace.Cache, session *Session, fil
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer shared.Close()
 	result, err := session.Run(context.Background(), shared)
 	if err != nil {
 		t.Fatal(err)

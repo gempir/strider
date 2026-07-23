@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestAnalyzeInvalidRegexpJSONAndExitCode(t *testing.T) {
+func TestSemanticInvalidRegexpJSONAndExitCode(t *testing.T) {
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/analyzeapp\n\ngo 1.26\n"), 0o600); err != nil {
 		t.Fatal(err)
@@ -16,19 +16,8 @@ func TestAnalyzeInvalidRegexpJSONAndExitCode(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "main.go"), []byte("package sample\nimport \"regexp\"\nvar _ = regexp.MustCompile(\"[\")\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	previous, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir(root); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		restoreWorkingDirectory(t, previous)
-	})
-
 	var stdout, stderr bytes.Buffer
-	code := runCLI([]string{
+	code := runCLIFrom(root, []string{
 		"check",
 		"--format",
 		"json",
@@ -43,7 +32,7 @@ func TestAnalyzeInvalidRegexpJSONAndExitCode(t *testing.T) {
 	}
 }
 
-func TestAnalyzeListsChecks(t *testing.T) {
+func TestSemanticListsChecks(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := runCLI([]string{
 		"check",

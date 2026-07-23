@@ -321,10 +321,11 @@ var checkCatalog = []Descriptor{
 
 // Plan is an immutable selection of analysis checks.
 type Plan struct {
-	checks   []Descriptor
-	settings map[string]configuredCheck
-	root     string
-	rootSet  bool
+	checks    []Descriptor
+	settings  map[string]configuredCheck
+	root      string
+	rootSet   bool
+	directory string
 }
 
 type configuredCheck struct {
@@ -447,11 +448,15 @@ func Catalog() []Descriptor {
 
 // NewPlan prepares semantic execution from already-selected, schema-bound
 // checks. It deliberately has no selection or configuration policy.
-func NewPlan(selected []SelectedCheck, root string, rootSet bool) *Plan {
+func NewPlan(selected []SelectedCheck, root string, rootSet bool, directory ...string) *Plan {
 	registry := &Plan{
-		settings: make(map[string]configuredCheck, len(selected)),
-		root:     source.ResolveRoot(root),
-		rootSet:  rootSet,
+		settings:  make(map[string]configuredCheck, len(selected)),
+		root:      source.ResolveRoot(root),
+		rootSet:   rootSet,
+		directory: ".",
+	}
+	if len(directory) != 0 && directory[0] != "" {
+		registry.directory = source.ResolveRoot(directory[0])
 	}
 	for _, item := range selected {
 		meta := item.Check.Meta()

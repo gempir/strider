@@ -23,19 +23,9 @@ func TestCheckCombinesFormattingSyntaxAndPackageChecks(t *testing.T) {
 	if err := os.WriteFile(filename, original, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	previous, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir(root); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		restoreWorkingDirectory(t, previous)
-	})
-
 	var stdout, stderr bytes.Buffer
-	code := runCLI(
+	code := runCLIFrom(
+		root,
 		[]string{
 			"--no-config",
 			"check",

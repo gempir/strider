@@ -381,37 +381,26 @@ severity = "none"
 	if err := os.WriteFile(filename, []byte("package p\nimport \"regexp\"\nfunc init() { regexp.MustCompile(\"[\") }\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	previous, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir(root); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		restoreWorkingDirectory(t, previous)
-	})
-
 	var stdout, stderr bytes.Buffer
-	code := runCLI([]string{
+	code := runCLIFrom(root, []string{
 		"check",
 		"--only",
 		"no-init",
 		filename,
 	}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitFindings || !strings.Contains(stdout.String(), "no-init:") {
-		t.Fatalf("lint exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+		t.Fatalf("check exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 	stdout.Reset()
 	stderr.Reset()
-	code = runCLI([]string{
+	code = runCLIFrom(root, []string{
 		"check",
 		"--only",
 		"invalid-regexp",
 		filename,
 	}, strings.NewReader(""), &stdout, &stderr)
 	if code != exitSuccess || stdout.String() != "0 issues\n" {
-		t.Fatalf("analyze exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+		t.Fatalf("semantic exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
 	}
 	stdout.Reset()
 	stderr.Reset()

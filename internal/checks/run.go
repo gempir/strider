@@ -207,7 +207,6 @@ dispatch:
 
 func runConcreteFile(ctx context.Context, file *workspace.File, registry *Registry, session *formatter.Formatter, formatOptions formatter.Options, collectCandidate bool) fileResult {
 	filename := file.Path()
-	defer file.Release()
 	if err := ctx.Err(); err != nil {
 		return fileResult{
 			filename: filename,

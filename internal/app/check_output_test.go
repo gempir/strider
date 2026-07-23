@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestLintJSONAndExitCode(t *testing.T) {
+func TestCheckJSONAndExitCode(t *testing.T) {
 	root := t.TempDir()
 	filename := filepath.Join(root, "main.go")
 	if err := os.WriteFile(filename, []byte("package p\nfunc init() {}\n"), 0o600); err != nil {
@@ -33,7 +33,7 @@ func TestLintJSONAndExitCode(t *testing.T) {
 	}
 }
 
-func TestLintHTMLAndExitCode(t *testing.T) {
+func TestCheckHTMLAndExitCode(t *testing.T) {
 	root := t.TempDir()
 	filename := filepath.Join(root, "main.go")
 	if err := os.WriteFile(filename, []byte("package p\nfunc init() {}\n"), 0o600); err != nil {
@@ -65,23 +65,13 @@ func TestLintHTMLAndExitCode(t *testing.T) {
 	}
 }
 
-func TestLintWithoutPathsScansCurrentDirectory(t *testing.T) {
+func TestCheckWithoutPathsScansCurrentDirectory(t *testing.T) {
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "main.go"), []byte("package p\nfunc init() {}\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	previous, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir(root); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		restoreWorkingDirectory(t, previous)
-	})
 	var stdout, stderr bytes.Buffer
-	code := runCLI([]string{
+	code := runCLIFrom(root, []string{
 		"check",
 		"--minimum-severity",
 		"note",
@@ -93,7 +83,7 @@ func TestLintWithoutPathsScansCurrentDirectory(t *testing.T) {
 	}
 }
 
-func TestLintListsCompleteRegistry(t *testing.T) {
+func TestCheckListsCompleteRegistry(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := runCLI([]string{
 		"check",

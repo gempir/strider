@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 
 	"github.com/gempir/strider/internal/cst"
 )
@@ -222,7 +223,7 @@ func (a *Pass) checkErrorMessage(arguments []cst.Node) {
 	if err != nil || value == "" {
 		return
 	}
-	first, _ := utf8Decode(value)
+	first, _ := utf8.DecodeRuneInString(value)
 	badEnd := strings.HasSuffix(value, ".") || strings.HasSuffix(value, ":") || strings.HasSuffix(value, "!") || strings.HasSuffix(value, "\n")
 	if unicode.IsUpper(first) || badEnd {
 		a.Report(literal, "error string should not be capitalized or end with punctuation")

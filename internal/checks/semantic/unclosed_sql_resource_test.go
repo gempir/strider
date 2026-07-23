@@ -3,7 +3,7 @@ package semantic
 import "testing"
 
 func TestUnclosedSQLResourceChecksDirectOwnership(t *testing.T) {
-	reports := runResearchCorrectnessCheck(
+	reports := runCheckFixture(
 		t,
 		unclosedSQLResourceCheck{},
 		`package fixture
@@ -37,12 +37,12 @@ func replaced(database *sql.DB) {
 }
 `,
 	)
-	assertResearchReportCount(t, reports, 2)
-	assertResearchMessagesContain(t, reports, "sql.")
+	assertReportCount(t, reports, 2)
+	assertMessagesContain(t, reports, "sql.")
 }
 
 func TestUnclosedSQLResourceLeavesAliasesToOwnershipAnalysis(t *testing.T) {
-	reports := runResearchCorrectnessCheck(
+	reports := runCheckFixture(
 		t,
 		unclosedSQLResourceCheck{},
 		`package fixture
@@ -58,11 +58,11 @@ func alias(database *sql.DB) error {
 }
 `,
 	)
-	assertResearchReportCount(t, reports, 0)
+	assertReportCount(t, reports, 0)
 }
 
 func TestUnclosedSQLResourceTracksNamedResultOwnership(t *testing.T) {
-	reports := runResearchCorrectnessCheck(
+	reports := runCheckFixture(
 		t,
 		unclosedSQLResourceCheck{},
 		`package fixture
@@ -81,6 +81,6 @@ func replaced(database *sql.DB) (rows *sql.Rows, err error) {
 }
 `,
 	)
-	assertResearchReportCount(t, reports, 1)
-	assertResearchMessagesContain(t, reports, "sql.")
+	assertReportCount(t, reports, 1)
+	assertMessagesContain(t, reports, "sql.")
 }

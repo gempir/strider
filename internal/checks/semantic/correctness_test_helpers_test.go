@@ -16,12 +16,12 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 )
 
-type researchCorrectnessReport struct {
+type checkReport struct {
 	position token.Position
 	message  string
 }
 
-func runResearchCorrectnessCheck(t *testing.T, check Check, source string) []researchCorrectnessReport {
+func runCheckFixture(t *testing.T, check Check, source string) []checkReport {
 	t.Helper()
 	fileSet := token.NewFileSet()
 	file, err := parser.ParseFile(fileSet, "fixture.go", source, parser.SkipObjectResolution)
@@ -33,7 +33,7 @@ func runResearchCorrectnessCheck(t *testing.T, check Check, source string) []res
 			Importer: importer.Default(),
 		},
 		fileSet,
-		types.NewPackage("example.com/researchfixture", "fixture"),
+		types.NewPackage("example.com/checkfixture", "fixture"),
 		[]*ast.File{
 			file,
 		},
@@ -42,9 +42,9 @@ func runResearchCorrectnessCheck(t *testing.T, check Check, source string) []res
 	if err != nil {
 		t.Fatal(err)
 	}
-	reports := make([]researchCorrectnessReport, 0)
+	reports := make([]checkReport, 0)
 	pass := &Pass{
-		PackagePath: "example.com/researchfixture",
+		PackagePath: "example.com/checkfixture",
 		Files: []*ast.File{
 			file,
 		},
@@ -59,7 +59,7 @@ func runResearchCorrectnessCheck(t *testing.T, check Check, source string) []res
 		})[ssaPackage],
 	}
 	pass.report = func(start, _ token.Pos, message string, _ []diagnostic.Fix) {
-		reports = append(reports, researchCorrectnessReport{
+		reports = append(reports, checkReport{
 			position: fileSet.Position(start),
 			message:  message,
 		})
@@ -68,7 +68,7 @@ func runResearchCorrectnessCheck(t *testing.T, check Check, source string) []res
 	return reports
 }
 
-func assertResearchReportCount(t *testing.T, reports []researchCorrectnessReport, want int) {
+func assertReportCount(t *testing.T, reports []checkReport, want int) {
 	t.Helper()
 	if len(reports) == want {
 		return
@@ -76,7 +76,7 @@ func assertResearchReportCount(t *testing.T, reports []researchCorrectnessReport
 	t.Fatalf("got %d reports, want %d: %#v", len(reports), want, reports)
 }
 
-func assertResearchMessagesContain(t *testing.T, reports []researchCorrectnessReport, fragment string) {
+func assertMessagesContain(t *testing.T, reports []checkReport, fragment string) {
 	t.Helper()
 	for _, report := range reports {
 		if !strings.Contains(report.message, fragment) {

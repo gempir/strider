@@ -41,7 +41,7 @@ func TestEveryAnalyzerAcceptsCommonConfiguration(t *testing.T) {
 	}
 }
 
-func TestAnalyzerRegistryFiltersByEffectiveSeverityBeforePlanning(t *testing.T) {
+func TestSemanticRegistryFiltersByEffectiveSeverityBeforePlanning(t *testing.T) {
 	registry, err := NewRegistry(
 		RegistryOptions{
 			Only: []string{
@@ -97,7 +97,7 @@ func TestAnalyzerRegistryFiltersByEffectiveSeverityBeforePlanning(t *testing.T) 
 	}
 }
 
-func TestAnalyzerRegistryRejectsInvalidMinimumSeverity(t *testing.T) {
+func TestSemanticRegistryRejectsInvalidMinimumSeverity(t *testing.T) {
 	_, err := NewRegistry(RegistryOptions{
 		MinimumSeverity: "fatal",
 	})
@@ -116,7 +116,7 @@ func TestAnalyzerRegistryRejectsInvalidMinimumSeverity(t *testing.T) {
 	}
 }
 
-func TestAnalyzerRegistrySkipsLoadingWhenSeverityFilterIsEmpty(t *testing.T) {
+func TestSemanticRegistrySkipsLoadingWhenSeverityFilterIsEmpty(t *testing.T) {
 	registry, err := NewRegistry(
 		RegistryOptions{
 			Only: []string{

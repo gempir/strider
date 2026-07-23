@@ -94,3 +94,14 @@ func TestModulePathCacheReusesNegativeLookup(t *testing.T) {
 		t.Fatalf("cached module path = %q, want empty", got)
 	}
 }
+
+func TestModulePathInParsesQuotedDirective(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("// module ignored.example\nmodule \"example.com/quoted\"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	path, found := modulePathIn(root)
+	if !found || path != "example.com/quoted" {
+		t.Fatalf("modulePathIn = %q, %t; want parsed quoted module path", path, found)
+	}
+}

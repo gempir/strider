@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"sort"
 
@@ -40,6 +41,15 @@ type checkListEntry struct {
 }
 
 func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+	directory, err := os.Getwd()
+	if err != nil {
+		printError(stderr, ui.ColorAuto, "strider", err)
+		return exitError
+	}
+	return runFrom(ctx, directory, args, stdin, stdout, stderr)
+}
+
+func runFrom(ctx context.Context, directory string, args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -61,7 +71,7 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 	}
 	switch args[0] {
 	case "check":
-		configuration, err := config.Load(globals.configPath, globals.noConfig)
+		configuration, err := config.Load(directory, globals.configPath, globals.noConfig)
 		if err != nil {
 			printError(stderr, colorMode, "strider", err)
 			return exitError
@@ -69,7 +79,7 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 		colorMode = configuredColor(configuration, globals)
 		return runCheck(ctx, args[1:], configuration, colorMode, stdout, stderr)
 	case "fmt", "format":
-		configuration, err := config.Load(globals.configPath, globals.noConfig)
+		configuration, err := config.Load(directory, globals.configPath, globals.noConfig)
 		if err != nil {
 			printError(stderr, colorMode, "strider", err)
 			return exitError

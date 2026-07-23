@@ -3,7 +3,7 @@ package semantic
 import "testing"
 
 func TestNilValueWithNilErrorReportsOnlyPayloadFunctions(t *testing.T) {
-	reports := runResearchCorrectnessCheck(
+	reports := runCheckFixture(
 		t,
 		nilValueWithNilErrorCheck{},
 		`package fixture
@@ -19,6 +19,6 @@ type missingError struct{}
 func (missingError) Error() string { return "missing" }
 `,
 	)
-	assertResearchReportCount(t, reports, 1)
-	assertResearchMessagesContain(t, reports, "nil payload")
+	assertReportCount(t, reports, 1)
+	assertMessagesContain(t, reports, "nil payload")
 }

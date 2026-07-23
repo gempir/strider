@@ -34,18 +34,8 @@ func TestFormatWithoutPathsScansCurrentDirectory(t *testing.T) {
 	if err := os.WriteFile(filename, []byte("package p\nfunc F( ){return}\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	previous, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir(root); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		restoreWorkingDirectory(t, previous)
-	})
 	var stdout, stderr bytes.Buffer
-	if code := runCLI([]string{
+	if code := runCLIFrom(root, []string{
 		"fmt",
 		"--check",
 	}, strings.NewReader("ignored stdin"), &stdout, &stderr); code != exitFindings {

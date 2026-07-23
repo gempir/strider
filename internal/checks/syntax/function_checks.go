@@ -150,7 +150,7 @@ func (a *Pass) checkUnexportedReturn(facts *functionFacts) {
 	for _, result := range resultDecls(facts.signature.Result) {
 		typeName := cst.Spelling(result.TypeNode)
 		base := strings.TrimLeft(typeName, "*[]")
-		if identifierName(base) && base != "error" && !token.IsExported(base) && !builtinType(base) {
+		if token.IsIdentifier(base) && base != "error" && !token.IsExported(base) && !predeclaredIdentifier(base) {
 			a.Report(result.TypeNode, "exported function returns an unexported type")
 		}
 	}

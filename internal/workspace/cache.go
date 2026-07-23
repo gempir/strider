@@ -143,7 +143,7 @@ func (cache *Cache) Open(paths []string, options Options) (*Workspace, error) {
 			".",
 		}
 	}
-	filenames, err := source.Discover(inputs, source.Options{})
+	filenames, err := source.DiscoverFrom(options.Directory, inputs, source.Options{})
 	if err != nil {
 		return nil, err
 	}

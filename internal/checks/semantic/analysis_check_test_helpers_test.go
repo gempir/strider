@@ -18,9 +18,6 @@ func runStandaloneAnalysisCheck(t *testing.T, root string, check Check) []diagno
 				severity: meta.DefaultSeverity,
 			},
 		},
-		knownCodes: map[string]bool{
-			meta.Code: true,
-		},
 	}
 	diagnostics, err := Run([]string{
 		root,

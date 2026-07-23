@@ -139,11 +139,10 @@ var checkCatalog = []Check{
 
 // Registry is an immutable selection of analysis checks.
 type Registry struct {
-	checks     []Check
-	settings   map[string]configuredCheck
-	knownCodes map[string]bool
-	root       string
-	rootSet    bool
+	checks   []Check
+	settings map[string]configuredCheck
+	root     string
+	rootSet  bool
 }
 
 type configuredCheck struct {
@@ -236,10 +235,9 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 		return nil, err
 	}
 	registry := &Registry{
-		settings:   make(map[string]configuredCheck, len(all)),
-		knownCodes: selection.KnownCodes,
-		root:       source.ResolveRoot(options.Root),
-		rootSet:    options.Root != "",
+		settings: make(map[string]configuredCheck, len(all)),
+		root:     source.ResolveRoot(options.Root),
+		rootSet:  options.Root != "",
 	}
 	for _, check := range selection.Checks {
 		meta := check.Meta()
@@ -266,35 +264,6 @@ func (registry *Registry) Excluded(code, filename string) bool {
 // Checks returns a copy of the selected checks.
 func (registry *Registry) Checks() []Check {
 	return append([]Check(nil), registry.checks...)
-}
-
-// KnownCodes returns every package-aware check code, including checks that are
-// disabled or below the current severity threshold.
-func (registry *Registry) KnownCodes() map[string]bool {
-	if registry == nil {
-		return nil
-	}
-	result := make(map[string]bool, len(registry.knownCodes))
-	for code := range registry.knownCodes {
-		result[code] = true
-	}
-	return result
-}
-
-// UsesSSA reports whether code requires the SSA capability.
-func UsesSSA(code string) bool {
-	requirements, ok := RequirementsFor(code)
-	return ok && requirements.Stage == AnalysisStageSSA
-}
-
-// RequirementsFor returns the colocated requirements for code.
-func RequirementsFor(code string) (Requirements, bool) {
-	for _, check := range checkCatalog {
-		if strings.EqualFold(check.Meta().Code, code) {
-			return check.Requirements(), true
-		}
-	}
-	return Requirements{}, false
 }
 
 func allChecks() []Check {

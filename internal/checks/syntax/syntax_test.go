@@ -1,7 +1,6 @@
 package syntax
 
 import (
-	"go/token"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -18,6 +17,40 @@ import (
 
 func intPointer(value int) *int {
 	return &value
+}
+
+func NewRegistry(only []string) (*Registry, error) {
+	return NewRegistryConfigured(only, nil, "")
+}
+
+func NewRegistryConfigured(only []string, settings map[string]config.CheckConfig, root string) (*Registry, error) {
+	return NewRegistryWithOptions(RegistryOptions{
+		Only:            only,
+		Settings:        settings,
+		Root:            root,
+		MinimumSeverity: diagnostic.SeverityNote,
+	})
+}
+
+// Run is a test-only adapter over the production AnalyzeTree boundary.
+func Run(files []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
+	diagnostics := []diagnostic.Diagnostic{}
+	for _, filename := range files {
+		if !registry.Applies(filename) {
+			continue
+		}
+		contents, err := os.ReadFile(filename)
+		if err != nil {
+			return nil, err
+		}
+		tree, err := cst.Parse(filename, contents)
+		if err != nil {
+			return nil, err
+		}
+		diagnostics = append(diagnostics, AnalyzeTree(filename, tree, registry)...)
+	}
+	diagnostic.Sort(diagnostics)
+	return diagnostics, nil
 }
 
 func TestInitialChecks(t *testing.T) {
@@ -1226,20 +1259,6 @@ func TestLintCheckConfigurationCanExcludePaths(t *testing.T) {
 	}
 }
 
-func TestRunWithoutFilesReturnsEmptyDiagnostics(t *testing.T) {
-	registry, err := NewRegistry(nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	diagnostics, err := Run(nil, registry)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if diagnostics == nil || len(diagnostics) != 0 {
-		t.Fatalf("got %#v, want a non-nil empty diagnostics slice", diagnostics)
-	}
-}
-
 func TestExtendedNativeChecksReportRepresentativeFindings(t *testing.T) {
 	source := `// Package sample demonstrates compatibility checks.
 package sample
@@ -1406,64 +1425,5 @@ func BenchmarkLint(b *testing.B) {
 		}, registry); err != nil {
 			b.Fatal(err)
 		}
-	}
-}
-
-func TestAnalyzeTreeMatchesFileRun(t *testing.T) {
-	filename := writeFixture(t, "package p\nfunc init() {}\n")
-	registry, err := NewRegistry([]string{
-		"no-init",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	contents, err := os.ReadFile(filename)
-	if err != nil {
-		t.Fatal(err)
-	}
-	tree, err := cst.Parse(filename, contents)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fromTree := AnalyzeTree(filename, tree, registry)
-	fromFile, err := Run([]string{
-		filename,
-	}, registry)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(fromTree, fromFile) {
-		t.Fatalf("tree diagnostics %#v differ from file diagnostics %#v", fromTree, fromFile)
-	}
-}
-
-func TestSortDiagnosticsUsesEndOffsetAsTieBreaker(t *testing.T) {
-	diagnostics := []diagnostic.Diagnostic{
-		{
-			File:    "main.go",
-			Code:    "example",
-			Message: "same",
-			Start: token.Position{
-				Offset: 10,
-			},
-			End: token.Position{
-				Offset: 30,
-			},
-		},
-		{
-			File:    "main.go",
-			Code:    "example",
-			Message: "same",
-			Start: token.Position{
-				Offset: 10,
-			},
-			End: token.Position{
-				Offset: 20,
-			},
-		},
-	}
-	sortDiagnostics(diagnostics)
-	if diagnostics[0].End.Offset != 20 || diagnostics[1].End.Offset != 30 {
-		t.Fatalf("diagnostics not totally ordered by range: %#v", diagnostics)
 	}
 }

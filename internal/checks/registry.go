@@ -47,9 +47,9 @@ func NewRegistry(options RegistryOptions) (*Registry, error) {
 	if err != nil {
 		return nil, err
 	}
-	settings := make(map[string]config.CheckConfig, len(options.Settings)+1)
-	for code, setting := range options.Settings {
-		settings[strings.ToLower(code)] = setting
+	settings, err := config.NormalizeCheckSettings(options.Settings)
+	if err != nil {
+		return nil, err
 	}
 	formatSetting := settings[formatMeta.Code]
 	formatSetting.Excludes = append(append([]string(nil), options.FormatExcludes...), formatSetting.Excludes...)
@@ -212,18 +212,6 @@ func (registry *Registry) KnownCodes() map[string]bool {
 		result[code] = true
 	}
 	return result
-}
-
-// Capabilities returns the union required by the selected checks.
-func (registry *Registry) Capabilities() Capability {
-	if registry == nil {
-		return 0
-	}
-	var capabilities Capability
-	for _, check := range registry.checks {
-		capabilities |= check.Meta().Capabilities
-	}
-	return capabilities
 }
 
 func (registry *Registry) Severity(code string) diagnostic.Severity {

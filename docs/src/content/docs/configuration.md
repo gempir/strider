@@ -174,8 +174,8 @@ Tool-wide settings live under `[check]`.
 | `excludes` | string list | `[]` | Suppress diagnostics and fixes in matching files for all checks while retaining them for package analysis. |
 | `baseline` | string | unset | Apply this baseline unless the CLI overrides or ignores it. Relative paths resolve from `strider.toml`. |
 | `minimum-severity` | string | `"warning"` | Run only checks whose effective severity is at least `"none"`, `"note"`, `"warning"`, or `"error"`. |
-All 207 checks are eligible. The default warning floor runs the 191 checks whose
-effective severity is warning or error. `strider check --minimum-severity note`
+The default warning floor runs checks whose effective severity is warning or
+error. `strider check --minimum-severity note`
 also runs note checks, while `strider check --minimum-severity none` additionally
 runs checks configured with severity `none`.
 

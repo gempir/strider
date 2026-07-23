@@ -43,8 +43,8 @@ Long options always require two dashes. Every option also has a scoped
 one-character alias, such as `-s warning` for `--minimum-severity warning` and
 `-w` for `--watch`.
 
-All 207 checks are eligible. The default warning severity floor runs the 191
-warning and error checks; use `--minimum-severity note` to include notes too.
+The default warning severity floor runs warning and error checks; use
+`--minimum-severity note` to include notes too.
 Checks configured with `severity = "none"` are suppressed unless the command
 uses `--minimum-severity none`. `--only` selects exactly the named codes and
 avoids building program information that those checks do not need.

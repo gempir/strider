@@ -153,6 +153,47 @@ func TestUnifiedRegistryExplicitSelectionIsCaseInsensitive(t *testing.T) {
 	}
 }
 
+func TestUnifiedRegistryNormalizesSettingsAndRejectsDuplicateSpellings(t *testing.T) {
+	registry, err := NewRegistry(RegistryOptions{
+		Only: []string{
+			"NO-INIT",
+		},
+		Settings: map[string]config.CheckConfig{
+			"No-InIt": {
+				Severity: "error",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := registry.Severity("NO-INIT"); got != diagnostic.SeverityError {
+		t.Fatalf("normalized severity = %s, want error", got)
+	}
+
+	_, err = NewRegistry(RegistryOptions{
+		Settings: map[string]config.CheckConfig{
+			"format":  {},
+			"FORMAT":  {},
+			"no-init": {},
+			"NO-INIT": {},
+		},
+	})
+	if err == nil || err.Error() != `duplicate case-insensitive check setting(s): "FORMAT", "format"; "NO-INIT", "no-init"` {
+		t.Fatalf("got %v, want sorted duplicate-setting error", err)
+	}
+
+	_, err = NewRegistry(RegistryOptions{
+		Only: []string{
+			"format",
+			"FORMAT",
+		},
+	})
+	if err == nil || !strings.Contains(err.Error(), `duplicate case-insensitive check selection(s): "FORMAT", "format"`) {
+		t.Fatalf("got %v, want duplicate-selection error", err)
+	}
+}
+
 func TestUnifiedRegistryCapabilitiesAvoidPackageLoadingForCSTChecks(t *testing.T) {
 	registry, err := NewRegistry(RegistryOptions{
 		Only: []string{
@@ -170,7 +211,7 @@ func TestUnifiedRegistryCapabilitiesAvoidPackageLoadingForCSTChecks(t *testing.T
 	}
 }
 
-func TestUnifiedRegistryFiltersEffectiveSeverityBeforeCapabilities(t *testing.T) {
+func TestUnifiedRegistryFiltersEffectiveSeverityBeforeConstruction(t *testing.T) {
 	registry, err := NewRegistry(
 		RegistryOptions{
 			Only: []string{
@@ -203,8 +244,8 @@ func TestUnifiedRegistryFiltersEffectiveSeverityBeforeCapabilities(t *testing.T)
 	if got := len(checks); got != 2 || checks[0].Meta().Code != "invalid-template" || checks[1].Meta().Code != "no-init" {
 		t.Fatalf("filtered checks = %#v, want invalid-template and no-init", checks)
 	}
-	if capabilities := registry.Capabilities(); capabilities&CapabilitySSA != 0 {
-		t.Fatalf("filtered SSA check still affected capabilities: %d", capabilities)
+	if registry.semantic == nil || len(registry.semantic.Checks()) != 1 || registry.semantic.Checks()[0].Meta().Code != "invalid-template" {
+		t.Fatal("filtered SSA check was still constructed")
 	}
 	if registry.Severity("no-init") != diagnostic.SeverityError {
 		t.Fatal("configured severity was not applied before filtering")

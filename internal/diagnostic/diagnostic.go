@@ -2,7 +2,11 @@
 // source-code engines.
 package diagnostic
 
-import "go/token"
+import (
+	"cmp"
+	"go/token"
+	"slices"
+)
 
 const (
 	SeverityNone    Severity = "none"
@@ -84,6 +88,31 @@ func severityRank(severity Severity) uint8 {
 	default:
 		return 0
 	}
+}
+
+// Compare orders diagnostics by their complete stable presentation key.
+func Compare(left, right Diagnostic) int {
+	if result := cmp.Compare(left.File, right.File); result != 0 {
+		return result
+	}
+	if result := cmp.Compare(left.Start.Offset, right.Start.Offset); result != 0 {
+		return result
+	}
+	if result := cmp.Compare(left.Code, right.Code); result != 0 {
+		return result
+	}
+	if result := cmp.Compare(left.Message, right.Message); result != 0 {
+		return result
+	}
+	if result := cmp.Compare(left.End.Offset, right.End.Offset); result != 0 {
+		return result
+	}
+	return cmp.Compare(left.Severity, right.Severity)
+}
+
+// Sort applies the canonical deterministic diagnostic order.
+func Sort(diagnostics []Diagnostic) {
+	slices.SortStableFunc(diagnostics, Compare)
 }
 
 // ValidSafety reports whether safety is one of Strider's supported automatic

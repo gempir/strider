@@ -95,7 +95,7 @@ func (session *Session) Run(shared *workspace.Workspace) (Result, error) {
 		return Result{}, err
 	}
 	filterExcludedResults(&result, session.options.Root, session.options.Excludes)
-	sortDiagnostics(result.Diagnostics)
+	diagnostic.Sort(result.Diagnostics)
 	if result.Diagnostics == nil {
 		result.Diagnostics = []diagnostic.Diagnostic{}
 	}
@@ -113,18 +113,6 @@ func (session *Session) Stats() SessionStats {
 		ConcreteHits:   session.hits,
 		ConcreteMisses: session.misses,
 	}
-}
-
-// Invalidate drops all results retained for future generations.
-func (session *Session) Invalidate() {
-	if session == nil {
-		return
-	}
-	session.mu.Lock()
-	defer session.mu.Unlock()
-	session.hasConcrete = false
-	session.concreteKey = [sha256.Size]byte{}
-	session.concrete = Result{}
 }
 
 func concreteFingerprint(shared *workspace.Workspace, includeFormatterContext bool) ([sha256.Size]byte, error) {

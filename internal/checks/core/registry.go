@@ -50,36 +50,46 @@ func Select[T Check](options SelectionOptions[T]) (Selection[T], error) {
 		knownCodes[check.Meta().Code] = true
 	}
 
-	settings := make(map[string]config.CheckConfig, len(options.Settings))
+	settings, err := config.NormalizeCheckSettings(options.Settings)
+	if err != nil {
+		return Selection[T]{}, err
+	}
 	unknown := make([]string, 0)
-	for code, setting := range options.Settings {
+	settingCodes := make([]string, 0, len(settings))
+	for code := range settings {
+		settingCodes = append(settingCodes, code)
+	}
+	sort.Strings(settingCodes)
+	for _, code := range settingCodes {
+		setting := settings[code]
 		if setting.Severity != "" && !diagnostic.ValidSeverity(diagnostic.Severity(setting.Severity)) {
 			return Selection[T]{}, fmt.Errorf("check %q severity must be none, note, warning, or error", code)
 		}
-		normalized := strings.ToLower(code)
-		if _, ok := byCode[normalized]; !ok {
+		if _, ok := byCode[code]; !ok {
 			unknown = append(unknown, code)
 			continue
 		}
-		if err := ValidateOptions(byCode[normalized].Meta(), setting); err != nil {
+		if err := ValidateOptions(byCode[code].Meta(), setting); err != nil {
 			return Selection[T]{}, err
 		}
 		if options.Validate != nil {
-			if err := options.Validate(byCode[normalized].Meta().Code, setting); err != nil {
+			if err := options.Validate(byCode[code].Meta().Code, setting); err != nil {
 				return Selection[T]{}, err
 			}
 		}
-		settings[normalized] = setting
 	}
 
-	wanted := make(map[string]bool, len(options.Only))
-	for _, code := range options.Only {
-		normalized := strings.ToLower(code)
-		if _, ok := byCode[normalized]; !ok {
+	only, err := config.NormalizeCheckCodes(options.Only)
+	if err != nil {
+		return Selection[T]{}, err
+	}
+	wanted := make(map[string]bool, len(only))
+	for _, code := range only {
+		if _, ok := byCode[code]; !ok {
 			unknown = append(unknown, code)
 			continue
 		}
-		wanted[normalized] = true
+		wanted[code] = true
 	}
 	if len(unknown) != 0 {
 		sort.Strings(unknown)

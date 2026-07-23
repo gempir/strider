@@ -65,7 +65,7 @@ func Run(shared *workspace.Workspace, registry *Registry, options RunOptions) (R
 		return Result{}, err
 	}
 	filterExcludedResults(&result, options.Root, options.Excludes)
-	sortDiagnostics(result.Diagnostics)
+	diagnostic.Sort(result.Diagnostics)
 	if result.Diagnostics == nil {
 		result.Diagnostics = []diagnostic.Diagnostic{}
 	}
@@ -241,30 +241,4 @@ func formatDiagnostic(root, filename string, severity diagnostic.Severity) diagn
 			},
 		},
 	}
-}
-
-func sortDiagnostics(diagnostics []diagnostic.Diagnostic) {
-	sort.SliceStable(
-		diagnostics,
-		func(leftIndex, rightIndex int) bool {
-			left := diagnostics[leftIndex]
-			right := diagnostics[rightIndex]
-			if left.File != right.File {
-				return left.File < right.File
-			}
-			if left.Start.Offset != right.Start.Offset {
-				return left.Start.Offset < right.Start.Offset
-			}
-			if left.Code != right.Code {
-				return left.Code < right.Code
-			}
-			if left.Message != right.Message {
-				return left.Message < right.Message
-			}
-			if left.End.Offset != right.End.Offset {
-				return left.End.Offset < right.End.Offset
-			}
-			return left.Severity < right.Severity
-		},
-	)
 }

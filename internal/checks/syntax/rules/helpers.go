@@ -139,13 +139,6 @@ func legacyBuildTerms(text string) []string {
 	return terms
 }
 
-func commentDirective(text string) bool {
-	return strings.HasPrefix(text, "go:") || strings.HasPrefix(text, "line ") || strings.HasPrefix(text, "+build") || strings.HasPrefix(text, "nolint") || strings.HasPrefix(
-		text,
-		"strider:",
-	) || strings.HasPrefix(text, "Code generated") || strings.HasPrefix(text, "TODO") || strings.HasPrefix(text, "FIXME") || strings.HasPrefix(text, "#")
-}
-
 func parseStructTagValues(value string) (map[string][]string, bool) {
 	tags := make(map[string][]string)
 	for value != "" {

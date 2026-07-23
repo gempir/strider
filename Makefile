@@ -9,11 +9,27 @@ build:
 install: build
 	mv ./strider ~/.local/bin/strider
 
+verify: check test vet unused-check
+
 test:
 	go test ./...
 
+vet:
+	go vet ./...
+
 check:
 	go run cmd/strider/main.go check
+
+unused-check:
+	@output="$$(go run golang.org/x/tools/cmd/deadcode@v0.48.0 -test ./...)"; \
+	if [ -n "$$output" ]; then \
+		printf '%s\n' "$$output"; \
+		exit 1; \
+	fi
+
+dependency-check:
+	go mod verify
+	go mod tidy -diff
 
 corpus-check: build
 	go run ./scripts/corpus --mode check --strider "$(STRIDER)" $(CORPUS_FLAGS)

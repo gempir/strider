@@ -4,11 +4,8 @@ package syntax
 import (
 	"bytes"
 	"fmt"
-	"os"
-	"runtime"
 	"sort"
 	"strings"
-	"sync"
 
 	"github.com/gempir/strider/internal/checks/core"
 	builtinchecks "github.com/gempir/strider/internal/checks/syntax/rules"
@@ -20,10 +17,9 @@ import (
 )
 
 type Registry struct {
-	checks     []builtinchecks.Check
-	settings   map[string]configuredCheck
-	knownCodes map[string]bool
-	root       string
+	checks   []builtinchecks.Check
+	settings map[string]configuredCheck
+	root     string
 }
 
 type configuredCheck struct {
@@ -55,26 +51,6 @@ type concreteSuppression struct {
 	codes map[string]bool
 }
 
-type fileResult struct {
-	filename    string
-	diagnostics []diagnostic.Diagnostic
-	err         error
-}
-
-func NewRegistry(only []string) (*Registry, error) {
-	return NewRegistryConfigured(only, nil, "")
-}
-
-// NewRegistryConfigured applies project check settings.
-func NewRegistryConfigured(only []string, settings map[string]config.CheckConfig, root string) (*Registry, error) {
-	return NewRegistryWithOptions(RegistryOptions{
-		Only:            only,
-		Settings:        settings,
-		Root:            root,
-		MinimumSeverity: diagnostic.SeverityNote,
-	})
-}
-
 // NewRegistryWithOptions applies project settings and a minimum effective
 // severity. Explicit selection never bypasses the severity threshold.
 func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
@@ -95,9 +71,8 @@ func NewRegistryWithOptions(options RegistryOptions) (*Registry, error) {
 		return nil, err
 	}
 	registry := &Registry{
-		settings:   make(map[string]configuredCheck, len(all)),
-		knownCodes: selection.KnownCodes,
-		root:       source.ResolveRoot(options.Root),
+		settings: make(map[string]configuredCheck, len(all)),
+		root:     source.ResolveRoot(options.Root),
 	}
 	for _, check := range selection.Checks {
 		meta := check.Meta()
@@ -135,19 +110,6 @@ func validateConfiguredCheck(code string, setting config.CheckConfig) error {
 
 func (r *Registry) Checks() []builtinchecks.Check {
 	return append([]builtinchecks.Check(nil), r.checks...)
-}
-
-// KnownCodes returns every concrete-syntax check code, including checks that
-// are disabled or below the current severity threshold.
-func (r *Registry) KnownCodes() map[string]bool {
-	if r == nil {
-		return nil
-	}
-	result := make(map[string]bool, len(r.knownCodes))
-	for code := range r.knownCodes {
-		result[code] = true
-	}
-	return result
 }
 
 func (r *Registry) Severity(code string) diagnostic.Severity {
@@ -213,107 +175,6 @@ func (r *Registry) Applies(filename string) bool {
 		}
 	}
 	return false
-}
-
-func Run(files []string, registry *Registry) ([]diagnostic.Diagnostic, error) {
-	if len(files) == 0 {
-		return []diagnostic.Diagnostic{}, nil
-	}
-	if len(files) == 1 {
-		diagnostics, err := checkFile(files[0], registry)
-		if err != nil {
-			return nil, fmt.Errorf("%s: %w", source.DisplayPath(files[0]), err)
-		}
-		if diagnostics == nil {
-			diagnostics = []diagnostic.Diagnostic{}
-		}
-		sortDiagnostics(diagnostics)
-		return diagnostics, nil
-	}
-	workers := min(runtime.GOMAXPROCS(0), max(1, len(files)))
-	jobs := make(chan string)
-	results := make(chan fileResult, len(files))
-	var group sync.WaitGroup
-	for range workers {
-		group.Add(1)
-		go func() {
-			defer group.Done()
-			for filename := range jobs {
-				diagnostics, err := checkFile(filename, registry)
-				results <- fileResult{
-					filename:    filename,
-					diagnostics: diagnostics,
-					err:         err,
-				}
-			}
-		}()
-	}
-	go func() {
-		for _, filename := range files {
-			jobs <- filename
-		}
-		close(jobs)
-		group.Wait()
-		close(results)
-	}()
-	allDiagnostics := []diagnostic.Diagnostic{}
-	errorsByFile := []fileResult{}
-	for result := range results {
-		if result.err != nil {
-			errorsByFile = append(errorsByFile, result)
-			continue
-		}
-		allDiagnostics = append(allDiagnostics, result.diagnostics...)
-	}
-	if len(errorsByFile) != 0 {
-		sort.Slice(errorsByFile, func(i, j int) bool {
-			return errorsByFile[i].filename < errorsByFile[j].filename
-		})
-		return nil, fmt.Errorf("%s: %w", source.DisplayPath(errorsByFile[0].filename), errorsByFile[0].err)
-	}
-	sortDiagnostics(allDiagnostics)
-	return allDiagnostics, nil
-}
-
-func sortDiagnostics(diagnostics []diagnostic.Diagnostic) {
-	sort.SliceStable(
-		diagnostics,
-		func(i, j int) bool {
-			left, right := diagnostics[i], diagnostics[j]
-			if left.File != right.File {
-				return left.File < right.File
-			}
-			if left.Start.Offset != right.Start.Offset {
-				return left.Start.Offset < right.Start.Offset
-			}
-			if left.Code != right.Code {
-				return left.Code < right.Code
-			}
-			if left.Message != right.Message {
-				return left.Message < right.Message
-			}
-			if left.End.Offset != right.End.Offset {
-				return left.End.Offset < right.End.Offset
-			}
-			return left.Severity < right.Severity
-		},
-	)
-}
-
-func checkFile(filename string, registry *Registry) ([]diagnostic.Diagnostic, error) {
-	activeChecks := registry.activeChecks(filename)
-	if len(activeChecks) == 0 {
-		return nil, nil
-	}
-	content, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-	concreteTree, err := cst.Parse(filename, content)
-	if err != nil {
-		return nil, err
-	}
-	return analyzeTree(filename, concreteTree, activeChecks, registry), nil
 }
 
 // AnalyzeTree runs the selected concrete-syntax checks against a shared tree.

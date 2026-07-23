@@ -1,18 +1,30 @@
 name: release
 
 on:
-    release:
-        types: [published]
+    push:
+        tags:
+            - "v*"
 
 permissions:
     contents: read
 
 concurrency:
-    group: release-${{ github.event.release.tag_name }}
+    group: release-${{ github.ref_name }}
     cancel-in-progress: false
 
 jobs:
+    test:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+            - uses: actions/setup-go@v6
+              with:
+                  go-version-file: go.mod
+            - name: Run canonical verification
+              run: make verify
+
     build:
+        needs: test
         name: ${{ matrix.goos }}-${{ matrix.goarch }}
         runs-on: ubuntu-latest
         strategy:
@@ -46,7 +58,7 @@ jobs:
         steps:
             - uses: actions/checkout@v6
               with:
-                  ref: ${{ github.event.release.tag_name }}
+                  ref: ${{ github.ref }}
             - uses: actions/setup-go@v6
               with:
                   go-version-file: go.mod
@@ -55,7 +67,7 @@ jobs:
                   CGO_ENABLED: "0"
                   GOOS: ${{ matrix.goos }}
                   GOARCH: ${{ matrix.goarch }}
-                  RELEASE_TAG: ${{ github.event.release.tag_name }}
+                  RELEASE_TAG: ${{ github.ref_name }}
               run: |
                   archive_version="${RELEASE_TAG//\//-}"
                   archive="strider-${archive_version}-${GOOS}-${GOARCH}.${{ matrix.extension }}"
@@ -96,5 +108,13 @@ jobs:
               env:
                   GH_TOKEN: ${{ github.token }}
                   GH_REPO: ${{ github.repository }}
-                  RELEASE_TAG: ${{ github.event.release.tag_name }}
-              run: gh release upload "$RELEASE_TAG" dist/* --clobber
+                  RELEASE_TAG: ${{ github.ref_name }}
+              run: |
+                  if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+                    gh release upload "$RELEASE_TAG" dist/* --clobber
+                  else
+                    gh release create "$RELEASE_TAG" dist/* \
+                      --verify-tag \
+                      --generate-notes \
+                      --title "$RELEASE_TAG"
+                  fi

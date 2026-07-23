@@ -79,8 +79,8 @@ current directory:
 strider check
 ```
 
-All 207 checks are eligible. The default warning floor runs 191; select
-individual codes when investigating a finding or adopting Strider incrementally:
+The default warning floor runs warning and error checks. Select individual
+codes when investigating a finding or adopting Strider incrementally:
 
 ```sh
 strider check --only format,no-init,invalid-regexp ./...

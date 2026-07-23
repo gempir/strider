@@ -7,8 +7,7 @@ import (
 )
 
 const (
-	CapabilitySource Capability = 1 << iota
-	CapabilityCST
+	CapabilityCST Capability = 1 << iota
 	CapabilityAST
 	CapabilityTypes
 	CapabilityFacts

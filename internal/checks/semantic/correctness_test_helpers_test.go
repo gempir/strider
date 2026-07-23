@@ -84,25 +84,3 @@ func assertResearchMessagesContain(t *testing.T, reports []researchCorrectnessRe
 		}
 	}
 }
-
-func assertResearchReportNeedles(t *testing.T, reports []researchCorrectnessReport, source string, needles ...string) {
-	t.Helper()
-	want := make(map[int]bool, len(needles))
-	for _, needle := range needles {
-		index := strings.Index(source, needle)
-		if index < 0 {
-			t.Fatalf("test source does not contain %q", needle)
-		}
-		want[1+strings.Count(source[:index], "\n")] = true
-	}
-	for _, report := range reports {
-		if !want[report.position.Line] {
-			t.Errorf("unexpected report at %s: %s", report.position, report.message)
-			continue
-		}
-		delete(want, report.position.Line)
-	}
-	for line := range want {
-		t.Errorf("missing report on fixture.go:%d", line)
-	}
-}

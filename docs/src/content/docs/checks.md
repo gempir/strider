@@ -16,14 +16,14 @@ changing its public code.
 
 ## Run checks
 
-Run every check at or above the configured severity floor. The default warning
-floor runs 191 checks:
+Run every check at or above the configured severity floor. By default this runs
+warning and error checks:
 
 ```sh
 strider check [PATH]...
 ```
 
-Run all 207 checks whose effective severity is note or higher:
+Run checks whose effective severity is note or higher:
 
 ```sh
 strider check --minimum-severity note [PATH]...

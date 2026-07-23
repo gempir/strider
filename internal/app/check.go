@@ -110,16 +110,16 @@ func runCheckCommand(args []string, configuration config.Config, colorMode ui.Co
 	aliases := commandOptionAliases["check"]
 	reportFormat := stringOption(flags, "format", "f", "text", "report format: text, json, or html")
 	minimumSeverityFlag := stringOption(flags, "minimum-severity", "s", "", "minimum effective severity: none, note, warning, or error")
-	summaryOnly := boolOption(flags, "summary-only", "q", false, "only print per-check counts and the aggregate issue summary")
-	watch := boolOption(flags, "watch", "w", false, "rerun checks when source changes")
-	listChecks := boolOption(flags, "list-checks", "l", false, "list checks admitted by the severity floor")
+	summaryOnly := boolOption(flags, "summary-only", "q", "only print per-check counts and the aggregate issue summary")
+	watch := boolOption(flags, "watch", "w", "rerun checks when source changes")
+	listChecks := boolOption(flags, "list-checks", "l", "list checks admitted by the severity floor")
 	flags.BoolVar(listChecks, "list-rules", false, "alias for --list-checks")
 	explain := stringOption(flags, "explain", "e", "", "explain a check")
 	baselinePath := stringOption(flags, "baseline", "b", "", "path to the check baseline")
-	generateBaseline := boolOption(flags, "generate-baseline", "g", false, "replace the baseline with all current findings")
-	removeOutdated := boolOption(flags, "remove-outdated-baseline-entries", "r", false, "remove baseline entries that no longer match")
-	fixSafe := boolOption(flags, "fix", "x", false, "apply safe automatic fixes")
-	fixUnsafe := boolOption(flags, "fix-unsafe", "u", false, "apply all automatic fixes, including unsafe fixes")
+	generateBaseline := boolOption(flags, "generate-baseline", "g", "replace the baseline with all current findings")
+	removeOutdated := boolOption(flags, "remove-outdated-baseline-entries", "r", "remove baseline entries that no longer match")
+	fixSafe := boolOption(flags, "fix", "x", "apply safe automatic fixes")
+	fixUnsafe := boolOption(flags, "fix-unsafe", "u", "apply all automatic fixes, including unsafe fixes")
 	var only stringList
 	varOption(flags, &only, "only", "o", "run only these check codes (repeatable or comma-separated)")
 	flags.Usage = func() {

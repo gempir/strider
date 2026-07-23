@@ -124,34 +124,34 @@ func (l *layout) indexTree() {
 				l.markToken(current.Op, propertyUnaryOp)
 			case *cst.ParameterDecl:
 				if current.IdentifierList != nil {
-					l.markFirstToken(current.TypeNode, propertySpaceBefore)
+					l.markFirstToken(current.TypeNode)
 				}
 			case *cst.VarSpec:
 				if current.TypeNode != nil {
-					l.markFirstToken(current.TypeNode, propertySpaceBefore)
+					l.markFirstToken(current.TypeNode)
 				}
 			case *cst.VarSpec2:
 				if current.TypeNode != nil {
-					l.markFirstToken(current.TypeNode, propertySpaceBefore)
+					l.markFirstToken(current.TypeNode)
 				}
 			case *cst.FieldDecl:
 				if current.IdentifierList != nil && current.TypeNode != nil {
-					l.markFirstToken(current.TypeNode, propertySpaceBefore)
+					l.markFirstToken(current.TypeNode)
 				}
 			case *cst.Result:
 				if current.Parameters != nil {
-					l.markFirstToken(current.Parameters, propertySpaceBefore)
+					l.markFirstToken(current.Parameters)
 				} else if current.TypeNode != nil {
-					l.markFirstToken(current.TypeNode, propertySpaceBefore)
+					l.markFirstToken(current.TypeNode)
 				}
 			case *cst.MethodDecl:
 				if current.Receiver != nil {
-					l.markFirstToken(current.Receiver, propertySpaceBefore)
+					l.markFirstToken(current.Receiver)
 				}
 			case *cst.TypeDef:
-				l.markFirstToken(current.TypeNode, propertySpaceBefore)
+				l.markFirstToken(current.TypeNode)
 			case *cst.TypeParamDecl:
-				l.markFirstToken(current.TypeConstraint, propertySpaceBefore)
+				l.markFirstToken(current.TypeConstraint)
 			case *cst.TypeElemList:
 				l.markToken(current.OR, propertySpacedOp)
 			}
@@ -309,13 +309,13 @@ func (l *layout) markToken(current cst.Token, property tokenProperty) {
 	}
 }
 
-func (l *layout) markFirstToken(node cst.Node, property tokenProperty) {
+func (l *layout) markFirstToken(node cst.Node) {
 	if node == nil {
 		return
 	}
 	tokens := cst.NodeTokens(node)
 	if len(tokens) != 0 {
-		l.markToken(tokens[0], property)
+		l.markToken(tokens[0], propertySpaceBefore)
 	}
 }
 

@@ -197,6 +197,77 @@ func TestLoadTracksExplicitZeroValuedCheckOptions(t *testing.T) {
 	}
 }
 
+func TestLoadNormalizesCheckCodesAndRejectsDuplicateSpellings(t *testing.T) {
+	path := filepath.Join(t.TempDir(), Filename)
+	if err := os.WriteFile(path, []byte("version = 1\n[checks.NO-INIT]\nseverity = \"error\"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	configuration, err := Load(path, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := configuration.EffectiveCheck("No-InIt").Severity; got != "error" {
+		t.Fatalf("case-insensitive effective severity = %q, want error", got)
+	}
+
+	duplicatePath := filepath.Join(t.TempDir(), Filename)
+	duplicate := "version = 1\n[checks.format]\nseverity = \"warning\"\n[checks.FORMAT]\nseverity = \"error\"\n"
+	if err := os.WriteFile(duplicatePath, []byte(duplicate), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, err = Load(duplicatePath, false)
+	if err == nil || !strings.Contains(err.Error(), `duplicate case-insensitive check setting(s): "FORMAT", "format"`) {
+		t.Fatalf("got %v, want deterministic duplicate-spelling error", err)
+	}
+}
+
+func TestLoadRejectsMalformedExclusionGlobs(t *testing.T) {
+	tests := []string{
+		"version = 1\n[formatter]\nexcludes = [\"broken/[\"]\n",
+		"version = 1\n[check]\nexcludes = [\"broken/[\"]\n",
+		"version = 1\n[checks.no-init]\nexcludes = [\"broken/[\"]\n",
+	}
+	for index, contents := range tests {
+		path := filepath.Join(t.TempDir(), Filename)
+		if err := os.WriteFile(path, []byte(contents), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := Load(path, false); err == nil || !strings.Contains(err.Error(), "malformed exclusion glob") {
+			t.Errorf("case %d: got %v, want malformed-glob error", index, err)
+		}
+	}
+}
+
+func TestToolValidationErrorsAreStable(t *testing.T) {
+	negative := -1
+	tool := ToolConfig{
+		MinimumSeverity: "fatal",
+		Settings: map[string]CheckConfig{
+			"z-check": {
+				MaxLines: &negative,
+				Severity: "fatal",
+			},
+			"a-check": {
+				MaxMethods: &negative,
+			},
+		},
+	}
+	first := ""
+	for range 20 {
+		err := validateTool("check", tool)
+		if err == nil {
+			t.Fatal("invalid tool configuration was accepted")
+		}
+		if first == "" {
+			first = err.Error()
+			continue
+		}
+		if got := err.Error(); got != first {
+			t.Fatalf("validation order changed:\nfirst: %s\nnext:  %s", first, got)
+		}
+	}
+}
+
 func chdir(t *testing.T, directory string) {
 	t.Helper()
 	previous, err := os.Getwd()

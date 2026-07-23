@@ -27,18 +27,12 @@ func TestCheckRequirementsCoverCatalog(t *testing.T) {
 		}
 		seen[code] = true
 		codes = append(codes, code)
-		requirements, ok := RequirementsFor(code)
-		if !ok {
-			t.Fatalf("check %q has no requirements", code)
-		}
+		requirements := check.Requirements()
 		switch requirements.Stage {
 		case AnalysisStageTypes:
 		case AnalysisStageSSA:
 		default:
 			t.Fatalf("check %q has invalid stage %d", code, requirements.Stage)
-		}
-		if UsesSSA(code) != (requirements.Stage == AnalysisStageSSA) {
-			t.Fatalf("UsesSSA(%q) disagrees with its requirements", code)
 		}
 		if requirements.Facts.Has(FactStaticCalls) != (len(requirements.staticCallPackages) != 0) {
 			t.Fatalf("check %q has inconsistent static-call requirements", code)

@@ -40,11 +40,6 @@ func isPointerToNamedType(valueType types.Type, packagePath, name string) bool {
 	return pointer != nil && isNamedType(pointer.Elem(), packagePath, name)
 }
 
-func isNamedReceiverType(valueType types.Type, packagePath, name string) bool {
-	named := namedType(valueType)
-	return named != nil && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == packagePath && named.Obj().Name() == name
-}
-
 func calledMethod(info *types.Info, expression ast.Expr) (*types.Func, *types.Named) {
 	selector, _ := ast.Unparen(expression).(*ast.SelectorExpr)
 	if selector == nil {

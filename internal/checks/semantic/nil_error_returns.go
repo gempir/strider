@@ -263,18 +263,6 @@ func isExplicitNil(pass *Pass, expression ast.Expr) bool {
 	return ok
 }
 
-func isNilableType(valueType types.Type) bool {
-	if valueType == nil {
-		return false
-	}
-	switch types.Unalias(valueType).Underlying().(type) {
-	case *types.Chan, *types.Signature, *types.Interface, *types.Map, *types.Pointer, *types.Slice:
-		return true
-	default:
-		return false
-	}
-}
-
 func (nilErrorReturnCheck) Requirements() Requirements {
 	return Requirements{
 		Stage: AnalysisStageTypes,

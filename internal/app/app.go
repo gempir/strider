@@ -11,7 +11,6 @@ import (
 	"github.com/gempir/strider/internal/baseline"
 	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/diagnostic"
-	"github.com/gempir/strider/internal/pathfilter"
 	"github.com/gempir/strider/internal/report"
 	"github.com/gempir/strider/internal/ui"
 )
@@ -219,14 +218,4 @@ func applyBaseline(command string, diagnostics []diagnostic.Diagnostic, options 
 		)
 	}
 	return result.Diagnostics, false, nil
-}
-
-func filterDiagnostics(diagnostics []diagnostic.Diagnostic, root string, excludes []string) []diagnostic.Diagnostic {
-	filtered := make([]diagnostic.Diagnostic, 0, len(diagnostics))
-	for _, item := range diagnostics {
-		if !pathfilter.Excluded(root, item.File, excludes) {
-			filtered = append(filtered, item)
-		}
-	}
-	return filtered
 }

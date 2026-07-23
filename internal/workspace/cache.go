@@ -233,21 +233,6 @@ func (cache *Cache) Stats() CacheStats {
 	}
 }
 
-// Invalidate removes all snapshots retained for later generations. Existing
-// workspaces remain valid because they own immutable snapshot references.
-func (cache *Cache) Invalidate() {
-	if cache == nil {
-		return
-	}
-	cache.openMu.Lock()
-	defer cache.openMu.Unlock()
-	cache.mu.Lock()
-	cache.entries = make(map[cacheKey]*cacheEntry)
-	cache.bytes = 0
-	cache.treeBytes = 0
-	cache.mu.Unlock()
-}
-
 func (cache *Cache) evictLocked() {
 	for len(cache.entries) > cache.maxEntries || cache.bytes > cache.maxBytes || cache.treeBytes > cache.maxTreeBytes {
 		treePressure := cache.treeBytes > cache.maxTreeBytes

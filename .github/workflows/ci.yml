@@ -16,8 +16,18 @@ jobs:
             - uses: actions/setup-go@v6
               with:
                   go-version-file: go.mod
-            - run: go test ./...
-            - run: go vet ./...
+            - name: Run canonical verification
+              run: make verify
+
+    dependencies:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+            - uses: actions/setup-go@v6
+              with:
+                  go-version-file: go.mod
+            - name: Verify module integrity and tidiness
+              run: make dependency-check
 
     race:
         runs-on: ubuntu-latest
@@ -44,10 +54,27 @@ jobs:
             - name: Build documentation and benchmark pages
               working-directory: docs
               run: bun run build
+            - name: Require generated documentation to be current
+              run: git diff --exit-code
+
+    platform-smoke:
+        name: ${{ matrix.os }} filesystem smoke
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [macos-latest, windows-latest]
+        steps:
+            - uses: actions/checkout@v6
+            - uses: actions/setup-go@v6
+              with:
+                  go-version-file: go.mod
+            - name: Test filesystem and path-sensitive packages
+              run: go test ./internal/config ./internal/filewrite ./internal/pathfilter ./internal/source ./internal/workspace
 
     corpus:
         name: open-source corpus and performance
-        needs: test
+        needs: [test, dependencies]
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v6

@@ -12,6 +12,7 @@ import (
 	"github.com/BurntSushi/toml"
 
 	"github.com/gempir/strider/internal/diagnostic"
+	"github.com/gempir/strider/internal/pathfilter"
 	"github.com/gempir/strider/internal/ui"
 )
 
@@ -130,12 +131,78 @@ func Load(explicitPath string, disabled bool) (Config, error) {
 		sort.Strings(keys)
 		return Config{}, fmt.Errorf("%s: unknown configuration key(s): %s", absolute, strings.Join(keys, ", "))
 	}
+	configuration.Checks.Settings, err = NormalizeCheckSettings(configuration.Checks.Settings)
+	if err != nil {
+		return Config{}, fmt.Errorf("read %s: %w", absolute, err)
+	}
 	configuration.Path = absolute
 	configuration.Root = filepath.Dir(absolute)
 	if err := configuration.validate(); err != nil {
 		return Config{}, fmt.Errorf("%s: %w", absolute, err)
 	}
 	return configuration, nil
+}
+
+// NormalizeCheckCode returns the canonical spelling used by configuration,
+// selection, and lookup APIs.
+func NormalizeCheckCode(code string) string {
+	return strings.ToLower(code)
+}
+
+// NormalizeCheckSettings canonicalizes setting keys and rejects ambiguous
+// case-folded spellings.
+func NormalizeCheckSettings(settings map[string]CheckConfig) (map[string]CheckConfig, error) {
+	keys := make([]string, 0, len(settings))
+	for code := range settings {
+		keys = append(keys, code)
+	}
+	sort.Strings(keys)
+	normalized := make(map[string]CheckConfig, len(settings))
+	spellings := make(map[string][]string, len(settings))
+	for _, code := range keys {
+		canonical := NormalizeCheckCode(code)
+		spellings[canonical] = append(spellings[canonical], code)
+		normalized[canonical] = settings[code]
+	}
+	duplicates := duplicateSpellings(spellings)
+	if len(duplicates) != 0 {
+		return nil, fmt.Errorf("duplicate case-insensitive check setting(s): %s", strings.Join(duplicates, "; "))
+	}
+	return normalized, nil
+}
+
+// NormalizeCheckCodes canonicalizes an explicit selection and rejects
+// ambiguous repeated spellings.
+func NormalizeCheckCodes(codes []string) ([]string, error) {
+	normalized := make([]string, 0, len(codes))
+	spellings := make(map[string][]string, len(codes))
+	for _, code := range codes {
+		canonical := NormalizeCheckCode(code)
+		normalized = append(normalized, canonical)
+		spellings[canonical] = append(spellings[canonical], code)
+	}
+	duplicates := duplicateSpellings(spellings)
+	if len(duplicates) != 0 {
+		return nil, fmt.Errorf("duplicate case-insensitive check selection(s): %s", strings.Join(duplicates, "; "))
+	}
+	return normalized, nil
+}
+
+func duplicateSpellings(spellings map[string][]string) []string {
+	duplicates := make([]string, 0, len(spellings))
+	for _, values := range spellings {
+		if len(values) < 2 {
+			continue
+		}
+		sort.Strings(values)
+		quoted := make([]string, len(values))
+		for index, value := range values {
+			quoted[index] = fmt.Sprintf("%q", value)
+		}
+		duplicates = append(duplicates, strings.Join(quoted, ", "))
+	}
+	sort.Strings(duplicates)
+	return duplicates
 }
 
 func decodeCheck(destination *ToolConfig, values map[string]toml.Primitive, metadata toml.MetaData) error {
@@ -254,29 +321,70 @@ func (configuration Config) validate() error {
 	if configuration.Formatter.PrintWidth < 40 || configuration.Formatter.PrintWidth > 500 {
 		return fmt.Errorf("formatter.print-width must be between 40 and 500")
 	}
+	if err := pathfilter.Validate(configuration.Formatter.Excludes); err != nil {
+		return fmt.Errorf("formatter.excludes: %w", err)
+	}
 	return validateTool("check", configuration.Checks)
 }
 
 func validateTool(name string, tool ToolConfig) error {
+	issues := make([]string, 0)
 	if !diagnostic.ValidSeverity(diagnostic.Severity(tool.MinimumSeverity)) {
-		return fmt.Errorf("%s.minimum-severity must be none, note, warning, or error", name)
+		issues = append(issues, fmt.Sprintf("%s.minimum-severity must be none, note, warning, or error", name))
 	}
-	for code, check := range tool.Settings {
+	if err := pathfilter.Validate(tool.Excludes); err != nil {
+		issues = append(issues, fmt.Sprintf("%s.excludes: %v", name, err))
+	}
+	codes := make([]string, 0, len(tool.Settings))
+	for code := range tool.Settings {
+		codes = append(codes, code)
+	}
+	sort.Strings(codes)
+	for _, code := range codes {
+		check := tool.Settings[code]
 		if check.Severity != "" && !diagnostic.ValidSeverity(diagnostic.Severity(check.Severity)) {
-			return fmt.Errorf("%s.%s.severity must be none, note, warning, or error", name, code)
+			issues = append(issues, fmt.Sprintf("%s.%s.severity must be none, note, warning, or error", name, code))
 		}
-		for option, value := range map[string]*int{
-			"max-lines":          check.MaxLines,
-			"max-statements":     check.MaxStatements,
-			"max-results":        check.MaxResults,
-			"max-parameters":     check.MaxParameters,
-			"max-public-structs": check.MaxPublicStructs,
-			"max-methods":        check.MaxMethods,
+		for _, option := range []struct {
+			name  string
+			value *int
+		}{
+			{
+				name:  "max-lines",
+				value: check.MaxLines,
+			},
+			{
+				name:  "max-statements",
+				value: check.MaxStatements,
+			},
+			{
+				name:  "max-results",
+				value: check.MaxResults,
+			},
+			{
+				name:  "max-parameters",
+				value: check.MaxParameters,
+			},
+			{
+				name:  "max-public-structs",
+				value: check.MaxPublicStructs,
+			},
+			{
+				name:  "max-methods",
+				value: check.MaxMethods,
+			},
 		} {
-			if value != nil && *value < 0 {
-				return fmt.Errorf("%s.%s.%s must not be negative", name, code, option)
+			if option.value != nil && *option.value < 0 {
+				issues = append(issues, fmt.Sprintf("%s.%s.%s must not be negative", name, code, option.name))
 			}
 		}
+		if err := pathfilter.Validate(check.Excludes); err != nil {
+			issues = append(issues, fmt.Sprintf("%s.%s.excludes: %v", name, code, err))
+		}
+	}
+	sort.Strings(issues)
+	if len(issues) != 0 {
+		return errors.New(strings.Join(issues, "; "))
 	}
 	return nil
 }
@@ -291,7 +399,7 @@ func (configuration Config) Resolve(path string) string {
 // EffectiveCheck returns one check setting with the tool-wide exclusions
 // appended.
 func (configuration Config) EffectiveCheck(code string) CheckConfig {
-	check := cloneCheckConfig(configuration.Checks.Settings[code])
+	check := cloneCheckConfig(configuration.Checks.Settings[NormalizeCheckCode(code)])
 	check.Excludes = append(append([]string(nil), configuration.Checks.Excludes...), check.Excludes...)
 	return check
 }

@@ -208,7 +208,7 @@ func run(paths []string, registry *Registry, ssaBuilder ssaBuildFunc) ([]diagnos
 	}
 	group.Wait()
 	close(results)
-	sortDiagnostics(diagnostics)
+	diagnostic.Sort(diagnostics)
 	return diagnostics, nil
 }
 
@@ -480,29 +480,4 @@ func packageError(loaded []*packages.Package) error {
 	}
 	sort.Strings(errors)
 	return fmt.Errorf("load packages: %s", errors[0])
-}
-
-func sortDiagnostics(diagnostics []diagnostic.Diagnostic) {
-	sort.SliceStable(
-		diagnostics,
-		func(i, j int) bool {
-			left, right := diagnostics[i], diagnostics[j]
-			if left.File != right.File {
-				return left.File < right.File
-			}
-			if left.Start.Offset != right.Start.Offset {
-				return left.Start.Offset < right.Start.Offset
-			}
-			if left.Code != right.Code {
-				return left.Code < right.Code
-			}
-			if left.Message != right.Message {
-				return left.Message < right.Message
-			}
-			if left.End.Offset != right.End.Offset {
-				return left.End.Offset < right.End.Offset
-			}
-			return left.Severity < right.Severity
-		},
-	)
 }

@@ -166,12 +166,6 @@ func NormalizeCheckSettings(settings map[string]CheckConfig) (map[string]CheckCo
 	return checkconfig.NormalizeSettings(settings)
 }
 
-// NormalizeCheckCodes canonicalizes an explicit selection and rejects
-// ambiguous repeated spellings.
-func NormalizeCheckCodes(codes []string) ([]string, error) {
-	return checkconfig.NormalizeCodes(codes)
-}
-
 func decodeCheck(destination *ToolConfig, values map[string]toml.Primitive, metadata toml.MetaData) error {
 	for name, value := range values {
 		switch name {

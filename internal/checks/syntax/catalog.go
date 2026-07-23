@@ -141,7 +141,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "bidirectional-control-character",
 			Summary:         "reject invisible bidirectional source controls",
-			Explanation:     "reject invisible bidirectional source controls..",
+			Explanation:     "reject invisible bidirectional source controls.",
 			GoodExample:     "// access denied",
 			BadExample:      "// access \u202edenied",
 			DefaultSeverity: diagnostic.SeverityError,
@@ -207,7 +207,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "boolean-literal-comparison",
 			Summary:         "simplify comparisons between booleans and literals",
-			Explanation:     "simplify comparisons between booleans and literals..",
+			Explanation:     "simplify comparisons between booleans and literals.",
 			GoodExample:     "if ready { start() }",
 			BadExample:      "if ready == true { start() }",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -255,7 +255,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "confusing-results",
 			Summary:         "name consecutive unnamed results that have the same type",
-			Explanation:     "name consecutive unnamed results that have the same type..",
+			Explanation:     "name consecutive unnamed results that have the same type.",
 			GoodExample:     "func bounds() (min int, max int)",
 			BadExample:      "func bounds() (int, int)",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -266,7 +266,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "constant-logical-expr",
 			Summary:         "detect constant logical expressions",
-			Explanation:     "detect constant logical expressions..",
+			Explanation:     "detect constant logical expressions.",
 			GoodExample:     "if ready && connected { start() }",
 			BadExample:      "if false && connected { start() }",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -277,7 +277,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "context-as-argument",
 			Summary:         "require context.Context to be the first parameter",
-			Explanation:     "require context.Context to be the first parameter..",
+			Explanation:     "require context.Context to be the first parameter.",
 			GoodExample:     "func Load(ctx context.Context, id string) error",
 			BadExample:      "func Load(id string, ctx context.Context) error",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -288,7 +288,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "deep-exit",
 			Summary:         "keep process-terminating calls in main or init",
-			Explanation:     "keep process-terminating calls in main or init..",
+			Explanation:     "keep process-terminating calls in main or init.",
 			GoodExample:     "func run() error { return load() }",
 			BadExample:      "func loadConfig() { if failed() { os.Exit(1) } }",
 			DefaultSeverity: diagnostic.SeverityError,
@@ -299,7 +299,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "deferred-recover-call",
 			Summary:         "defer recover through a function closure",
-			Explanation:     "defer recover through a function closure..",
+			Explanation:     "defer recover through a function closure.",
 			GoodExample:     "defer func() { _ = recover() }()",
 			BadExample:      "defer recover()",
 			DefaultSeverity: diagnostic.SeverityError,
@@ -310,7 +310,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "discarded-deferred-result",
 			Summary:         "avoid return values discarded by deferred calls",
-			Explanation:     "avoid return values discarded by deferred calls..",
+			Explanation:     "avoid return values discarded by deferred calls.",
 			GoodExample:     "defer func() { cleanup() }()",
 			BadExample:      "defer func() error { return cleanup() }()",
 			DefaultSeverity: diagnostic.SeverityError,
@@ -332,7 +332,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "double-negation",
 			Summary:         "remove redundant double boolean negation",
-			Explanation:     "remove redundant double boolean negation..",
+			Explanation:     "remove redundant double boolean negation.",
 			GoodExample:     "return ready",
 			BadExample:      "return !!ready",
 			DefaultSeverity: diagnostic.SeverityError,
@@ -343,7 +343,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "duplicated-imports",
 			Summary:         "reject importing the same package more than once",
-			Explanation:     "reject importing the same package more than once..",
+			Explanation:     "reject importing the same package more than once.",
 			GoodExample:     "import \"strings\"",
 			BadExample:      "import (\n\t\"strings\"\n\ttext \"strings\"\n)",
 			DefaultSeverity: diagnostic.SeverityError,
@@ -354,7 +354,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "early-return",
 			Summary:         "prefer early returns that reduce nesting",
-			Explanation:     "prefer early returns that reduce nesting..",
+			Explanation:     "prefer early returns that reduce nesting.",
 			GoodExample:     "if !ready { return }\nprocess()",
 			BadExample:      "if ready { process() } else { return }",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -365,7 +365,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "empty-conditional-block",
 			Summary:         "detect empty conditional blocks",
-			Explanation:     "detect empty conditional blocks..",
+			Explanation:     "detect empty conditional blocks.",
 			GoodExample:     "if ready { process() }",
 			BadExample:      "if ready {}",
 			DefaultSeverity: diagnostic.SeverityError,
@@ -387,7 +387,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "error-naming",
 			Summary:         "name package errors with an Err prefix",
-			Explanation:     "name package errors with an Err prefix..",
+			Explanation:     "name package errors with an Err prefix.",
 			GoodExample:     "var ErrNotFound = errors.New(\"not found\")",
 			BadExample:      "var NotFoundError = errors.New(\"not found\")",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -398,7 +398,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "error-last-result",
 			Summary:         "place error last in result lists",
-			Explanation:     "place error last in result lists..",
+			Explanation:     "place error last in result lists.",
 			GoodExample:     "func Load() (string, error)",
 			BadExample:      "func Load() (error, string)",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -409,7 +409,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "error-strings",
 			Summary:         "use lower-case unpunctuated error messages",
-			Explanation:     "use lower-case unpunctuated error messages..",
+			Explanation:     "use lower-case unpunctuated error messages.",
 			GoodExample:     "errors.New(\"connection refused\")",
 			BadExample:      "errors.New(\"Connection refused.\")",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -420,7 +420,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "prefer-fmt-errorf",
 			Summary:         "replace errors.New around fmt.Sprintf",
-			Explanation:     "replace errors.New around fmt.Sprintf..",
+			Explanation:     "replace errors.New around fmt.Sprintf.",
 			GoodExample:     "fmt.Errorf(\"load %s\", name)",
 			BadExample:      "errors.New(fmt.Sprintf(\"load %s\", name))",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -431,7 +431,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "exported-declaration-comment",
 			Summary:         "document exported declarations",
-			Explanation:     "document exported declarations..",
+			Explanation:     "document exported declarations.",
 			GoodExample:     "// Client sends requests.\ntype Client struct{}",
 			BadExample:      "type Client struct{}",
 			DefaultSeverity: diagnostic.SeverityNote,
@@ -467,7 +467,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "flag-parameter",
 			Summary:         "detect boolean control parameters",
-			Explanation:     "detect boolean control parameters..",
+			Explanation:     "detect boolean control parameters.",
 			GoodExample:     "func Open(path string, mode Mode) error",
 			BadExample:      "func Open(path string, readOnly bool) error { if readOnly { return openReadOnly(path) }; return openReadWrite(path) }",
 			DefaultSeverity: diagnostic.SeverityNote,
@@ -507,7 +507,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "get-function-return-value",
 			Summary:         "require Get-prefixed functions to return values",
-			Explanation:     "require Get-prefixed functions to return values..",
+			Explanation:     "require Get-prefixed functions to return values.",
 			GoodExample:     "func GetClient() *Client { return client }",
 			BadExample:      "func GetClient() { initializeClient() }",
 			DefaultSeverity: diagnostic.SeverityNote,
@@ -518,7 +518,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "identical-branches",
 			Summary:         "detect identical if branches",
-			Explanation:     "detect identical if branches..",
+			Explanation:     "detect identical if branches.",
 			GoodExample:     "if ready { start() } else { wait() }",
 			BadExample:      "if ready { start() } else { start() }",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -529,7 +529,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "identical-if-chain-branches",
 			Summary:         "detect repeated if-chain branches",
-			Explanation:     "detect repeated if-chain branches..",
+			Explanation:     "detect repeated if-chain branches.",
 			GoodExample:     "if first { one() } else if second { two() }",
 			BadExample:      "if first { run() } else if second { run() }",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -540,7 +540,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "identical-if-chain-conditions",
 			Summary:         "detect repeated if-chain conditions",
-			Explanation:     "detect repeated if-chain conditions..",
+			Explanation:     "detect repeated if-chain conditions.",
 			GoodExample:     "if first { one() } else if second { two() }",
 			BadExample:      "if ready { one() } else if ready { two() }",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -551,7 +551,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "identical-switch-branches",
 			Summary:         "detect repeated switch branches",
-			Explanation:     "detect repeated switch branches..",
+			Explanation:     "detect repeated switch branches.",
 			GoodExample:     "switch value { case 1: one(); case 2: two() }",
 			BadExample:      "switch value { case 1: run(); case 2: run() }",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -562,7 +562,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "identical-switch-conditions",
 			Summary:         "detect repeated switch conditions",
-			Explanation:     "detect repeated switch conditions..",
+			Explanation:     "detect repeated switch conditions.",
 			GoodExample:     "switch { case first: one(); case second: two() }",
 			BadExample:      "switch { case ready: one(); case ready: two() }",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -573,7 +573,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "redundant-error-return-check",
 			Summary:         "simplify redundant error checks before returning",
-			Explanation:     "simplify redundant error checks before returning..",
+			Explanation:     "simplify redundant error checks before returning.",
 			GoodExample:     "err := save()\nreturn err",
 			BadExample:      "if err := save(); err != nil { return err }\nreturn nil",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -584,7 +584,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "ineffective-pointer-copy",
 			Summary:         "detect pointer round trips that do not copy values",
-			Explanation:     "detect pointer round trips that do not copy values..",
+			Explanation:     "detect pointer round trips that do not copy values.",
 			GoodExample:     "copy := *pointer",
 			BadExample:      "copy := &*pointer",
 			DefaultSeverity: diagnostic.SeverityError,
@@ -606,7 +606,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "import-shadowing",
 			Summary:         "detect declarations shadowing imports",
-			Explanation:     "detect declarations shadowing imports..",
+			Explanation:     "detect declarations shadowing imports.",
 			GoodExample:     "encoded := json.Marshal(value)",
 			BadExample:      "json := loadConfig() // shadows the json import",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -631,7 +631,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "increment-decrement",
 			Summary:         "prefer increment and decrement statements",
-			Explanation:     "prefer increment and decrement statements..",
+			Explanation:     "prefer increment and decrement statements.",
 			GoodExample:     "count++",
 			BadExample:      "count += 1",
 			DefaultSeverity: diagnostic.SeverityNote,
@@ -642,7 +642,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "inefficient-map-lookup",
 			Summary:         "avoid repeated map lookups",
-			Explanation:     "avoid repeated map lookups..",
+			Explanation:     "avoid repeated map lookups.",
 			GoodExample:     "if value, ok := values[key]; ok { use(value) }",
 			BadExample:      "if _, ok := values[key]; ok { use(values[key]) }",
 			DefaultSeverity: diagnostic.SeverityError,
@@ -689,7 +689,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "modifies-parameter",
 			Summary:         "detect parameter mutation",
-			Explanation:     "detect parameter mutation..",
+			Explanation:     "detect parameter mutation.",
 			GoodExample:     "func normalize(value string) string { normalized := strings.TrimSpace(value); return normalized }",
 			BadExample:      "func normalize(value string) string { value = strings.TrimSpace(value); return value }",
 			DefaultSeverity: diagnostic.SeverityError,
@@ -700,7 +700,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "modifies-value-receiver",
 			Summary:         "detect value receiver mutation",
-			Explanation:     "detect value receiver mutation..",
+			Explanation:     "detect value receiver mutation.",
 			GoodExample:     "func (item *Item) Rename(name string) { item.Name = name }",
 			BadExample:      "func (item Item) Rename(name string) { item.Name = name }",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -711,7 +711,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "modulo-one",
 			Summary:         "detect remainder operations that are always zero",
-			Explanation:     "detect remainder operations that are always zero..",
+			Explanation:     "detect remainder operations that are always zero.",
 			GoodExample:     "remainder := value % divisor",
 			BadExample:      "remainder := value % 1",
 			DefaultSeverity: diagnostic.SeverityError,
@@ -722,7 +722,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "nested-structs",
 			Summary:         "discourage anonymous nested struct types",
-			Explanation:     "discourage anonymous nested struct types..",
+			Explanation:     "discourage anonymous nested struct types.",
 			GoodExample:     "type Address struct { City string }\ntype User struct { Address Address }",
 			BadExample:      "type User struct { Address struct { City string } }",
 			DefaultSeverity: diagnostic.SeverityNote,
@@ -733,7 +733,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "package-comments",
 			Summary:         "require package documentation",
-			Explanation:     "require package documentation..",
+			Explanation:     "require package documentation.",
 			GoodExample:     "// Package store persists application data.\npackage store",
 			BadExample:      "package store",
 			DefaultSeverity: diagnostic.SeverityNote,
@@ -766,7 +766,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "range-value-address",
 			Summary:         "avoid taking addresses of range values",
-			Explanation:     "avoid taking addresses of range values..",
+			Explanation:     "avoid taking addresses of range values.",
 			GoodExample:     "for index := range values { pointers = append(pointers, &values[index]) }",
 			BadExample:      "for _, value := range values { pointers = append(pointers, &value) }",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -777,7 +777,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "simplify-range",
 			Summary:         "simplify range statements",
-			Explanation:     "simplify range statements..",
+			Explanation:     "simplify range statements.",
 			GoodExample:     "for _, character := range text { use(character) }",
 			BadExample:      "for _, character := range []rune(text) { use(character) }",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -799,7 +799,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "redefines-builtin-id",
 			Summary:         "avoid redefining predeclared identifiers",
-			Explanation:     "avoid redefining predeclared identifiers..",
+			Explanation:     "avoid redefining predeclared identifiers.",
 			GoodExample:     "func parse(input string) error",
 			BadExample:      "func parse(error string) error",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -810,7 +810,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "redundant-build-tag",
 			Summary:         "remove redundant legacy build tags",
-			Explanation:     "remove redundant legacy build tags..",
+			Explanation:     "remove redundant legacy build tags.",
 			GoodExample:     "//go:build linux || darwin",
 			BadExample:      "//go:build linux || darwin\n// +build linux darwin",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -821,7 +821,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "redundant-import-alias",
 			Summary:         "remove aliases equal to package names",
-			Explanation:     "remove aliases equal to package names..",
+			Explanation:     "remove aliases equal to package names.",
 			GoodExample:     "import \"strings\"",
 			BadExample:      "import strings \"strings\"",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -832,7 +832,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "redundant-final-return",
 			Summary:         "remove final returns from resultless functions",
-			Explanation:     "remove final returns from resultless functions..",
+			Explanation:     "remove final returns from resultless functions.",
 			GoodExample:     "func run() { work() }",
 			BadExample:      "func run() { work(); return }",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -843,7 +843,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "redundant-switch-break",
 			Summary:         "remove redundant breaks from switch cases",
-			Explanation:     "remove redundant breaks from switch cases..",
+			Explanation:     "remove redundant breaks from switch cases.",
 			GoodExample:     "switch value { case 1: work() }",
 			BadExample:      "switch value { case 1: work(); break }",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -854,7 +854,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "single-case-switch",
 			Summary:         "replace single-case switches with if statements",
-			Explanation:     "replace single-case switches with if statements..",
+			Explanation:     "replace single-case switches with if statements.",
 			GoodExample:     "if value == 1 { work() }",
 			BadExample:      "switch value { case 1: work() }",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -865,7 +865,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "string-of-int",
 			Summary:         "make integer-to-string intent explicit",
-			Explanation:     "make integer-to-string intent explicit..",
+			Explanation:     "make integer-to-string intent explicit.",
 			GoodExample:     "text := strconv.Itoa(value)",
 			BadExample:      "text := string(value)",
 			DefaultSeverity: diagnostic.SeverityError,
@@ -876,7 +876,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "spaced-compiler-directive",
 			Summary:         "detect compiler directives disabled by leading whitespace",
-			Explanation:     "detect compiler directives disabled by leading whitespace..",
+			Explanation:     "detect compiler directives disabled by leading whitespace.",
 			GoodExample:     "//go:noinline\nfunc call() {}",
 			BadExample:      "// go:noinline\nfunc call() {}",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -887,7 +887,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "spinning-select-default",
 			Summary:         "detect select loops that spin on an empty default",
-			Explanation:     "detect select loops that spin on an empty default..",
+			Explanation:     "detect select loops that spin on an empty default.",
 			GoodExample:     "for { select { case value := <-values: use(value) } }",
 			BadExample:      "for { select { case value := <-values: use(value); default: } }",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -909,7 +909,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "time-date",
 			Summary:         "detect suspicious time.Date arguments",
-			Explanation:     "detect suspicious time.Date arguments..",
+			Explanation:     "detect suspicious time.Date arguments.",
 			GoodExample:     "time.Date(2026, time.July, 16, 12, 0, 0, 0, time.UTC)",
 			BadExample:      "time.Date(2026, 13, 16, 12, 0, 0, 0, time.UTC)",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -920,7 +920,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "time-naming",
 			Summary:         "avoid unit suffixes on time.Duration values",
-			Explanation:     "avoid unit suffixes on time.Duration values..",
+			Explanation:     "avoid unit suffixes on time.Duration values.",
 			GoodExample:     "var timeout time.Duration",
 			BadExample:      "var timeoutSeconds time.Duration",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -931,7 +931,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "unchecked-type-assertion",
 			Summary:         "require checked type assertions",
-			Explanation:     "require checked type assertions..",
+			Explanation:     "require checked type assertions.",
 			GoodExample:     "value, ok := input.(string)",
 			BadExample:      "value := input.(string)",
 			DefaultSeverity: diagnostic.SeverityError,
@@ -942,7 +942,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "unexported-naming",
 			Summary:         "avoid leading underscores in private names",
-			Explanation:     "avoid leading underscores in private names..",
+			Explanation:     "avoid leading underscores in private names.",
 			GoodExample:     "var clientID string",
 			BadExample:      "var _clientID string",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -953,7 +953,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "unexported-return",
 			Summary:         "avoid exported APIs returning private types",
-			Explanation:     "avoid exported APIs returning private types..",
+			Explanation:     "avoid exported APIs returning private types.",
 			GoodExample:     "func NewClient() *Client",
 			BadExample:      "func NewClient() *client",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -964,7 +964,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "unnecessary-if",
 			Summary:         "replace boolean-returning if chains",
-			Explanation:     "replace boolean-returning if chains..",
+			Explanation:     "replace boolean-returning if chains.",
 			GoodExample:     "return ready",
 			BadExample:      "if ready { return true } else { return false }",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -975,7 +975,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "unnecessary-format",
 			Summary:         "avoid formatting calls without directives",
-			Explanation:     "avoid formatting calls without directives..",
+			Explanation:     "avoid formatting calls without directives.",
 			GoodExample:     "fmt.Sprint(value)",
 			BadExample:      "fmt.Sprintf(\"static message\")",
 			DefaultSeverity: diagnostic.SeverityNote,
@@ -986,7 +986,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "unreachable-code",
 			Summary:         "detect statements after unconditional flow",
-			Explanation:     "detect statements after unconditional flow..",
+			Explanation:     "detect statements after unconditional flow.",
 			GoodExample:     "save()\nreturn nil",
 			BadExample:      "return nil\nsave()",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -1008,7 +1008,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "unused-parameter",
 			Summary:         "detect unused function parameters",
-			Explanation:     "detect unused function parameters..",
+			Explanation:     "detect unused function parameters.",
 			GoodExample:     "func greet(name string) { fmt.Println(name) }",
 			BadExample:      "func greet(name string) { fmt.Println(\"hello\") }",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -1019,7 +1019,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "unused-receiver",
 			Summary:         "detect unused method receivers",
-			Explanation:     "detect unused method receivers..",
+			Explanation:     "detect unused method receivers.",
 			GoodExample:     "func (client *Client) Send() { client.flush() }",
 			BadExample:      "func (client *Client) Version() string { return version }",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -1030,7 +1030,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "use-any",
 			Summary:         "prefer any to interface{}",
-			Explanation:     "prefer any to interface{}..",
+			Explanation:     "prefer any to interface{}.",
 			GoodExample:     "var value any",
 			BadExample:      "var value interface{}",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -1041,7 +1041,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "use-errors-new",
 			Summary:         "prefer errors.New for static errors",
-			Explanation:     "prefer errors.New for static errors..",
+			Explanation:     "prefer errors.New for static errors.",
 			GoodExample:     "errors.New(\"not found\")",
 			BadExample:      "fmt.Errorf(\"not found\")",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -1052,7 +1052,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "use-fmt-print",
 			Summary:         "prefer fmt.Print over builtin print",
-			Explanation:     "prefer fmt.Print over builtin print..",
+			Explanation:     "prefer fmt.Print over builtin print.",
 			GoodExample:     "fmt.Print(message)",
 			BadExample:      "print(message)",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -1063,7 +1063,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "use-slices-sort",
 			Summary:         "prefer slices.Sort over sort.Slice",
-			Explanation:     "prefer slices.Sort over sort.Slice..",
+			Explanation:     "prefer slices.Sort over sort.Slice.",
 			GoodExample:     "slices.Sort(values)",
 			BadExample:      "sort.Slice(values, func(i, j int) bool { return values[i] < values[j] })",
 			DefaultSeverity: diagnostic.SeverityWarning,
@@ -1074,7 +1074,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "var-declaration",
 			Summary:         "simplify zero-value declarations",
-			Explanation:     "simplify zero-value declarations..",
+			Explanation:     "simplify zero-value declarations.",
 			GoodExample:     "var count int",
 			BadExample:      "count := 0",
 			DefaultSeverity: diagnostic.SeverityNote,
@@ -1096,7 +1096,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "waitgroup-by-value",
 			Summary:         "pass sync.WaitGroup by pointer",
-			Explanation:     "pass sync.WaitGroup by pointer..",
+			Explanation:     "pass sync.WaitGroup by pointer.",
 			GoodExample:     "func wait(group *sync.WaitGroup)",
 			BadExample:      "func wait(group sync.WaitGroup)",
 			DefaultSeverity: diagnostic.SeverityError,
@@ -1107,7 +1107,7 @@ var definitions = []definition{
 		meta: Meta{
 			Code:            "zero-integer-division",
 			Summary:         "detect literal integer division that truncates to zero",
-			Explanation:     "detect literal integer division that truncates to zero..",
+			Explanation:     "detect literal integer division that truncates to zero.",
 			GoodExample:     "ratio := 2.0 / 3.0",
 			BadExample:      "ratio := 2 / 3",
 			DefaultSeverity: diagnostic.SeverityError,

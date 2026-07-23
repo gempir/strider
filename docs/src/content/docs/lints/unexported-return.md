@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Avoid exported APIs returning private types..
+Avoid exported APIs returning private types.
 
 ## Bad
 

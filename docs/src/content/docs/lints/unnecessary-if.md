@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Replace boolean-returning if chains..
+Replace boolean-returning if chains.
 
 ## Bad
 

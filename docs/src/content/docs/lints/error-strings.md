@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Use lower-case unpunctuated error messages..
+Use lower-case unpunctuated error messages.
 
 ## Bad
 

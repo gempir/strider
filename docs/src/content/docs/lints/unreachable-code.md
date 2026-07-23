@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Detect statements after unconditional flow..
+Detect statements after unconditional flow.
 
 ## Bad
 

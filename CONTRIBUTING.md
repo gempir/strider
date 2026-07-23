@@ -1,5 +1,102 @@
 # Contributing
 
+## Authoring a check
+
+Start a check with `checkscaffold`. Supply complete user-facing metadata up
+front so the command can validate the global code namespace and produce its
+reference page:
+
+```sh
+go run ./scripts/checkscaffold \
+  -engine semantic \
+  -stage types \
+  -code missing-package-context \
+  -summary "detect package operations without context" \
+  -explanation "Package operations can block; require a caller-owned context while leaving wrappers and generated code unreported." \
+  -good 'load(ctx, name)' \
+  -bad 'load(context.Background(), name)' \
+  -severity warning
+```
+
+Use `-engine syntax` for a CST check. Semantic checks select `-stage types`
+or `-stage ssa`. Simple options can be declared without another defaults table:
+
+```sh
+-options-json '[{"name":"allowed","kind":"strings","default_strings":[],"help":"Names exempt from this check."}]'
+```
+
+Supported scaffold option kinds are `int` (a non-negative integer) and
+`strings`. The command rejects incomplete metadata, invalid option schemas,
+existing file/doc targets, and codes that collide case-insensitively. It then
+updates the central generated registration, inventory goldens, reference page,
+and catalog statistics. Review those generated diffs, but author behavior in
+only the two new files:
+
+```text
+internal/checks/<engine>/<code>.go
+internal/checks/<engine>/<code>_test.go
+```
+
+The generated implementation intentionally does nothing. Replace it and the
+metadata-only scaffold test with focused positive and adversarial cases.
+
+For a syntax check, keep traversal ownership in the shared CST engine. The
+scaffold registers a `SourceFile` interest; narrow it to the smallest node kind
+when implementing the check:
+
+```go
+func (pass *Pass) checkPackageBanner(file *cst.SourceFile) {
+	if file.TopLevelDeclList == nil {
+		pass.Report(file, "package contains no declarations")
+	}
+}
+```
+
+Test syntax behavior through its selected registry so dispatch and reporting
+are covered:
+
+```go
+filename := writeFixture(t, "package empty\n")
+registry, err := NewRegistry([]string{"package-banner"})
+diagnostics, err := Run([]string{filename}, registry)
+```
+
+For a semantic check, implement only `Meta` and `Run`; registration owns
+whether the prepared pass stops at types or includes SSA:
+
+```go
+func (missingPackageContextCheck) Run(pass *Pass) {
+	pass.Inspect([]ast.Node{(*ast.CallExpr)(nil)}, func(node ast.Node) bool {
+		call := node.(*ast.CallExpr)
+		if isPackageFunction(pass.TypesInfo, call.Fun, "context", "Background") {
+			pass.Report(call, "accept a caller-owned context")
+		}
+		return true
+	})
+}
+```
+
+Use `assertCheckDiagnostics` for a compact positive fixture, then add negative
+forms that define the false-positive boundary. Checks with exact positions or
+fixes should call `assertDiagnosticGolden`.
+
+Refresh every diagnostic, engine-code, unified-inventory, and JSON golden with
+the one documented target:
+
+```sh
+make golden-update
+git diff -- internal/checks internal/report
+```
+
+`make check-update` additionally regenerates check documentation and catalog
+statistics. `checkscaffold` runs it automatically. Finish with the same
+validation used in CI:
+
+```sh
+make check
+make test
+```
+
 ## Test suites
 
 Run the unit, integration, and package tests with:

@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Name package errors with an Err prefix..
+Name package errors with an Err prefix.
 
 ## Bad
 

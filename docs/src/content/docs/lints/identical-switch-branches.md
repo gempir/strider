@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Detect repeated switch branches..
+Detect repeated switch branches.
 
 ## Bad
 

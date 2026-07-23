@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Detect repeated if-chain branches..
+Detect repeated if-chain branches.
 
 ## Bad
 

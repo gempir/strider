@@ -214,7 +214,13 @@ func run(options options) error {
 	}
 	corpus, err := measuredCorpus(filepath.Join(root, options.corpusPath))
 	if err != nil {
-		return err
+		if !errors.Is(err, os.ErrNotExist) {
+			return err
+		}
+		corpus, err = previousCorpusSummary(filepath.Join(root, options.outputPath))
+		if err != nil {
+			return fmt.Errorf("read measured or previous corpus evidence: %w", err)
+		}
 	}
 	sources, err := implementationSources(root)
 	if err != nil {
@@ -757,6 +763,19 @@ func measuredCorpus(path string) (corpusSummary, error) {
 		}
 	}
 	return result, nil
+}
+
+func previousCorpusSummary(path string) (corpusSummary, error) {
+	var previous struct {
+		Corpus corpusSummary `json:"corpus"`
+	}
+	if err := decodeJSON(path, &previous); err != nil {
+		return corpusSummary{}, err
+	}
+	if previous.Corpus.Projects == 0 {
+		return corpusSummary{}, fmt.Errorf("previous catalog review has no corpus evidence")
+	}
+	return previous.Corpus, nil
 }
 
 func decodeJSON(path string, destination any) error {

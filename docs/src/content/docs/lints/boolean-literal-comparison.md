@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Simplify comparisons between booleans and literals..
+Simplify comparisons between booleans and literals.
 
 ## Bad
 

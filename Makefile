@@ -14,6 +14,13 @@ verify: check test vet unused-check
 test:
 	go test ./...
 
+golden-update:
+	STRIDER_UPDATE_GOLDEN=1 go test ./internal/checks/... ./internal/report
+
+check-update: golden-update
+	cd docs && bun run generate:checks
+	go run ./scripts/catalogreview
+
 vet:
 	go vet ./...
 
@@ -22,6 +29,10 @@ check:
 
 unused-check:
 	@output="$$(go run golang.org/x/tools/cmd/deadcode@v0.48.0 -test ./...)"; \
+	status="$$?"; \
+	if [ "$$status" -ne 0 ]; then \
+		exit "$$status"; \
+	fi; \
 	if [ -n "$$output" ]; then \
 		printf '%s\n' "$$output"; \
 		exit 1; \

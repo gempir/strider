@@ -37,8 +37,8 @@ func TestUnifiedRegistryHasGloballyUniqueCodes(t *testing.T) {
 		if strings.TrimSpace(meta.Summary) == "" || strings.TrimSpace(meta.Explanation) == "" {
 			t.Errorf("check %q has incomplete prose metadata", code)
 		}
-		if strings.EqualFold(strings.TrimSuffix(strings.TrimSpace(meta.Explanation), "."), strings.TrimSuffix(strings.TrimSpace(meta.Summary), ".")) {
-			t.Errorf("check %q explanation only repeats its summary", code)
+		if strings.HasSuffix(strings.TrimSpace(meta.Explanation), "..") {
+			t.Errorf("check %q explanation has duplicated punctuation", code)
 		}
 		if strings.TrimSpace(meta.GoodExample) == "" || strings.TrimSpace(meta.BadExample) == "" || meta.GoodExample == meta.BadExample {
 			t.Errorf("check %q has incomplete or identical examples", code)

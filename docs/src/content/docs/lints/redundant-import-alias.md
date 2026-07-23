@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-warning" aria-hidden="true"></span> `warning`
 
-Remove aliases equal to package names..
+Remove aliases equal to package names.
 
 ## Bad
 

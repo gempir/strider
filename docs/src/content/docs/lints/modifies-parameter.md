@@ -11,7 +11,7 @@ sidebar:
 
 **Default severity:** <span class="severity-indicator severity-error" aria-hidden="true"></span> `error`
 
-Detect parameter mutation..
+Detect parameter mutation.
 
 ## Bad
 

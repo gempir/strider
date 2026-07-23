@@ -17,7 +17,7 @@
   },
   "corpus": {
     "projects": 11,
-    "check_runtime_ms": 9308,
+    "check_runtime_ms": 14440,
     "findings": 28313
   },
   "checks": [
@@ -142,7 +142,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "reject invisible bidirectional source controls..",
+      "signal_rationale": "reject invisible bidirectional source controls.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -178,7 +178,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "simplify comparisons between booleans and literals..",
+      "signal_rationale": "simplify comparisons between booleans and literals.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -289,7 +289,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "name consecutive unnamed results that have the same type..",
+      "signal_rationale": "name consecutive unnamed results that have the same type.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -307,7 +307,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "detect constant logical expressions..",
+      "signal_rationale": "detect constant logical expressions.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -362,7 +362,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "require context.Context to be the first parameter..",
+      "signal_rationale": "require context.Context to be the first parameter.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -526,7 +526,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "keep process-terminating calls in main or init..",
+      "signal_rationale": "keep process-terminating calls in main or init.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -580,7 +580,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "defer recover through a function closure..",
+      "signal_rationale": "defer recover through a function closure.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -635,7 +635,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "avoid return values discarded by deferred calls..",
+      "signal_rationale": "avoid return values discarded by deferred calls.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -725,7 +725,7 @@
       "fix_availability": "safe automatic fix",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "remove redundant double boolean negation..",
+      "signal_rationale": "remove redundant double boolean negation.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -761,7 +761,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "reject importing the same package more than once..",
+      "signal_rationale": "reject importing the same package more than once.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -816,7 +816,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "prefer early returns that reduce nesting..",
+      "signal_rationale": "prefer early returns that reduce nesting.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -835,7 +835,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "detect empty conditional blocks..",
+      "signal_rationale": "detect empty conditional blocks.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -891,7 +891,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "place error last in result lists..",
+      "signal_rationale": "place error last in result lists.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -910,7 +910,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "name package errors with an Err prefix..",
+      "signal_rationale": "name package errors with an Err prefix.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -929,7 +929,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "use lower-case unpunctuated error messages..",
+      "signal_rationale": "use lower-case unpunctuated error messages.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -985,7 +985,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "document exported declarations..",
+      "signal_rationale": "document exported declarations.",
       "decision_rationale": "Retained as an opt-in advisory policy; projects can enable it without making subjective style or optimization guidance fail default checks.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -1057,7 +1057,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "detect boolean control parameters..",
+      "signal_rationale": "detect boolean control parameters.",
       "decision_rationale": "Retained as an opt-in advisory policy; projects can enable it without making subjective style or optimization guidance fail default checks.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -1131,7 +1131,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "require Get-prefixed functions to return values..",
+      "signal_rationale": "require Get-prefixed functions to return values.",
       "decision_rationale": "Retained as an opt-in advisory policy; projects can enable it without making subjective style or optimization guidance fail default checks.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -1167,7 +1167,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "detect identical if branches..",
+      "signal_rationale": "detect identical if branches.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -1185,7 +1185,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "detect repeated if-chain branches..",
+      "signal_rationale": "detect repeated if-chain branches.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -1203,7 +1203,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "detect repeated if-chain conditions..",
+      "signal_rationale": "detect repeated if-chain conditions.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -1222,7 +1222,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "detect repeated switch branches..",
+      "signal_rationale": "detect repeated switch branches.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -1240,7 +1240,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "detect repeated switch conditions..",
+      "signal_rationale": "detect repeated switch conditions.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -1278,7 +1278,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "detect declarations shadowing imports..",
+      "signal_rationale": "detect declarations shadowing imports.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -1368,7 +1368,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "prefer increment and decrement statements..",
+      "signal_rationale": "prefer increment and decrement statements.",
       "decision_rationale": "Retained as an opt-in advisory policy; projects can enable it without making subjective style or optimization guidance fail default checks.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -1404,7 +1404,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "detect pointer round trips that do not copy values..",
+      "signal_rationale": "detect pointer round trips that do not copy values.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -1441,7 +1441,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "avoid repeated map lookups..",
+      "signal_rationale": "avoid repeated map lookups.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -1824,7 +1824,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "detect parameter mutation..",
+      "signal_rationale": "detect parameter mutation.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -1842,7 +1842,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "detect value receiver mutation..",
+      "signal_rationale": "detect value receiver mutation.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -1860,7 +1860,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "detect remainder operations that are always zero..",
+      "signal_rationale": "detect remainder operations that are always zero.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -1914,7 +1914,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "discourage anonymous nested struct types..",
+      "signal_rationale": "discourage anonymous nested struct types.",
       "decision_rationale": "Retained as an opt-in advisory policy; projects can enable it without making subjective style or optimization guidance fail default checks.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -2242,7 +2242,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "require package documentation..",
+      "signal_rationale": "require package documentation.",
       "decision_rationale": "Retained as an opt-in advisory policy; projects can enable it without making subjective style or optimization guidance fail default checks.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -2336,7 +2336,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "replace errors.New around fmt.Sprintf..",
+      "signal_rationale": "replace errors.New around fmt.Sprintf.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -2373,7 +2373,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "avoid taking addresses of range values..",
+      "signal_rationale": "avoid taking addresses of range values.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -2430,7 +2430,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "avoid redefining predeclared identifiers..",
+      "signal_rationale": "avoid redefining predeclared identifiers.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -2467,7 +2467,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "remove redundant legacy build tags..",
+      "signal_rationale": "remove redundant legacy build tags.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -2505,7 +2505,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "simplify redundant error checks before returning..",
+      "signal_rationale": "simplify redundant error checks before returning.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -2524,7 +2524,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "remove final returns from resultless functions..",
+      "signal_rationale": "remove final returns from resultless functions.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -2543,7 +2543,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "remove aliases equal to package names..",
+      "signal_rationale": "remove aliases equal to package names.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -2562,7 +2562,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "remove redundant breaks from switch cases..",
+      "signal_rationale": "remove redundant breaks from switch cases.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -2653,7 +2653,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "simplify range statements..",
+      "signal_rationale": "simplify range statements.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -2691,7 +2691,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "replace single-case switches with if statements..",
+      "signal_rationale": "replace single-case switches with if statements.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -2799,7 +2799,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "detect compiler directives disabled by leading whitespace..",
+      "signal_rationale": "detect compiler directives disabled by leading whitespace.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -2835,7 +2835,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "detect select loops that spin on an empty default..",
+      "signal_rationale": "detect select loops that spin on an empty default.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -2872,7 +2872,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "make integer-to-string intent explicit..",
+      "signal_rationale": "make integer-to-string intent explicit.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -2999,7 +2999,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "detect suspicious time.Date arguments..",
+      "signal_rationale": "detect suspicious time.Date arguments.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -3018,7 +3018,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "avoid unit suffixes on time.Duration values..",
+      "signal_rationale": "avoid unit suffixes on time.Duration values.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -3146,7 +3146,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "require checked type assertions..",
+      "signal_rationale": "require checked type assertions.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -3201,7 +3201,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "avoid leading underscores in private names..",
+      "signal_rationale": "avoid leading underscores in private names.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -3219,7 +3219,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "avoid exported APIs returning private types..",
+      "signal_rationale": "avoid exported APIs returning private types.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -3255,7 +3255,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "avoid formatting calls without directives..",
+      "signal_rationale": "avoid formatting calls without directives.",
       "decision_rationale": "Retained as an opt-in advisory policy; projects can enable it without making subjective style or optimization guidance fail default checks.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -3274,7 +3274,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "replace boolean-returning if chains..",
+      "signal_rationale": "replace boolean-returning if chains.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -3292,7 +3292,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "overlaps Staticcheck unreachable-code analyzers",
       "decision": "keep",
-      "signal_rationale": "detect statements after unconditional flow..",
+      "signal_rationale": "detect statements after unconditional flow.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -3419,7 +3419,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "detect unused function parameters..",
+      "signal_rationale": "detect unused function parameters.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -3438,7 +3438,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "detect unused method receivers..",
+      "signal_rationale": "detect unused method receivers.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -3475,7 +3475,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "prefer any to interface{}..",
+      "signal_rationale": "prefer any to interface{}.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -3494,7 +3494,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "prefer errors.New for static errors..",
+      "signal_rationale": "prefer errors.New for static errors.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -3513,7 +3513,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "prefer fmt.Print over builtin print..",
+      "signal_rationale": "prefer fmt.Print over builtin print.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -3532,7 +3532,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "prefer slices.Sort over sort.Slice..",
+      "signal_rationale": "prefer slices.Sort over sort.Slice.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -3550,7 +3550,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "simplify zero-value declarations..",
+      "signal_rationale": "simplify zero-value declarations.",
       "decision_rationale": "Retained as an opt-in advisory policy; projects can enable it without making subjective style or optimization guidance fail default checks.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -3605,7 +3605,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "pass sync.WaitGroup by pointer..",
+      "signal_rationale": "pass sync.WaitGroup by pointer.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"
@@ -3677,7 +3677,7 @@
       "fix_availability": "none",
       "analyzer_overlap": "none identified in go vet or Staticcheck",
       "decision": "keep",
-      "signal_rationale": "detect literal integer division that truncates to zero..",
+      "signal_rationale": "detect literal integer division that truncates to zero.",
       "decision_rationale": "Retained at its existing default because its documented pattern has a direct remediation and focused catalog tests protect the implementation contract.",
       "false_positive_boundary": "Reports only the documented syntactic, type, or data-flow pattern; the focused good example and negative tests define intentional exclusions.",
       "example_evidence": "documented good/bad fragment validated by the catalog contract"

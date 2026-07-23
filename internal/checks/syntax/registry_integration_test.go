@@ -56,11 +56,18 @@ func TestCatalogIsCompleteDocumentedAndRunnable(t *testing.T) {
 		}
 	}
 	sort.Strings(names)
-	want, err := os.ReadFile(filepath.Join(filepath.Dir(testFile), "testdata", "check_codes.txt"))
+	goldenPath := filepath.Join(filepath.Dir(testFile), "testdata", "check_codes.txt")
+	got := strings.Join(names, "\n") + "\n"
+	if os.Getenv("STRIDER_UPDATE_GOLDEN") == "1" {
+		if err := os.WriteFile(goldenPath, []byte(got), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	want, err := os.ReadFile(goldenPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := strings.Join(names, "\n") + "\n"; got != string(want) {
+	if got != string(want) {
 		t.Errorf("check catalog differs from testdata/check_codes.txt\ngot:\n%s\nwant:\n%s", got, want)
 	}
 }

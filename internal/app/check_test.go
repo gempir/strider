@@ -476,10 +476,6 @@ func TestCheckWatcherReportsOnlyChangedGenerations(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	session, err := checks.NewSession(registry, checks.RunOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
 	var stdout, stderr bytes.Buffer
 	watcher := &checkWatcher{
 		paths: []string{
@@ -487,7 +483,8 @@ func TestCheckWatcherReportsOnlyChangedGenerations(t *testing.T) {
 		},
 		workspaceOptions: workspace.Options{},
 		cache:            workspace.NewCache(workspace.CacheOptions{}),
-		session:          session,
+		registry:         registry,
+		runOptions:       checks.RunOptions{},
 		colorMode:        ui.ColorNever,
 		stdout:           &stdout,
 		stderr:           &stderr,
@@ -504,6 +501,16 @@ func TestCheckWatcherReportsOnlyChangedGenerations(t *testing.T) {
 	}
 	if stdout.String() != firstOutput {
 		t.Fatalf("unchanged generation emitted output: %q", stdout.String())
+	}
+
+	if err := os.WriteFile(filename, []byte("package sample\nfunc init() {} // changed source, same finding\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := watcher.run(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if stdout.String() != firstOutput {
+		t.Fatalf("diagnostically unchanged source emitted output: %q", stdout.String())
 	}
 
 	if err := os.WriteFile(filename, []byte("package sample\nfunc main() {}\n"), 0o600); err != nil {

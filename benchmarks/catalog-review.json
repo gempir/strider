@@ -17,7 +17,7 @@
   },
   "corpus": {
     "projects": 11,
-    "check_runtime_ms": 11246,
+    "check_runtime_ms": 9308,
     "findings": 28313
   },
   "checks": [

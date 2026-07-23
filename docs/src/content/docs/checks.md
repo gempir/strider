@@ -63,11 +63,10 @@ strider check --watch ./...
 ```
 
 Watch mode reports the initial generation, then emits a fresh complete report
-when selected source or the resulting findings change. It reuses unchanged
-CST results but deliberately runs package-aware checks fresh instead of doing
-extra package loads to prove a cached analysis reusable. Baseline generation
-and pruning, JSON, and HTML are one-shot operations and cannot be combined
-with `--watch`.
+when the resulting findings change. It reuses unchanged source snapshots and
+parsed CSTs, but runs every selected check on each generation so dependency
+changes are always observed. Baseline generation and pruning, JSON, and HTML
+are one-shot operations and cannot be combined with `--watch`.
 
 ## Apply automatic fixes
 

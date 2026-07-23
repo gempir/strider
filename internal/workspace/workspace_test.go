@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 )
@@ -199,6 +200,42 @@ func TestCacheReusesImmutableSnapshotAcrossGenerations(t *testing.T) {
 	stats := cache.Stats()
 	if stats.Hits != 1 || stats.Misses != 1 || stats.Entries != 1 {
 		t.Fatalf("unexpected cache stats: %#v", stats)
+	}
+}
+
+func TestCacheCloseReleasesReuseWithoutInvalidatingLiveGeneration(t *testing.T) {
+	directory := t.TempDir()
+	filename := filepath.Join(directory, "main.go")
+	if err := os.WriteFile(filename, []byte("package main\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cache := NewCache(CacheOptions{})
+	opened, err := cache.Open([]string{
+		filename,
+	}, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	file := opened.Files()[0]
+	cache.Close()
+	cache.Close()
+	stats := cache.Stats()
+	if !stats.Closed || stats.Entries != 0 || stats.Bytes != 0 || stats.TreeBytes != 0 {
+		t.Fatalf("closed cache stats = %#v", stats)
+	}
+	if contents, err := file.Bytes(); err != nil || !bytes.Equal(contents, []byte("package main\n")) {
+		t.Fatalf("live generation after cache close = %q, %v", contents, err)
+	}
+	if _, err := cache.Open([]string{
+		filename,
+	}, Options{}); err == nil || !strings.Contains(err.Error(), "cache is closed") {
+		t.Fatalf("open after cache close error = %v", err)
+	}
+	if err := opened.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := file.Bytes(); err == nil {
+		t.Fatal("closed generation remained accessible")
 	}
 }
 

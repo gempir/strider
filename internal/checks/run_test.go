@@ -61,6 +61,66 @@ func TestRunDoesNotConsumeWorkspace(t *testing.T) {
 	}
 }
 
+func TestRunWithWorkspaceCacheObservesDependencyChanges(t *testing.T) {
+	directory := t.TempDir()
+	dependencyDirectory := filepath.Join(directory, "dep")
+	if err := os.Mkdir(dependencyDirectory, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(directory, "go.mod"), []byte("module example.com/watch\n\ngo 1.24\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	dependency := filepath.Join(dependencyDirectory, "dep.go")
+	if err := os.WriteFile(dependency, []byte("package dep\ntype Value struct{}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	target := filepath.Join(directory, "target.go")
+	if err := os.WriteFile(target, []byte("package watch\nimport \"example.com/watch/dep\"\nfunc Use(value dep.Value) {}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	registry, err := NewRegistry(RegistryOptions{
+		Only: []string{
+			"copy-lock-value",
+		},
+		Directory: directory,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cache := workspace.NewCache(workspace.CacheOptions{})
+	t.Cleanup(cache.Close)
+	run := func() Result {
+		shared, openErr := cache.Open([]string{
+			target,
+		}, workspace.Options{
+			Directory: directory,
+		})
+		if openErr != nil {
+			t.Fatal(openErr)
+		}
+		defer shared.Close()
+		result, runErr := Run(context.Background(), shared, registry, RunOptions{})
+		if runErr != nil {
+			t.Fatal(runErr)
+		}
+		return result
+	}
+	if result := run(); len(result.Diagnostics) != 0 {
+		t.Fatalf("initial diagnostics = %#v", result.Diagnostics)
+	}
+	if err := os.WriteFile(dependency, []byte("package dep\nimport \"sync\"\ntype Value struct { Mutex sync.Mutex }\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	changed := run()
+	if len(changed.Diagnostics) == 0 || changed.Diagnostics[0].Code != "copy-lock-value" {
+		t.Fatalf("dependency-change diagnostics = %#v", changed.Diagnostics)
+	}
+	stats := cache.Stats()
+	if stats.Hits != 1 || stats.Misses != 1 {
+		t.Fatalf("workspace reuse stats = %#v", stats)
+	}
+}
+
 func TestConcreteWorkersCancelOnFirstErrorAndJoin(t *testing.T) {
 	previous := runtime.GOMAXPROCS(4)
 	t.Cleanup(func() {

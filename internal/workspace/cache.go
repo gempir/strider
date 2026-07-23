@@ -43,6 +43,7 @@ type CacheOptions struct {
 // considered while successfully opening generations. Bytes is exact retained
 // source size; TreeBytes is the conservative CST estimate used for eviction.
 type CacheStats struct {
+	Closed      bool
 	Generations uint64
 	Hits        uint64
 	Misses      uint64
@@ -69,6 +70,7 @@ type Cache struct {
 	hits         uint64
 	misses       uint64
 	evictions    uint64
+	closed       bool
 }
 
 type cacheKey struct {
@@ -136,6 +138,12 @@ func (cache *Cache) Open(paths []string, options Options) (*Workspace, error) {
 	}
 	cache.openMu.Lock()
 	defer cache.openMu.Unlock()
+	cache.mu.Lock()
+	closed := cache.closed
+	cache.mu.Unlock()
+	if closed {
+		return nil, fmt.Errorf("open cached workspace: cache is closed")
+	}
 
 	inputs := append([]string(nil), paths...)
 	if len(inputs) == 0 {
@@ -215,6 +223,27 @@ func (cache *Cache) Open(paths []string, options Options) (*Workspace, error) {
 	}, nil
 }
 
+// Close releases every snapshot retained for reuse and prevents future
+// generations. Already-open workspaces keep their immutable snapshots until
+// their own Close call, so cache and generation lifetimes remain independent.
+// Close is idempotent.
+func (cache *Cache) Close() {
+	if cache == nil {
+		return
+	}
+	cache.openMu.Lock()
+	defer cache.openMu.Unlock()
+	cache.mu.Lock()
+	defer cache.mu.Unlock()
+	if cache.closed {
+		return
+	}
+	cache.closed = true
+	cache.entries = nil
+	cache.bytes = 0
+	cache.treeBytes = 0
+}
+
 // Stats returns cache counters and current retained resource use.
 func (cache *Cache) Stats() CacheStats {
 	if cache == nil {
@@ -223,6 +252,7 @@ func (cache *Cache) Stats() CacheStats {
 	cache.mu.Lock()
 	defer cache.mu.Unlock()
 	return CacheStats{
+		Closed:      cache.closed,
 		Generations: cache.generation,
 		Hits:        cache.hits,
 		Misses:      cache.misses,

@@ -58,7 +58,8 @@ type checkWatcher struct {
 	paths            []string
 	workspaceOptions workspace.Options
 	cache            *workspace.Cache
-	session          *checks.Session
+	registry         *checks.Registry
+	runOptions       checks.RunOptions
 	baseline         baselineOptions
 	summaryOnly      bool
 	colorMode        ui.ColorMode
@@ -360,21 +361,19 @@ func runCheckWatch(
 	stdout,
 	stderr io.Writer,
 ) error {
-	session, err := checks.NewSession(registry, runOptions)
-	if err != nil {
-		return err
-	}
 	watcher := &checkWatcher{
 		paths:            append([]string(nil), paths...),
 		workspaceOptions: workspaceOptions,
 		cache:            workspace.NewCache(workspace.CacheOptions{}),
-		session:          session,
+		registry:         registry,
+		runOptions:       runOptions,
 		baseline:         baselineConfig,
 		summaryOnly:      summaryOnly,
 		colorMode:        colorMode,
 		stdout:           stdout,
 		stderr:           stderr,
 	}
+	defer watcher.cache.Close()
 	ticker := time.NewTicker(checkWatchInterval)
 	defer ticker.Stop()
 	lastError := ""
@@ -404,16 +403,13 @@ func (watcher *checkWatcher) run(ctx context.Context) error {
 		return err
 	}
 	defer shared.Close()
-	before := watcher.session.Stats()
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	result, err := watcher.session.Run(ctx, shared)
+	result, err := checks.Run(ctx, shared, watcher.registry, watcher.runOptions)
 	if err != nil {
 		return err
 	}
-	after := watcher.session.Stats()
-	concreteChanged := after.ConcreteMisses > before.ConcreteMisses
 	diagnostics, handled, err := prepareCheckDiagnostics(result.Diagnostics, watcher.baseline, watcher.colorMode, watcher.stderr)
 	if err != nil {
 		return err
@@ -422,7 +418,7 @@ func (watcher *checkWatcher) run(ctx context.Context) error {
 		return fmt.Errorf("watch mode cannot update a baseline")
 	}
 	diagnosticsChanged := !watcher.hasDiagnostics || !reflect.DeepEqual(watcher.lastDiagnostics, diagnostics)
-	if watcher.iteration != 0 && !concreteChanged && !diagnosticsChanged {
+	if watcher.iteration != 0 && !diagnosticsChanged {
 		return nil
 	}
 	watcher.lastDiagnostics = diagnostics

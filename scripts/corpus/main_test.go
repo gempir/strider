@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -195,5 +197,35 @@ func TestPercentileUsesNearestRank(t *testing.T) {
 func TestResetBenchmarkStateRejectsFilesystemRoot(t *testing.T) {
 	if err := resetBenchmarkState(string(os.PathSeparator)); err == nil {
 		t.Fatal("filesystem root was accepted as benchmark state")
+	}
+}
+
+func TestCleanupBenchmarkCachesPreservesTelemetry(t *testing.T) {
+	root := t.TempDir()
+	for _, path := range []string{
+		root + "/go-cache/entry",
+		root + "/strider-cache/entry",
+		root + "/telemetry/sample-1.json",
+	} {
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte("data"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	cleanupBenchmarkCaches(root)
+
+	for _, path := range []string{
+		root + "/go-cache",
+		root + "/strider-cache",
+	} {
+		if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("cache path %s still exists: %v", path, err)
+		}
+	}
+	if _, err := os.Stat(root + "/telemetry/sample-1.json"); err != nil {
+		t.Fatalf("telemetry was removed: %v", err)
 	}
 }

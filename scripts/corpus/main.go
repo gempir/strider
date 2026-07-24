@@ -542,6 +542,7 @@ func runOperationSamples(strider, checkout, operation string, item project, vari
 		result.Error = err.Error()
 		return result
 	}
+	defer cleanupBenchmarkCaches(stateRoot)
 	warmups := options.warmups
 	if warmups == 0 && (variant.striderCache == "warm" || variant.goBuildCache == "warm") {
 		warmups = 1
@@ -858,6 +859,15 @@ func resetBenchmarkState(path string) error {
 		return err
 	}
 	return os.MkdirAll(filepath.Join(clean, "telemetry"), 0o755)
+}
+
+func cleanupBenchmarkCaches(root string) {
+	for _, name := range []string{
+		"go-cache",
+		"strider-cache",
+	} {
+		_ = os.RemoveAll(filepath.Join(root, name))
+	}
 }
 
 func prepareSampleState(root string, variant benchmarkVariant, name string) (sampleState, func() error, error) {

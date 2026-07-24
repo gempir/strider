@@ -111,3 +111,43 @@ func BenchmarkLint(b *testing.B) {
 		}
 	}
 }
+
+func TestPreparedPlanReusesDispatchByActiveCheckCohort(t *testing.T) {
+	root := t.TempDir()
+	var noInit, filenameFormat Check
+	for _, check := range Catalog() {
+		if check.Meta().Code == "no-init" {
+			noInit = check
+		}
+		if check.Meta().Code == "filename-format" {
+			filenameFormat = check
+		}
+	}
+	registry := NewPlan([]SelectedCheck{
+		{
+			Check: noInit,
+			Excludes: []string{
+				"excluded",
+			},
+		},
+		{
+			Check: filenameFormat,
+		},
+	}, root)
+	first := registry.prepare(filepath.Join(registry.root, "one.go"))
+	second := registry.prepare(filepath.Join(registry.root, "two.go"))
+	if first != second {
+		t.Fatal("files with the same active checks rebuilt their dispatch plan")
+	}
+	excludedFilename := filepath.Join(registry.root, "excluded", "three.go")
+	excluded := registry.prepare(excludedFilename)
+	if excluded == first {
+		t.Fatal("per-file exclusion reused an incompatible dispatch plan")
+	}
+	if len(excluded.checks) != 1 {
+		t.Fatalf("excluded plan has %d checks, want 1", len(excluded.checks))
+	}
+	if cached := registry.prepare(excludedFilename); cached != excluded {
+		t.Fatal("per-file active checks were recomputed")
+	}
+}

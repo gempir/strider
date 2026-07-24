@@ -2,6 +2,7 @@
 
 STRIDER ?= ./strider
 CORPUS_FLAGS ?=
+CORPUS_UPDATE_FLAGS ?= --samples 1 --warmups 0 --scheduler-modes fixed --strider-cache-modes cold,warm --go-cache-modes warm
 
 build:
 	CGO_ENABLED=0 go build -trimpath -o strider ./cmd/strider
@@ -37,4 +38,5 @@ corpus-update: build
 	go run ./scripts/corpus --mode update --strider "$(STRIDER)" \
 		--html target/corpus/index.html \
 		--project-html docs/public/benchmark-report/projects \
-		--homepage-stats docs/src/generated/sftpgo-benchmark.json $(CORPUS_FLAGS)
+		--homepage-stats docs/src/generated/sftpgo-benchmark.json \
+		$(CORPUS_UPDATE_FLAGS) $(CORPUS_FLAGS)

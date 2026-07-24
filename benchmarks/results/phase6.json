@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "phase": 6,
+  "protocol": {
+    "samples": 7,
+    "warmups": 1,
+    "schedulers": ["fixed", "native"],
+    "strider_cache": "cold",
+    "go_build_cache": "warm",
+    "target": "linux/amd64",
+    "host": "darwin/arm64",
+    "go_version": "go1.26.4",
+    "corpus": "sftpgo",
+    "corpus_revision": "42f7a4d415dc7a97da08880edb82e5b0db5fcfc8",
+    "os_filesystem_cache": "accepted as warm"
+  },
+  "selected": {
+    "file_scheduler": "work-stealing",
+    "semantic_overlap": false,
+    "reason": "Lowest native-core latency without a fixed two-core regression; semantic overlap regressed both scheduler modes."
+  },
+  "strategies": {
+    "work_stealing": {
+      "fixed": {
+        "format_median_ms": 495,
+        "file_local_median_ms": 844,
+        "check_median_ms": 2735,
+        "check_peak_rss_bytes": 1038221312,
+        "check_live_heap_after_file_local_bytes": 33760952,
+        "check_worker_wall_ms": 765.768,
+        "check_worker_sum_ms": 1491.533,
+        "check_worker_idle_ms": 40.002,
+        "check_slowest_file_ms": 310.015
+      },
+      "native": {
+        "format_median_ms": 295,
+        "file_local_median_ms": 496,
+        "check_median_ms": 2046,
+        "check_peak_rss_bytes": 927121408,
+        "check_live_heap_after_file_local_bytes": 191291032,
+        "check_worker_wall_ms": 459.491,
+        "check_worker_sum_ms": 2453.995,
+        "check_worker_idle_ms": 2149.129,
+        "check_slowest_file_ms": 360.693
+      }
+    },
+    "largest_first": {
+      "fixed_check_median_ms": 2805,
+      "native_check_median_ms": 2470,
+      "fixed_check_peak_rss_bytes": 1035681792,
+      "native_check_peak_rss_bytes": 923058176,
+      "fixed_live_heap_after_file_local_bytes": 15119280,
+      "native_live_heap_after_file_local_bytes": 195696336,
+      "fixed_worker_wall_ms": 784.930,
+      "fixed_worker_sum_ms": 1557.876,
+      "fixed_worker_idle_ms": 12.886,
+      "fixed_slowest_file_ms": 312.685,
+      "native_worker_wall_ms": 620.267,
+      "native_worker_sum_ms": 2976.917,
+      "native_worker_idle_ms": 3235.482,
+      "native_slowest_file_ms": 620.267
+    },
+    "fifo": {
+      "fixed_check_median_ms": 3302,
+      "native_check_median_ms": 2566,
+      "fixed_check_peak_rss_bytes": 1037172736,
+      "native_check_peak_rss_bytes": 1000734720,
+      "fixed_live_heap_after_file_local_bytes": 15319288,
+      "native_live_heap_after_file_local_bytes": 160047208,
+      "fixed_worker_wall_ms": 1099.765,
+      "fixed_worker_sum_ms": 1721.969,
+      "fixed_worker_idle_ms": 480.813,
+      "fixed_slowest_file_ms": 363.125,
+      "native_worker_wall_ms": 690.583,
+      "native_worker_sum_ms": 2785.693,
+      "native_worker_idle_ms": 4120.139,
+      "native_slowest_file_ms": 443.285
+    }
+  },
+  "semantic_overlap": {
+    "enabled_for_evaluation_only": true,
+    "fixed_check_median_ms": 2946,
+    "native_check_median_ms": 2203,
+    "fixed_peak_rss_bytes": 1053982720,
+    "native_peak_rss_bytes": 933560320,
+    "fixed_live_heap_at_file_local_completion_bytes": 130810848,
+    "native_live_heap_at_file_local_completion_bytes": 278122288
+  },
+  "digests": {
+    "format": "deb5d65d4c8a2fe9a78b395c8c2a84acc9dc9bed01c7bcfa4c93ad1d0767ead9",
+    "check_file_local": "420c333de766aa1474f90f3abd1968a773442ae8bd0e9abc90eb21585d916287",
+    "check": "2d29be88549e2b0accdfbfba5785b7f7704357dfef6e181148f76b8ec7eb9d08"
+  }
+}

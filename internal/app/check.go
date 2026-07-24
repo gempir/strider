@@ -16,6 +16,8 @@ import (
 	"github.com/gempir/strider/internal/fix"
 	"github.com/gempir/strider/internal/formatter"
 	"github.com/gempir/strider/internal/report"
+	"github.com/gempir/strider/internal/resultcache"
+	"github.com/gempir/strider/internal/telemetry"
 	"github.com/gempir/strider/internal/ui"
 	"github.com/gempir/strider/internal/workspace"
 )
@@ -96,8 +98,8 @@ type checkConflict struct {
 	message string
 }
 
-func runCheck(ctx context.Context, args []string, configuration config.Config, colorMode ui.ColorMode, stdout, stderr io.Writer, startedAt time.Time) int {
-	exitCode, err := runCheckCommand(ctx, args, configuration, colorMode, stdout, stderr, startedAt)
+func runCheck(ctx context.Context, args []string, configuration config.Config, colorMode ui.ColorMode, stdout, stderr io.Writer, startedAt time.Time, cache *resultcache.Cache) int {
+	exitCode, err := runCheckCommand(ctx, args, configuration, colorMode, stdout, stderr, startedAt, cache)
 	if err != nil {
 		printCommandError(stderr, colorMode, "strider check", "%v", err)
 		return exitError
@@ -105,7 +107,16 @@ func runCheck(ctx context.Context, args []string, configuration config.Config, c
 	return exitCode
 }
 
-func runCheckCommand(ctx context.Context, args []string, configuration config.Config, colorMode ui.ColorMode, stdout, stderr io.Writer, startedAt time.Time) (int, error) {
+func runCheckCommand(
+	ctx context.Context,
+	args []string,
+	configuration config.Config,
+	colorMode ui.ColorMode,
+	stdout,
+	stderr io.Writer,
+	startedAt time.Time,
+	cache *resultcache.Cache,
+) (int, error) {
 	if err := ctx.Err(); err != nil {
 		return exitError, err
 	}
@@ -209,8 +220,10 @@ func runCheckCommand(ctx context.Context, args []string, configuration config.Co
 		Excludes:           checkConfig.Excludes,
 		SkipPackageLoading: !packageLoading,
 		CollectCandidates:  fixMode,
+		Cache:              cache,
 	}
 	if *watch {
+		runOptions.Cache = nil
 		if err := runCheckWatch(ctx, flags.Args(), workspaceOptions, registry, runOptions, baselineConfig, *summaryOnly, colorMode, stdout, stderr, startedAt); err != nil {
 			return exitError, err
 		}
@@ -251,6 +264,8 @@ func validateCheckConflicts(active map[string]bool) error {
 }
 
 func runCheckOnce(ctx context.Context, execution checkExecution) (int, error) {
+	finish := telemetry.Start("check.command")
+	defer finish()
 	if err := ctx.Err(); err != nil {
 		return exitError, err
 	}
@@ -299,7 +314,9 @@ func runCheckOnce(ctx context.Context, execution checkExecution) (int, error) {
 		Checks:   executedCheckCount(execution.registry, execution.runOptions),
 		Duration: time.Since(execution.startedAt),
 	}
+	reportFinish := telemetry.Start("check.report")
 	err = reportCheckDiagnostics(execution.stdout, diagnostics, execution.reportFormat, execution.summaryOnly, execution.colorMode, &statistics)
+	reportFinish()
 	if err != nil {
 		return exitError, err
 	}

@@ -2,8 +2,10 @@
 package checks
 
 import (
+	"fmt"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/gempir/strider/internal/checks/catalog"
 	"github.com/gempir/strider/internal/checks/semantic"
@@ -33,6 +35,7 @@ type Registry struct {
 	format     bool
 	syntax     *syntax.Plan
 	semantic   *semantic.Plan
+	display    sync.Map
 }
 
 type configuredCheck struct {
@@ -201,4 +204,42 @@ func (registry *Registry) needsCST(filename string) bool {
 
 func (registry *Registry) formatApplies(filename string) bool {
 	return registry != nil && registry.format && !pathfilter.Excluded(registry.root, filename, registry.settings[formatMeta.Code].excludes)
+}
+
+func (registry *Registry) diagnosticPath(filename string) string {
+	if cached, ok := registry.display.Load(filename); ok {
+		if display, valid := cached.(string); valid {
+			return display
+		}
+	}
+	display := source.DiagnosticPath(registry.root, filename)
+	cached, _ := registry.display.LoadOrStore(filename, display)
+	if stored, valid := cached.(string); valid {
+		return stored
+	}
+	return display
+}
+
+func (registry *Registry) localCacheIdentity(filename string) string {
+	if registry == nil {
+		return ""
+	}
+	var identity strings.Builder
+	if registry.formatApplies(filename) {
+		setting := registry.settings[formatMeta.Code]
+		fmt.Fprintf(&identity, "format=true\nseverity=%s\n", setting.severity)
+		excludes := append([]string(nil), setting.excludes...)
+		sort.Strings(excludes)
+		for _, exclude := range excludes {
+			fmt.Fprintf(&identity, "format-exclude=%s\n", exclude)
+		}
+	} else {
+		identity.WriteString("format=false\n")
+	}
+	if registry.syntax == nil {
+		identity.WriteString("syntax=disabled\n")
+	} else {
+		identity.WriteString(registry.syntax.CacheIdentity(filename))
+	}
+	return identity.String()
 }

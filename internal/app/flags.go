@@ -1,4 +1,4 @@
-//strider:ignore-file cognitive-complexity,cyclomatic-complexity,modifies-parameter,no-package-var,single-case-switch
+//strider:ignore-file cognitive-complexity,cyclomatic-complexity,function-length,modifies-parameter,no-package-var,single-case-switch
 package app
 
 import (
@@ -12,12 +12,15 @@ import (
 
 var commandOptionAliases = map[string]map[string]string{
 	"strider": {
-		"config":    "c",
-		"no-config": "n",
-		"color":     "C",
-		"colors":    "C",
-		"help":      "h",
-		"version":   "v",
+		"config":      "c",
+		"no-config":   "n",
+		"color":       "C",
+		"colors":      "C",
+		"cache-dir":   "",
+		"no-cache":    "",
+		"clear-cache": "",
+		"help":        "h",
+		"version":     "v",
 	},
 	"fmt": {
 		"check":          "c",
@@ -50,6 +53,9 @@ type globalOptions struct {
 	noConfig   bool
 	color      string
 	colorSet   bool
+	cacheDir   string
+	noCache    bool
+	clearCache bool
 }
 
 type stringList []string
@@ -82,6 +88,26 @@ func parseGlobalOptions(args []string, stderr io.Writer) ([]string, globalOption
 			args = args[1:]
 		case args[0] == "--no-config" || args[0] == "-n":
 			options.noConfig = true
+			args = args[1:]
+		case args[0] == "--cache-dir":
+			if len(args) < 2 || args[1] == "" {
+				printCommandError(stderr, globalColor(options), "strider", "--cache-dir requires a path")
+				return nil, globalOptions{}, false
+			}
+			options.cacheDir = args[1]
+			args = args[2:]
+		case strings.HasPrefix(args[0], "--cache-dir="):
+			options.cacheDir = strings.TrimPrefix(args[0], "--cache-dir=")
+			if options.cacheDir == "" {
+				printCommandError(stderr, globalColor(options), "strider", "--cache-dir requires a path")
+				return nil, globalOptions{}, false
+			}
+			args = args[1:]
+		case args[0] == "--no-cache":
+			options.noCache = true
+			args = args[1:]
+		case args[0] == "--clear-cache":
+			options.clearCache = true
 			args = args[1:]
 		case args[0] == "--color" || args[0] == "--colors" || args[0] == "-C":
 			if len(args) < 2 || !ui.ValidColorMode(args[1]) {
@@ -127,6 +153,10 @@ func parseGlobalOptions(args []string, stderr io.Writer) ([]string, globalOption
 func validateGlobalOptions(args []string, options globalOptions, stderr io.Writer) ([]string, globalOptions, bool) {
 	if options.configPath != "" && options.noConfig {
 		printCommandError(stderr, globalColor(options), "strider", "--config and --no-config are mutually exclusive")
+		return nil, globalOptions{}, false
+	}
+	if options.cacheDir != "" && options.noCache {
+		printCommandError(stderr, globalColor(options), "strider", "--cache-dir and --no-cache are mutually exclusive")
 		return nil, globalOptions{}, false
 	}
 	return args, options, true

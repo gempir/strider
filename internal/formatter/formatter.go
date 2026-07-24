@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/gempir/strider/internal/cst"
+	"github.com/gempir/strider/internal/telemetry"
 )
 
 const PrintWidth = 180
@@ -40,6 +41,14 @@ func DefaultOptions() Options {
 
 func NewFormatter() *Formatter {
 	return &Formatter{}
+}
+
+// CacheIdentity returns every formatter input not already represented by the
+// source content and logical path cache-key components.
+func (s *Formatter) CacheIdentity(filename string, options Options) string {
+	options = normalizeOptions(options)
+	module := s.modules.findInfo(filename)
+	return fmt.Sprintf("print-width=%d\nmodule=%s\ngo-mod=%s", options.PrintWidth, module.path, module.identity)
 }
 
 func Format(filename string, source []byte) (Result, error) {
@@ -92,7 +101,49 @@ func (s *Formatter) FormatTree(filename string, originalTree *cst.Tree, options 
 	return s.formatTree(filename, originalTree, normalizeOptions(options), true)
 }
 
+// FormatTreeKnownActive formats a tree after the caller has made the sole
+// ignore decision for the path and established that formatting is active.
+func (s *Formatter) FormatTreeKnownActive(filename string, originalTree *cst.Tree, options Options) (Result, error) {
+	return s.formatTree(filename, originalTree, normalizeOptions(options), false)
+}
+
+// WouldChangeTree reports formatting drift without constructing a candidate
+// that escapes the call. It guarantees the same Changed and Ignored values as
+// FormatTree whenever the full formatter succeeds. Convergence-error parity is
+// intentionally not part of this status-only contract.
+func (s *Formatter) WouldChangeTree(filename string, originalTree *cst.Tree, options Options) (changed bool, ignored bool, err error) {
+	return s.wouldChangeTree(filename, originalTree, normalizeOptions(options), true)
+}
+
+// WouldChangeTreeKnownActive is the status-only counterpart to
+// FormatTreeKnownActive.
+func (s *Formatter) WouldChangeTreeKnownActive(filename string, originalTree *cst.Tree, options Options) (changed bool, err error) {
+	changed, _, err = s.wouldChangeTree(filename, originalTree, normalizeOptions(options), false)
+	return changed, err
+}
+
+func (s *Formatter) wouldChangeTree(filename string, originalTree *cst.Tree, options Options, checkIgnored bool) (changed bool, ignored bool, err error) {
+	if err := validateTreeInput(filename, originalTree, options); err != nil {
+		return false, false, err
+	}
+	source := originalTree.Bytes()
+	if checkIgnored && IsIgnored(source) {
+		return false, true, nil
+	}
+	module := ""
+	if treeHasImports(originalTree) {
+		module = s.modules.find(filename)
+	}
+	formatted, err := renderCandidate(originalTree, options, module)
+	if err != nil {
+		return false, false, err
+	}
+	return !bytes.Equal(source, formatted), false, nil
+}
+
 func (s *Formatter) formatTree(filename string, originalTree *cst.Tree, options Options, checkIgnored bool) (Result, error) {
+	finish := telemetry.Start("formatter.verified")
+	defer finish()
 	preview, module, err := s.previewTree(filename, originalTree, options, checkIgnored)
 	if err != nil || preview.Ignored {
 		return preview, err
@@ -114,20 +165,11 @@ func (s *Formatter) formatTree(filename string, originalTree *cst.Tree, options 
 	return preview, nil
 }
 
-// FormatTreeUnverified renders a read-only formatting candidate without reparsing it.
-// It is intended for drift checks; callers that may expose or write the
-// candidate must use FormatTree and its equivalence/idempotence checks.
-func (s *Formatter) FormatTreeUnverified(filename string, originalTree *cst.Tree, options Options) (Result, error) {
-	result, _, err := s.previewTree(filename, originalTree, normalizeOptions(options), true)
-	return result, err
-}
-
 func (s *Formatter) previewTree(filename string, originalTree *cst.Tree, options Options, checkIgnored bool) (Result, string, error) {
-	if originalTree == nil {
-		return Result{}, "", fmt.Errorf("format %s: nil concrete syntax tree", filename)
-	}
-	if options.PrintWidth < 40 || options.PrintWidth > 500 {
-		return Result{}, "", fmt.Errorf("format %s: print width must be between 40 and 500", filename)
+	finish := telemetry.Start("formatter.preview")
+	defer finish()
+	if err := validateTreeInput(filename, originalTree, options); err != nil {
+		return Result{}, "", err
 	}
 	source := originalTree.Bytes()
 	if checkIgnored && IsIgnored(source) {
@@ -145,6 +187,11 @@ func (s *Formatter) previewTree(filename string, originalTree *cst.Tree, options
 	formatted, err := renderCandidate(originalTree, options, module)
 	if err != nil {
 		return Result{}, "", err
+	}
+	if bytes.Equal(source, formatted) {
+		return Result{
+			Source: formatted,
+		}, module, nil
 	}
 	// Rendering uses CST trivia to preserve deliberate vertical space. Because a
 	// render can move that trivia to its canonical token boundary, render the new
@@ -170,8 +217,23 @@ func (s *Formatter) previewTree(filename string, originalTree *cst.Tree, options
 	return Result{}, "", fmt.Errorf("formatter did not converge for %s", filename)
 }
 
+func validateTreeInput(filename string, originalTree *cst.Tree, options Options) error {
+	if originalTree == nil {
+		return fmt.Errorf("format %s: nil concrete syntax tree", filename)
+	}
+	if options.PrintWidth < 40 || options.PrintWidth > 500 {
+		return fmt.Errorf("format %s: print width must be between 40 and 500", filename)
+	}
+	return nil
+}
+
 func renderCandidate(tree *cst.Tree, options Options, module string) ([]byte, error) {
-	formatted, err := goformat.Source([]byte(renderWithModule(tree, options, module)))
+	renderFinish := telemetry.Start("formatter.render")
+	rendered := []byte(renderWithModule(tree, options, module))
+	renderFinish()
+	goFormatFinish := telemetry.Start("formatter.go-format")
+	formatted, err := goformat.Source(rendered)
+	goFormatFinish()
 	if err != nil {
 		return nil, fmt.Errorf("formatter gofmt compatibility: %w", err)
 	}

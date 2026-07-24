@@ -13,6 +13,7 @@ import (
 	"github.com/gempir/strider/internal/cst"
 	"github.com/gempir/strider/internal/pathfilter"
 	"github.com/gempir/strider/internal/source"
+	"github.com/gempir/strider/internal/telemetry"
 )
 
 // Options controls source discovery for a workspace.
@@ -50,6 +51,8 @@ type File struct {
 
 // Open discovers a deterministic workspace for paths.
 func Open(paths []string, options Options) (*Workspace, error) {
+	finish := telemetry.Start("workspace.discover")
+	defer finish()
 	inputs := append([]string(nil), paths...)
 	if len(inputs) == 0 {
 		inputs = []string{
@@ -104,7 +107,7 @@ func (workspace *Workspace) Close() error {
 	}
 	workspace.closeOnce.Do(func() {
 		for _, file := range workspace.files {
-			file.release()
+			file.Release()
 		}
 	})
 	return nil
@@ -133,15 +136,19 @@ func (file *File) Bytes() ([]byte, error) {
 		}
 		return file.snapshot.source, nil
 	}
-	file.bytesOnce.Do(func() {
-		contents, err := os.ReadFile(file.path)
-		file.bytesMu.Lock()
-		if !file.bytesReleased {
-			file.bytes = contents
-			file.bytesErr = err
-		}
-		file.bytesMu.Unlock()
-	})
+	file.bytesOnce.Do(
+		func() {
+			finish := telemetry.Start("workspace.read")
+			defer finish()
+			contents, err := os.ReadFile(file.path)
+			file.bytesMu.Lock()
+			if !file.bytesReleased {
+				file.bytes = contents
+				file.bytesErr = err
+			}
+			file.bytesMu.Unlock()
+		},
+	)
 	file.bytesMu.RLock()
 	defer file.bytesMu.RUnlock()
 	if file.bytesReleased {
@@ -219,7 +226,10 @@ func (file *File) Identity() (ContentIdentity, error) {
 	return sha256.Sum256(contents), nil
 }
 
-func (file *File) releaseCST() {
+// ReleaseCST drops this generation's tree handle after its last concrete
+// consumer. Cached watch snapshots remain intact for reuse by later
+// generations.
+func (file *File) ReleaseCST() {
 	if file == nil {
 		return
 	}
@@ -229,11 +239,14 @@ func (file *File) releaseCST() {
 	file.treeMu.Unlock()
 }
 
-func (file *File) release() {
+// Release drops this generation's source and tree handles. References already
+// materialized by transactional write, diff, or fix planning remain valid.
+// The method is idempotent and safe to call concurrently with reads.
+func (file *File) Release() {
 	if file == nil {
 		return
 	}
-	file.releaseCST()
+	file.ReleaseCST()
 	file.bytesMu.Lock()
 	file.bytes = nil
 	file.bytesReleased = true

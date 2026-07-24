@@ -7,6 +7,7 @@ import (
 	"github.com/gempir/strider/internal/checks/catalog"
 	"github.com/gempir/strider/internal/cst"
 	"github.com/gempir/strider/internal/diagnostic"
+	"github.com/gempir/strider/internal/telemetry"
 )
 
 type Pass struct {
@@ -37,6 +38,8 @@ func analyzeCST(input CSTInput) executionStats {
 	if len(input.Checks) == 0 || input.Tree == nil {
 		return executionStats{}
 	}
+	finish := telemetry.Start("syntax.traversal")
+	defer finish()
 	analyzer := &Pass{
 		filename:  input.Filename,
 		tree:      input.Tree,
@@ -46,11 +49,11 @@ func analyzeCST(input CSTInput) executionStats {
 		functions: make(map[cst.Node]*functionFacts),
 		calls:     make(map[*cst.PrimaryExpr]callFacts),
 	}
-	dispatch := make(map[NodeKind][]Check)
+	dispatch := input.Dispatch
+	if dispatch == nil {
+		dispatch = buildDispatch(input.Checks)
+	}
 	for _, check := range input.Checks {
-		for _, interest := range check.Interests() {
-			dispatch[interest] = append(dispatch[interest], check)
-		}
 		analyzer.run(check, check.Start)
 	}
 	cst.WalkProductionsWithAncestors(
@@ -66,6 +69,16 @@ func analyzeCST(input CSTInput) executionStats {
 		analyzer.run(check, check.Finish)
 	}
 	return analyzer.stats
+}
+
+func buildDispatch(checks []Check) map[NodeKind][]Check {
+	dispatch := make(map[NodeKind][]Check)
+	for _, check := range checks {
+		for _, interest := range check.Interests() {
+			dispatch[interest] = append(dispatch[interest], check)
+		}
+	}
+	return dispatch
 }
 
 func (a *Pass) dispatch(checks []Check, node cst.Node) {
@@ -94,10 +107,14 @@ func (a *Pass) Report(node cst.Node, message string) {
 	if a.check == nil || node == nil || a.reporter == nil {
 		return
 	}
+	start, end := a.findingRange(node)
 	a.reporter(Finding{
-		Node:    node,
-		Code:    a.check.Meta().Code,
-		Message: message,
+		Node:     node,
+		Start:    start,
+		End:      end,
+		HasRange: true,
+		Code:     a.check.Meta().Code,
+		Message:  message,
 	})
 }
 
@@ -106,14 +123,22 @@ func (a *Pass) ReportFix(node cst.Node, message string, fix diagnostic.Fix) {
 	if a.check == nil || node == nil || a.reporter == nil {
 		return
 	}
+	start, end := a.findingRange(node)
 	a.reporter(Finding{
-		Node:    node,
-		Code:    a.check.Meta().Code,
-		Message: message,
+		Node:     node,
+		Start:    start,
+		End:      end,
+		HasRange: true,
+		Code:     a.check.Meta().Code,
+		Message:  message,
 		Fixes: []diagnostic.Fix{
 			fix,
 		},
 	})
+}
+
+func (a *Pass) findingRange(node cst.Node) (start, end int) {
+	return a.tree.Range(node)
 }
 
 // ReportRange emits an offset finding owned by the current descriptor.

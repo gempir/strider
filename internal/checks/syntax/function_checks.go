@@ -48,7 +48,7 @@ func (a *Pass) checkFunctionLength(facts *functionFacts) {
 	if facts.signature == nil || facts.body == nil {
 		return
 	}
-	start, end := cst.Range(facts.body)
+	start, end := a.tree.Range(facts.body)
 	lines := a.tree.Position(end).Line - a.tree.Position(start).Line + 1
 	statementLimit := a.intOption("max-statements")
 	lineLimit := a.intOption("max-lines")
@@ -217,11 +217,12 @@ func (a *Pass) functionUses(facts *functionFacts) map[string]int {
 	if facts.body == nil {
 		return uses
 	}
-	for _, current := range cst.NodeTokens(facts.body) {
+	a.tree.ForEachToken(facts.body, func(current cst.Token) bool {
 		if current.Ch() == token.IDENT {
 			uses[current.Src()]++
 		}
-	}
+		return true
+	})
 	return uses
 }
 
@@ -245,7 +246,7 @@ func (a *Pass) checkFlagParameter(facts *functionFacts) {
 	}
 	for _, parameter := range parameterDecls(facts.signature.Parameters) {
 		for _, name := range identifierTokens(parameter.IdentifierList) {
-			if cst.Spelling(parameter.TypeNode) == "bool" && conditionUses(facts.body, name.Src()) {
+			if cst.Spelling(parameter.TypeNode) == "bool" && conditionUses(a.tree, facts.body, name.Src()) {
 				a.Report(name, fmt.Sprintf("boolean parameter %s controls function flow", name.Src()))
 			}
 		}
@@ -266,7 +267,7 @@ func (a *Pass) checkUnusedReceiver(facts *functionFacts) {
 	}
 }
 
-func conditionUses(body cst.Node, name string) bool {
+func conditionUses(tree *cst.Tree, body cst.Node, name string) bool {
 	found := false
 	cst.Walk(
 		body,
@@ -280,12 +281,13 @@ func conditionUses(body cst.Node, name string) bool {
 			default:
 				return true
 			}
-			for _, current := range cst.NodeTokens(condition) {
+			tree.ForEachToken(condition, func(current cst.Token) bool {
 				if current.Ch() == token.IDENT && current.Src() == name {
 					found = true
 					return false
 				}
-			}
+				return true
+			})
 			return !found
 		},
 	)

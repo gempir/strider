@@ -86,7 +86,7 @@ func (a *Pass) checkExportedList(list *cst.IdentifierList, node cst.Node) {
 }
 
 func (a *Pass) hasDocumentation(name string, node cst.Node) bool {
-	start, _ := cst.Range(node)
+	start, _ := a.tree.Range(node)
 	source := a.tree.Bytes()
 	comments := a.tree.Comments()
 	for index := len(comments) - 1; index >= 0; index-- {

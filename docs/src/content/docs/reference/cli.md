@@ -6,7 +6,7 @@ description: Check and format commands, global options, reports, baselines, stre
 ## Synopsis
 
 ```sh
-strider [--config PATH|--no-config] [--color auto|always|never] COMMAND [OPTIONS] [FILE|DIR]...
+strider [GLOBAL OPTIONS] COMMAND [OPTIONS] [FILE|DIR]...
 ```
 
 | Command | Description |
@@ -33,6 +33,9 @@ one-character form with one dash; aliases are scoped to their command.
 | `-n, --no-config` | Disable discovery and use built-in defaults. |
 | `-C, --color auto\|always\|never` | Control ANSI color. Default: configured value or `auto`. |
 | `-C, --colors auto\|always\|never` | Alias for `--color`. |
+| `--cache-dir PATH` | Override the persistent file-local result cache directory. |
+| `--no-cache` | Disable persistent result cache reads and writes. |
+| `--clear-cache` | Atomically clear versioned entries before running the command. |
 
 `--config` and `--no-config` are mutually exclusive. Normally Strider searches
 from the current directory through its parents and uses the nearest
@@ -42,6 +45,14 @@ from the current directory through its parents and uses the nearest
 `NO_COLOR` disables color and a non-empty `FORCE_COLOR` forces it;
 `FORCE_COLOR=0` explicitly disables it. `FORCE_COLOR` has highest precedence.
 JSON and formatted source are never decorated with ANSI escapes.
+
+Read-only `fmt --check` and `check` runs cache formatting status and native
+syntax findings by exact source content, executable identity, effective
+configuration, logical path, module identity, and target inputs. Absolute
+paths, display positions, and effective severities are materialized for each
+invocation rather than persisted. Candidate-producing diff, write, and fix
+paths bypass the cache, as does watch mode. Corrupt or older-schema entries are
+safe misses; cache writes are atomic and byte-bounded.
 
 ## `strider check`
 

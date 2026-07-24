@@ -105,7 +105,7 @@ func (a *Pass) checkDoubleNegation(expression *cst.UnaryExpr) {
 	outerEnd := outerStart + len(expression.Op.Src())
 	innerStart := inner.Op.Position().Offset
 	innerEnd := innerStart + len(inner.Op.Src())
-	operandStart, _ := cst.Range(inner.UnaryExpr)
+	operandStart, _ := a.tree.Range(inner.UnaryExpr)
 	unsafeTrivia := automaticFixWouldJoinToken(a.content, outerStart) || unsafeAutomaticFixTrivia(a.content, outerEnd, innerStart) || unsafeAutomaticFixTrivia(
 		a.content,
 		innerEnd,

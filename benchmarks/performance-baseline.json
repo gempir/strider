@@ -1,0 +1,1963 @@
+{
+  "schema_version": 2,
+  "environment": {
+    "go_version": "go1.26.4",
+    "host_os": "darwin",
+    "host_arch": "arm64",
+    "target_os": "linux",
+    "target_arch": "amd64",
+    "cpu_model": "arm64",
+    "cpu_count": 10,
+    "memory_bytes": 0,
+    "go_module_cache": "/Users/gempir/go/pkg/mod",
+    "os_filesystem_cache": "accepted as warm"
+  },
+  "strider_build_identity": "sha256:b20499c9e32e986ed464f6402d7c3af0cb71ea930b3cb3cdd2f799251b0ba500",
+  "strider_revision": "7d0799d833431f7c531c5edfdd854db99ef665c4-dirty",
+  "projects": [
+    {
+      "name": "sftpgo",
+      "repository": "https://github.com/drakkan/sftpgo.git",
+      "revision": "42f7a4d415dc7a97da08880edb82e5b0db5fcfc8",
+      "operations": [
+        {
+          "name": "format",
+          "scheduler": "fixed",
+          "strider_cache": "cold",
+          "go_build_cache": "warm",
+          "exit_code": 1,
+          "digest": "deb5d65d4c8a2fe9a78b395c8c2a84acc9dc9bed01c7bcfa4c93ad1d0767ead9",
+          "findings": 154,
+          "duration_ms": 1115,
+          "p95_ms": 1250,
+          "peak_rss_bytes": 401932288,
+          "alloc_bytes": 1280328984,
+          "gc_cycles": 34,
+          "gc_pause_ns": 1365335,
+          "budget_ms": 30000,
+          "baseline_match": true,
+          "within_budget": true,
+          "samples": [
+            {
+              "index": 1,
+              "duration_ns": 1096762542,
+              "peak_rss_bytes": 344424448,
+              "alloc_bytes": 1280514848,
+              "gc_cycles": 34,
+              "gc_pause_ns": 1388208,
+              "exit_code": 1,
+              "digest": "deb5d65d4c8a2fe9a78b395c8c2a84acc9dc9bed01c7bcfa4c93ad1d0767ead9",
+              "telemetry_file": "target/benchmarks/phase0/sftpgo/format/fixed/strider-cold/go-warm/telemetry/sample-1.json",
+              "telemetry": {
+                "schema_version": 1,
+                "command": "--no-config fmt --check .",
+                "build_identity": "sha256:b20499c9e32e986ed464f6402d7c3af0cb71ea930b3cb3cdd2f799251b0ba500",
+                "revision": "7d0799d833431f7c531c5edfdd854db99ef665c4-dirty",
+                "go_version": "go1.26.4",
+                "goos": "darwin",
+                "goarch": "arm64",
+                "gomaxprocs": 2,
+                "started_at": "2026-07-24T16:09:21.834979Z",
+                "duration_ns": 1083834041,
+                "memory_before": {
+                  "alloc_bytes": 296104,
+                  "total_alloc_bytes": 296104,
+                  "heap_alloc_bytes": 296104,
+                  "heap_objects": 2119,
+                  "num_gc": 0,
+                  "pause_total_ns": 0
+                },
+                "memory_after": {
+                  "alloc_bytes": 237798168,
+                  "total_alloc_bytes": 1280810952,
+                  "heap_alloc_bytes": 237798168,
+                  "heap_objects": 2985228,
+                  "num_gc": 34,
+                  "pause_total_ns": 1388208
+                },
+                "phases": [
+                  {
+                    "name": "command.total",
+                    "count": 1,
+                    "wall_ns": 1077193458,
+                    "sum_ns": 1077193458
+                  },
+                  {
+                    "name": "cst.parse",
+                    "count": 496,
+                    "wall_ns": 1056277625,
+                    "sum_ns": 272357917
+                  },
+                  {
+                    "name": "format.file-local",
+                    "count": 1,
+                    "wall_ns": 1068243209,
+                    "sum_ns": 1068243209
+                  },
+                  {
+                    "name": "format.file-worker",
+                    "count": 246,
+                    "wall_ns": 1068199208,
+                    "sum_ns": 2087346751
+                  },
+                  {
+                    "name": "format.report",
+                    "count": 1,
+                    "wall_ns": 2209041,
+                    "sum_ns": 2209041
+                  },
+                  {
+                    "name": "format.total",
+                    "count": 1,
+                    "wall_ns": 1077160541,
+                    "sum_ns": 1077160541
+                  },
+                  {
+                    "name": "formatter.go-format",
+                    "count": 496,
+                    "wall_ns": 1067648458,
+                    "sum_ns": 660504924
+                  },
+                  {
+                    "name": "formatter.preview",
+                    "count": 246,
+                    "wall_ns": 1068057500,
+                    "sum_ns": 1948630041
+                  },
+                  {
+                    "name": "formatter.render",
+                    "count": 496,
+                    "wall_ns": 1063283792,
+                    "sum_ns": 1115282093
+                  },
+                  {
+                    "name": "workspace.discover",
+                    "count": 1,
+                    "wall_ns": 6697666,
+                    "sum_ns": 6697666
+                  },
+                  {
+                    "name": "workspace.read",
+                    "count": 246,
+                    "wall_ns": 1056177459,
+                    "sum_ns": 6705089
+                  }
+                ]
+              }
+            },
+            {
+              "index": 2,
+              "duration_ns": 1154957375,
+              "peak_rss_bytes": 379846656,
+              "alloc_bytes": 1280328984,
+              "gc_cycles": 34,
+              "gc_pause_ns": 927246,
+              "exit_code": 1,
+              "digest": "deb5d65d4c8a2fe9a78b395c8c2a84acc9dc9bed01c7bcfa4c93ad1d0767ead9",
+              "telemetry_file": "target/benchmarks/phase0/sftpgo/format/fixed/strider-cold/go-warm/telemetry/sample-2.json",
+              "telemetry": {
+                "schema_version": 1,
+                "command": "--no-config fmt --check .",
+                "build_identity": "sha256:b20499c9e32e986ed464f6402d7c3af0cb71ea930b3cb3cdd2f799251b0ba500",
+                "revision": "7d0799d833431f7c531c5edfdd854db99ef665c4-dirty",
+                "go_version": "go1.26.4",
+                "goos": "darwin",
+                "goarch": "arm64",
+                "gomaxprocs": 2,
+                "started_at": "2026-07-24T16:09:22.933564Z",
+                "duration_ns": 1139387625,
+                "memory_before": {
+                  "alloc_bytes": 296080,
+                  "total_alloc_bytes": 296080,
+                  "heap_alloc_bytes": 296080,
+                  "heap_objects": 2118,
+                  "num_gc": 0,
+                  "pause_total_ns": 0
+                },
+                "memory_after": {
+                  "alloc_bytes": 253916376,
+                  "total_alloc_bytes": 1280625064,
+                  "heap_alloc_bytes": 253916376,
+                  "heap_objects": 3067356,
+                  "num_gc": 34,
+                  "pause_total_ns": 927246
+                },
+                "phases": [
+                  {
+                    "name": "command.total",
+                    "count": 1,
+                    "wall_ns": 1132717459,
+                    "sum_ns": 1132717459
+                  },
+                  {
+                    "name": "cst.parse",
+                    "count": 496,
+                    "wall_ns": 1095846167,
+                    "sum_ns": 297781889
+                  },
+                  {
+                    "name": "format.file-local",
+                    "count": 1,
+                    "wall_ns": 1123588250,
+                    "sum_ns": 1123588250
+                  },
+                  {
+                    "name": "format.file-worker",
+                    "count": 246,
+                    "wall_ns": 1123570000,
+                    "sum_ns": 2160051700
+                  },
+                  {
+                    "name": "format.report",
+                    "count": 1,
+                    "wall_ns": 2186666,
+                    "sum_ns": 2186666
+                  },
+                  {
+                    "name": "format.total",
+                    "count": 1,
+                    "wall_ns": 1132684500,
+                    "sum_ns": 1132684500
+                  },
+                  {
+                    "name": "formatter.go-format",
+                    "count": 496,
+                    "wall_ns": 1123094458,
+                    "sum_ns": 637767332
+                  },
+                  {
+                    "name": "formatter.preview",
+                    "count": 246,
+                    "wall_ns": 1123351792,
+                    "sum_ns": 2021434920
+                  },
+                  {
+                    "name": "formatter.render",
+                    "count": 496,
+                    "wall_ns": 1106342917,
+                    "sum_ns": 1163540302
+                  },
+                  {
+                    "name": "workspace.discover",
+                    "count": 1,
+                    "wall_ns": 6900166,
+                    "sum_ns": 6900166
+                  },
+                  {
+                    "name": "workspace.read",
+                    "count": 246,
+                    "wall_ns": 1095734083,
+                    "sum_ns": 7092422
+                  }
+                ]
+              }
+            },
+            {
+              "index": 3,
+              "duration_ns": 1117547625,
+              "peak_rss_bytes": 371490816,
+              "alloc_bytes": 1280477072,
+              "gc_cycles": 33,
+              "gc_pause_ns": 1365335,
+              "exit_code": 1,
+              "digest": "deb5d65d4c8a2fe9a78b395c8c2a84acc9dc9bed01c7bcfa4c93ad1d0767ead9",
+              "telemetry_file": "target/benchmarks/phase0/sftpgo/format/fixed/strider-cold/go-warm/telemetry/sample-3.json",
+              "telemetry": {
+                "schema_version": 1,
+                "command": "--no-config fmt --check .",
+                "build_identity": "sha256:b20499c9e32e986ed464f6402d7c3af0cb71ea930b3cb3cdd2f799251b0ba500",
+                "revision": "7d0799d833431f7c531c5edfdd854db99ef665c4-dirty",
+                "go_version": "go1.26.4",
+                "goos": "darwin",
+                "goarch": "arm64",
+                "gomaxprocs": 2,
+                "started_at": "2026-07-24T16:09:24.090538Z",
+                "duration_ns": 1103440417,
+                "memory_before": {
+                  "alloc_bytes": 295760,
+                  "total_alloc_bytes": 295760,
+                  "heap_alloc_bytes": 295760,
+                  "heap_objects": 2116,
+                  "num_gc": 0,
+                  "pause_total_ns": 0
+                },
+                "memory_after": {
+                  "alloc_bytes": 255446088,
+                  "total_alloc_bytes": 1280772832,
+                  "heap_alloc_bytes": 255446088,
+                  "heap_objects": 3089792,
+                  "num_gc": 33,
+                  "pause_total_ns": 1365335
+                },
+                "phases": [
+                  {
+                    "name": "command.total",
+                    "count": 1,
+                    "wall_ns": 1096710292,
+                    "sum_ns": 1096710292
+                  },
+                  {
+                    "name": "cst.parse",
+                    "count": 496,
+                    "wall_ns": 1069649166,
+                    "sum_ns": 293526464
+                  },
+                  {
+                    "name": "format.file-local",
+                    "count": 1,
+                    "wall_ns": 1087810042,
+                    "sum_ns": 1087810042
+                  },
+                  {
+                    "name": "format.file-worker",
+                    "count": 246,
+                    "wall_ns": 1087790834,
+                    "sum_ns": 2109166792
+                  },
+                  {
+                    "name": "format.report",
+                    "count": 1,
+                    "wall_ns": 2104959,
+                    "sum_ns": 2104959
+                  },
+                  {
+                    "name": "format.total",
+                    "count": 1,
+                    "wall_ns": 1096663500,
+                    "sum_ns": 1096663500
+                  },
+                  {
+                    "name": "formatter.go-format",
+                    "count": 496,
+                    "wall_ns": 1087290541,
+                    "sum_ns": 642370091
+                  },
+                  {
+                    "name": "formatter.preview",
+                    "count": 246,
+                    "wall_ns": 1087566583,
+                    "sum_ns": 1975141089
+                  },
+                  {
+                    "name": "formatter.render",
+                    "count": 496,
+                    "wall_ns": 1070598125,
+                    "sum_ns": 1115885039
+                  },
+                  {
+                    "name": "workspace.discover",
+                    "count": 1,
+                    "wall_ns": 6738667,
+                    "sum_ns": 6738667
+                  },
+                  {
+                    "name": "workspace.read",
+                    "count": 246,
+                    "wall_ns": 1069587500,
+                    "sum_ns": 10663791
+                  }
+                ]
+              }
+            },
+            {
+              "index": 4,
+              "duration_ns": 1102142166,
+              "peak_rss_bytes": 445415424,
+              "alloc_bytes": 1279398216,
+              "gc_cycles": 34,
+              "gc_pause_ns": 1371875,
+              "exit_code": 1,
+              "digest": "deb5d65d4c8a2fe9a78b395c8c2a84acc9dc9bed01c7bcfa4c93ad1d0767ead9",
+              "telemetry_file": "target/benchmarks/phase0/sftpgo/format/fixed/strider-cold/go-warm/telemetry/sample-4.json",
+              "telemetry": {
+                "schema_version": 1,
+                "command": "--no-config fmt --check .",
+                "build_identity": "sha256:b20499c9e32e986ed464f6402d7c3af0cb71ea930b3cb3cdd2f799251b0ba500",
+                "revision": "7d0799d833431f7c531c5edfdd854db99ef665c4-dirty",
+                "go_version": "go1.26.4",
+                "goos": "darwin",
+                "goarch": "arm64",
+                "gomaxprocs": 2,
+                "started_at": "2026-07-24T16:09:25.209841Z",
+                "duration_ns": 1088275584,
+                "memory_before": {
+                  "alloc_bytes": 295656,
+                  "total_alloc_bytes": 295656,
+                  "heap_alloc_bytes": 295656,
+                  "heap_objects": 2115,
+                  "num_gc": 0,
+                  "pause_total_ns": 0
+                },
+                "memory_after": {
+                  "alloc_bytes": 277077040,
+                  "total_alloc_bytes": 1279693872,
+                  "heap_alloc_bytes": 277077040,
+                  "heap_objects": 3563702,
+                  "num_gc": 34,
+                  "pause_total_ns": 1371875
+                },
+                "phases": [
+                  {
+                    "name": "command.total",
+                    "count": 1,
+                    "wall_ns": 1081558792,
+                    "sum_ns": 1081558792
+                  },
+                  {
+                    "name": "cst.parse",
+                    "count": 496,
+                    "wall_ns": 1057702542,
+                    "sum_ns": 299534499
+                  },
+                  {
+                    "name": "format.file-local",
+                    "count": 1,
+                    "wall_ns": 1072353958,
+                    "sum_ns": 1072353958
+                  },
+                  {
+                    "name": "format.file-worker",
+                    "count": 246,
+                    "wall_ns": 1072336333,
+                    "sum_ns": 2060864665
+                  },
+                  {
+                    "name": "format.report",
+                    "count": 1,
+                    "wall_ns": 2102833,
+                    "sum_ns": 2102833
+                  },
+                  {
+                    "name": "format.total",
+                    "count": 1,
+                    "wall_ns": 1081528833,
+                    "sum_ns": 1081528833
+                  },
+                  {
+                    "name": "formatter.go-format",
+                    "count": 496,
+                    "wall_ns": 1071856875,
+                    "sum_ns": 613811985
+                  },
+                  {
+                    "name": "formatter.preview",
+                    "count": 246,
+                    "wall_ns": 1072104500,
+                    "sum_ns": 1923731405
+                  },
+                  {
+                    "name": "formatter.render",
+                    "count": 496,
+                    "wall_ns": 1057526375,
+                    "sum_ns": 1084677073
+                  },
+                  {
+                    "name": "workspace.discover",
+                    "count": 1,
+                    "wall_ns": 7061959,
+                    "sum_ns": 7061959
+                  },
+                  {
+                    "name": "workspace.read",
+                    "count": 246,
+                    "wall_ns": 1057596375,
+                    "sum_ns": 6713591
+                  }
+                ]
+              }
+            },
+            {
+              "index": 5,
+              "duration_ns": 1108517167,
+              "peak_rss_bytes": 428457984,
+              "alloc_bytes": 1280235384,
+              "gc_cycles": 35,
+              "gc_pause_ns": 1424543,
+              "exit_code": 1,
+              "digest": "deb5d65d4c8a2fe9a78b395c8c2a84acc9dc9bed01c7bcfa4c93ad1d0767ead9",
+              "telemetry_file": "target/benchmarks/phase0/sftpgo/format/fixed/strider-cold/go-warm/telemetry/sample-5.json",
+              "telemetry": {
+                "schema_version": 1,
+                "command": "--no-config fmt --check .",
+                "build_identity": "sha256:b20499c9e32e986ed464f6402d7c3af0cb71ea930b3cb3cdd2f799251b0ba500",
+                "revision": "7d0799d833431f7c531c5edfdd854db99ef665c4-dirty",
+                "go_version": "go1.26.4",
+                "goos": "darwin",
+                "goarch": "arm64",
+                "gomaxprocs": 2,
+                "started_at": "2026-07-24T16:09:26.313725Z",
+                "duration_ns": 1094747625,
+                "memory_before": {
+                  "alloc_bytes": 295760,
+                  "total_alloc_bytes": 295760,
+                  "heap_alloc_bytes": 295760,
+                  "heap_objects": 2116,
+                  "num_gc": 0,
+                  "pause_total_ns": 0
+                },
+                "memory_after": {
+                  "alloc_bytes": 278793736,
+                  "total_alloc_bytes": 1280531144,
+                  "heap_alloc_bytes": 278793736,
+                  "heap_objects": 3593006,
+                  "num_gc": 35,
+                  "pause_total_ns": 1424543
+                },
+                "phases": [
+                  {
+                    "name": "command.total",
+                    "count": 1,
+                    "wall_ns": 1088028667,
+                    "sum_ns": 1088028667
+                  },
+                  {
+                    "name": "cst.parse",
+                    "count": 496,
+                    "wall_ns": 1066758542,
+                    "sum_ns": 304168346
+                  },
+                  {
+                    "name": "format.file-local",
+                    "count": 1,
+                    "wall_ns": 1078895208,
+                    "sum_ns": 1078895208
+                  },
+                  {
+                    "name": "format.file-worker",
+                    "count": 246,
+                    "wall_ns": 1078873500,
+                    "sum_ns": 2106928503
+                  },
+                  {
+                    "name": "format.report",
+                    "count": 1,
+                    "wall_ns": 2151959,
+                    "sum_ns": 2151959
+                  },
+                  {
+                    "name": "format.total",
+                    "count": 1,
+                    "wall_ns": 1087996917,
+                    "sum_ns": 1087996917
+                  },
+                  {
+                    "name": "formatter.go-format",
+                    "count": 496,
+                    "wall_ns": 1078380334,
+                    "sum_ns": 658246374
+                  },
+                  {
+                    "name": "formatter.preview",
+                    "count": 246,
+                    "wall_ns": 1078646000,
+                    "sum_ns": 1959091447
+                  },
+                  {
+                    "name": "formatter.render",
+                    "count": 496,
+                    "wall_ns": 1066652875,
+                    "sum_ns": 1106463743
+                  },
+                  {
+                    "name": "workspace.discover",
+                    "count": 1,
+                    "wall_ns": 6940875,
+                    "sum_ns": 6940875
+                  },
+                  {
+                    "name": "workspace.read",
+                    "count": 246,
+                    "wall_ns": 1066724458,
+                    "sum_ns": 6767385
+                  }
+                ]
+              }
+            },
+            {
+              "index": 6,
+              "duration_ns": 1115817417,
+              "peak_rss_bytes": 401932288,
+              "alloc_bytes": 1280415848,
+              "gc_cycles": 33,
+              "gc_pause_ns": 1023000,
+              "exit_code": 1,
+              "digest": "deb5d65d4c8a2fe9a78b395c8c2a84acc9dc9bed01c7bcfa4c93ad1d0767ead9",
+              "telemetry_file": "target/benchmarks/phase0/sftpgo/format/fixed/strider-cold/go-warm/telemetry/sample-6.json",
+              "telemetry": {
+                "schema_version": 1,
+                "command": "--no-config fmt --check .",
+                "build_identity": "sha256:b20499c9e32e986ed464f6402d7c3af0cb71ea930b3cb3cdd2f799251b0ba500",
+                "revision": "7d0799d833431f7c531c5edfdd854db99ef665c4-dirty",
+                "go_version": "go1.26.4",
+                "goos": "darwin",
+                "goarch": "arm64",
+                "gomaxprocs": 2,
+                "started_at": "2026-07-24T16:09:27.424109Z",
+                "duration_ns": 1101834417,
+                "memory_before": {
+                  "alloc_bytes": 295952,
+                  "total_alloc_bytes": 295952,
+                  "heap_alloc_bytes": 295952,
+                  "heap_objects": 2117,
+                  "num_gc": 0,
+                  "pause_total_ns": 0
+                },
+                "memory_after": {
+                  "alloc_bytes": 196481568,
+                  "total_alloc_bytes": 1280711800,
+                  "heap_alloc_bytes": 196481568,
+                  "heap_objects": 2591838,
+                  "num_gc": 33,
+                  "pause_total_ns": 1023000
+                },
+                "phases": [
+                  {
+                    "name": "command.total",
+                    "count": 1,
+                    "wall_ns": 1095128667,
+                    "sum_ns": 1095128667
+                  },
+                  {
+                    "name": "cst.parse",
+                    "count": 496,
+                    "wall_ns": 1083286458,
+                    "sum_ns": 285287372
+                  },
+                  {
+                    "name": "format.file-local",
+                    "count": 1,
+                    "wall_ns": 1086091542,
+                    "sum_ns": 1086091542
+                  },
+                  {
+                    "name": "format.file-worker",
+                    "count": 246,
+                    "wall_ns": 1086075583,
+                    "sum_ns": 2125068538
+                  },
+                  {
+                    "name": "format.report",
+                    "count": 1,
+                    "wall_ns": 2199000,
+                    "sum_ns": 2199000
+                  },
+                  {
+                    "name": "format.total",
+                    "count": 1,
+                    "wall_ns": 1095092500,
+                    "sum_ns": 1095092500
+                  },
+                  {
+                    "name": "formatter.go-format",
+                    "count": 496,
+                    "wall_ns": 1085538000,
+                    "sum_ns": 640562378
+                  },
+                  {
+                    "name": "formatter.preview",
+                    "count": 246,
+                    "wall_ns": 1085845250,
+                    "sum_ns": 1996766286
+                  },
+                  {
+                    "name": "formatter.render",
+                    "count": 496,
+                    "wall_ns": 1083136458,
+                    "sum_ns": 1155744837
+                  },
+                  {
+                    "name": "workspace.discover",
+                    "count": 1,
+                    "wall_ns": 6792333,
+                    "sum_ns": 6792333
+                  },
+                  {
+                    "name": "workspace.read",
+                    "count": 246,
+                    "wall_ns": 1083217208,
+                    "sum_ns": 8364622
+                  }
+                ]
+              }
+            },
+            {
+              "index": 7,
+              "duration_ns": 1250678958,
+              "peak_rss_bytes": 458244096,
+              "alloc_bytes": 1279459984,
+              "gc_cycles": 34,
+              "gc_pause_ns": 1120328,
+              "exit_code": 1,
+              "digest": "deb5d65d4c8a2fe9a78b395c8c2a84acc9dc9bed01c7bcfa4c93ad1d0767ead9",
+              "telemetry_file": "target/benchmarks/phase0/sftpgo/format/fixed/strider-cold/go-warm/telemetry/sample-7.json",
+              "telemetry": {
+                "schema_version": 1,
+                "command": "--no-config fmt --check .",
+                "build_identity": "sha256:b20499c9e32e986ed464f6402d7c3af0cb71ea930b3cb3cdd2f799251b0ba500",
+                "revision": "7d0799d833431f7c531c5edfdd854db99ef665c4-dirty",
+                "go_version": "go1.26.4",
+                "goos": "darwin",
+                "goarch": "arm64",
+                "gomaxprocs": 2,
+                "started_at": "2026-07-24T16:09:28.541594Z",
+                "duration_ns": 1231081958,
+                "memory_before": {
+                  "alloc_bytes": 295656,
+                  "total_alloc_bytes": 295656,
+                  "heap_alloc_bytes": 295656,
+                  "heap_objects": 2115,
+                  "num_gc": 0,
+                  "pause_total_ns": 0
+                },
+                "memory_after": {
+                  "alloc_bytes": 272273504,
+                  "total_alloc_bytes": 1279755640,
+                  "heap_alloc_bytes": 272273504,
+                  "heap_objects": 3557953,
+                  "num_gc": 34,
+                  "pause_total_ns": 1120328
+                },
+                "phases": [
+                  {
+                    "name": "command.total",
+                    "count": 1,
+                    "wall_ns": 1224202333,
+                    "sum_ns": 1224202333
+                  },
+                  {
+                    "name": "cst.parse",
+                    "count": 496,
+                    "wall_ns": 1190938417,
+                    "sum_ns": 330823371
+                  },
+                  {
+                    "name": "format.file-local",
+                    "count": 1,
+                    "wall_ns": 1215284250,
+                    "sum_ns": 1215284250
+                  },
+                  {
+                    "name": "format.file-worker",
+                    "count": 246,
+                    "wall_ns": 1215259833,
+                    "sum_ns": 2343574344
+                  },
+                  {
+                    "name": "format.report",
+                    "count": 1,
+                    "wall_ns": 2113834,
+                    "sum_ns": 2113834
+                  },
+                  {
+                    "name": "format.total",
+                    "count": 1,
+                    "wall_ns": 1224166833,
+                    "sum_ns": 1224166833
+                  },
+                  {
+                    "name": "formatter.go-format",
+                    "count": 496,
+                    "wall_ns": 1214643750,
+                    "sum_ns": 689450364
+                  },
+                  {
+                    "name": "formatter.preview",
+                    "count": 246,
+                    "wall_ns": 1214977375,
+                    "sum_ns": 2184593548
+                  },
+                  {
+                    "name": "formatter.render",
+                    "count": 496,
+                    "wall_ns": 1197365500,
+                    "sum_ns": 1251710925
+                  },
+                  {
+                    "name": "workspace.discover",
+                    "count": 1,
+                    "wall_ns": 6757708,
+                    "sum_ns": 6757708
+                  },
+                  {
+                    "name": "workspace.read",
+                    "count": 246,
+                    "wall_ns": 1190839834,
+                    "sum_ns": 11081452
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "check",
+          "scheduler": "fixed",
+          "strider_cache": "cold",
+          "go_build_cache": "warm",
+          "exit_code": 1,
+          "digest": "2d29be88549e2b0accdfbfba5785b7f7704357dfef6e181148f76b8ec7eb9d08",
+          "findings": 11839,
+          "by_code": {
+            "add-constant": 1097,
+            "cognitive-complexity": 819,
+            "confusing-naming": 11,
+            "confusing-results": 40,
+            "constructor-interface-return": 10,
+            "context-cancel-in-loop": 5,
+            "cyclomatic-complexity": 334,
+            "deep-exit": 157,
+            "deprecated-api-usage": 15,
+            "discarded-error-result": 1689,
+            "doc-comment-period": 1495,
+            "duration-multiplied-by-duration": 5,
+            "early-return": 16,
+            "error-strings": 86,
+            "excessive-blank-identifiers": 16,
+            "exported-declaration-comment": 1014,
+            "file-length-limit": 65,
+            "flag-parameter": 125,
+            "format": 154,
+            "function-length": 473,
+            "function-result-limit": 32,
+            "get-function-return-value": 55,
+            "import-shadowing": 239,
+            "increment-decrement": 1,
+            "inefficient-map-lookup": 9,
+            "inefficient-sprintf": 32,
+            "insecure-url-scheme": 124,
+            "interface-method-limit": 7,
+            "max-control-nesting": 5,
+            "max-parameters": 8,
+            "max-public-structs": 45,
+            "modifies-parameter": 924,
+            "modifies-value-receiver": 3,
+            "nested-structs": 36,
+            "nil-error-return": 18,
+            "nil-value-with-nil-error": 9,
+            "no-defer-in-loop": 67,
+            "no-else-after-return": 18,
+            "no-init": 62,
+            "no-naked-return": 22,
+            "no-package-var": 707,
+            "package-comments": 187,
+            "range-value-address": 78,
+            "redundant-conversion": 810,
+            "single-case-switch": 153,
+            "slice-preallocation": 39,
+            "task-comment": 9,
+            "time-value-equality": 2,
+            "top-level-declaration-order": 87,
+            "unchecked-type-assertion": 97,
+            "unexported-return": 8,
+            "unnecessary-format": 8,
+            "unsafe-formatted-url-host-port": 3,
+            "unused-parameter": 12,
+            "unused-receiver": 219,
+            "use-any": 15,
+            "use-errors-new": 50,
+            "use-slices-sort": 8,
+            "weak-cryptography": 5
+          },
+          "duration_ms": 3567,
+          "p95_ms": 3908,
+          "peak_rss_bytes": 1244119040,
+          "alloc_bytes": 3202194152,
+          "gc_cycles": 50,
+          "gc_pause_ns": 2225291,
+          "budget_ms": 120000,
+          "baseline_match": true,
+          "within_budget": true,
+          "samples": [
+            {
+              "index": 1,
+              "duration_ns": 3908746167,
+              "peak_rss_bytes": 1249984512,
+              "alloc_bytes": 3202125088,
+              "gc_cycles": 48,
+              "gc_pause_ns": 2151005,
+              "exit_code": 1,
+              "digest": "2d29be88549e2b0accdfbfba5785b7f7704357dfef6e181148f76b8ec7eb9d08",
+              "telemetry_file": "target/benchmarks/phase0/sftpgo/check/fixed/strider-cold/go-warm/telemetry/sample-1.json",
+              "telemetry": {
+                "schema_version": 1,
+                "command": "--no-config check --minimum-severity note --format json .",
+                "build_identity": "sha256:b20499c9e32e986ed464f6402d7c3af0cb71ea930b3cb3cdd2f799251b0ba500",
+                "revision": "7d0799d833431f7c531c5edfdd854db99ef665c4-dirty",
+                "go_version": "go1.26.4",
+                "goos": "darwin",
+                "goarch": "arm64",
+                "gomaxprocs": 2,
+                "started_at": "2026-07-24T16:10:10.653239Z",
+                "duration_ns": 3884933125,
+                "memory_before": {
+                  "alloc_bytes": 296072,
+                  "total_alloc_bytes": 296072,
+                  "heap_alloc_bytes": 296072,
+                  "heap_objects": 2118,
+                  "num_gc": 0,
+                  "pause_total_ns": 0
+                },
+                "memory_after": {
+                  "alloc_bytes": 1128644072,
+                  "total_alloc_bytes": 3202421160,
+                  "heap_alloc_bytes": 1128644072,
+                  "heap_objects": 9369323,
+                  "num_gc": 48,
+                  "pause_total_ns": 2151005
+                },
+                "phases": [
+                  {
+                    "name": "check.command",
+                    "count": 1,
+                    "wall_ns": 3877382292,
+                    "sum_ns": 3877382292
+                  },
+                  {
+                    "name": "check.file-local",
+                    "count": 1,
+                    "wall_ns": 1536889584,
+                    "sum_ns": 1536889584
+                  },
+                  {
+                    "name": "check.file-worker",
+                    "count": 246,
+                    "wall_ns": 1536556875,
+                    "sum_ns": 3008199460
+                  },
+                  {
+                    "name": "check.report",
+                    "count": 1,
+                    "wall_ns": 27173292,
+                    "sum_ns": 27173292
+                  },
+                  {
+                    "name": "check.sort",
+                    "count": 1,
+                    "wall_ns": 9550750,
+                    "sum_ns": 9550750
+                  },
+                  {
+                    "name": "check.total",
+                    "count": 1,
+                    "wall_ns": 3839234000,
+                    "sum_ns": 3839234000
+                  },
+                  {
+                    "name": "command.total",
+                    "count": 1,
+                    "wall_ns": 3877649541,
+                    "sum_ns": 3877649541
+                  },
+                  {
+                    "name": "cst.parse",
+                    "count": 496,
+                    "wall_ns": 1534382250,
+                    "sum_ns": 269042374
+                  },
+                  {
+                    "name": "formatter.go-format",
+                    "count": 496,
+                    "wall_ns": 1534108875,
+                    "sum_ns": 637434551
+                  },
+                  {
+                    "name": "formatter.preview",
+                    "count": 246,
+                    "wall_ns": 1534371041,
+                    "sum_ns": 2021623210
+                  },
+                  {
+                    "name": "formatter.render",
+                    "count": 496,
+                    "wall_ns": 1534289083,
+                    "sum_ns": 1194243416
+                  },
+                  {
+                    "name": "semantic.checks",
+                    "count": 1,
+                    "wall_ns": 423768250,
+                    "sum_ns": 423768250
+                  },
+                  {
+                    "name": "semantic.package-load",
+                    "count": 1,
+                    "wall_ns": 1153790708,
+                    "sum_ns": 1153790708
+                  },
+                  {
+                    "name": "semantic.sort",
+                    "count": 1,
+                    "wall_ns": 1836000,
+                    "sum_ns": 1836000
+                  },
+                  {
+                    "name": "semantic.ssa",
+                    "count": 1,
+                    "wall_ns": 338175333,
+                    "sum_ns": 338175333
+                  },
+                  {
+                    "name": "semantic.total",
+                    "count": 1,
+                    "wall_ns": 2292187709,
+                    "sum_ns": 2292187709
+                  },
+                  {
+                    "name": "syntax.traversal",
+                    "count": 246,
+                    "wall_ns": 1535685333,
+                    "sum_ns": 838211241
+                  },
+                  {
+                    "name": "workspace.discover",
+                    "count": 1,
+                    "wall_ns": 10955875,
+                    "sum_ns": 10955875
+                  },
+                  {
+                    "name": "workspace.read",
+                    "count": 246,
+                    "wall_ns": 1534067375,
+                    "sum_ns": 7912744
+                  }
+                ]
+              }
+            },
+            {
+              "index": 2,
+              "duration_ns": 3567744334,
+              "peak_rss_bytes": 1213136896,
+              "alloc_bytes": 3203055280,
+              "gc_cycles": 49,
+              "gc_pause_ns": 2074378,
+              "exit_code": 1,
+              "digest": "2d29be88549e2b0accdfbfba5785b7f7704357dfef6e181148f76b8ec7eb9d08",
+              "telemetry_file": "target/benchmarks/phase0/sftpgo/check/fixed/strider-cold/go-warm/telemetry/sample-2.json",
+              "telemetry": {
+                "schema_version": 1,
+                "command": "--no-config check --minimum-severity note --format json .",
+                "build_identity": "sha256:b20499c9e32e986ed464f6402d7c3af0cb71ea930b3cb3cdd2f799251b0ba500",
+                "revision": "7d0799d833431f7c531c5edfdd854db99ef665c4-dirty",
+                "go_version": "go1.26.4",
+                "goos": "darwin",
+                "goarch": "arm64",
+                "gomaxprocs": 2,
+                "started_at": "2026-07-24T16:10:14.595292Z",
+                "duration_ns": 3543882042,
+                "memory_before": {
+                  "alloc_bytes": 295888,
+                  "total_alloc_bytes": 295888,
+                  "heap_alloc_bytes": 295888,
+                  "heap_objects": 2116,
+                  "num_gc": 0,
+                  "pause_total_ns": 0
+                },
+                "memory_after": {
+                  "alloc_bytes": 847922680,
+                  "total_alloc_bytes": 3203351168,
+                  "heap_alloc_bytes": 847922680,
+                  "heap_objects": 7023891,
+                  "num_gc": 49,
+                  "pause_total_ns": 2074378
+                },
+                "phases": [
+                  {
+                    "name": "check.command",
+                    "count": 1,
+                    "wall_ns": 3536883583,
+                    "sum_ns": 3536883583
+                  },
+                  {
+                    "name": "check.file-local",
+                    "count": 1,
+                    "wall_ns": 1551666000,
+                    "sum_ns": 1551666000
+                  },
+                  {
+                    "name": "check.file-worker",
+                    "count": 246,
+                    "wall_ns": 1551322666,
+                    "sum_ns": 3009910924
+                  },
+                  {
+                    "name": "check.report",
+                    "count": 1,
+                    "wall_ns": 22476209,
+                    "sum_ns": 22476209
+                  },
+                  {
+                    "name": "check.sort",
+                    "count": 1,
+                    "wall_ns": 11708000,
+                    "sum_ns": 11708000
+                  },
+                  {
+                    "name": "check.total",
+                    "count": 1,
+                    "wall_ns": 3507320458,
+                    "sum_ns": 3507320458
+                  },
+                  {
+                    "name": "command.total",
+                    "count": 1,
+                    "wall_ns": 3537149042,
+                    "sum_ns": 3537149042
+                  },
+                  {
+                    "name": "cst.parse",
+                    "count": 496,
+                    "wall_ns": 1525189125,
+                    "sum_ns": 318746380
+                  },
+                  {
+                    "name": "formatter.go-format",
+                    "count": 496,
+                    "wall_ns": 1537987208,
+                    "sum_ns": 637537586
+                  },
+                  {
+                    "name": "formatter.preview",
+                    "count": 246,
+                    "wall_ns": 1538234291,
+                    "sum_ns": 2039010617
+                  },
+                  {
+                    "name": "formatter.render",
+                    "count": 496,
+                    "wall_ns": 1533439209,
+                    "sum_ns": 1193365791
+                  },
+                  {
+                    "name": "semantic.checks",
+                    "count": 1,
+                    "wall_ns": 500377542,
+                    "sum_ns": 500377542
+                  },
+                  {
+                    "name": "semantic.package-load",
+                    "count": 1,
+                    "wall_ns": 748696916,
+                    "sum_ns": 748696916
+                  },
+                  {
+                    "name": "semantic.sort",
+                    "count": 1,
+                    "wall_ns": 1903250,
+                    "sum_ns": 1903250
+                  },
+                  {
+                    "name": "semantic.ssa",
+                    "count": 1,
+                    "wall_ns": 343263792,
+                    "sum_ns": 343263792
+                  },
+                  {
+                    "name": "semantic.total",
+                    "count": 1,
+                    "wall_ns": 1943267125,
+                    "sum_ns": 1943267125
+                  },
+                  {
+                    "name": "syntax.traversal",
+                    "count": 246,
+                    "wall_ns": 1550490416,
+                    "sum_ns": 804284082
+                  },
+                  {
+                    "name": "workspace.discover",
+                    "count": 1,
+                    "wall_ns": 7077000,
+                    "sum_ns": 7077000
+                  },
+                  {
+                    "name": "workspace.read",
+                    "count": 246,
+                    "wall_ns": 1521479208,
+                    "sum_ns": 7402866
+                  }
+                ]
+              }
+            },
+            {
+              "index": 3,
+              "duration_ns": 3595800333,
+              "peak_rss_bytes": 1244119040,
+              "alloc_bytes": 3203101696,
+              "gc_cycles": 50,
+              "gc_pause_ns": 2228951,
+              "exit_code": 1,
+              "digest": "2d29be88549e2b0accdfbfba5785b7f7704357dfef6e181148f76b8ec7eb9d08",
+              "telemetry_file": "target/benchmarks/phase0/sftpgo/check/fixed/strider-cold/go-warm/telemetry/sample-3.json",
+              "telemetry": {
+                "schema_version": 1,
+                "command": "--no-config check --minimum-severity note --format json .",
+                "build_identity": "sha256:b20499c9e32e986ed464f6402d7c3af0cb71ea930b3cb3cdd2f799251b0ba500",
+                "revision": "7d0799d833431f7c531c5edfdd854db99ef665c4-dirty",
+                "go_version": "go1.26.4",
+                "goos": "darwin",
+                "goarch": "arm64",
+                "gomaxprocs": 2,
+                "started_at": "2026-07-24T16:10:18.196344Z",
+                "duration_ns": 3572625834,
+                "memory_before": {
+                  "alloc_bytes": 295896,
+                  "total_alloc_bytes": 295896,
+                  "heap_alloc_bytes": 295896,
+                  "heap_objects": 2116,
+                  "num_gc": 0,
+                  "pause_total_ns": 0
+                },
+                "memory_after": {
+                  "alloc_bytes": 1143453608,
+                  "total_alloc_bytes": 3203397592,
+                  "heap_alloc_bytes": 1143453608,
+                  "heap_objects": 9526888,
+                  "num_gc": 50,
+                  "pause_total_ns": 2228951
+                },
+                "phases": [
+                  {
+                    "name": "check.command",
+                    "count": 1,
+                    "wall_ns": 3565125916,
+                    "sum_ns": 3565125916
+                  },
+                  {
+                    "name": "check.file-local",
+                    "count": 1,
+                    "wall_ns": 1555645125,
+                    "sum_ns": 1555645125
+                  },
+                  {
+                    "name": "check.file-worker",
+                    "count": 246,
+                    "wall_ns": 1555311791,
+                    "sum_ns": 3049760754
+                  },
+                  {
+                    "name": "check.report",
+                    "count": 1,
+                    "wall_ns": 26911958,
+                    "sum_ns": 26911958
+                  },
+                  {
+                    "name": "check.sort",
+                    "count": 1,
+                    "wall_ns": 9539667,
+                    "sum_ns": 9539667
+                  },
+                  {
+                    "name": "check.total",
+                    "count": 1,
+                    "wall_ns": 3531184208,
+                    "sum_ns": 3531184208
+                  },
+                  {
+                    "name": "command.total",
+                    "count": 1,
+                    "wall_ns": 3565401250,
+                    "sum_ns": 3565401250
+                  },
+                  {
+                    "name": "cst.parse",
+                    "count": 496,
+                    "wall_ns": 1550169125,
+                    "sum_ns": 285961625
+                  },
+                  {
+                    "name": "formatter.go-format",
+                    "count": 496,
+                    "wall_ns": 1549908667,
+                    "sum_ns": 640605883
+                  },
+                  {
+                    "name": "formatter.preview",
+                    "count": 246,
+                    "wall_ns": 1550151917,
+                    "sum_ns": 2061005819
+                  },
+                  {
+                    "name": "formatter.render",
+                    "count": 496,
+                    "wall_ns": 1550096166,
+                    "sum_ns": 1223854327
+                  },
+                  {
+                    "name": "semantic.checks",
+                    "count": 1,
+                    "wall_ns": 478326333,
+                    "sum_ns": 478326333
+                  },
+                  {
+                    "name": "semantic.package-load",
+                    "count": 1,
+                    "wall_ns": 768688417,
+                    "sum_ns": 768688417
+                  },
+                  {
+                    "name": "semantic.sort",
+                    "count": 1,
+                    "wall_ns": 2003875,
+                    "sum_ns": 2003875
+                  },
+                  {
+                    "name": "semantic.ssa",
+                    "count": 1,
+                    "wall_ns": 349417375,
+                    "sum_ns": 349417375
+                  },
+                  {
+                    "name": "semantic.total",
+                    "count": 1,
+                    "wall_ns": 1965353000,
+                    "sum_ns": 1965353000
+                  },
+                  {
+                    "name": "syntax.traversal",
+                    "count": 246,
+                    "wall_ns": 1554472583,
+                    "sum_ns": 827983205
+                  },
+                  {
+                    "name": "workspace.discover",
+                    "count": 1,
+                    "wall_ns": 7008958,
+                    "sum_ns": 7008958
+                  },
+                  {
+                    "name": "workspace.read",
+                    "count": 246,
+                    "wall_ns": 1550047042,
+                    "sum_ns": 8778005
+                  }
+                ]
+              }
+            },
+            {
+              "index": 4,
+              "duration_ns": 3495037292,
+              "peak_rss_bytes": 1262436352,
+              "alloc_bytes": 3203341104,
+              "gc_cycles": 50,
+              "gc_pause_ns": 2266750,
+              "exit_code": 1,
+              "digest": "2d29be88549e2b0accdfbfba5785b7f7704357dfef6e181148f76b8ec7eb9d08",
+              "telemetry_file": "target/benchmarks/phase0/sftpgo/check/fixed/strider-cold/go-warm/telemetry/sample-4.json",
+              "telemetry": {
+                "schema_version": 1,
+                "command": "--no-config check --minimum-severity note --format json .",
+                "build_identity": "sha256:b20499c9e32e986ed464f6402d7c3af0cb71ea930b3cb3cdd2f799251b0ba500",
+                "revision": "7d0799d833431f7c531c5edfdd854db99ef665c4-dirty",
+                "go_version": "go1.26.4",
+                "goos": "darwin",
+                "goarch": "arm64",
+                "gomaxprocs": 2,
+                "started_at": "2026-07-24T16:10:21.825558Z",
+                "duration_ns": 3470968875,
+                "memory_before": {
+                  "alloc_bytes": 295888,
+                  "total_alloc_bytes": 295888,
+                  "heap_alloc_bytes": 295888,
+                  "heap_objects": 2116,
+                  "num_gc": 0,
+                  "pause_total_ns": 0
+                },
+                "memory_after": {
+                  "alloc_bytes": 1141180760,
+                  "total_alloc_bytes": 3203636992,
+                  "heap_alloc_bytes": 1141180760,
+                  "heap_objects": 9533402,
+                  "num_gc": 50,
+                  "pause_total_ns": 2266750
+                },
+                "phases": [
+                  {
+                    "name": "check.command",
+                    "count": 1,
+                    "wall_ns": 3463456333,
+                    "sum_ns": 3463456333
+                  },
+                  {
+                    "name": "check.file-local",
+                    "count": 1,
+                    "wall_ns": 1503248917,
+                    "sum_ns": 1503248917
+                  },
+                  {
+                    "name": "check.file-worker",
+                    "count": 246,
+                    "wall_ns": 1501547125,
+                    "sum_ns": 2930110324
+                  },
+                  {
+                    "name": "check.report",
+                    "count": 1,
+                    "wall_ns": 27125833,
+                    "sum_ns": 27125833
+                  },
+                  {
+                    "name": "check.sort",
+                    "count": 1,
+                    "wall_ns": 10009833,
+                    "sum_ns": 10009833
+                  },
+                  {
+                    "name": "check.total",
+                    "count": 1,
+                    "wall_ns": 3429303292,
+                    "sum_ns": 3429303292
+                  },
+                  {
+                    "name": "command.total",
+                    "count": 1,
+                    "wall_ns": 3463726792,
+                    "sum_ns": 3463726792
+                  },
+                  {
+                    "name": "cst.parse",
+                    "count": 496,
+                    "wall_ns": 1500414000,
+                    "sum_ns": 287926329
+                  },
+                  {
+                    "name": "formatter.go-format",
+                    "count": 496,
+                    "wall_ns": 1500678250,
+                    "sum_ns": 611165470
+                  },
+                  {
+                    "name": "formatter.preview",
+                    "count": 246,
+                    "wall_ns": 1500917917,
+                    "sum_ns": 1996437634
+                  },
+                  {
+                    "name": "formatter.render",
+                    "count": 496,
+                    "wall_ns": 1500611625,
+                    "sum_ns": 1165305527
+                  },
+                  {
+                    "name": "semantic.checks",
+                    "count": 1,
+                    "wall_ns": 426088875,
+                    "sum_ns": 426088875
+                  },
+                  {
+                    "name": "semantic.package-load",
+                    "count": 1,
+                    "wall_ns": 775353167,
+                    "sum_ns": 775353167
+                  },
+                  {
+                    "name": "semantic.sort",
+                    "count": 1,
+                    "wall_ns": 1804584,
+                    "sum_ns": 1804584
+                  },
+                  {
+                    "name": "semantic.ssa",
+                    "count": 1,
+                    "wall_ns": 343520833,
+                    "sum_ns": 343520833
+                  },
+                  {
+                    "name": "semantic.total",
+                    "count": 1,
+                    "wall_ns": 1915336750,
+                    "sum_ns": 1915336750
+                  },
+                  {
+                    "name": "syntax.traversal",
+                    "count": 246,
+                    "wall_ns": 1500711375,
+                    "sum_ns": 785847715
+                  },
+                  {
+                    "name": "workspace.discover",
+                    "count": 1,
+                    "wall_ns": 7014000,
+                    "sum_ns": 7014000
+                  },
+                  {
+                    "name": "workspace.read",
+                    "count": 246,
+                    "wall_ns": 1499650459,
+                    "sum_ns": 9428013
+                  }
+                ]
+              }
+            },
+            {
+              "index": 5,
+              "duration_ns": 3560464167,
+              "peak_rss_bytes": 1255636992,
+              "alloc_bytes": 3201837160,
+              "gc_cycles": 50,
+              "gc_pause_ns": 2225291,
+              "exit_code": 1,
+              "digest": "2d29be88549e2b0accdfbfba5785b7f7704357dfef6e181148f76b8ec7eb9d08",
+              "telemetry_file": "target/benchmarks/phase0/sftpgo/check/fixed/strider-cold/go-warm/telemetry/sample-5.json",
+              "telemetry": {
+                "schema_version": 1,
+                "command": "--no-config check --minimum-severity note --format json .",
+                "build_identity": "sha256:b20499c9e32e986ed464f6402d7c3af0cb71ea930b3cb3cdd2f799251b0ba500",
+                "revision": "7d0799d833431f7c531c5edfdd854db99ef665c4-dirty",
+                "go_version": "go1.26.4",
+                "goos": "darwin",
+                "goarch": "arm64",
+                "gomaxprocs": 2,
+                "started_at": "2026-07-24T16:10:25.354128Z",
+                "duration_ns": 3537540917,
+                "memory_before": {
+                  "alloc_bytes": 295872,
+                  "total_alloc_bytes": 295872,
+                  "heap_alloc_bytes": 295872,
+                  "heap_objects": 2116,
+                  "num_gc": 0,
+                  "pause_total_ns": 0
+                },
+                "memory_after": {
+                  "alloc_bytes": 1020556280,
+                  "total_alloc_bytes": 3202133032,
+                  "heap_alloc_bytes": 1020556280,
+                  "heap_objects": 7870843,
+                  "num_gc": 50,
+                  "pause_total_ns": 2225291
+                },
+                "phases": [
+                  {
+                    "name": "check.command",
+                    "count": 1,
+                    "wall_ns": 3530351291,
+                    "sum_ns": 3530351291
+                  },
+                  {
+                    "name": "check.file-local",
+                    "count": 1,
+                    "wall_ns": 1543424500,
+                    "sum_ns": 1543424500
+                  },
+                  {
+                    "name": "check.file-worker",
+                    "count": 246,
+                    "wall_ns": 1543079042,
+                    "sum_ns": 3018215317
+                  },
+                  {
+                    "name": "check.report",
+                    "count": 1,
+                    "wall_ns": 25214917,
+                    "sum_ns": 25214917
+                  },
+                  {
+                    "name": "check.sort",
+                    "count": 1,
+                    "wall_ns": 9794792,
+                    "sum_ns": 9794792
+                  },
+                  {
+                    "name": "check.total",
+                    "count": 1,
+                    "wall_ns": 3497887875,
+                    "sum_ns": 3497887875
+                  },
+                  {
+                    "name": "command.total",
+                    "count": 1,
+                    "wall_ns": 3530609916,
+                    "sum_ns": 3530609916
+                  },
+                  {
+                    "name": "cst.parse",
+                    "count": 496,
+                    "wall_ns": 1519504042,
+                    "sum_ns": 279569954
+                  },
+                  {
+                    "name": "formatter.go-format",
+                    "count": 496,
+                    "wall_ns": 1529818750,
+                    "sum_ns": 631833614
+                  },
+                  {
+                    "name": "formatter.preview",
+                    "count": 246,
+                    "wall_ns": 1530060875,
+                    "sum_ns": 2002507376
+                  },
+                  {
+                    "name": "formatter.render",
+                    "count": 496,
+                    "wall_ns": 1525249125,
+                    "sum_ns": 1176217754
+                  },
+                  {
+                    "name": "semantic.checks",
+                    "count": 1,
+                    "wall_ns": 491688291,
+                    "sum_ns": 491688291
+                  },
+                  {
+                    "name": "semantic.package-load",
+                    "count": 1,
+                    "wall_ns": 769577625,
+                    "sum_ns": 769577625
+                  },
+                  {
+                    "name": "semantic.sort",
+                    "count": 1,
+                    "wall_ns": 1823333,
+                    "sum_ns": 1823333
+                  },
+                  {
+                    "name": "semantic.ssa",
+                    "count": 1,
+                    "wall_ns": 345465458,
+                    "sum_ns": 345465458
+                  },
+                  {
+                    "name": "semantic.total",
+                    "count": 1,
+                    "wall_ns": 1944038292,
+                    "sum_ns": 1944038292
+                  },
+                  {
+                    "name": "syntax.traversal",
+                    "count": 246,
+                    "wall_ns": 1542239791,
+                    "sum_ns": 852584166
+                  },
+                  {
+                    "name": "workspace.discover",
+                    "count": 1,
+                    "wall_ns": 7234833,
+                    "sum_ns": 7234833
+                  },
+                  {
+                    "name": "workspace.read",
+                    "count": 246,
+                    "wall_ns": 1519384917,
+                    "sum_ns": 7796876
+                  }
+                ]
+              }
+            },
+            {
+              "index": 6,
+              "duration_ns": 3625256333,
+              "peak_rss_bytes": 1237204992,
+              "alloc_bytes": 3202194152,
+              "gc_cycles": 49,
+              "gc_pause_ns": 1818502,
+              "exit_code": 1,
+              "digest": "2d29be88549e2b0accdfbfba5785b7f7704357dfef6e181148f76b8ec7eb9d08",
+              "telemetry_file": "target/benchmarks/phase0/sftpgo/check/fixed/strider-cold/go-warm/telemetry/sample-6.json",
+              "telemetry": {
+                "schema_version": 1,
+                "command": "--no-config check --minimum-severity note --format json .",
+                "build_identity": "sha256:b20499c9e32e986ed464f6402d7c3af0cb71ea930b3cb3cdd2f799251b0ba500",
+                "revision": "7d0799d833431f7c531c5edfdd854db99ef665c4-dirty",
+                "go_version": "go1.26.4",
+                "goos": "darwin",
+                "goarch": "arm64",
+                "gomaxprocs": 2,
+                "started_at": "2026-07-24T16:10:28.947389Z",
+                "duration_ns": 3602355417,
+                "memory_before": {
+                  "alloc_bytes": 295784,
+                  "total_alloc_bytes": 295784,
+                  "heap_alloc_bytes": 295784,
+                  "heap_objects": 2115,
+                  "num_gc": 0,
+                  "pause_total_ns": 0
+                },
+                "memory_after": {
+                  "alloc_bytes": 1140054504,
+                  "total_alloc_bytes": 3202489936,
+                  "heap_alloc_bytes": 1140054504,
+                  "heap_objects": 9477059,
+                  "num_gc": 49,
+                  "pause_total_ns": 1818502
+                },
+                "phases": [
+                  {
+                    "name": "check.command",
+                    "count": 1,
+                    "wall_ns": 3594871792,
+                    "sum_ns": 3594871792
+                  },
+                  {
+                    "name": "check.file-local",
+                    "count": 1,
+                    "wall_ns": 1571011958,
+                    "sum_ns": 1571011958
+                  },
+                  {
+                    "name": "check.file-worker",
+                    "count": 246,
+                    "wall_ns": 1570677667,
+                    "sum_ns": 3077680740
+                  },
+                  {
+                    "name": "check.report",
+                    "count": 1,
+                    "wall_ns": 27370542,
+                    "sum_ns": 27370542
+                  },
+                  {
+                    "name": "check.sort",
+                    "count": 1,
+                    "wall_ns": 9876917,
+                    "sum_ns": 9876917
+                  },
+                  {
+                    "name": "check.total",
+                    "count": 1,
+                    "wall_ns": 3560362375,
+                    "sum_ns": 3560362375
+                  },
+                  {
+                    "name": "command.total",
+                    "count": 1,
+                    "wall_ns": 3595134958,
+                    "sum_ns": 3595134958
+                  },
+                  {
+                    "name": "cst.parse",
+                    "count": 496,
+                    "wall_ns": 1547698459,
+                    "sum_ns": 302597620
+                  },
+                  {
+                    "name": "formatter.go-format",
+                    "count": 496,
+                    "wall_ns": 1554909375,
+                    "sum_ns": 640552381
+                  },
+                  {
+                    "name": "formatter.preview",
+                    "count": 246,
+                    "wall_ns": 1555170000,
+                    "sum_ns": 2041708335
+                  },
+                  {
+                    "name": "formatter.render",
+                    "count": 496,
+                    "wall_ns": 1547981833,
+                    "sum_ns": 1200281248
+                  },
+                  {
+                    "name": "semantic.checks",
+                    "count": 1,
+                    "wall_ns": 483962042,
+                    "sum_ns": 483962042
+                  },
+                  {
+                    "name": "semantic.package-load",
+                    "count": 1,
+                    "wall_ns": 768932583,
+                    "sum_ns": 768932583
+                  },
+                  {
+                    "name": "semantic.sort",
+                    "count": 1,
+                    "wall_ns": 1852084,
+                    "sum_ns": 1852084
+                  },
+                  {
+                    "name": "semantic.ssa",
+                    "count": 1,
+                    "wall_ns": 349993959,
+                    "sum_ns": 349993959
+                  },
+                  {
+                    "name": "semantic.total",
+                    "count": 1,
+                    "wall_ns": 1978812209,
+                    "sum_ns": 1978812209
+                  },
+                  {
+                    "name": "syntax.traversal",
+                    "count": 246,
+                    "wall_ns": 1569816375,
+                    "sum_ns": 873709001
+                  },
+                  {
+                    "name": "workspace.discover",
+                    "count": 1,
+                    "wall_ns": 7118125,
+                    "sum_ns": 7118125
+                  },
+                  {
+                    "name": "workspace.read",
+                    "count": 246,
+                    "wall_ns": 1547526666,
+                    "sum_ns": 7848838
+                  }
+                ]
+              }
+            },
+            {
+              "index": 7,
+              "duration_ns": 3558382416,
+              "peak_rss_bytes": 1163100160,
+              "alloc_bytes": 3201641576,
+              "gc_cycles": 50,
+              "gc_pause_ns": 2301790,
+              "exit_code": 1,
+              "digest": "2d29be88549e2b0accdfbfba5785b7f7704357dfef6e181148f76b8ec7eb9d08",
+              "telemetry_file": "target/benchmarks/phase0/sftpgo/check/fixed/strider-cold/go-warm/telemetry/sample-7.json",
+              "telemetry": {
+                "schema_version": 1,
+                "command": "--no-config check --minimum-severity note --format json .",
+                "build_identity": "sha256:b20499c9e32e986ed464f6402d7c3af0cb71ea930b3cb3cdd2f799251b0ba500",
+                "revision": "7d0799d833431f7c531c5edfdd854db99ef665c4-dirty",
+                "go_version": "go1.26.4",
+                "goos": "darwin",
+                "goarch": "arm64",
+                "gomaxprocs": 2,
+                "started_at": "2026-07-24T16:10:32.606058Z",
+                "duration_ns": 3536428541,
+                "memory_before": {
+                  "alloc_bytes": 295888,
+                  "total_alloc_bytes": 295888,
+                  "heap_alloc_bytes": 295888,
+                  "heap_objects": 2116,
+                  "num_gc": 0,
+                  "pause_total_ns": 0
+                },
+                "memory_after": {
+                  "alloc_bytes": 975079912,
+                  "total_alloc_bytes": 3201937464,
+                  "heap_alloc_bytes": 975079912,
+                  "heap_objects": 7826653,
+                  "num_gc": 50,
+                  "pause_total_ns": 2301790
+                },
+                "phases": [
+                  {
+                    "name": "check.command",
+                    "count": 1,
+                    "wall_ns": 3529317583,
+                    "sum_ns": 3529317583
+                  },
+                  {
+                    "name": "check.file-local",
+                    "count": 1,
+                    "wall_ns": 1538097375,
+                    "sum_ns": 1538097375
+                  },
+                  {
+                    "name": "check.file-worker",
+                    "count": 246,
+                    "wall_ns": 1537659417,
+                    "sum_ns": 2989346677
+                  },
+                  {
+                    "name": "check.report",
+                    "count": 1,
+                    "wall_ns": 21267083,
+                    "sum_ns": 21267083
+                  },
+                  {
+                    "name": "check.sort",
+                    "count": 1,
+                    "wall_ns": 1401792,
+                    "sum_ns": 1401792
+                  },
+                  {
+                    "name": "check.total",
+                    "count": 1,
+                    "wall_ns": 3500996917,
+                    "sum_ns": 3500996917
+                  },
+                  {
+                    "name": "command.total",
+                    "count": 1,
+                    "wall_ns": 3529591042,
+                    "sum_ns": 3529591042
+                  },
+                  {
+                    "name": "cst.parse",
+                    "count": 496,
+                    "wall_ns": 1512090209,
+                    "sum_ns": 259024790
+                  },
+                  {
+                    "name": "formatter.go-format",
+                    "count": 496,
+                    "wall_ns": 1524551750,
+                    "sum_ns": 703311244
+                  },
+                  {
+                    "name": "formatter.preview",
+                    "count": 246,
+                    "wall_ns": 1524801542,
+                    "sum_ns": 2071168423
+                  },
+                  {
+                    "name": "formatter.render",
+                    "count": 496,
+                    "wall_ns": 1520062916,
+                    "sum_ns": 1186927632
+                  },
+                  {
+                    "name": "semantic.checks",
+                    "count": 1,
+                    "wall_ns": 519392666,
+                    "sum_ns": 519392666
+                  },
+                  {
+                    "name": "semantic.package-load",
+                    "count": 1,
+                    "wall_ns": 807147375,
+                    "sum_ns": 807147375
+                  },
+                  {
+                    "name": "semantic.sort",
+                    "count": 1,
+                    "wall_ns": 308459,
+                    "sum_ns": 308459
+                  },
+                  {
+                    "name": "semantic.ssa",
+                    "count": 1,
+                    "wall_ns": 324912042,
+                    "sum_ns": 324912042
+                  },
+                  {
+                    "name": "semantic.total",
+                    "count": 1,
+                    "wall_ns": 1961393666,
+                    "sum_ns": 1961393666
+                  },
+                  {
+                    "name": "syntax.traversal",
+                    "count": 246,
+                    "wall_ns": 1536828000,
+                    "sum_ns": 770746586
+                  },
+                  {
+                    "name": "workspace.discover",
+                    "count": 1,
+                    "wall_ns": 7045292,
+                    "sum_ns": 7045292
+                  },
+                  {
+                    "name": "workspace.read",
+                    "count": 246,
+                    "wall_ns": 1506024792,
+                    "sum_ns": 7490877
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "passed": true,
+  "total_ms": 75980
+}

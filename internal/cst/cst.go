@@ -15,6 +15,8 @@ import (
 	"sync"
 
 	gc "modernc.org/gc/v3"
+
+	"github.com/gempir/strider/internal/telemetry"
 )
 
 // Node is a production or token in the concrete syntax tree.
@@ -107,6 +109,8 @@ type Tree struct {
 	comments     []Comment
 	linesOnce    sync.Once
 	lines        []int
+	rangesOnce   sync.Once
+	ranges       []productionRange
 }
 
 // Comment is a concrete source comment and its exact byte range.
@@ -126,14 +130,30 @@ type bounds struct {
 	found       bool
 }
 
+type nodeSpan struct {
+	start int
+	end   int
+	found bool
+}
+
+type productionRange struct {
+	node  Node
+	span  nodeSpan
+	depth int
+}
+
 type tokenWalkItem struct {
 	node    Node
 	token   Token
 	isToken bool
+	exit    bool
+	index   int
 }
 
 // Parse parses one complete Go source file into a CST.
 func Parse(filename string, source []byte) (*Tree, error) {
+	finish := telemetry.Start("cst.parse")
+	defer finish()
 	root, err := gc.ParseFile(filename, source)
 	if err != nil {
 		return nil, err
@@ -271,6 +291,11 @@ func Range(node Node) (start, end int) {
 	return start, end
 }
 
+// Range returns the byte range for a node associated with this tree.
+func (t *Tree) Range(node Node) (start, end int) {
+	return Range(node)
+}
+
 func concreteToken(current Token) bool {
 	if current.Src() == "" {
 		return false
@@ -358,6 +383,38 @@ func NodeTokens(node Node) []Token {
 		}
 	}
 	return result
+}
+
+// ForEachToken visits all tokens belonging to node in source order without
+// allocating a temporary token slice. Returning false stops iteration.
+func ForEachToken(node Node, visit func(Token) bool) {
+	if visit == nil {
+		return
+	}
+	first, last, ok := nodeTokenBounds(node, false)
+	if !ok {
+		return
+	}
+	visitTokenRange(first, last, visit)
+}
+
+// ForEachToken visits indexed token bounds for a node in this tree. Returning
+// false stops iteration.
+func (t *Tree) ForEachToken(node Node, visit func(Token) bool) {
+	ForEachToken(node, visit)
+}
+
+// TokenBounds returns the first and last tokens belonging to a node.
+func (t *Tree) TokenBounds(node Node) (Token, Token, bool) {
+	return nodeTokenBounds(node, false)
+}
+
+func visitTokenRange(first, last Token, visit func(Token) bool) {
+	for current := first; current.IsValid(); current = current.Next() {
+		if !visit(current) || current == last {
+			return
+		}
+	}
 }
 
 // Children returns the direct grammar children of node. Tokens are included
@@ -466,6 +523,22 @@ func WalkProductionsWithAncestors(node Node, visit func(Node, []Node) bool) {
 	}
 }
 
+// WalkProductionsWithRanges visits every production with ancestors and
+// precomputed concrete offsets. The range sidecar follows production preorder.
+func (t *Tree) WalkProductionsWithRanges(visit func(Node, []Node, int, int)) {
+	if t == nil || visit == nil {
+		return
+	}
+	ranges := t.productionRanges()
+	var inlineAncestors [16]Node
+	ancestors := inlineAncestors[:0]
+	for _, indexed := range ranges {
+		ancestors = ancestors[:indexed.depth]
+		visit(indexed.node, ancestors, indexed.span.start, indexed.span.end)
+		ancestors = append(ancestors, indexed.node)
+	}
+}
+
 func appendChildrenReverse(stack []Node, node Node) []Node {
 	if generated, ok := appendGeneratedChildren(stack, node, true); ok {
 		return generated
@@ -491,6 +564,91 @@ func appendProductionChildItemsReverse[T ~struct {
 		return generated
 	}
 	return stack
+}
+
+func (t *Tree) productionRanges() []productionRange {
+	t.rangesOnce.Do(func() {
+		t.ranges = buildProductionRanges(t.Root(), len(t.Tokens())*3)
+	})
+	return t.ranges
+}
+
+func buildProductionRanges(root Node, capacity int) []productionRange {
+	finish := telemetry.Start("cst.range-index")
+	defer finish()
+	result := make([]productionRange, 0, max(capacity, 128))
+	var inlineStack [32]tokenWalkItem
+	stack := inlineStack[:1]
+	stack[0].node = root
+	var inlineFrames [32]nodeSpan
+	frames := inlineFrames[:0]
+	for len(stack) != 0 {
+		last := len(stack) - 1
+		current := stack[last]
+		stack = stack[:last]
+		if current.exit {
+			frameIndex := len(frames) - 1
+			indexed := frames[frameIndex]
+			frames = frames[:frameIndex]
+			result[current.index].span = indexed
+			if len(frames) != 0 && indexed.found {
+				includeSpan(indexed, &frames[len(frames)-1])
+			}
+			continue
+		}
+		if current.isToken {
+			includeConcreteToken(current.token, frames)
+			continue
+		}
+		if currentToken, ok := nodeTokenValue(current.node); ok {
+			includeConcreteToken(currentToken, frames)
+			continue
+		}
+		index := len(result)
+		result = append(result, productionRange{
+			node:  current.node,
+			depth: len(frames),
+		})
+		frames = append(frames, nodeSpan{})
+		stack = append(stack, tokenWalkItem{
+			node:  current.node,
+			exit:  true,
+			index: index,
+		})
+		if generated, ok := appendGeneratedTokenItemsReverse(stack, current.node); ok {
+			stack = generated
+		}
+	}
+	return result
+}
+
+func includeConcreteToken(current Token, frames []nodeSpan) {
+	tokenSpan, found := spanForToken(current)
+	if found && len(frames) != 0 {
+		includeSpan(tokenSpan, &frames[len(frames)-1])
+	}
+}
+
+func spanForToken(current Token) (nodeSpan, bool) {
+	if !current.IsValid() || !concreteToken(current) {
+		return nodeSpan{}, false
+	}
+	start := current.Position().Offset
+	return nodeSpan{
+		start: start,
+		end:   start + len(current.Src()),
+		found: true,
+	}, true
+}
+
+func includeSpan(source nodeSpan, destination *nodeSpan) {
+	if !destination.found || source.start < destination.start {
+		destination.start = source.start
+	}
+	if !destination.found || source.end > destination.end {
+		destination.end = source.end
+	}
+	destination.found = true
 }
 
 func nodeTokenBounds(node Node, concreteOnly bool) (Token, Token, bool) {

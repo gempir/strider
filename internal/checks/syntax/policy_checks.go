@@ -100,10 +100,13 @@ func valueReceiver(receiver *cst.Parameters) bool {
 }
 
 func rootIdentifier(node cst.Node) cst.Token {
-	for _, current := range cst.NodeTokens(node) {
+	var result cst.Token
+	cst.ForEachToken(node, func(current cst.Token) bool {
 		if current.Ch().String() == "IDENT" {
-			return current
+			result = current
+			return false
 		}
-	}
-	return cst.Token{}
+		return true
+	})
+	return result
 }

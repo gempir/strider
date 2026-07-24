@@ -16,7 +16,7 @@ type switchCase struct {
 }
 
 func (a *Pass) checkSingleCaseSwitch(node cst.Node) {
-	cases := switchCases(node)
+	cases := switchCases(a.tree, node)
 	if len(cases) == 1 && len(cases[0].conditions) <= 1 {
 		a.Report(node, "switch with one case can be replaced by an if statement")
 	}
@@ -24,7 +24,7 @@ func (a *Pass) checkSingleCaseSwitch(node cst.Node) {
 
 func (a *Pass) checkIdenticalSwitchConditions(node cst.Node) {
 	conditions := map[string]bool{}
-	for _, clause := range switchCases(node) {
+	for _, clause := range switchCases(a.tree, node) {
 		for _, condition := range clause.conditions {
 			text := cst.Spelling(condition)
 			if conditions[text] {
@@ -38,7 +38,7 @@ func (a *Pass) checkIdenticalSwitchConditions(node cst.Node) {
 
 func (a *Pass) checkIdenticalSwitchBranches(node cst.Node) {
 	branches := map[string]bool{}
-	for _, clause := range switchCases(node) {
+	for _, clause := range switchCases(a.tree, node) {
 		body := statementListSpelling(clause.body)
 		if body != "" {
 			if branches[body] {
@@ -51,7 +51,7 @@ func (a *Pass) checkIdenticalSwitchBranches(node cst.Node) {
 }
 
 func (a *Pass) checkSwitchDefaultLast(node cst.Node) {
-	cases := switchCases(node)
+	cases := switchCases(a.tree, node)
 	defaultIndex := -1
 	for index, clause := range cases {
 		if clause.isDefault {
@@ -63,7 +63,7 @@ func (a *Pass) checkSwitchDefaultLast(node cst.Node) {
 	}
 }
 
-func switchCases(node cst.Node) []switchCase {
+func switchCases(tree *cst.Tree, node cst.Node) []switchCase {
 	result := []switchCase{}
 	cst.Walk(
 		node,
@@ -109,8 +109,8 @@ func switchCases(node cst.Node) []switchCase {
 		},
 	)
 	sort.SliceStable(result, func(i, j int) bool {
-		left, _ := cst.Range(result[i].node)
-		right, _ := cst.Range(result[j].node)
+		left, _ := tree.Range(result[i].node)
+		right, _ := tree.Range(result[j].node)
 		return left < right
 	})
 	return result

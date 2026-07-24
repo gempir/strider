@@ -4,19 +4,24 @@ package checks
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/gempir/strider/internal/diagnostic"
+	"github.com/gempir/strider/internal/fileschedule"
 	"github.com/gempir/strider/internal/formatter"
+	"github.com/gempir/strider/internal/resultcache"
+	"github.com/gempir/strider/internal/telemetry"
 	"github.com/gempir/strider/internal/workspace"
 )
 
@@ -28,7 +33,7 @@ func TestRunRejectsPreCanceledContext(t *testing.T) {
 	}
 }
 
-func TestRunDoesNotConsumeWorkspace(t *testing.T) {
+func TestRunReleasesOneShotWorkspace(t *testing.T) {
 	directory := t.TempDir()
 	if err := os.WriteFile(filepath.Join(directory, "main.go"), []byte("package sample\nfunc init() {}\n"), 0o600); err != nil {
 		t.Fatal(err)
@@ -49,20 +54,20 @@ func TestRunDoesNotConsumeWorkspace(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	first, err := Run(context.Background(), shared, registry, RunOptions{})
+	result, err := Run(context.Background(), shared, registry, RunOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := Run(context.Background(), shared, registry, RunOptions{})
-	if err != nil {
-		t.Fatal(err)
+	if len(result.Diagnostics) != 1 || result.Diagnostics[0].Code != "no-init" {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
 	}
-	if !reflect.DeepEqual(first, second) {
-		t.Fatalf("repeated Run changed result:\nfirst:  %#v\nsecond: %#v", first, second)
+	if _, err := Run(context.Background(), shared, registry, RunOptions{}); err == nil || !strings.Contains(err.Error(), "source cache released") {
+		t.Fatalf("second Run error = %v, want released workspace", err)
 	}
 }
 
 func TestRunWithWorkspaceCacheObservesDependencyChanges(t *testing.T) {
+	t.Setenv(SemanticOverlapEnvironment, "1")
 	directory := t.TempDir()
 	dependencyDirectory := filepath.Join(directory, "dep")
 	if err := os.Mkdir(dependencyDirectory, 0o700); err != nil {
@@ -276,32 +281,39 @@ func TestRunIsDeterministicAcrossWorkersAndPackages(t *testing.T) {
 		runtime.GOMAXPROCS(previous)
 	})
 	var expected []diagnostic.Diagnostic
-	for _, workers := range []int{
-		1,
-		4,
-		2,
-		8,
+	for _, strategy := range []fileschedule.Strategy{
+		fileschedule.FIFO,
+		fileschedule.LargestFirst,
+		fileschedule.WorkStealing,
 	} {
-		runtime.GOMAXPROCS(workers)
-		shared, err := workspace.Open([]string{
-			root,
-		}, workspace.Options{})
-		if err != nil {
-			t.Fatal(err)
-		}
-		result, err := Run(context.Background(), shared, registry, RunOptions{
-			Formatter: formatter.DefaultOptions(),
-			Root:      root,
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if expected == nil {
-			expected = result.Diagnostics
-			continue
-		}
-		if !reflect.DeepEqual(result.Diagnostics, expected) {
-			t.Fatalf("GOMAXPROCS=%d diagnostics changed:\nfirst: %#v\nnext:  %#v", workers, expected, result.Diagnostics)
+		t.Setenv(fileschedule.EnvironmentVariable, string(strategy))
+		for _, workers := range []int{
+			1,
+			4,
+			2,
+			8,
+		} {
+			runtime.GOMAXPROCS(workers)
+			shared, err := workspace.Open([]string{
+				root,
+			}, workspace.Options{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			result, err := Run(context.Background(), shared, registry, RunOptions{
+				Formatter: formatter.DefaultOptions(),
+				Root:      root,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if expected == nil {
+				expected = result.Diagnostics
+				continue
+			}
+			if !reflect.DeepEqual(result.Diagnostics, expected) {
+				t.Fatalf("strategy=%s GOMAXPROCS=%d diagnostics changed:\nfirst: %#v\nnext:  %#v", strategy, workers, expected, result.Diagnostics)
+			}
 		}
 	}
 	if len(expected) < 6 {
@@ -462,5 +474,72 @@ func TestRunFormatIgnoreFastPathDoesNotParse(t *testing.T) {
 	}
 	if len(result.Diagnostics) != 0 || len(result.Candidates) != 0 {
 		t.Fatalf("ignored result = %#v", result)
+	}
+}
+
+func TestRunFileLocalCacheHitAvoidsCSTParse(t *testing.T) {
+	directory := t.TempDir()
+	filename := filepath.Join(directory, "main.go")
+	if err := os.WriteFile(filename, []byte("package sample\nfunc init() {}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cache, err := resultcache.Open(resultcache.Options{
+		Directory: filepath.Join(directory, "cache"),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	registry, err := NewRegistry(RegistryOptions{
+		Only: []string{
+			"no-init",
+		},
+		Root: directory,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	run := func() Result {
+		shared, err := workspace.Open([]string{
+			filename,
+		}, workspace.Options{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer shared.Close()
+		result, err := Run(context.Background(), shared, registry, RunOptions{
+			SkipPackageLoading: true,
+			Cache:              cache,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return result
+	}
+	first := run()
+	if err := cache.Flush(); err != nil {
+		t.Fatal(err)
+	}
+	telemetryPath := filepath.Join(directory, "telemetry.json")
+	t.Setenv(telemetry.EnvironmentVariable, telemetryPath)
+	telemetry.ConfigureFromEnvironment("test cache hit")
+	second := run()
+	if err := telemetry.Flush(); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(first.Diagnostics, second.Diagnostics) {
+		t.Fatalf("cache hit diagnostics differ:\nfirst:  %+v\nsecond: %+v", first.Diagnostics, second.Diagnostics)
+	}
+	contents, err := os.ReadFile(telemetryPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var report telemetry.Report
+	if err := json.Unmarshal(contents, &report); err != nil {
+		t.Fatal(err)
+	}
+	for _, phase := range report.Phases {
+		if phase.Name == "cst.parse" {
+			t.Fatalf("cache hit parsed a CST: %+v", phase)
+		}
 	}
 }

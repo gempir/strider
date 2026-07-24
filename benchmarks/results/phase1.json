@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "phase": 1,
+  "protocol": {
+    "samples": 7,
+    "warmups": 1,
+    "scheduler": "fixed",
+    "gomaxprocs": 2,
+    "strider_cache": "cold",
+    "go_build_cache": "warm",
+    "target": "linux/amd64",
+    "host": "darwin/arm64",
+    "go_version": "go1.26.4",
+    "corpus": "sftpgo",
+    "corpus_revision": "42f7a4d415dc7a97da08880edb82e5b0db5fcfc8",
+    "os_filesystem_cache": "accepted as warm"
+  },
+  "operations": {
+    "format": {
+      "baseline_median_ms": 1115,
+      "median_ms": 570,
+      "improvement_percent": 48.9,
+      "p95_ms": 583,
+      "peak_rss_bytes": 309706752,
+      "allocated_bytes": 615650856,
+      "gc_cycles": 20,
+      "digest": "deb5d65d4c8a2fe9a78b395c8c2a84acc9dc9bed01c7bcfa4c93ad1d0767ead9"
+    },
+    "check": {
+      "baseline_median_ms": 3567,
+      "median_ms": 2970,
+      "improvement_percent": 16.7,
+      "p95_ms": 3362,
+      "peak_rss_bytes": 1249771520,
+      "allocated_bytes": 2533539672,
+      "gc_cycles": 34,
+      "digest": "2d29be88549e2b0accdfbfba5785b7f7704357dfef6e181148f76b8ec7eb9d08"
+    }
+  }
+}

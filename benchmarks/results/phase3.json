@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "phase": 3,
+  "protocol": {
+    "samples": 7,
+    "warmups": 1,
+    "scheduler": "fixed",
+    "gomaxprocs": 2,
+    "strider_cache": "cold",
+    "go_build_cache": "warm",
+    "target": "linux/amd64",
+    "host": "darwin/arm64",
+    "go_version": "go1.26.4",
+    "corpus": "sftpgo",
+    "corpus_revision": "42f7a4d415dc7a97da08880edb82e5b0db5fcfc8",
+    "os_filesystem_cache": "accepted as warm"
+  },
+  "operations": {
+    "format": {
+      "phase0_peak_rss_bytes": 401932288,
+      "median_ms": 490,
+      "p95_ms": 494,
+      "peak_rss_bytes": 260489216,
+      "peak_rss_reduction_percent": 35.2,
+      "allocated_bytes": 618730008,
+      "gc_cycles": 16,
+      "phase0_gc_cycles": 34,
+      "gc_cycle_reduction_percent": 52.9,
+      "live_heap_after_file_local_bytes": 96880200,
+      "digest": "deb5d65d4c8a2fe9a78b395c8c2a84acc9dc9bed01c7bcfa4c93ad1d0767ead9"
+    },
+    "check_file_local": {
+      "median_ms": 857,
+      "p95_ms": 862,
+      "peak_rss_bytes": 271532032,
+      "allocated_bytes": 969077544,
+      "gc_cycles": 27,
+      "live_heap_after_file_local_bytes": 34826128,
+      "digest": "420c333de766aa1474f90f3abd1968a773442ae8bd0e9abc90eb21585d916287"
+    },
+    "check": {
+      "phase0_peak_rss_bytes": 1244119040,
+      "median_ms": 2744,
+      "p95_ms": 3188,
+      "peak_rss_bytes": 1034649600,
+      "peak_rss_reduction_percent": 16.8,
+      "allocated_bytes": 2545655816,
+      "gc_cycles": 36,
+      "live_heap_after_file_local_bytes": 35694248,
+      "digest": "2d29be88549e2b0accdfbfba5785b7f7704357dfef6e181148f76b8ec7eb9d08",
+      "note": "Full-check external RSS is dominated by the later package/type/SSA phase; the concrete boundary is reported separately."
+    }
+  }
+}

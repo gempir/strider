@@ -5,8 +5,10 @@ package syntax
 
 import (
 	"bytes"
+	"fmt"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/gempir/strider/internal/checks/catalog"
 	"github.com/gempir/strider/internal/cst"
@@ -16,15 +18,23 @@ import (
 )
 
 type Plan struct {
-	checks   []Check
-	settings map[string]configuredCheck
-	root     string
+	checks          []Check
+	settings        map[string]configuredCheck
+	root            string
+	preparedByFile  sync.Map
+	preparedByGroup sync.Map
 }
 
 type configuredCheck struct {
 	severity diagnostic.Severity
 	excludes []string
 	options  catalog.ResolvedOptions
+}
+
+type preparedPlan struct {
+	checks   []Check
+	dispatch map[NodeKind][]Check
+	options  map[string]catalog.ResolvedOptions
 }
 
 // SelectedCheck is a fully bound syntax check produced by the unified
@@ -73,15 +83,72 @@ func (r *Plan) Severity(code string) diagnostic.Severity {
 	return r.settings[code].severity
 }
 
-func (r *Plan) activeChecks(filename string) []Check {
+// CacheIdentity returns the effective syntax configuration for filename,
+// including selected checks, severities, exclusions, and resolved options.
+func (r *Plan) CacheIdentity(filename string) string {
+	if r == nil {
+		return "syntax=disabled"
+	}
+	prepared := r.prepare(filename)
+	var identity strings.Builder
+	for _, check := range prepared.checks {
+		meta := check.Meta()
+		setting := r.settings[meta.Code]
+		fmt.Fprintf(&identity, "check=%s\nseverity=%s\n", meta.Code, setting.severity)
+		excludes := append([]string(nil), setting.excludes...)
+		sort.Strings(excludes)
+		for _, exclude := range excludes {
+			fmt.Fprintf(&identity, "exclude=%s\n", exclude)
+		}
+		options := setting.options
+		for _, spec := range meta.Options {
+			if spec.Kind == catalog.OptionInt {
+				value, _ := options.Int(spec.Name)
+				fmt.Fprintf(&identity, "option=%s:int:%d\n", spec.Name, value)
+			}
+			if spec.Kind == catalog.OptionStrings {
+				values, _ := options.Strings(spec.Name)
+				fmt.Fprintf(&identity, "option=%s:strings:%q\n", spec.Name, values)
+			}
+		}
+	}
+	return identity.String()
+}
+
+func (r *Plan) prepare(filename string) *preparedPlan {
+	if cached, ok := r.preparedByFile.Load(filename); ok {
+		if prepared, valid := cached.(*preparedPlan); valid {
+			return prepared
+		}
+	}
 	active := make([]Check, 0, len(r.checks))
+	codes := make([]string, 0, len(r.checks))
 	for _, check := range r.checks {
 		if pathfilter.Excluded(r.root, filename, r.settings[check.Meta().Code].excludes) {
 			continue
 		}
 		active = append(active, check)
+		codes = append(codes, check.Meta().Code)
 	}
-	return active
+	groupKey := strings.Join(codes, "\x00")
+	cached, ok := r.preparedByGroup.Load(groupKey)
+	if !ok {
+		prepared := &preparedPlan{
+			checks:   active,
+			dispatch: buildDispatch(active),
+			options:  r.boundOptions(active),
+		}
+		cached, _ = r.preparedByGroup.LoadOrStore(groupKey, prepared)
+	}
+	prepared, valid := cached.(*preparedPlan)
+	if !valid {
+		prepared = &preparedPlan{}
+	}
+	cached, _ = r.preparedByFile.LoadOrStore(filename, prepared)
+	if stored, valid := cached.(*preparedPlan); valid {
+		return stored
+	}
+	return prepared
 }
 
 // Applies reports whether at least one selected concrete-syntax check applies
@@ -90,12 +157,7 @@ func (r *Plan) Applies(filename string) bool {
 	if r == nil {
 		return false
 	}
-	for _, check := range r.checks {
-		if !pathfilter.Excluded(r.root, filename, r.settings[check.Meta().Code].excludes) {
-			return true
-		}
-	}
-	return false
+	return len(r.prepare(filename).checks) != 0
 }
 
 // AnalyzeTree runs the selected concrete-syntax checks against a shared tree.
@@ -103,18 +165,23 @@ func AnalyzeTree(filename string, concreteTree *cst.Tree, registry *Plan) []diag
 	if concreteTree == nil || registry == nil {
 		return nil
 	}
-	activeChecks := registry.activeChecks(filename)
-	return analyzeTree(filename, concreteTree, activeChecks, registry)
+	return AnalyzeTreeWithDisplay(filename, source.DiagnosticPath(registry.root, filename), concreteTree, registry)
 }
 
-func analyzeTree(filename string, concreteTree *cst.Tree, activeChecks []Check, registry *Plan) []diagnostic.Diagnostic {
-	if len(activeChecks) == 0 {
+// AnalyzeTreeWithDisplay runs the selected syntax checks with a display path
+// already materialized by the caller's per-run path cache.
+func AnalyzeTreeWithDisplay(filename, displayFilename string, concreteTree *cst.Tree, registry *Plan) []diagnostic.Diagnostic {
+	if concreteTree == nil || registry == nil {
+		return nil
+	}
+	prepared := registry.prepare(filename)
+	if len(prepared.checks) == 0 {
 		return nil
 	}
 	concreteIgnores, concreteNodes := concreteSuppressions(concreteTree)
 	context := &Context{
 		filename:        filename,
-		displayFilename: source.DiagnosticPath(registry.root, filename),
+		displayFilename: displayFilename,
 		concreteIgnores: concreteIgnores,
 		concreteNodes:   concreteNodes,
 	}
@@ -122,8 +189,9 @@ func analyzeTree(filename string, concreteTree *cst.Tree, activeChecks []Check, 
 		CSTInput{
 			Filename: filename,
 			Tree:     concreteTree,
-			Checks:   activeChecks,
-			Options:  registry.boundOptions(activeChecks),
+			Checks:   prepared.checks,
+			Dispatch: prepared.dispatch,
+			Options:  prepared.options,
 			Report: func(finding Finding) {
 				context.reportConcrete(concreteTree, finding, registry.Severity(finding.Code))
 			},
@@ -141,9 +209,9 @@ func (r *Plan) boundOptions(checks []Check) map[string]catalog.ResolvedOptions {
 }
 
 func (c *Context) reportConcrete(tree *cst.Tree, finding Finding, severity diagnostic.Severity) {
-	startOffset, endOffset := cst.Range(finding.Node)
-	if finding.HasRange {
-		startOffset, endOffset = finding.Start, finding.End
+	startOffset, endOffset := finding.Start, finding.End
+	if !finding.HasRange {
+		startOffset, endOffset = tree.Range(finding.Node)
 	}
 	if c.suppressedRange(finding.Code, startOffset, endOffset) {
 		return
@@ -185,7 +253,7 @@ func concreteSuppressions(tree *cst.Tree) (map[string]bool, []concreteSuppressio
 	}
 	fileIgnores := make(map[string]bool)
 	candidates := concreteSuppressionCandidates(tree)
-	packageStart, _ := cst.Range(tree.Root())
+	packageStart, _ := tree.Range(tree.Root())
 	comments := tree.Comments()
 	result := make([]concreteSuppression, 0, len(comments))
 	for _, comment := range comments {
@@ -221,21 +289,18 @@ func concreteSuppressions(tree *cst.Tree) (map[string]bool, []concreteSuppressio
 
 func concreteSuppressionCandidates(tree *cst.Tree) []concreteSuppression {
 	result := []concreteSuppression{}
-	cst.Walk(
-		tree.Root(),
-		func(node cst.Node) bool {
+	tree.WalkProductionsWithRanges(
+		func(node cst.Node, _ []cst.Node, start, end int) {
 			kind := cst.Kind(node)
 			if !strings.HasSuffix(kind, "Decl") && !strings.HasSuffix(kind, "Stmt") {
-				return true
+				return
 			}
-			start, end := cst.Range(node)
 			if end > start {
 				result = append(result, concreteSuppression{
 					start: start,
 					end:   end,
 				})
 			}
-			return true
 		},
 	)
 	sort.SliceStable(result, func(i, j int) bool {

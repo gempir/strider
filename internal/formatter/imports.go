@@ -23,10 +23,10 @@ func (l *layout) indexImports() {
 			if !ok {
 				return true
 			}
-			tokens := cst.NodeTokens(declaration)
-			if len(tokens) != 0 {
-				start, _ := l.tokenIndex(tokens[0])
-				end, _ := l.tokenIndex(tokens[len(tokens)-1])
+			first, last, found := l.tree.TokenBounds(declaration)
+			if found {
+				start, _ := l.tokenIndex(first)
+				end, _ := l.tokenIndex(last)
 				if l.importStart < 0 || start < l.importStart {
 					l.importStart = start
 				}

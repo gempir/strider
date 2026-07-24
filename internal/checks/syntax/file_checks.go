@@ -166,7 +166,7 @@ func (a *Pass) checkRedundantImportAlias(spec *cst.ImportSpec) {
 }
 
 func importHasComment(tree *cst.Tree, spec *cst.ImportSpec) bool {
-	start, end := cst.Range(spec)
+	start, end := tree.Range(spec)
 	startPosition := tree.Position(start)
 	endPosition := tree.Position(end)
 	source := tree.Bytes()
@@ -217,7 +217,7 @@ func (a *Pass) checkPackageComment() {
 		return
 	}
 	nameToken := a.packageNameToken()
-	packageStart, _ := cst.Range(nameToken)
+	packageStart, _ := a.tree.Range(nameToken)
 	for _, comment := range a.tree.Comments() {
 		if comment.End >= packageStart {
 			break

@@ -11,12 +11,15 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/gempir/strider/internal/baseline"
 	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/diagnostic"
 	"github.com/gempir/strider/internal/report"
+	"github.com/gempir/strider/internal/resultcache"
+	"github.com/gempir/strider/internal/telemetry"
 	"github.com/gempir/strider/internal/ui"
 )
 
@@ -43,7 +46,16 @@ type checkListEntry struct {
 	summary  string
 }
 
-func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer) (exitCode int) {
+	telemetry.ConfigureFromEnvironment(strings.Join(args, " "))
+	finish := telemetry.Start("command.total")
+	defer func() {
+		finish()
+		if err := telemetry.Flush(); err != nil {
+			printError(stderr, ui.ColorAuto, "strider", fmt.Errorf("write telemetry: %w", err))
+			exitCode = exitError
+		}
+	}()
 	directory, err := os.Getwd()
 	if err != nil {
 		printError(stderr, ui.ColorAuto, "strider", err)
@@ -81,7 +93,13 @@ func runFrom(ctx context.Context, directory string, args []string, stdin io.Read
 			return exitError
 		}
 		colorMode = configuredColor(configuration, globals)
-		return runCheck(ctx, args[1:], configuration, colorMode, stdout, stderr, startedAt)
+		cache, err := openResultCache(globals)
+		if err != nil {
+			printError(stderr, colorMode, "strider", err)
+			return exitError
+		}
+		defer cache.FlushBestEffort()
+		return runCheck(ctx, args[1:], configuration, colorMode, stdout, stderr, startedAt, cache)
 	case "fmt", "format":
 		configuration, err := config.Load(directory, globals.configPath, globals.noConfig)
 		if err != nil {
@@ -89,7 +107,13 @@ func runFrom(ctx context.Context, directory string, args []string, stdin io.Read
 			return exitError
 		}
 		colorMode = configuredColor(configuration, globals)
-		return runFormat(ctx, args[1:], configuration, colorMode, stdin, stdout, stderr)
+		cache, err := openResultCache(globals)
+		if err != nil {
+			printError(stderr, colorMode, "strider", err)
+			return exitError
+		}
+		defer cache.FlushBestEffort()
+		return runFormat(ctx, args[1:], configuration, colorMode, stdin, stdout, stderr, cache)
 	case "help", "-h", "--help":
 		usage(stdout, colorMode)
 		return exitSuccess
@@ -116,11 +140,41 @@ func usage(writer io.Writer, colorMode ui.ColorMode) {
 	palette := ui.NewPalette(writer, colorMode)
 	fmt.Fprintln(writer, palette.Bold("Strider")+" formats and checks Go code.")
 	fmt.Fprintf(writer, "\n%s\n", palette.Accent("Usage:"))
-	fmt.Fprintf(writer, "  %s [-c PATH|--config PATH|-n|--no-config] [-C MODE|--color MODE] COMMAND [OPTIONS]\n", palette.Bold("strider"))
+	fmt.Fprintf(writer, "  %s [GLOBAL OPTIONS] COMMAND [OPTIONS]\n", palette.Bold("strider"))
+	fmt.Fprintf(writer, "\n%s\n", palette.Accent("Global options:"))
+	fmt.Fprintln(writer, "  -c, --config PATH       use an explicit configuration")
+	fmt.Fprintln(writer, "  -n, --no-config         disable configuration discovery")
+	fmt.Fprintln(writer, "  -C, --color MODE        set color mode")
+	fmt.Fprintln(writer, "      --cache-dir PATH    override the persistent cache directory")
+	fmt.Fprintln(writer, "      --no-cache          disable persistent result caching")
+	fmt.Fprintln(writer, "      --clear-cache       clear persistent results before running")
 	fmt.Fprintf(writer, "\n%s\n", palette.Accent("Commands:"))
 	fmt.Fprintf(writer, "  %s       Format Go source (alias: format)\n", palette.Code("fmt"))
 	fmt.Fprintf(writer, "  %s     Run formatting, clarity, and correctness checks\n", palette.Code("check"))
 	fmt.Fprintf(writer, "  %s   Print the version\n", palette.Code("version"))
+}
+
+func openResultCache(options globalOptions) (*resultcache.Cache, error) {
+	cacheOptions := resultcache.Options{
+		Directory: options.cacheDir,
+	}
+	if options.clearCache {
+		cache, err := resultcache.Open(cacheOptions)
+		if err != nil {
+			return nil, fmt.Errorf("open result cache: %w", err)
+		}
+		if err := cache.Clear(); err != nil {
+			return nil, fmt.Errorf("clear result cache: %w", err)
+		}
+	}
+	if options.noCache {
+		return resultcache.Disabled(), nil
+	}
+	cache, err := resultcache.Open(cacheOptions)
+	if err != nil {
+		return nil, fmt.Errorf("open result cache: %w", err)
+	}
+	return cache, nil
 }
 
 func printError(writer io.Writer, colorMode ui.ColorMode, command string, err error) {

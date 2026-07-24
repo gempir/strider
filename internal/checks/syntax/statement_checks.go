@@ -56,7 +56,7 @@ func (a *Pass) checkBreak(statement *cst.BreakStmt) {
 		}
 		statements := statementsFromList(list)
 		if len(statements) != 0 && statements[len(statements)-1] == statement {
-			start, end := cst.Range(statement)
+			start, end := a.tree.Range(statement)
 			edit := a.redundantBreakEdit(start, end)
 			a.ReportFix(
 				statement,

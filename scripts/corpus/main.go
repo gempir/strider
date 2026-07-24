@@ -1,6 +1,6 @@
 // Command corpus runs Strider against the pinned open-source benchmark corpus.
 //
-//strider:ignore-file cognitive-complexity,cyclomatic-complexity,early-return,error-strings,function-length,no-else-after-return,no-package-var,single-case-switch
+//strider:ignore-file cognitive-complexity,cyclomatic-complexity,discarded-error-result,early-return,error-strings,function-length,inefficient-map-lookup,max-control-nesting,no-else-after-return,no-package-var,single-case-switch,use-errors-new,use-slices-sort
 package main
 
 import (
@@ -17,12 +17,15 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
 	diagnosticmodel "github.com/gempir/strider/internal/diagnostic"
 	reporter "github.com/gempir/strider/internal/report"
+	"github.com/gempir/strider/internal/telemetry"
 )
 
 const schemaVersion = 1
@@ -46,7 +49,7 @@ var reportTemplate = template.Must(
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Strider open-source corpus</title><script>if(self!==top)document.documentElement.classList.add('embedded')</script><style>
 :root{color-scheme:dark;--bg:#0d1117;--panel:#121820;--text:#e6edf3;--muted:#8f9baa;--line:#2a3440;--accent:#54d6b0;--pass:#54d6b0;--fail:#ff7b72;--code:#0a0f14}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-feature-settings:"ss01","cv02","cv11"}main{width:min(1440px,calc(100% - 48px));margin:56px auto 88px}header{border-left:2px solid var(--accent);padding-left:20px}h1{font-size:clamp(2rem,5vw,3.6rem);line-height:1.04;letter-spacing:-.045em;margin:0}.lede{color:var(--muted);margin:.6rem 0 2.25rem}.project{border-block-start:1px solid var(--line);margin:0}.project:last-child{border-block-end:1px solid var(--line)}.project h2{display:flex;align-items:baseline;gap:12px;margin:0;padding:18px 16px 14px;font-size:1.12rem;letter-spacing:-.02em}.project h2>a:first-child{color:var(--text);font-size:1.25rem;text-decoration:none}.project h2>a:first-child:hover{color:var(--accent)}.project h2>a:last-child{margin-left:auto;color:var(--muted);font-size:.78rem;font-weight:500;text-underline-offset:3px}.revision{max-width:24ch;overflow:hidden;color:var(--muted);font:11px ui-monospace,SFMono-Regular,Consolas,monospace;text-overflow:ellipsis;white-space:nowrap}table{border-collapse:collapse;width:100%;background:var(--panel)}th,td{text-align:left;padding:11px 16px;border-top:1px solid var(--line)}th{color:var(--muted);font-size:.69rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em}tbody tr:hover{background:color-mix(in srgb,var(--accent) 5%,transparent)}.pass{color:var(--pass);font-weight:650}.fail{color:var(--fail);font-weight:650}details{padding:0 16px;border-top:1px solid var(--line)}summary{cursor:pointer;color:var(--muted);padding:12px 0;font-size:.82rem;text-transform:capitalize}details p{margin:0 0 14px;line-height:1.9}code{border-left:1px solid var(--line);color:var(--muted);font:11px ui-monospace,SFMono-Regular,Consolas,monospace;padding:1px 7px}html.embedded main{width:100%;margin:0;padding:24px}html.embedded header{display:none}:root[data-theme="light"]{color-scheme:light;--bg:#f7f9f8;--panel:#fff;--text:#17201d;--muted:#65736d;--line:#ced9d4;--accent:#087a5c;--pass:#087a5c;--fail:#c93c37;--code:#f0f4f2}@media(max-width:700px){main{width:min(100% - 28px,1440px);margin-top:28px}.project h2{align-items:flex-start;flex-wrap:wrap}.project h2>a:last-child{margin-left:0}.revision{order:3;flex-basis:100%;max-width:100%}.scroll{overflow-x:auto}table{min-width:620px}th,td{padding:10px 12px}html.embedded main{padding:14px}}
 </style></head><body><main><header><h1>Strider open-source corpus</h1><p class="lede">Pinned, repeatable format and unified check results across {{len .Projects}} Go projects. Total wall time: {{seconds .TotalMS}}.</p></header>
-{{range .Projects}}<section class="project"><h2><a href="projects/{{.Name}}/index.html">{{.Name}}</a><span class="revision">{{.Revision}}</span> <a href="{{.Repository}}"><small>repository</small></a></h2><div class="scroll"><table><thead><tr><th>Operation</th><th>Findings</th><th>Time</th><th>Budget</th><th>Baseline</th><th>Performance</th></tr></thead><tbody>{{range .Operations}}<tr><td>{{.Name}}</td><td>{{.Findings}}</td><td>{{seconds .DurationMS}}</td><td>{{budget .BudgetMS}}</td><td class="{{status .}}">{{if .BaselineMatch}}match{{else}}changed{{end}}</td><td class="{{status .}}">{{if .Error}}error{{else if .WithinBudget}}within budget{{else}}slower{{end}}</td></tr>{{end}}</tbody></table></div>{{range .Operations}}{{if .ByCode}}{{$operation := .}}<details><summary>{{.Name}} findings by rule</summary><p>{{range $code := codes .ByCode}}<code>{{$code}}={{index $operation.ByCode $code}}</code> {{end}}</p></details>{{end}}{{end}}</section>{{end}}
+{{range .Projects}}<section class="project"><h2><a href="projects/{{.Name}}/index.html">{{.Name}}</a><span class="revision">{{.Revision}}</span> <a href="{{.Repository}}"><small>repository</small></a></h2><div class="scroll"><table><thead><tr><th>Operation</th><th>Scheduler</th><th>Caches</th><th>Findings</th><th>Median</th><th>p95</th><th>Peak RSS</th><th>Budget</th><th>Baseline</th><th>Performance</th></tr></thead><tbody>{{range .Operations}}<tr><td>{{.Name}}</td><td>{{.Scheduler}}</td><td>{{.StriderCache}} / {{.GoBuildCache}}</td><td>{{.Findings}}</td><td>{{seconds .DurationMS}}</td><td>{{seconds .P95MS}}</td><td>{{.PeakRSSBytes}}</td><td>{{budget .BudgetMS}}</td><td class="{{status .}}">{{if .BaselineMatch}}match{{else}}changed{{end}}</td><td class="{{status .}}">{{if .Error}}error{{else if .WithinBudget}}within budget{{else}}slower{{end}}</td></tr>{{end}}</tbody></table></div>{{range .Operations}}{{if .ByCode}}{{$operation := .}}<details><summary>{{.Name}} findings by rule</summary><p>{{range $code := codes .ByCode}}<code>{{$code}}={{index $operation.ByCode $code}}</code> {{end}}</p></details>{{end}}{{end}}</section>{{end}}
 </main></body></html>`,
 	),
 )
@@ -84,9 +87,26 @@ type signature struct {
 }
 
 type report struct {
-	Projects []projectResult `json:"projects"`
-	Passed   bool            `json:"passed"`
-	TotalMS  int64           `json:"total_ms"`
+	SchemaVersion        int                  `json:"schema_version"`
+	Environment          benchmarkEnvironment `json:"environment"`
+	StriderBuildIdentity string               `json:"strider_build_identity,omitempty"`
+	StriderRevision      string               `json:"strider_revision,omitempty"`
+	Projects             []projectResult      `json:"projects"`
+	Passed               bool                 `json:"passed"`
+	TotalMS              int64                `json:"total_ms"`
+}
+
+type benchmarkEnvironment struct {
+	GoVersion         string `json:"go_version"`
+	HostOS            string `json:"host_os"`
+	HostArch          string `json:"host_arch"`
+	TargetOS          string `json:"target_os"`
+	TargetArch        string `json:"target_arch"`
+	CPUModel          string `json:"cpu_model"`
+	CPUCount          int    `json:"cpu_count"`
+	MemoryBytes       uint64 `json:"memory_bytes"`
+	GoModuleCache     string `json:"go_module_cache"`
+	OSFilesystemCache string `json:"os_filesystem_cache"`
 }
 
 type projectResult struct {
@@ -98,15 +118,24 @@ type projectResult struct {
 
 type operationResult struct {
 	Name          string                       `json:"name"`
+	Scheduler     string                       `json:"scheduler"`
+	StriderCache  string                       `json:"strider_cache"`
+	GoBuildCache  string                       `json:"go_build_cache"`
 	ExitCode      int                          `json:"exit_code"`
 	Digest        string                       `json:"digest"`
 	Findings      int                          `json:"findings"`
 	ByCode        map[string]int               `json:"by_code,omitempty"`
 	DurationMS    int64                        `json:"duration_ms"`
+	P95MS         int64                        `json:"p95_ms"`
+	PeakRSSBytes  int64                        `json:"peak_rss_bytes"`
+	AllocBytes    uint64                       `json:"alloc_bytes"`
+	GCCycles      uint32                       `json:"gc_cycles"`
+	GCPauseNS     uint64                       `json:"gc_pause_ns"`
 	BudgetMS      int                          `json:"budget_ms"`
 	BaselineMatch bool                         `json:"baseline_match"`
 	WithinBudget  bool                         `json:"within_budget"`
 	Error         string                       `json:"error,omitempty"`
+	Samples       []sampleResult               `json:"samples,omitempty"`
 	Diagnostics   []diagnosticmodel.Diagnostic `json:"-"`
 }
 
@@ -120,6 +149,38 @@ type options struct {
 	htmlPath          string
 	projectHTMLPath   string
 	homepageStatsPath string
+	rawPath           string
+	project           string
+	samples           int
+	warmups           int
+	schedulerModes    string
+	striderCacheModes string
+	goCacheModes      string
+}
+
+type sampleResult struct {
+	Index         int              `json:"index"`
+	DurationNS    int64            `json:"duration_ns"`
+	PeakRSSBytes  int64            `json:"peak_rss_bytes"`
+	AllocBytes    uint64           `json:"alloc_bytes"`
+	GCCycles      uint32           `json:"gc_cycles"`
+	GCPauseNS     uint64           `json:"gc_pause_ns"`
+	ExitCode      int              `json:"exit_code"`
+	Digest        string           `json:"digest"`
+	TelemetryFile string           `json:"telemetry_file"`
+	Telemetry     telemetry.Report `json:"telemetry"`
+}
+
+type benchmarkVariant struct {
+	scheduler    string
+	striderCache string
+	goBuildCache string
+}
+
+type sampleState struct {
+	striderCache  string
+	goCache       string
+	telemetryPath string
 }
 
 type homepageStats struct {
@@ -148,6 +209,13 @@ func parseFlags() options {
 	flag.StringVar(&result.htmlPath, "html", "target/corpus/index.html", "HTML report output")
 	flag.StringVar(&result.projectHTMLPath, "project-html", "", "project HTML report directory (defaults beside --html)")
 	flag.StringVar(&result.homepageStatsPath, "homepage-stats", "", "homepage benchmark stats JSON output")
+	flag.StringVar(&result.rawPath, "raw", "target/corpus/raw", "raw sample and cache-state directory")
+	flag.StringVar(&result.project, "project", "", "run only one named project")
+	flag.IntVar(&result.samples, "samples", 7, "measured samples per benchmark category")
+	flag.IntVar(&result.warmups, "warmups", 1, "unmeasured warm-ups per benchmark category")
+	flag.StringVar(&result.schedulerModes, "scheduler-modes", "fixed,native", "comma-separated scheduler modes: fixed,native")
+	flag.StringVar(&result.striderCacheModes, "strider-cache-modes", "cold,warm", "comma-separated Strider cache modes: cold,warm")
+	flag.StringVar(&result.goCacheModes, "go-cache-modes", "cold,warm", "comma-separated Go build cache modes for package-aware checks")
 	flag.Parse()
 	return result
 }
@@ -155,6 +223,21 @@ func parseFlags() options {
 func run(options options) error {
 	if options.mode != "check" && options.mode != "update" {
 		return fmt.Errorf("unsupported mode %q", options.mode)
+	}
+	if options.samples < 1 {
+		return fmt.Errorf("samples must be positive")
+	}
+	if options.warmups < 0 {
+		return fmt.Errorf("warmups cannot be negative")
+	}
+	if _, err := parseModes(options.schedulerModes, "scheduler", "fixed", "native"); err != nil {
+		return err
+	}
+	if _, err := parseModes(options.striderCacheModes, "Strider cache", "cold", "warm"); err != nil {
+		return err
+	}
+	if _, err := parseModes(options.goCacheModes, "Go build cache", "cold", "warm"); err != nil {
+		return err
 	}
 	strider, err := filepath.Abs(options.strider)
 	if err != nil {
@@ -179,7 +262,9 @@ func run(options options) error {
 
 	started := time.Now()
 	results := report{
-		Passed: true,
+		SchemaVersion: 2,
+		Environment:   detectBenchmarkEnvironment(),
+		Passed:        true,
 	}
 	actual := baseline{
 		Version: schemaVersion,
@@ -189,6 +274,9 @@ func run(options options) error {
 		projectHTMLPath = filepath.Join(filepath.Dir(options.htmlPath), "projects")
 	}
 	for _, item := range configuration.Projects {
+		if options.project != "" && item.Name != options.project {
+			continue
+		}
 		checkout, checkoutErr := prepareProject(options.cachePath, item)
 		projectReport := projectResult{
 			Name:       item.Name,
@@ -207,18 +295,40 @@ func run(options options) error {
 				Error: checkoutErr.Error(),
 			})
 		} else {
+			referenceSignatures := map[string]signature{}
 			for _, operation := range []string{
 				"format",
+				"check-file-local",
 				"check",
 			} {
-				observed := runOperation(strider, checkout, operation, item)
-				expectedSignature, found := findExpected(expected, item.Name, item.Revision, operation)
-				observed.BaselineMatch = options.mode == "update" || (found && reflect.DeepEqual(expectedSignature, observed.signature()))
-				if observed.Error != "" || !observed.WithinBudget || !observed.BaselineMatch {
-					results.Passed = false
+				variants, variantErr := benchmarkVariants(operation, options)
+				if variantErr != nil {
+					return variantErr
 				}
-				projectReport.Operations = append(projectReport.Operations, observed)
-				projectBaseline.Operations[operation] = observed.signature()
+				for _, variant := range variants {
+					observed := runOperationSamples(strider, checkout, operation, item, variant, options)
+					expectedSignature, found := findExpected(expected, item.Name, item.Revision, operation)
+					if operation == "check-file-local" || options.mode == "update" {
+						reference, referenceFound := referenceSignatures[operation]
+						observed.BaselineMatch = !referenceFound || reflect.DeepEqual(reference, observed.signature())
+						if !referenceFound && observed.Error == "" {
+							referenceSignatures[operation] = observed.signature()
+						}
+					} else {
+						observed.BaselineMatch = found && reflect.DeepEqual(expectedSignature, observed.signature())
+					}
+					if observed.Error != "" || !observed.WithinBudget || !observed.BaselineMatch {
+						results.Passed = false
+					}
+					if len(observed.Samples) != 0 && results.StriderBuildIdentity == "" {
+						results.StriderBuildIdentity = observed.Samples[0].Telemetry.BuildIdentity
+						results.StriderRevision = observed.Samples[0].Telemetry.Revision
+					}
+					projectReport.Operations = append(projectReport.Operations, observed)
+					if _, stored := projectBaseline.Operations[operation]; operation != "check-file-local" && !stored && observed.Error == "" {
+						projectBaseline.Operations[operation] = observed.signature()
+					}
+				}
 			}
 			if err := writeProjectReport(projectHTMLPath, projectReport, checkout); err != nil {
 				return err
@@ -226,6 +336,9 @@ func run(options options) error {
 		}
 		results.Projects = append(results.Projects, projectReport)
 		actual.Projects = append(actual.Projects, projectBaseline)
+	}
+	if options.project != "" && len(results.Projects) == 0 {
+		return fmt.Errorf("project %s is missing from the corpus manifest", options.project)
 	}
 	results.TotalMS = time.Since(started).Milliseconds()
 
@@ -270,6 +383,9 @@ func writeHomepageStats(path string, results report, projectName string) error {
 			Revision: project.Revision,
 		}
 		for _, operation := range project.Operations {
+			if operation.Scheduler != "" && (operation.Scheduler != "fixed" || operation.StriderCache != "warm" || operation.GoBuildCache != "warm") {
+				continue
+			}
 			switch operation.Name {
 			case "format":
 				stats.FormatMS = operation.DurationMS
@@ -359,7 +475,7 @@ func prepareProject(cacheRoot string, item project) (string, error) {
 	if err := os.Remove(filepath.Join(checkout, ".strider-corpus.toml")); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return "", err
 	}
-	if dirty, err := commandOutput(checkout, "git", "status", "--porcelain"); err != nil {
+	if dirty, err := commandOutput(checkout, "git", "-c", "core.fsmonitor=false", "status", "--porcelain"); err != nil {
 		return "", err
 	} else if len(bytes.TrimSpace(dirty)) != 0 {
 		return "", fmt.Errorf("%s checkout is dirty", item.Name)
@@ -387,7 +503,127 @@ func commandOutput(directory, name string, arguments ...string) ([]byte, error) 
 	return cmd.CombinedOutput()
 }
 
-func runOperation(strider, checkout, operation string, item project) operationResult {
+func detectBenchmarkEnvironment() benchmarkEnvironment {
+	goModuleCache := os.Getenv("GOMODCACHE")
+	if goModuleCache == "" {
+		if output, err := commandOutput("", "go", "env", "GOMODCACHE"); err == nil {
+			goModuleCache = strings.TrimSpace(string(output))
+		}
+	}
+	cpuModel, memoryBytes := machineDetails()
+	return benchmarkEnvironment{
+		GoVersion:         runtime.Version(),
+		HostOS:            runtime.GOOS,
+		HostArch:          runtime.GOARCH,
+		TargetOS:          "linux",
+		TargetArch:        "amd64",
+		CPUModel:          cpuModel,
+		CPUCount:          runtime.NumCPU(),
+		MemoryBytes:       memoryBytes,
+		GoModuleCache:     goModuleCache,
+		OSFilesystemCache: "accepted as warm",
+	}
+}
+
+func runOperationSamples(strider, checkout, operation string, item project, variant benchmarkVariant, options options) (result operationResult) {
+	result = operationResult{
+		Name:         operation,
+		Scheduler:    variant.scheduler,
+		StriderCache: variant.striderCache,
+		GoBuildCache: variant.goBuildCache,
+		BudgetMS:     operationBudget(item, operation),
+	}
+	stateRoot, err := benchmarkStateRoot(options.rawPath, item.Name, operation, variant)
+	if err != nil {
+		result.Error = err.Error()
+		return result
+	}
+	if err := resetBenchmarkState(stateRoot); err != nil {
+		result.Error = err.Error()
+		return result
+	}
+	defer func() {
+		if cleanupErr := cleanupBenchmarkCaches(stateRoot); cleanupErr != nil && result.Error == "" {
+			result.Error = cleanupErr.Error()
+		}
+	}()
+	warmups := options.warmups
+	if warmups == 0 && (variant.striderCache == "warm" || variant.goBuildCache == "warm") {
+		warmups = 1
+	}
+	for index := range warmups {
+		state, cleanup, stateErr := prepareSampleState(stateRoot, variant, "warmup-"+strconv.Itoa(index+1))
+		if stateErr != nil {
+			result.Error = stateErr.Error()
+			return result
+		}
+		observed := runOperationOnce(strider, checkout, operation, item, variant, state)
+		cleanupErr := cleanup()
+		if cleanupErr != nil {
+			result.Error = cleanupErr.Error()
+			return result
+		}
+		if observed.Error != "" {
+			result.Error = "warm-up: " + observed.Error
+			return result
+		}
+	}
+
+	var reference signature
+	for index := 1; index <= options.samples; index++ {
+		state, cleanup, stateErr := prepareSampleState(stateRoot, variant, "sample-"+strconv.Itoa(index))
+		if stateErr != nil {
+			result.Error = stateErr.Error()
+			return result
+		}
+		observed := runOperationOnce(strider, checkout, operation, item, variant, state)
+		cleanupErr := cleanup()
+		if cleanupErr != nil {
+			result.Error = cleanupErr.Error()
+			return result
+		}
+		if observed.Error != "" {
+			result.Error = observed.Error
+			return result
+		}
+		if index == 1 {
+			result.ExitCode = observed.ExitCode
+			result.Digest = observed.Digest
+			result.Findings = observed.Findings
+			result.ByCode = observed.ByCode
+			result.Diagnostics = observed.Diagnostics
+			reference = observed.signature()
+		} else if !reflect.DeepEqual(reference, observed.signature()) {
+			result.Error = fmt.Sprintf("sample %d produced a different diagnostic digest", index)
+			return result
+		}
+		sample := observed.Samples[0]
+		sample.Index = index
+		result.Samples = append(result.Samples, sample)
+	}
+	result.DurationMS = medianInt64(result.Samples, func(sample sampleResult) int64 {
+		return sample.DurationNS / int64(time.Millisecond)
+	})
+	result.P95MS = percentileInt64(result.Samples, 95, func(sample sampleResult) int64 {
+		return sample.DurationNS / int64(time.Millisecond)
+	})
+	result.PeakRSSBytes = medianInt64(result.Samples, func(sample sampleResult) int64 {
+		return sample.PeakRSSBytes
+	})
+	result.AllocBytes = uint64(medianInt64(result.Samples, func(sample sampleResult) int64 {
+		return int64(sample.AllocBytes)
+	}))
+	result.GCCycles = uint32(medianInt64(result.Samples, func(sample sampleResult) int64 {
+		return int64(sample.GCCycles)
+	}))
+	result.GCPauseNS = uint64(medianInt64(result.Samples, func(sample sampleResult) int64 {
+		return int64(sample.GCPauseNS)
+	}))
+	result.WithinBudget = result.DurationMS <= int64(result.BudgetMS)
+	return result
+}
+
+func runOperationOnce(strider, checkout, operation string, item project, variant benchmarkVariant, state sampleState) operationResult {
 	arguments := map[string][]string{
 		"format": {
 			"--no-config",
@@ -402,6 +638,15 @@ func runOperation(strider, checkout, operation string, item project) operationRe
 			"--format",
 			"json",
 		},
+		"check-file-local": {
+			"--no-config",
+			"check",
+			"--no-package-loading",
+			"--minimum-severity",
+			"note",
+			"--format",
+			"json",
+		},
 	}[operation]
 	if len(item.FormatExcludes) != 0 {
 		configPath := filepath.Join(checkout, ".strider-corpus.toml")
@@ -409,7 +654,7 @@ func runOperation(strider, checkout, operation string, item project) operationRe
 		if err != nil {
 			return operationResult{
 				Name:     operation,
-				BudgetMS: item.BudgetsMS[operation],
+				BudgetMS: operationBudget(item, operation),
 				Error:    err.Error(),
 			}
 		}
@@ -417,7 +662,7 @@ func runOperation(strider, checkout, operation string, item project) operationRe
 		if err := os.WriteFile(configPath, contents, 0o600); err != nil {
 			return operationResult{
 				Name:     operation,
-				BudgetMS: item.BudgetsMS[operation],
+				BudgetMS: operationBudget(item, operation),
 				Error:    err.Error(),
 			}
 		}
@@ -434,18 +679,33 @@ func runOperation(strider, checkout, operation string, item project) operationRe
 		}
 	}
 	arguments = append(arguments, paths...)
-	budget := item.BudgetsMS[operation]
+	budget := operationBudget(item, operation)
 	cmd := exec.Command(strider, arguments...)
 	cmd.Dir = checkout
 	// Pin the analysis target so build-tagged files produce the same corpus on
 	// developer machines and the Linux GitHub Actions runner.
-	cmd.Env = append(os.Environ(), "CGO_ENABLED=0", "GOARCH=amd64", "GOMAXPROCS=2", "GOOS=linux", "GOWORK=off")
+	gomaxprocs := "2"
+	if variant.scheduler == "native" {
+		gomaxprocs = strconv.Itoa(runtime.NumCPU())
+	}
+	cmd.Env = append(
+		os.Environ(),
+		"CGO_ENABLED=0",
+		"GOARCH=amd64",
+		"GOMAXPROCS="+gomaxprocs,
+		"GOOS=linux",
+		"GOWORK=off",
+		"STRIDER_CACHE_DIR="+state.striderCache,
+		telemetry.EnvironmentVariable+"="+state.telemetryPath,
+		"GOCACHE="+state.goCache,
+	)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	started := time.Now()
 	err := cmd.Run()
-	duration := time.Since(started).Milliseconds()
+	duration := time.Since(started)
+	peakRSS := processPeakRSS(cmd.ProcessState)
 	exitCode := 0
 	if err != nil {
 		var exitError *exec.ExitError
@@ -453,19 +713,21 @@ func runOperation(strider, checkout, operation string, item project) operationRe
 			exitCode = exitError.ExitCode()
 		} else {
 			return operationResult{
-				Name:       operation,
-				DurationMS: duration,
-				BudgetMS:   budget,
-				Error:      err.Error(),
+				Name:     operation,
+				BudgetMS: budget,
+				Error:    err.Error(),
 			}
 		}
 	}
 	result := operationResult{
 		Name:         operation,
+		Scheduler:    variant.scheduler,
+		StriderCache: variant.striderCache,
+		GoBuildCache: variant.goBuildCache,
 		ExitCode:     exitCode,
-		DurationMS:   duration,
+		DurationMS:   duration.Milliseconds(),
 		BudgetMS:     budget,
-		WithinBudget: duration <= int64(budget),
+		WithinBudget: duration.Milliseconds() <= int64(budget),
 	}
 	if exitCode > 1 {
 		result.Error = strings.TrimSpace(stderr.String())
@@ -491,15 +753,221 @@ func runOperation(strider, checkout, operation string, item project) operationRe
 			}
 		}
 	}
+	var trace telemetry.Report
+	traceContents, traceErr := os.ReadFile(state.telemetryPath)
+	if traceErr != nil {
+		result.Error = "read telemetry: " + traceErr.Error()
+		return result
+	}
+	if decodeErr := json.Unmarshal(traceContents, &trace); decodeErr != nil {
+		result.Error = "decode telemetry: " + decodeErr.Error()
+		return result
+	}
+	trace.Events = nil
+	allocBytes := saturatingDifference(trace.MemoryAfter.TotalAllocBytes, trace.MemoryBefore.TotalAllocBytes)
+	gcCycles := saturatingDifference32(trace.MemoryAfter.NumGC, trace.MemoryBefore.NumGC)
+	gcPause := saturatingDifference(trace.MemoryAfter.PauseTotalNS, trace.MemoryBefore.PauseTotalNS)
+	result.Samples = []sampleResult{
+		{
+			DurationNS:    duration.Nanoseconds(),
+			PeakRSSBytes:  peakRSS,
+			AllocBytes:    allocBytes,
+			GCCycles:      gcCycles,
+			GCPauseNS:     gcPause,
+			ExitCode:      exitCode,
+			Digest:        result.Digest,
+			TelemetryFile: portablePath(state.telemetryPath),
+			Telemetry:     trace,
+		},
+	}
 	return result
+}
+
+func benchmarkVariants(operation string, options options) ([]benchmarkVariant, error) {
+	schedulers, err := parseModes(options.schedulerModes, "scheduler", "fixed", "native")
+	if err != nil {
+		return nil, err
+	}
+	striderCaches, err := parseModes(options.striderCacheModes, "Strider cache", "cold", "warm")
+	if err != nil {
+		return nil, err
+	}
+	goCaches := []string{
+		"warm",
+	}
+	if operation == "check" {
+		goCaches, err = parseModes(options.goCacheModes, "Go build cache", "cold", "warm")
+		if err != nil {
+			return nil, err
+		}
+	}
+	result := make([]benchmarkVariant, 0, len(schedulers)*len(striderCaches)*len(goCaches))
+	for _, scheduler := range schedulers {
+		for _, striderCache := range striderCaches {
+			for _, goCache := range goCaches {
+				result = append(result, benchmarkVariant{
+					scheduler:    scheduler,
+					striderCache: striderCache,
+					goBuildCache: goCache,
+				})
+			}
+		}
+	}
+	return result, nil
+}
+
+func operationBudget(item project, operation string) int {
+	if operation == "check-file-local" {
+		return item.BudgetsMS["check"]
+	}
+	return item.BudgetsMS[operation]
+}
+
+func parseModes(value, label string, allowed ...string) ([]string, error) {
+	valid := make(map[string]bool, len(allowed))
+	for _, item := range allowed {
+		valid[item] = true
+	}
+	seen := map[string]bool{}
+	result := []string{}
+	for _, item := range strings.Split(value, ",") {
+		item = strings.TrimSpace(item)
+		if !valid[item] {
+			return nil, fmt.Errorf("unsupported %s mode %q", label, item)
+		}
+		if !seen[item] {
+			seen[item] = true
+			result = append(result, item)
+		}
+	}
+	if len(result) == 0 {
+		return nil, fmt.Errorf("%s modes cannot be empty", label)
+	}
+	return result, nil
+}
+
+func benchmarkStateRoot(rawRoot, projectName, operation string, variant benchmarkVariant) (string, error) {
+	absolute, err := filepath.Abs(rawRoot)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(absolute, projectName, operation, variant.scheduler, "strider-"+variant.striderCache, "go-"+variant.goBuildCache), nil
+}
+
+func resetBenchmarkState(path string) error {
+	clean := filepath.Clean(path)
+	if clean == "." || clean == string(filepath.Separator) || filepath.Dir(clean) == clean {
+		return fmt.Errorf("refusing to reset unsafe benchmark state path %q", path)
+	}
+	if err := os.RemoveAll(clean); err != nil {
+		return err
+	}
+	return os.MkdirAll(filepath.Join(clean, "telemetry"), 0o755)
+}
+
+func cleanupBenchmarkCaches(root string) error {
+	var result error
+	for _, name := range []string{
+		"go-cache",
+		"strider-cache",
+	} {
+		result = errors.Join(result, os.RemoveAll(filepath.Join(root, name)))
+	}
+	return result
+}
+
+func prepareSampleState(root string, variant benchmarkVariant, name string) (sampleState, func() error, error) {
+	temporary, err := os.MkdirTemp(root, ".process-")
+	if err != nil {
+		return sampleState{}, func() error {
+			return nil
+		}, err
+	}
+	cleanup := func() error {
+		return os.RemoveAll(temporary)
+	}
+	striderCache := filepath.Join(root, "strider-cache")
+	if variant.striderCache == "cold" {
+		striderCache = filepath.Join(temporary, "strider-cache")
+	}
+	goCache := filepath.Join(root, "go-cache")
+	if variant.goBuildCache == "cold" {
+		goCache = filepath.Join(temporary, "go-cache")
+	}
+	for _, path := range []string{
+		striderCache,
+		goCache,
+	} {
+		if err := os.MkdirAll(path, 0o755); err != nil {
+			cleanupErr := cleanup()
+			return sampleState{}, func() error {
+				return nil
+			}, errors.Join(err, cleanupErr)
+		}
+	}
+	return sampleState{
+		striderCache:  striderCache,
+		goCache:       goCache,
+		telemetryPath: filepath.Join(root, "telemetry", name+".json"),
+	}, cleanup, nil
+}
+
+func medianInt64(samples []sampleResult, value func(sampleResult) int64) int64 {
+	return percentileInt64(samples, 50, value)
+}
+
+func percentileInt64(samples []sampleResult, percentile int, value func(sampleResult) int64) int64 {
+	values := make([]int64, len(samples))
+	for index, sample := range samples {
+		values[index] = value(sample)
+	}
+	sort.Slice(values, func(left, right int) bool {
+		return values[left] < values[right]
+	})
+	if len(values) == 0 {
+		return 0
+	}
+	index := (percentile*len(values)+99)/100 - 1
+	index = max(0, min(index, len(values)-1))
+	return values[index]
+}
+
+func saturatingDifference(after, before uint64) uint64 {
+	if after < before {
+		return 0
+	}
+	return after - before
+}
+
+func saturatingDifference32(after, before uint32) uint32 {
+	if after < before {
+		return 0
+	}
+	return after - before
+}
+
+func portablePath(path string) string {
+	workingDirectory, err := os.Getwd()
+	if err != nil {
+		return filepath.ToSlash(path)
+	}
+	relative, err := filepath.Rel(workingDirectory, path)
+	if err != nil || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+		return filepath.ToSlash(path)
+	}
+	return filepath.ToSlash(relative)
 }
 
 func writeProjectReport(htmlRoot string, project projectResult, sourceRoot string) error {
 	diagnostics := make([]diagnosticmodel.Diagnostic, 0)
 	timings := make([]reporter.HTMLTiming, 0, len(project.Operations))
 	for _, operation := range project.Operations {
+		label := operation.Name
+		if operation.Scheduler != "" {
+			label = fmt.Sprintf("%s (%s, strider-%s, go-%s)", operation.Name, operation.Scheduler, operation.StriderCache, operation.GoBuildCache)
+		}
 		timings = append(timings, reporter.HTMLTiming{
-			Name:       operation.Name,
+			Name:       label,
 			DurationMS: operation.DurationMS,
 		})
 		if operation.Name != "check" {
@@ -590,8 +1058,8 @@ func writeJSON(path string, value any) error {
 }
 
 func writeConsole(writer io.Writer, results report) {
-	fmt.Fprintln(writer, "Project         Operation  Findings   Time / Budget  Baseline  Performance")
-	fmt.Fprintln(writer, "--------------- ---------- -------- ---------------- --------- -----------")
+	fmt.Fprintln(writer, "Project         Operation  Scheduler Cache            Findings  Median / p95  Baseline  Performance")
+	fmt.Fprintln(writer, "--------------- ---------- --------- ---------------- --------- ------------- --------- -----------")
 	for _, project := range results.Projects {
 		for _, operation := range project.Operations {
 			baselineState, performanceState := "PASS", "PASS"
@@ -606,12 +1074,14 @@ func writeConsole(writer io.Writer, results report) {
 			}
 			fmt.Fprintf(
 				writer,
-				"%-15s %-10s %8d %7d / %-6d %-9s %s\n",
+				"%-15s %-10s %-9s %-16s %9d %6d / %-4d %-9s %s\n",
 				project.Name,
 				operation.Name,
+				operation.Scheduler,
+				operation.StriderCache+"/"+operation.GoBuildCache,
 				operation.Findings,
 				operation.DurationMS,
-				operation.BudgetMS,
+				operation.P95MS,
 				baselineState,
 				performanceState,
 			)
@@ -628,8 +1098,8 @@ func writeGitHubSummary(path string, results report) error {
 	defer file.Close()
 	fmt.Fprintln(file, "## Strider open-source corpus")
 	fmt.Fprintln(file)
-	fmt.Fprintln(file, "| Project | Operation | Findings | Time | Budget | Baseline | Performance |")
-	fmt.Fprintln(file, "| --- | --- | ---: | ---: | ---: | --- | --- |")
+	fmt.Fprintln(file, "| Project | Operation | Scheduler | Cache | Findings | Median | p95 | Peak RSS | Baseline | Performance |")
+	fmt.Fprintln(file, "| --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- |")
 	for _, project := range results.Projects {
 		for _, operation := range project.Operations {
 			baselineState, performanceState := "✅", "✅"
@@ -644,12 +1114,16 @@ func writeGitHubSummary(path string, results report) error {
 			}
 			fmt.Fprintf(
 				file,
-				"| %s | %s | %d | %.2fs | %.2fs | %s | %s |\n",
+				"| %s | %s | %s | %s/%s | %d | %.2fs | %.2fs | %.1f MiB | %s | %s |\n",
 				project.Name,
 				operation.Name,
+				operation.Scheduler,
+				operation.StriderCache,
+				operation.GoBuildCache,
 				operation.Findings,
 				float64(operation.DurationMS)/1000,
-				float64(operation.BudgetMS)/1000,
+				float64(operation.P95MS)/1000,
+				float64(operation.PeakRSSBytes)/(1<<20),
 				baselineState,
 				performanceState,
 			)

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"go/token"
+	"os"
 	"runtime"
 	"sort"
 	"sync"
@@ -15,6 +16,7 @@ import (
 	"github.com/gempir/strider/internal/diagnostic"
 	"github.com/gempir/strider/internal/formatter"
 	"github.com/gempir/strider/internal/pathfilter"
+	"github.com/gempir/strider/internal/resultcache"
 	"github.com/gempir/strider/internal/source"
 	"github.com/gempir/strider/internal/telemetry"
 	"github.com/gempir/strider/internal/workspace"
@@ -31,6 +33,9 @@ type RunOptions struct {
 	// CollectCandidates retains complete formatted files for a future write or
 	// fix operation. Read-only check callers should leave it disabled.
 	CollectCandidates bool
+	// Cache persists file-local format status and native syntax findings for
+	// read-only one-shot commands. Candidate-producing runs bypass it.
+	Cache *resultcache.Cache
 }
 
 // Result contains the merged diagnostics and, when requested, formatted
@@ -74,7 +79,7 @@ func Run(ctx context.Context, shared *workspace.Workspace, registry *Registry, o
 		options.Formatter = formatter.DefaultOptions()
 	}
 
-	result, err := runConcreteChecks(ctx, shared.Files(), registry, options.Formatter, options.CollectCandidates)
+	result, err := runConcreteChecks(ctx, shared.Files(), registry, options.Formatter, options.CollectCandidates, options.Cache)
 	if err != nil {
 		return Result{}, err
 	}
@@ -125,8 +130,24 @@ func filterExcludedResults(result *Result, root string, excludes []string) {
 	}
 }
 
-func runConcreteChecks(ctx context.Context, files []*workspace.File, registry *Registry, formatOptions formatter.Options, collectCandidates bool) (Result, error) {
-	return runConcreteChecksWith(ctx, files, registry, formatOptions, collectCandidates, runConcreteFile)
+func runConcreteChecks(ctx context.Context, files []*workspace.File, registry *Registry, formatOptions formatter.Options, collectCandidates bool, cache *resultcache.Cache) (
+	Result,
+	error,
+) {
+	runFile := runConcreteFile
+	if cache != nil && !collectCandidates {
+		runFile = func(
+			ctx context.Context,
+			file *workspace.File,
+			registry *Registry,
+			session *formatter.Formatter,
+			formatOptions formatter.Options,
+			collectCandidate bool,
+		) fileResult {
+			return runConcreteFileCached(ctx, file, registry, session, formatOptions, collectCandidate, cache)
+		}
+	}
+	return runConcreteChecksWith(ctx, files, registry, formatOptions, collectCandidates, runFile)
 }
 
 func runConcreteChecksWith(ctx context.Context, files []*workspace.File, registry *Registry, formatOptions formatter.Options, collectCandidates bool, runFile concreteFileRunner) (
@@ -219,6 +240,18 @@ dispatch:
 }
 
 func runConcreteFile(ctx context.Context, file *workspace.File, registry *Registry, session *formatter.Formatter, formatOptions formatter.Options, collectCandidate bool) fileResult {
+	return runConcreteFileCached(ctx, file, registry, session, formatOptions, collectCandidate, nil)
+}
+
+func runConcreteFileCached(
+	ctx context.Context,
+	file *workspace.File,
+	registry *Registry,
+	session *formatter.Formatter,
+	formatOptions formatter.Options,
+	collectCandidate bool,
+	cache *resultcache.Cache,
+) fileResult {
 	finish := telemetry.Start("check.file-worker")
 	defer finish()
 	filename := file.Path()
@@ -231,19 +264,28 @@ func runConcreteFile(ctx context.Context, file *workspace.File, registry *Regist
 	lintApplies := registry.syntax != nil && registry.syntax.Applies(filename)
 	formatApplies := registry.formatApplies(filename)
 	formatIgnored := false
-	if formatApplies {
-		contents, readErr := file.Bytes()
-		if readErr != nil {
-			return fileResult{
-				filename: filename,
-				err:      readErr,
-			}
+	contents, readErr := file.Bytes()
+	if readErr != nil {
+		return fileResult{
+			filename: filename,
+			err:      readErr,
 		}
+	}
+	if formatApplies {
 		formatIgnored = formatter.IsIgnored(contents)
-		if formatIgnored && !lintApplies {
-			return fileResult{
-				filename: filename,
-			}
+	}
+	display := registry.diagnosticPath(filename)
+	cacheKey := localCacheKey(cache, session, registry, filename, display, contents, formatOptions)
+	if cached, ok := cache.Get(cacheKey); ok {
+		return materializeCachedFile(filename, display, contents, registry, cached)
+	}
+	if formatIgnored && !lintApplies {
+		cache.Store(cacheKey, resultcache.Entry{
+			FormatKnown:   true,
+			FormatIgnored: true,
+		})
+		return fileResult{
+			filename: filename,
 		}
 	}
 	if err := ctx.Err(); err != nil {
@@ -262,7 +304,6 @@ func runConcreteFile(ctx context.Context, file *workspace.File, registry *Regist
 	result := fileResult{
 		filename: filename,
 	}
-	display := registry.diagnosticPath(filename)
 	if err := ctx.Err(); err != nil {
 		result.err = err
 		return result
@@ -298,9 +339,63 @@ func runConcreteFile(ctx context.Context, file *workspace.File, registry *Regist
 		}
 	}
 	if lintApplies {
-		result.diagnostics = append(result.diagnostics, syntax.AnalyzeTreeWithDisplay(filename, display, tree, registry.syntax)...)
+		syntaxDiagnostics := syntax.AnalyzeTreeWithDisplay(filename, display, tree, registry.syntax)
+		result.diagnostics = append(result.diagnostics, syntaxDiagnostics...)
+		cache.Store(
+			cacheKey,
+			resultcache.Entry{
+				FormatKnown:   formatApplies,
+				FormatChanged: hasDiagnosticCode(result.diagnostics, formatMeta.Code),
+				FormatIgnored: formatIgnored,
+				Findings:      resultcache.FindingsFromDiagnostics(syntaxDiagnostics),
+			},
+		)
+	} else {
+		cache.Store(
+			cacheKey,
+			resultcache.Entry{
+				FormatKnown:   formatApplies,
+				FormatChanged: hasDiagnosticCode(result.diagnostics, formatMeta.Code),
+				FormatIgnored: formatIgnored,
+			},
+		)
 	}
 	return result
+}
+
+func localCacheKey(cache *resultcache.Cache, session *formatter.Formatter, registry *Registry, filename, logicalPath string, contents []byte, formatOptions formatter.Options) string {
+	if cache == nil {
+		return ""
+	}
+	target := fmt.Sprintf("goos=%s\ngoarch=%s\ncgo=%s\nskip-generated=true", os.Getenv("GOOS"), os.Getenv("GOARCH"), os.Getenv("CGO_ENABLED"))
+	return cache.Key(
+		[]byte("check-file-local"),
+		contents,
+		[]byte(logicalPath),
+		[]byte(registry.localCacheIdentity(filename)),
+		[]byte(session.CacheIdentity(filename, formatOptions)),
+		[]byte(target),
+	)
+}
+
+func materializeCachedFile(filename, display string, contents []byte, registry *Registry, cached resultcache.Entry) fileResult {
+	result := fileResult{
+		filename: filename,
+	}
+	if cached.FormatKnown && cached.FormatChanged && !cached.FormatIgnored {
+		result.diagnostics = append(result.diagnostics, formatDiagnostic(display, registry.Severity(formatMeta.Code)))
+	}
+	result.diagnostics = append(result.diagnostics, resultcache.Materialize(display, contents, cached.Findings, registry.Severity)...)
+	return result
+}
+
+func hasDiagnosticCode(diagnostics []diagnostic.Diagnostic, code string) bool {
+	for _, item := range diagnostics {
+		if item.Code == code {
+			return true
+		}
+	}
+	return false
 }
 
 func formatDiagnostic(display string, severity diagnostic.Severity) diagnostic.Diagnostic {

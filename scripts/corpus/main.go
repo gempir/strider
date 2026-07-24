@@ -298,6 +298,7 @@ func run(options options) error {
 			referenceSignatures := map[string]signature{}
 			for _, operation := range []string{
 				"format",
+				"check-file-local",
 				"check",
 			} {
 				variants, variantErr := benchmarkVariants(operation, options)
@@ -307,7 +308,7 @@ func run(options options) error {
 				for _, variant := range variants {
 					observed := runOperationSamples(strider, checkout, operation, item, variant, options)
 					expectedSignature, found := findExpected(expected, item.Name, item.Revision, operation)
-					if options.mode == "update" {
+					if operation == "check-file-local" || options.mode == "update" {
 						reference, referenceFound := referenceSignatures[operation]
 						observed.BaselineMatch = !referenceFound || reflect.DeepEqual(reference, observed.signature())
 						if !referenceFound && observed.Error == "" {
@@ -324,7 +325,7 @@ func run(options options) error {
 						results.StriderRevision = observed.Samples[0].Telemetry.Revision
 					}
 					projectReport.Operations = append(projectReport.Operations, observed)
-					if _, stored := projectBaseline.Operations[operation]; !stored && observed.Error == "" {
+					if _, stored := projectBaseline.Operations[operation]; operation != "check-file-local" && !stored && observed.Error == "" {
 						projectBaseline.Operations[operation] = observed.signature()
 					}
 				}
@@ -530,7 +531,7 @@ func runOperationSamples(strider, checkout, operation string, item project, vari
 		Scheduler:    variant.scheduler,
 		StriderCache: variant.striderCache,
 		GoBuildCache: variant.goBuildCache,
-		BudgetMS:     item.BudgetsMS[operation],
+		BudgetMS:     operationBudget(item, operation),
 	}
 	stateRoot, err := benchmarkStateRoot(options.rawPath, item.Name, operation, variant)
 	if err != nil {
@@ -632,6 +633,15 @@ func runOperationOnce(strider, checkout, operation string, item project, variant
 			"--format",
 			"json",
 		},
+		"check-file-local": {
+			"--no-config",
+			"check",
+			"--no-package-loading",
+			"--minimum-severity",
+			"note",
+			"--format",
+			"json",
+		},
 	}[operation]
 	if len(item.FormatExcludes) != 0 {
 		configPath := filepath.Join(checkout, ".strider-corpus.toml")
@@ -639,7 +649,7 @@ func runOperationOnce(strider, checkout, operation string, item project, variant
 		if err != nil {
 			return operationResult{
 				Name:     operation,
-				BudgetMS: item.BudgetsMS[operation],
+				BudgetMS: operationBudget(item, operation),
 				Error:    err.Error(),
 			}
 		}
@@ -647,7 +657,7 @@ func runOperationOnce(strider, checkout, operation string, item project, variant
 		if err := os.WriteFile(configPath, contents, 0o600); err != nil {
 			return operationResult{
 				Name:     operation,
-				BudgetMS: item.BudgetsMS[operation],
+				BudgetMS: operationBudget(item, operation),
 				Error:    err.Error(),
 			}
 		}
@@ -664,7 +674,7 @@ func runOperationOnce(strider, checkout, operation string, item project, variant
 		}
 	}
 	arguments = append(arguments, paths...)
-	budget := item.BudgetsMS[operation]
+	budget := operationBudget(item, operation)
 	cmd := exec.Command(strider, arguments...)
 	cmd.Dir = checkout
 	// Pin the analysis target so build-tagged files produce the same corpus on
@@ -799,6 +809,13 @@ func benchmarkVariants(operation string, options options) ([]benchmarkVariant, e
 		}
 	}
 	return result, nil
+}
+
+func operationBudget(item project, operation string) int {
+	if operation == "check-file-local" {
+		return item.BudgetsMS["check"]
+	}
+	return item.BudgetsMS[operation]
 }
 
 func parseModes(value, label string, allowed ...string) ([]string, error) {

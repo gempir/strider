@@ -20,6 +20,10 @@ report. Cold state is recreated for every measured process. Warm state receives
 an exact-binary/configuration population run before measurement. OS filesystem
 cache state is explicitly accepted as warm.
 
+The runner also measures `check --no-package-loading` as `check-file-local`.
+That lane isolates persistent-cache lookup and diagnostic materialization from
+the package-loading, type-analysis, and SSA floor in a full check.
+
 `target/corpus/report.json` contains the environment, all raw samples, medians,
 p95, allocations, GC cycles and pause time, external peak RSS, and aggregate
 phase spans. Detailed event traces live below `target/corpus/raw`. Aggregate

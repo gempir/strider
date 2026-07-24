@@ -5,6 +5,7 @@ package syntax
 
 import (
 	"bytes"
+	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -80,6 +81,38 @@ func NewPlan(selected []SelectedCheck, root string) *Plan {
 
 func (r *Plan) Severity(code string) diagnostic.Severity {
 	return r.settings[code].severity
+}
+
+// CacheIdentity returns the effective syntax configuration for filename,
+// including selected checks, severities, exclusions, and resolved options.
+func (r *Plan) CacheIdentity(filename string) string {
+	if r == nil {
+		return "syntax=disabled"
+	}
+	prepared := r.prepare(filename)
+	var identity strings.Builder
+	for _, check := range prepared.checks {
+		meta := check.Meta()
+		setting := r.settings[meta.Code]
+		fmt.Fprintf(&identity, "check=%s\nseverity=%s\n", meta.Code, setting.severity)
+		excludes := append([]string(nil), setting.excludes...)
+		sort.Strings(excludes)
+		for _, exclude := range excludes {
+			fmt.Fprintf(&identity, "exclude=%s\n", exclude)
+		}
+		options := setting.options
+		for _, spec := range meta.Options {
+			if spec.Kind == catalog.OptionInt {
+				value, _ := options.Int(spec.Name)
+				fmt.Fprintf(&identity, "option=%s:int:%d\n", spec.Name, value)
+			}
+			if spec.Kind == catalog.OptionStrings {
+				values, _ := options.Strings(spec.Name)
+				fmt.Fprintf(&identity, "option=%s:strings:%q\n", spec.Name, values)
+			}
+		}
+	}
+	return identity.String()
 }
 
 func (r *Plan) prepare(filename string) *preparedPlan {

@@ -10,6 +10,7 @@ import (
 
 	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/formatter"
+	"github.com/gempir/strider/internal/resultcache"
 	"github.com/gempir/strider/internal/source"
 	"github.com/gempir/strider/internal/telemetry"
 	"github.com/gempir/strider/internal/ui"
@@ -34,6 +35,7 @@ type formatOptions struct {
 	directory     string
 	excludes      []string
 	colorMode     ui.ColorMode
+	cache         *resultcache.Cache
 }
 
 type sourceLine struct {
@@ -52,7 +54,7 @@ type diffHunk struct {
 	end   int
 }
 
-func runFormat(ctx context.Context, args []string, configuration config.Config, colorMode ui.ColorMode, stdin io.Reader, stdout, stderr io.Writer) int {
+func runFormat(ctx context.Context, args []string, configuration config.Config, colorMode ui.ColorMode, stdin io.Reader, stdout, stderr io.Writer, cache *resultcache.Cache) int {
 	if err := ctx.Err(); err != nil {
 		printCommandError(stderr, colorMode, "strider fmt", "%v", err)
 		return exitError
@@ -68,6 +70,7 @@ func runFormat(ctx context.Context, args []string, configuration config.Config, 
 	options.directory = configuration.Directory
 	options.excludes = configuration.Formatter.Excludes
 	options.colorMode = colorMode
+	options.cache = cache
 	if options.stdin {
 		return formatStdin(ctx, options.stdinFilename, options.formatter, colorMode, stdin, stdout, stderr)
 	}
@@ -179,7 +182,7 @@ func formatPaths(ctx context.Context, options formatOptions, stdout, stderr io.W
 		return exitError
 	}
 	if options.check {
-		statuses, formatErrors := formatFileStatuses(ctx, shared.Files(), options.formatter)
+		statuses, formatErrors := formatFileStatuses(ctx, shared.Files(), options.formatter, options.root, options.excludes, options.cache)
 		for _, formatErr := range formatErrors {
 			if formatErr != nil {
 				printCommandError(stderr, options.colorMode, "strider fmt", "%v", formatErr)

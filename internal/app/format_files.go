@@ -4,11 +4,15 @@ package app
 import (
 	"context"
 	"fmt"
+	"os"
 	"runtime"
+	"sort"
+	"strings"
 	"sync"
 
 	"github.com/gempir/strider/internal/filewrite"
 	"github.com/gempir/strider/internal/formatter"
+	"github.com/gempir/strider/internal/resultcache"
 	"github.com/gempir/strider/internal/source"
 	"github.com/gempir/strider/internal/telemetry"
 	"github.com/gempir/strider/internal/workspace"
@@ -120,7 +124,10 @@ dispatch:
 	return formatted, errorsByFile
 }
 
-func formatFileStatuses(ctx context.Context, files []*workspace.File, options formatter.Options) ([]formattedStatus, []error) {
+func formatFileStatuses(ctx context.Context, files []*workspace.File, options formatter.Options, root string, excludes []string, cache *resultcache.Cache) (
+	[]formattedStatus,
+	[]error,
+) {
 	statuses := make([]formattedStatus, len(files))
 	errorsByFile := make([]error, len(files))
 	if len(files) == 0 {
@@ -128,6 +135,8 @@ func formatFileStatuses(ctx context.Context, files []*workspace.File, options fo
 	}
 
 	session := formatter.NewFormatter()
+	resolvedRoot := source.ResolveRoot(root)
+	cacheConfiguration := formatCacheConfiguration(excludes)
 	workerContext, cancel := context.WithCancel(ctx)
 	defer cancel()
 	jobs := make(chan int)
@@ -159,11 +168,24 @@ func formatFileStatuses(ctx context.Context, files []*workspace.File, options fo
 					cancel()
 					return
 				}
+				cacheKey := formatStatusCacheKey(cache, session, filename, source.DiagnosticPath(resolvedRoot, filename), original, options, cacheConfiguration)
+				if cached, hit := cache.Get(cacheKey); hit && cached.FormatKnown {
+					statuses[index] = formattedStatus{
+						filename: filename,
+						changed:  cached.FormatChanged,
+						ignored:  cached.FormatIgnored,
+					}
+					continue
+				}
 				if formatter.IsIgnored(original) {
 					statuses[index] = formattedStatus{
 						filename: filename,
 						ignored:  true,
 					}
+					cache.Store(cacheKey, resultcache.Entry{
+						FormatKnown:   true,
+						FormatIgnored: true,
+					})
 					continue
 				}
 				tree, err := file.CST()
@@ -188,6 +210,10 @@ func formatFileStatuses(ctx context.Context, files []*workspace.File, options fo
 					filename: filename,
 					changed:  changed,
 				}
+				cache.Store(cacheKey, resultcache.Entry{
+					FormatKnown:   true,
+					FormatChanged: changed,
+				})
 			}
 		}()
 	}
@@ -205,6 +231,24 @@ dispatch:
 		errorsByFile = append(errorsByFile, err)
 	}
 	return statuses, errorsByFile
+}
+
+func formatStatusCacheKey(cache *resultcache.Cache, session *formatter.Formatter, filename, logicalPath string, contents []byte, options formatter.Options, configuration string) string {
+	if cache == nil {
+		return ""
+	}
+	target := fmt.Sprintf("goos=%s\ngoarch=%s\ncgo=%s\nskip-generated=true", os.Getenv("GOOS"), os.Getenv("GOARCH"), os.Getenv("CGO_ENABLED"))
+	return cache.Key([]byte("format-status"), contents, []byte(logicalPath), []byte(session.CacheIdentity(filename, options)), []byte(configuration), []byte(target))
+}
+
+func formatCacheConfiguration(excludes []string) string {
+	sortedExcludes := append([]string(nil), excludes...)
+	sort.Strings(sortedExcludes)
+	var identity strings.Builder
+	for _, exclude := range sortedExcludes {
+		fmt.Fprintf(&identity, "exclude=%s\n", exclude)
+	}
+	return identity.String()
 }
 
 func writeFormattedFiles(files []formattedFile) error {

@@ -151,24 +151,28 @@ func TestBenchmarkVariantsKeepColdGoCacheOutOfFormat(t *testing.T) {
 		striderCacheModes: "cold,warm",
 		goCacheModes:      "cold,warm",
 	}
-	formatVariants, err := benchmarkVariants("format", options)
+	assertBenchmarkVariantCount(t, "format", options, 4)
+	assertBenchmarkVariantCount(t, "check", options, 8)
+	assertBenchmarkVariantCount(t, "check-file-local", options, 4)
+}
+
+func assertBenchmarkVariantCount(t *testing.T, operation string, options options, want int) {
+	t.Helper()
+
+	variants, err := benchmarkVariants(operation, options)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(formatVariants) != 4 {
-		t.Fatalf("format variants = %d, want 4", len(formatVariants))
+	if len(variants) != want {
+		t.Fatalf("%s variants = %d, want %d", operation, len(variants), want)
 	}
-	for _, variant := range formatVariants {
+	if operation != "format" {
+		return
+	}
+	for _, variant := range variants {
 		if variant.goBuildCache != "warm" {
 			t.Fatalf("format variant has Go cache mode %q", variant.goBuildCache)
 		}
-	}
-	checkVariants, err := benchmarkVariants("check", options)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(checkVariants) != 8 {
-		t.Fatalf("check variants = %d, want 8", len(checkVariants))
 	}
 }
 

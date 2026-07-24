@@ -4,6 +4,7 @@ package checks
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -17,6 +18,8 @@ import (
 
 	"github.com/gempir/strider/internal/diagnostic"
 	"github.com/gempir/strider/internal/formatter"
+	"github.com/gempir/strider/internal/resultcache"
+	"github.com/gempir/strider/internal/telemetry"
 	"github.com/gempir/strider/internal/workspace"
 )
 
@@ -462,5 +465,72 @@ func TestRunFormatIgnoreFastPathDoesNotParse(t *testing.T) {
 	}
 	if len(result.Diagnostics) != 0 || len(result.Candidates) != 0 {
 		t.Fatalf("ignored result = %#v", result)
+	}
+}
+
+func TestRunFileLocalCacheHitAvoidsCSTParse(t *testing.T) {
+	directory := t.TempDir()
+	filename := filepath.Join(directory, "main.go")
+	if err := os.WriteFile(filename, []byte("package sample\nfunc init() {}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cache, err := resultcache.Open(resultcache.Options{
+		Directory: filepath.Join(directory, "cache"),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	registry, err := NewRegistry(RegistryOptions{
+		Only: []string{
+			"no-init",
+		},
+		Root: directory,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	run := func() Result {
+		shared, err := workspace.Open([]string{
+			filename,
+		}, workspace.Options{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer shared.Close()
+		result, err := Run(context.Background(), shared, registry, RunOptions{
+			SkipPackageLoading: true,
+			Cache:              cache,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return result
+	}
+	first := run()
+	if err := cache.Flush(); err != nil {
+		t.Fatal(err)
+	}
+	telemetryPath := filepath.Join(directory, "telemetry.json")
+	t.Setenv(telemetry.EnvironmentVariable, telemetryPath)
+	telemetry.ConfigureFromEnvironment("test cache hit")
+	second := run()
+	if err := telemetry.Flush(); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(first.Diagnostics, second.Diagnostics) {
+		t.Fatalf("cache hit diagnostics differ:\nfirst:  %+v\nsecond: %+v", first.Diagnostics, second.Diagnostics)
+	}
+	contents, err := os.ReadFile(telemetryPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var report telemetry.Report
+	if err := json.Unmarshal(contents, &report); err != nil {
+		t.Fatal(err)
+	}
+	for _, phase := range report.Phases {
+		if phase.Name == "cst.parse" {
+			t.Fatalf("cache hit parsed a CST: %+v", phase)
+		}
 	}
 }

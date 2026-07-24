@@ -2,6 +2,8 @@
 package formatter
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,51 +17,62 @@ type modulePathCache struct {
 }
 
 type cachedModulePath struct {
-	path string
+	path     string
+	identity string
 }
 
 func (c *modulePathCache) find(filename string) string {
+	return c.findInfo(filename).path
+}
+
+func (c *modulePathCache) findInfo(filename string) cachedModulePath {
 	if filename == "" || strings.HasPrefix(filename, "<") {
-		return ""
+		return cachedModulePath{}
 	}
 	directory, err := filepath.Abs(filepath.Dir(filename))
 	if err != nil {
-		return ""
+		return cachedModulePath{}
 	}
 	visited := []string{}
 	for {
 		if cached, ok := c.entries.Load(directory); ok {
-			path := cached.(cachedModulePath).path
-			c.store(visited, path)
-			return path
+			info := cached.(cachedModulePath)
+			c.store(visited, info)
+			return info
 		}
 		visited = append(visited, directory)
-		if path, found := modulePathIn(directory); found {
-			c.store(visited, path)
-			return path
+		if info, found := moduleInfoIn(directory); found {
+			c.store(visited, info)
+			return info
 		}
 		parent := filepath.Dir(directory)
 		if parent == directory {
-			c.store(visited, "")
-			return ""
+			c.store(visited, cachedModulePath{})
+			return cachedModulePath{}
 		}
 		directory = parent
 	}
 }
 
-func (c *modulePathCache) store(directories []string, path string) {
-	entry := cachedModulePath{
-		path: path,
-	}
+func (c *modulePathCache) store(directories []string, entry cachedModulePath) {
 	for _, directory := range directories {
 		c.entries.LoadOrStore(directory, entry)
 	}
 }
 
 func modulePathIn(directory string) (string, bool) {
+	info, found := moduleInfoIn(directory)
+	return info.path, found
+}
+
+func moduleInfoIn(directory string) (cachedModulePath, bool) {
 	content, err := os.ReadFile(filepath.Join(directory, "go.mod"))
 	if err != nil {
-		return "", false
+		return cachedModulePath{}, false
 	}
-	return modfile.ModulePath(content), true
+	digest := sha256.Sum256(content)
+	return cachedModulePath{
+		path:     modfile.ModulePath(content),
+		identity: hex.EncodeToString(digest[:]),
+	}, true
 }

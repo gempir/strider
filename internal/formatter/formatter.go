@@ -43,6 +43,14 @@ func NewFormatter() *Formatter {
 	return &Formatter{}
 }
 
+// CacheIdentity returns every formatter input not already represented by the
+// source content and logical path cache-key components.
+func (s *Formatter) CacheIdentity(filename string, options Options) string {
+	options = normalizeOptions(options)
+	module := s.modules.findInfo(filename)
+	return fmt.Sprintf("print-width=%d\nmodule=%s\ngo-mod=%s", options.PrintWidth, module.path, module.identity)
+}
+
 func Format(filename string, source []byte) (Result, error) {
 	return FormatWithOptions(filename, source, DefaultOptions())
 }

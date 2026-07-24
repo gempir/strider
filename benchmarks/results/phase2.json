@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "phase": 2,
+  "protocol": {
+    "samples": 7,
+    "warmups": 1,
+    "scheduler": "fixed",
+    "gomaxprocs": 2,
+    "go_build_cache": "warm",
+    "target": "linux/amd64",
+    "host": "darwin/arm64",
+    "go_version": "go1.26.4",
+    "corpus": "sftpgo",
+    "corpus_revision": "42f7a4d415dc7a97da08880edb82e5b0db5fcfc8",
+    "os_filesystem_cache": "accepted as warm"
+  },
+  "operations": {
+    "format": {
+      "cold_median_ms": 608,
+      "cold_p95_ms": 617,
+      "warm_median_ms": 37,
+      "warm_p95_ms": 37,
+      "warm_improvement_percent": 93.9,
+      "cold_peak_rss_bytes": 312344576,
+      "warm_peak_rss_bytes": 24870912,
+      "cold_allocated_bytes": 618563320,
+      "warm_allocated_bytes": 12886416,
+      "digest": "deb5d65d4c8a2fe9a78b395c8c2a84acc9dc9bed01c7bcfa4c93ad1d0767ead9"
+    },
+    "check_file_local": {
+      "cold_median_ms": 1045,
+      "cold_p95_ms": 1058,
+      "warm_median_ms": 67,
+      "warm_p95_ms": 67,
+      "warm_improvement_percent": 93.6,
+      "cold_peak_rss_bytes": 333004800,
+      "warm_peak_rss_bytes": 52477952,
+      "cold_allocated_bytes": 969311480,
+      "warm_allocated_bytes": 77705272,
+      "digest": "420c333de766aa1474f90f3abd1968a773442ae8bd0e9abc90eb21585d916287"
+    },
+    "check": {
+      "cold_median_ms": 3116,
+      "cold_p95_ms": 3273,
+      "warm_median_ms": 2195,
+      "warm_p95_ms": 2270,
+      "warm_improvement_percent": 29.6,
+      "cold_peak_rss_bytes": 1250623488,
+      "warm_peak_rss_bytes": 1035026432,
+      "cold_allocated_bytes": 2545863536,
+      "warm_allocated_bytes": 1654172792,
+      "digest": "2d29be88549e2b0accdfbfba5785b7f7704357dfef6e181148f76b8ec7eb9d08"
+    }
+  }
+}

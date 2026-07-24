@@ -2,6 +2,7 @@
 package checks
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -217,4 +218,28 @@ func (registry *Registry) diagnosticPath(filename string) string {
 		return stored
 	}
 	return display
+}
+
+func (registry *Registry) localCacheIdentity(filename string) string {
+	if registry == nil {
+		return ""
+	}
+	var identity strings.Builder
+	if registry.formatApplies(filename) {
+		setting := registry.settings[formatMeta.Code]
+		fmt.Fprintf(&identity, "format=true\nseverity=%s\n", setting.severity)
+		excludes := append([]string(nil), setting.excludes...)
+		sort.Strings(excludes)
+		for _, exclude := range excludes {
+			fmt.Fprintf(&identity, "format-exclude=%s\n", exclude)
+		}
+	} else {
+		identity.WriteString("format=false\n")
+	}
+	if registry.syntax == nil {
+		identity.WriteString("syntax=disabled\n")
+	} else {
+		identity.WriteString(registry.syntax.CacheIdentity(filename))
+	}
+	return identity.String()
 }

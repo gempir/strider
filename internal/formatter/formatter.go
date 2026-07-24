@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/gempir/strider/internal/cst"
+	"github.com/gempir/strider/internal/telemetry"
 )
 
 const PrintWidth = 180
@@ -93,6 +94,8 @@ func (s *Formatter) FormatTree(filename string, originalTree *cst.Tree, options 
 }
 
 func (s *Formatter) formatTree(filename string, originalTree *cst.Tree, options Options, checkIgnored bool) (Result, error) {
+	finish := telemetry.Start("formatter.verified")
+	defer finish()
 	preview, module, err := s.previewTree(filename, originalTree, options, checkIgnored)
 	if err != nil || preview.Ignored {
 		return preview, err
@@ -123,6 +126,8 @@ func (s *Formatter) FormatTreeUnverified(filename string, originalTree *cst.Tree
 }
 
 func (s *Formatter) previewTree(filename string, originalTree *cst.Tree, options Options, checkIgnored bool) (Result, string, error) {
+	finish := telemetry.Start("formatter.preview")
+	defer finish()
 	if originalTree == nil {
 		return Result{}, "", fmt.Errorf("format %s: nil concrete syntax tree", filename)
 	}
@@ -171,7 +176,12 @@ func (s *Formatter) previewTree(filename string, originalTree *cst.Tree, options
 }
 
 func renderCandidate(tree *cst.Tree, options Options, module string) ([]byte, error) {
-	formatted, err := goformat.Source([]byte(renderWithModule(tree, options, module)))
+	renderFinish := telemetry.Start("formatter.render")
+	rendered := []byte(renderWithModule(tree, options, module))
+	renderFinish()
+	goFormatFinish := telemetry.Start("formatter.go-format")
+	formatted, err := goformat.Source(rendered)
+	goFormatFinish()
 	if err != nil {
 		return nil, fmt.Errorf("formatter gofmt compatibility: %w", err)
 	}

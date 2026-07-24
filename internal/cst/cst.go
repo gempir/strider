@@ -15,6 +15,8 @@ import (
 	"sync"
 
 	gc "modernc.org/gc/v3"
+
+	"github.com/gempir/strider/internal/telemetry"
 )
 
 // Node is a production or token in the concrete syntax tree.
@@ -134,6 +136,8 @@ type tokenWalkItem struct {
 
 // Parse parses one complete Go source file into a CST.
 func Parse(filename string, source []byte) (*Tree, error) {
+	finish := telemetry.Start("cst.parse")
+	defer finish()
 	root, err := gc.ParseFile(filename, source)
 	if err != nil {
 		return nil, err

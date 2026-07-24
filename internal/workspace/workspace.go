@@ -13,6 +13,7 @@ import (
 	"github.com/gempir/strider/internal/cst"
 	"github.com/gempir/strider/internal/pathfilter"
 	"github.com/gempir/strider/internal/source"
+	"github.com/gempir/strider/internal/telemetry"
 )
 
 // Options controls source discovery for a workspace.
@@ -50,6 +51,8 @@ type File struct {
 
 // Open discovers a deterministic workspace for paths.
 func Open(paths []string, options Options) (*Workspace, error) {
+	finish := telemetry.Start("workspace.discover")
+	defer finish()
 	inputs := append([]string(nil), paths...)
 	if len(inputs) == 0 {
 		inputs = []string{
@@ -133,15 +136,19 @@ func (file *File) Bytes() ([]byte, error) {
 		}
 		return file.snapshot.source, nil
 	}
-	file.bytesOnce.Do(func() {
-		contents, err := os.ReadFile(file.path)
-		file.bytesMu.Lock()
-		if !file.bytesReleased {
-			file.bytes = contents
-			file.bytesErr = err
-		}
-		file.bytesMu.Unlock()
-	})
+	file.bytesOnce.Do(
+		func() {
+			finish := telemetry.Start("workspace.read")
+			defer finish()
+			contents, err := os.ReadFile(file.path)
+			file.bytesMu.Lock()
+			if !file.bytesReleased {
+				file.bytes = contents
+				file.bytesErr = err
+			}
+			file.bytesMu.Unlock()
+		},
+	)
 	file.bytesMu.RLock()
 	defer file.bytesMu.RUnlock()
 	if file.bytesReleased {

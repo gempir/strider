@@ -16,6 +16,7 @@ import (
 	"github.com/gempir/strider/internal/formatter"
 	"github.com/gempir/strider/internal/pathfilter"
 	"github.com/gempir/strider/internal/source"
+	"github.com/gempir/strider/internal/telemetry"
 	"github.com/gempir/strider/internal/workspace"
 )
 
@@ -55,6 +56,8 @@ type concreteFileRunner func(context.Context, *workspace.File, *Registry, *forma
 // share each workspace file's CST; package-aware checks retain the original
 // input patterns so go/packages semantics remain unchanged.
 func Run(ctx context.Context, shared *workspace.Workspace, registry *Registry, options RunOptions) (Result, error) {
+	finish := telemetry.Start("check.total")
+	defer finish()
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -81,7 +84,9 @@ func Run(ctx context.Context, shared *workspace.Workspace, registry *Registry, o
 		}
 	}
 	filterExcludedResults(&result, options.Root, options.Excludes)
+	sortFinish := telemetry.Start("check.sort")
 	diagnostic.Sort(result.Diagnostics)
+	sortFinish()
 	if result.Diagnostics == nil {
 		result.Diagnostics = []diagnostic.Diagnostic{}
 	}
@@ -128,6 +133,8 @@ func runConcreteChecksWith(ctx context.Context, files []*workspace.File, registr
 	Result,
 	error,
 ) {
+	finish := telemetry.Start("check.file-local")
+	defer finish()
 	if err := ctx.Err(); err != nil {
 		return Result{}, err
 	}
@@ -212,6 +219,8 @@ dispatch:
 }
 
 func runConcreteFile(ctx context.Context, file *workspace.File, registry *Registry, session *formatter.Formatter, formatOptions formatter.Options, collectCandidate bool) fileResult {
+	finish := telemetry.Start("check.file-worker")
+	defer finish()
 	filename := file.Path()
 	if err := ctx.Err(); err != nil {
 		return fileResult{

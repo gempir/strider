@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	diagnosticmodel "github.com/gempir/strider/internal/diagnostic"
 )
@@ -141,5 +142,54 @@ func TestWriteHomepageStatsExportsMeasuredDurations(t *testing.T) {
 	}
 	if stats.Project != "sftpgo" || stats.FormatMS != 458 || stats.CheckMS != 5700 {
 		t.Fatalf("unexpected homepage stats: %+v", stats)
+	}
+}
+
+func TestBenchmarkVariantsKeepColdGoCacheOutOfFormat(t *testing.T) {
+	options := options{
+		schedulerModes:    "fixed,native",
+		striderCacheModes: "cold,warm",
+		goCacheModes:      "cold,warm",
+	}
+	formatVariants, err := benchmarkVariants("format", options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(formatVariants) != 4 {
+		t.Fatalf("format variants = %d, want 4", len(formatVariants))
+	}
+	for _, variant := range formatVariants {
+		if variant.goBuildCache != "warm" {
+			t.Fatalf("format variant has Go cache mode %q", variant.goBuildCache)
+		}
+	}
+	checkVariants, err := benchmarkVariants("check", options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(checkVariants) != 8 {
+		t.Fatalf("check variants = %d, want 8", len(checkVariants))
+	}
+}
+
+func TestPercentileUsesNearestRank(t *testing.T) {
+	samples := make([]sampleResult, 7)
+	for index := range samples {
+		samples[index].DurationNS = int64(index+1) * int64(time.Millisecond)
+	}
+	value := func(sample sampleResult) int64 {
+		return sample.DurationNS / int64(time.Millisecond)
+	}
+	if got := medianInt64(samples, value); got != 4 {
+		t.Fatalf("median = %d, want 4", got)
+	}
+	if got := percentileInt64(samples, 95, value); got != 7 {
+		t.Fatalf("p95 = %d, want 7", got)
+	}
+}
+
+func TestResetBenchmarkStateRejectsFilesystemRoot(t *testing.T) {
+	if err := resetBenchmarkState(string(os.PathSeparator)); err == nil {
+		t.Fatal("filesystem root was accepted as benchmark state")
 	}
 }

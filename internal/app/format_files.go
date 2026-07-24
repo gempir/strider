@@ -10,6 +10,7 @@ import (
 	"github.com/gempir/strider/internal/filewrite"
 	"github.com/gempir/strider/internal/formatter"
 	"github.com/gempir/strider/internal/source"
+	"github.com/gempir/strider/internal/telemetry"
 	"github.com/gempir/strider/internal/workspace"
 )
 
@@ -20,6 +21,8 @@ type formattedFile struct {
 }
 
 func formatFiles(ctx context.Context, files []*workspace.File, options formatter.Options, verify bool) ([]formattedFile, []error) {
+	finish := telemetry.Start("format.file-local")
+	defer finish()
 	formatted := make([]formattedFile, len(files))
 	errorsByFile := make([]error, len(files))
 	if len(files) == 0 {
@@ -49,6 +52,8 @@ func formatFiles(ctx context.Context, files []*workspace.File, options formatter
 				}
 				file := files[index]
 				func() {
+					finish := telemetry.Start("format.file-worker")
+					defer finish()
 					if err := workerContext.Err(); err != nil {
 						return
 					}

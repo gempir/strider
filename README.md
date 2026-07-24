@@ -121,6 +121,10 @@ cases. The scaffold refreshes generated docs and golden data; finish with
 ### Open-source corpus
 
 `make corpus-check` runs formatting and the check catalog against pinned popular
-Go projects. It rejects processing errors, compares deterministic output with a
-reviewed baseline, and enforces per-project timing budgets. CI publishes the
-timing table in its job summary and uploads standalone JSON and HTML reports.
+Go projects. Each category uses a warm-up plus seven measured samples across
+fixed two-core/native scheduling and cold/warm Strider cache states; package
+checks also separate cold and warm Go build caches. Reports retain raw samples,
+median and p95 latency, allocations, GC work, external peak RSS, the build
+identity, and the benchmark environment. The command rejects processing errors,
+compares deterministic output with a reviewed baseline, and enforces
+per-project timing budgets.

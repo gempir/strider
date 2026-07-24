@@ -7,6 +7,7 @@ import (
 	"github.com/gempir/strider/internal/checks/catalog"
 	"github.com/gempir/strider/internal/cst"
 	"github.com/gempir/strider/internal/diagnostic"
+	"github.com/gempir/strider/internal/telemetry"
 )
 
 type Pass struct {
@@ -37,6 +38,8 @@ func analyzeCST(input CSTInput) executionStats {
 	if len(input.Checks) == 0 || input.Tree == nil {
 		return executionStats{}
 	}
+	finish := telemetry.Start("syntax.traversal")
+	defer finish()
 	analyzer := &Pass{
 		filename:  input.Filename,
 		tree:      input.Tree,

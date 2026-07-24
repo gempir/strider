@@ -16,6 +16,7 @@ import (
 	"github.com/gempir/strider/internal/fix"
 	"github.com/gempir/strider/internal/formatter"
 	"github.com/gempir/strider/internal/report"
+	"github.com/gempir/strider/internal/telemetry"
 	"github.com/gempir/strider/internal/ui"
 	"github.com/gempir/strider/internal/workspace"
 )
@@ -251,6 +252,8 @@ func validateCheckConflicts(active map[string]bool) error {
 }
 
 func runCheckOnce(ctx context.Context, execution checkExecution) (int, error) {
+	finish := telemetry.Start("check.command")
+	defer finish()
 	if err := ctx.Err(); err != nil {
 		return exitError, err
 	}
@@ -299,7 +302,9 @@ func runCheckOnce(ctx context.Context, execution checkExecution) (int, error) {
 		Checks:   executedCheckCount(execution.registry, execution.runOptions),
 		Duration: time.Since(execution.startedAt),
 	}
+	reportFinish := telemetry.Start("check.report")
 	err = reportCheckDiagnostics(execution.stdout, diagnostics, execution.reportFormat, execution.summaryOnly, execution.colorMode, &statistics)
+	reportFinish()
 	if err != nil {
 		return exitError, err
 	}

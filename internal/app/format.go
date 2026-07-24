@@ -11,6 +11,7 @@ import (
 	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/formatter"
 	"github.com/gempir/strider/internal/source"
+	"github.com/gempir/strider/internal/telemetry"
 	"github.com/gempir/strider/internal/ui"
 	"github.com/gempir/strider/internal/workspace"
 )
@@ -156,6 +157,8 @@ func formatStdin(ctx context.Context, filename string, formatOptions formatter.O
 }
 
 func formatPaths(ctx context.Context, options formatOptions, stdout, stderr io.Writer) int {
+	finish := telemetry.Start("format.total")
+	defer finish()
 	if err := ctx.Err(); err != nil {
 		printCommandError(stderr, options.colorMode, "strider fmt", "%v", err)
 		return exitError
@@ -186,7 +189,9 @@ func formatPaths(ctx context.Context, options formatOptions, stdout, stderr io.W
 		printCommandError(stderr, options.colorMode, "strider fmt", "%v", err)
 		return exitError
 	}
+	reportFinish := telemetry.Start("format.report")
 	changed := reportFormatChanges(formatted, options, stdout)
+	reportFinish()
 	if options.write {
 		if err := writeFormattedFiles(formatted); err != nil {
 			printCommandError(stderr, options.colorMode, "strider fmt", "%v", err)

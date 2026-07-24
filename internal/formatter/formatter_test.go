@@ -2,6 +2,7 @@ package formatter
 
 import (
 	"bytes"
+	"fmt"
 	goformat "go/format"
 	"strings"
 	"testing"
@@ -753,6 +754,50 @@ func BenchmarkFormat(b *testing.B) {
 			b.Fatal(err)
 		}
 	}
+}
+
+func BenchmarkFormatSizes(b *testing.B) {
+	for _, size := range []struct {
+		name        string
+		targetBytes int
+	}{
+		{
+			name:        "small",
+			targetBytes: 1 << 10,
+		},
+		{
+			name:        "medium",
+			targetBytes: 64 << 10,
+		},
+		{
+			name:        "large",
+			targetBytes: 1 << 20,
+		},
+	} {
+		b.Run(
+			size.name,
+			func(b *testing.B) {
+				source := benchmarkSource(size.targetBytes)
+				b.SetBytes(int64(len(source)))
+				b.ReportAllocs()
+				for range b.N {
+					if _, err := Format("bench.go", source); err != nil {
+						b.Fatal(err)
+					}
+				}
+			},
+		)
+	}
+}
+
+func benchmarkSource(minimumBytes int) []byte {
+	var source strings.Builder
+	source.Grow(minimumBytes + 128)
+	source.WriteString("package benchmark\n\n")
+	for index := 0; source.Len() < minimumBytes; index++ {
+		fmt.Fprintf(&source, "func Function%d(value int) int { if value > %d { return value }; return %d }\n", index, index, index)
+	}
+	return []byte(source.String())
 }
 
 func TestFormatTreeMatchesSourceFormatting(t *testing.T) {

@@ -11,12 +11,14 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/gempir/strider/internal/baseline"
 	"github.com/gempir/strider/internal/config"
 	"github.com/gempir/strider/internal/diagnostic"
 	"github.com/gempir/strider/internal/report"
+	"github.com/gempir/strider/internal/telemetry"
 	"github.com/gempir/strider/internal/ui"
 )
 
@@ -43,7 +45,16 @@ type checkListEntry struct {
 	summary  string
 }
 
-func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer) (exitCode int) {
+	telemetry.ConfigureFromEnvironment(strings.Join(args, " "))
+	finish := telemetry.Start("command.total")
+	defer func() {
+		finish()
+		if err := telemetry.Flush(); err != nil {
+			printError(stderr, ui.ColorAuto, "strider", fmt.Errorf("write telemetry: %w", err))
+			exitCode = exitError
+		}
+	}()
 	directory, err := os.Getwd()
 	if err != nil {
 		printError(stderr, ui.ColorAuto, "strider", err)

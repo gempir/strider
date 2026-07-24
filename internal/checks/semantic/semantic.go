@@ -20,6 +20,7 @@ import (
 
 	"github.com/gempir/strider/internal/diagnostic"
 	"github.com/gempir/strider/internal/source"
+	"github.com/gempir/strider/internal/telemetry"
 )
 
 const loadMode = packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles | packages.NeedImports | packages.NeedTypes | packages.NeedTypesSizes | packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedModule
@@ -85,6 +86,8 @@ func run(paths []string, registry *Plan, ssaBuilder ssaBuildFunc) ([]diagnostic.
 }
 
 func runContext(ctx context.Context, paths []string, registry *Plan, ssaBuilder ssaBuildFunc) ([]diagnostic.Diagnostic, error) {
+	totalFinish := telemetry.Start("semantic.total")
+	defer totalFinish()
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -106,12 +109,14 @@ func runContext(ctx context.Context, paths []string, registry *Plan, ssaBuilder 
 		diagnosticRoot = loadDirectory
 	}
 	plan := registry.executionPlan()
+	loadFinish := telemetry.Start("semantic.package-load")
 	loaded, err := packages.Load(&packages.Config{
 		Context: ctx,
 		Dir:     loadDirectory,
 		Mode:    loadMode,
 		Tests:   true,
 	}, patterns...)
+	loadFinish()
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +135,9 @@ func runContext(ctx context.Context, paths []string, registry *Plan, ssaBuilder 
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
+	ssaFinish := telemetry.Start("semantic.ssa")
 	ssaResult := prepareSSA(initial, plan, ssaBuilder)
+	ssaFinish()
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -209,6 +216,7 @@ func runContext(ctx context.Context, paths []string, registry *Plan, ssaBuilder 
 	}
 
 	taskCount := len(passes) * len(registry.checks)
+	checkFinish := telemetry.Start("semantic.checks")
 	workers := min(runtime.GOMAXPROCS(0), max(1, taskCount))
 	jobs := make(chan analysisTask)
 	results := make(chan []analysisFinding, workers)
@@ -262,10 +270,13 @@ func runContext(ctx context.Context, paths []string, registry *Plan, ssaBuilder 
 			diagnostics = append(diagnostics, finding.diagnostic)
 		}
 	}
+	checkFinish()
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
+	sortFinish := telemetry.Start("semantic.sort")
 	diagnostic.Sort(diagnostics)
+	sortFinish()
 	return diagnostics, nil
 }
 

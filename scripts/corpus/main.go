@@ -525,8 +525,8 @@ func detectBenchmarkEnvironment() benchmarkEnvironment {
 	}
 }
 
-func runOperationSamples(strider, checkout, operation string, item project, variant benchmarkVariant, options options) operationResult {
-	result := operationResult{
+func runOperationSamples(strider, checkout, operation string, item project, variant benchmarkVariant, options options) (result operationResult) {
+	result = operationResult{
 		Name:         operation,
 		Scheduler:    variant.scheduler,
 		StriderCache: variant.striderCache,
@@ -542,7 +542,11 @@ func runOperationSamples(strider, checkout, operation string, item project, vari
 		result.Error = err.Error()
 		return result
 	}
-	defer cleanupBenchmarkCaches(stateRoot)
+	defer func() {
+		if cleanupErr := cleanupBenchmarkCaches(stateRoot); cleanupErr != nil && result.Error == "" {
+			result.Error = cleanupErr.Error()
+		}
+	}()
 	warmups := options.warmups
 	if warmups == 0 && (variant.striderCache == "warm" || variant.goBuildCache == "warm") {
 		warmups = 1
@@ -861,13 +865,15 @@ func resetBenchmarkState(path string) error {
 	return os.MkdirAll(filepath.Join(clean, "telemetry"), 0o755)
 }
 
-func cleanupBenchmarkCaches(root string) {
+func cleanupBenchmarkCaches(root string) error {
+	var result error
 	for _, name := range []string{
 		"go-cache",
 		"strider-cache",
 	} {
-		_ = os.RemoveAll(filepath.Join(root, name))
+		result = errors.Join(result, os.RemoveAll(filepath.Join(root, name)))
 	}
+	return result
 }
 
 func prepareSampleState(root string, variant benchmarkVariant, name string) (sampleState, func() error, error) {

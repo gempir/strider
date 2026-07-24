@@ -43,6 +43,13 @@ For a focused SFTPGo comparison:
 make corpus-check CORPUS_FLAGS="--project sftpgo"
 ```
 
+`make corpus-update` is intentionally a lightweight publication pass. It
+records one measured sample for cold and warm Strider-cache states on the
+stable two-core scheduler with a warm Go build cache. It does not repeat the
+seven-sample fixed/native and cold/warm Go-cache validation matrix. Override
+`CORPUS_UPDATE_FLAGS` only when a published report explicitly needs a
+different protocol.
+
 `benchmarks/performance-baseline.json` is the Phase 0 fixed-core SFTPGo
 re-baseline captured before the optimization phases. Digest changes are
 correctness failures and must not be refreshed as performance baselines.

@@ -202,30 +202,34 @@ func TestResetBenchmarkStateRejectsFilesystemRoot(t *testing.T) {
 
 func TestCleanupBenchmarkCachesPreservesTelemetry(t *testing.T) {
 	root := t.TempDir()
-	for _, path := range []string{
-		root + "/go-cache/entry",
-		root + "/strider-cache/entry",
-		root + "/telemetry/sample-1.json",
-	} {
-		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.WriteFile(path, []byte("data"), 0o600); err != nil {
-			t.Fatal(err)
-		}
+	writeTestFile(t, root+"/go-cache/entry")
+	writeTestFile(t, root+"/strider-cache/entry")
+	writeTestFile(t, root+"/telemetry/sample-1.json")
+
+	if err := cleanupBenchmarkCaches(root); err != nil {
+		t.Fatal(err)
 	}
 
-	cleanupBenchmarkCaches(root)
-
-	for _, path := range []string{
-		root + "/go-cache",
-		root + "/strider-cache",
-	} {
-		if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
-			t.Fatalf("cache path %s still exists: %v", path, err)
-		}
-	}
+	assertPathMissing(t, root+"/go-cache")
+	assertPathMissing(t, root+"/strider-cache")
 	if _, err := os.Stat(root + "/telemetry/sample-1.json"); err != nil {
 		t.Fatalf("telemetry was removed: %v", err)
+	}
+}
+
+func writeTestFile(t *testing.T, path string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte("data"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func assertPathMissing(t *testing.T, path string) {
+	t.Helper()
+	if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("cache path %s still exists: %v", path, err)
 	}
 }

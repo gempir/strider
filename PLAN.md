@@ -1,6 +1,6 @@
 # Strider Performance Plan
 
-Status: active
+Status: complete
 Primary comparison project: SFTPGo
 Scope: `strider fmt --check` and `strider check`
 
@@ -83,6 +83,11 @@ gate; native cores as informational) and both Strider cache modes (cold,
 warm). Report cold and warm Go build cache separately for package-aware
 checks.
 
+The exhaustive matrix belongs to `corpus-check`. `corpus-update` is a
+lightweight publication pass: one measured sample for cold and warm Strider
+cache states on the stable two-core scheduler with a warm Go build cache. It
+must not repeat the seven-sample fixed/native validation matrix.
+
 ### Cache state definitions
 
 - Cold Strider cache: fresh, empty cache directory for every measured process.
@@ -129,20 +134,20 @@ retention behavior motivating this plan.
 
 ### Phase 0: Measurement and statistically valid re-baseline
 
-- [ ] Add structured phase timing for the formatter and check pipeline with
+- [x] Add structured phase timing for the formatter and check pipeline with
   the parallel-phase semantics above.
-- [ ] Add allocation, GC, and external peak-RSS collection to benchmark runs.
-- [ ] Change corpus timing from a single run to warm-up plus repeated samples
+- [x] Add allocation, GC, and external peak-RSS collection to benchmark runs.
+- [x] Change corpus timing from a single run to warm-up plus repeated samples
   with raw-sample storage.
-- [ ] Add fixed-core/native-core and cold/warm result categories; store the
+- [x] Add fixed-core/native-core and cold/warm result categories; store the
   benchmark environment and Strider revision in reports.
-- [ ] Re-baseline SFTPGo under the final protocol; all later gates compare to
+- [x] Re-baseline SFTPGo under the final protocol; all later gates compare to
   this baseline.
-- [ ] Establish the warm semantic floor: measure `go/packages`, type
+- [x] Establish the warm semantic floor: measure `go/packages`, type
   analysis, SSA, sorting, and reporting so later warm full-check targets are
   bounded by reality.
-- [ ] Attribute time across parse, render, `go/format`, and traversal.
-- [ ] Run the one-line `GOGC`/`GOMEMLIMIT` experiment to size how much of the
+- [x] Attribute time across parse, render, `go/format`, and traversal.
+- [x] Run the one-line `GOGC`/`GOMEMLIMIT` experiment to size how much of the
   ~20% GC cost is avoidable without structural change (measurement input
   only, not a substitute for the lifetime fix).
 
@@ -181,13 +186,13 @@ Contract (explicit):
 
 Also in this phase:
 
-- [ ] Early exit inside `previewTree`: if the first render+format equals the
+- [x] Early exit inside `previewTree`: if the first render+format equals the
   source, skip the confirmation reparse/render. Benefits every caller,
   including write mode on already-formatted files.
-- [ ] Stop retaining source in `fmt --check`: replace the `formattedFile`
+- [x] Stop retaining source in `fmt --check`: replace the `formattedFile`
   retention with a lightweight status-only result.
-- [ ] Exactly one layer owns the format-ignore decision per path.
-- [ ] Cheap wins pulled forward: build the node-kind dispatch map once per
+- [x] Exactly one layer owns the format-ignore decision per path.
+- [x] Cheap wins pulled forward: build the node-kind dispatch map once per
   registry/configuration (accounting for per-file exclusions), compute
   `activeChecks` once, and materialize diagnostic display paths once per run.
 
@@ -272,25 +277,27 @@ Acceptance:
 Extend the existing `releaseCST`/`release` mechanics rather than adding a
 second lifecycle system:
 
-- [ ] Release a file's CST after its last consumer (formatter plus native
+- [x] Release a file's CST after its last consumer (formatter plus native
   syntax checks) in one-shot commands; decide whether release is
   runner-owned or exposed as a one-shot `Release` method.
-- [ ] For read-only one-shot commands, release the complete per-file state
+- [x] For read-only one-shot commands, release the complete per-file state
   once diagnostics are materialized; diff/write/fix modes release the CST but
   retain exactly the byte slices their transactional step needs (per the
   lifecycle matrix).
-- [ ] Cached watch snapshots must not be invalidated by generation-local
+- [x] Cached watch snapshots must not be invalidated by generation-local
   release; add race tests for release concurrent with reads and explicit
   watch-reuse tests.
-- [ ] Byte-weighted concurrency/admission limit reusing the watch-cache tree
+- [x] Byte-weighted concurrency/admission limit reusing the watch-cache tree
   size estimate so several very large files cannot create unbounded live
   memory.
-- [ ] Capacity estimates from source size where measurements show a stable
+- [x] Capacity estimates from source size where measurements show a stable
   relationship.
-- [ ] Replace short-lived per-node buffers with a small number of
+- [x] Replace short-lived per-node buffers with a small number of
   operation-owned scratch buffers (checkpoint/reset). Scratch buffers are
   pools by another name: the same bounded-lifetime requirement applies, and
-  no pool is introduced without a proven bounded lifetime.
+  no pool is introduced without a proven bounded lifetime. The implementation
+  eliminated the hot temporary token buffers with callback iteration, so no
+  scratch pool was needed.
 
 Acceptance:
 
@@ -301,11 +308,11 @@ Acceptance:
 
 ### Phase 4: Measured query improvements, then re-profile
 
-- [ ] Non-allocating token iterator or callback API; migrate hot syntax
+- [x] Non-allocating token iterator or callback API; migrate hot syntax
   checks off temporary `[]Token` allocations.
-- [ ] Store or precompute start/end offsets for production nodes; replace
+- [x] Store or precompute start/end offsets for production nodes; replace
   repeated subtree walks in range and token-bound helpers.
-- [ ] Re-profile end to end and re-rank the remaining work. This checkpoint
+- [x] Re-profile end to end and re-rank the remaining work. This checkpoint
   decides whether Phase 5 happens at all.
 
 Acceptance: ≥10% lower native-syntax CPU on SFTPGo; no digest changes.
@@ -336,9 +343,9 @@ small-file latency — small repositories are a first-class workload.
 Evaluate ordering and memory limits as one design, after per-file memory
 behavior is known:
 
-- [ ] Compare FIFO, largest-first, and work-stealing together with the
+- [x] Compare FIFO, largest-first, and work-stealing together with the
   byte-weighted admission limit.
-- [ ] Test whether package loading can overlap native checks once CST memory
+- [x] Test whether package loading can overlap native checks once CST memory
   pressure is reduced; do not enable overlap by default if it increases peak
   memory or worsens the two-core result.
 

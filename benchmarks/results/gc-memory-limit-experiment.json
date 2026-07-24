@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "workload": "sftpgo format --check",
+  "scheduler": "fixed",
+  "gomaxprocs": 2,
+  "strider_cache": "disabled",
+  "samples": 1,
+  "note": "Sizing experiment only; acceptance results use the repeated corpus protocol.",
+  "runs": [
+    {
+      "gogc": 100,
+      "gomemlimit": "off",
+      "duration_ms": 538,
+      "allocated_bytes": 599888512,
+      "gc_cycles": 68,
+      "gc_pause_ns": 2524625,
+      "live_heap_after_file_local_bytes": 9222472
+    },
+    {
+      "gogc": 300,
+      "gomemlimit": "off",
+      "duration_ms": 433,
+      "allocated_bytes": 597944376,
+      "gc_cycles": 14,
+      "gc_pause_ns": 674960,
+      "live_heap_after_file_local_bytes": 76261736
+    },
+    {
+      "gogc": 300,
+      "gomemlimit": "256MiB",
+      "duration_ms": 443,
+      "allocated_bytes": 598207488,
+      "gc_cycles": 14,
+      "gc_pause_ns": 494752,
+      "live_heap_after_file_local_bytes": 149080048
+    },
+    {
+      "gogc": 300,
+      "gomemlimit": "512MiB",
+      "duration_ms": 432,
+      "allocated_bytes": 597695032,
+      "gc_cycles": 15,
+      "gc_pause_ns": 565084,
+      "live_heap_after_file_local_bytes": 96742608
+    }
+  ],
+  "decision": "Use GOGC=300 only inside the byte-bounded, per-file-release CST window when the user has not set GOGC. Do not set a default GOMEMLIMIT."
+}

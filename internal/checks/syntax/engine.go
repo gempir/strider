@@ -49,11 +49,11 @@ func analyzeCST(input CSTInput) executionStats {
 		functions: make(map[cst.Node]*functionFacts),
 		calls:     make(map[*cst.PrimaryExpr]callFacts),
 	}
-	dispatch := make(map[NodeKind][]Check)
+	dispatch := input.Dispatch
+	if dispatch == nil {
+		dispatch = buildDispatch(input.Checks)
+	}
 	for _, check := range input.Checks {
-		for _, interest := range check.Interests() {
-			dispatch[interest] = append(dispatch[interest], check)
-		}
 		analyzer.run(check, check.Start)
 	}
 	cst.WalkProductionsWithAncestors(
@@ -69,6 +69,16 @@ func analyzeCST(input CSTInput) executionStats {
 		analyzer.run(check, check.Finish)
 	}
 	return analyzer.stats
+}
+
+func buildDispatch(checks []Check) map[NodeKind][]Check {
+	dispatch := make(map[NodeKind][]Check)
+	for _, check := range checks {
+		for _, interest := range check.Interests() {
+			dispatch[interest] = append(dispatch[interest], check)
+		}
+	}
+	return dispatch
 }
 
 func (a *Pass) dispatch(checks []Check, node cst.Node) {

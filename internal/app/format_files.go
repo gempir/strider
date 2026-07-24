@@ -20,7 +20,13 @@ type formattedFile struct {
 	result   formatter.Result
 }
 
-func formatFiles(ctx context.Context, files []*workspace.File, options formatter.Options, verify bool) ([]formattedFile, []error) {
+type formattedStatus struct {
+	filename string
+	changed  bool
+	ignored  bool
+}
+
+func formatFiles(ctx context.Context, files []*workspace.File, options formatter.Options) ([]formattedFile, []error) {
 	finish := telemetry.Start("format.file-local")
 	defer finish()
 	formatted := make([]formattedFile, len(files))
@@ -69,7 +75,6 @@ func formatFiles(ctx context.Context, files []*workspace.File, options formatter
 							filename: filename,
 							original: original,
 							result: formatter.Result{
-								Source:  append([]byte(nil), original...),
 								Ignored: true,
 							},
 						}
@@ -81,15 +86,13 @@ func formatFiles(ctx context.Context, files []*workspace.File, options formatter
 						cancel()
 						return
 					}
-					var result formatter.Result
-					if verify {
-						result, err = session.FormatTree(filename, tree, options)
-					} else {
-						result, err = session.FormatTreeUnverified(filename, tree, options)
-					}
+					result, err := session.FormatTreeKnownActive(filename, tree, options)
 					if err != nil {
 						errorsByFile[index] = err
 						cancel()
+						return
+					}
+					if err := workerContext.Err(); err != nil {
 						return
 					}
 					formatted[index] = formattedFile{
@@ -115,6 +118,93 @@ dispatch:
 		errorsByFile = append(errorsByFile, err)
 	}
 	return formatted, errorsByFile
+}
+
+func formatFileStatuses(ctx context.Context, files []*workspace.File, options formatter.Options) ([]formattedStatus, []error) {
+	statuses := make([]formattedStatus, len(files))
+	errorsByFile := make([]error, len(files))
+	if len(files) == 0 {
+		return statuses, errorsByFile
+	}
+
+	session := formatter.NewFormatter()
+	workerContext, cancel := context.WithCancel(ctx)
+	defer cancel()
+	jobs := make(chan int)
+	workers := min(runtime.GOMAXPROCS(0), len(files))
+	var group sync.WaitGroup
+	for range workers {
+		group.Add(1)
+		go func() {
+			defer group.Done()
+			for {
+				var index int
+				var ok bool
+				select {
+				case <-workerContext.Done():
+					return
+				case index, ok = <-jobs:
+					if !ok {
+						return
+					}
+				}
+				file := files[index]
+				filename := file.Path()
+				if err := workerContext.Err(); err != nil {
+					return
+				}
+				original, err := file.Bytes()
+				if err != nil {
+					errorsByFile[index] = fmt.Errorf("%s: %w", source.DisplayPath(filename), err)
+					cancel()
+					return
+				}
+				if formatter.IsIgnored(original) {
+					statuses[index] = formattedStatus{
+						filename: filename,
+						ignored:  true,
+					}
+					continue
+				}
+				tree, err := file.CST()
+				if err != nil {
+					errorsByFile[index] = fmt.Errorf("%s: %w", source.DisplayPath(filename), err)
+					cancel()
+					return
+				}
+				if err := workerContext.Err(); err != nil {
+					return
+				}
+				changed, err := session.WouldChangeTreeKnownActive(filename, tree, options)
+				if err != nil {
+					errorsByFile[index] = err
+					cancel()
+					return
+				}
+				if err := workerContext.Err(); err != nil {
+					return
+				}
+				statuses[index] = formattedStatus{
+					filename: filename,
+					changed:  changed,
+				}
+			}
+		}()
+	}
+dispatch:
+	for index := range files {
+		select {
+		case <-workerContext.Done():
+			break dispatch
+		case jobs <- index:
+		}
+	}
+	close(jobs)
+	group.Wait()
+	if err := ctx.Err(); err != nil {
+		errorsByFile = append(errorsByFile, err)
+	}
+	return statuses, errorsByFile
 }
 
 func writeFormattedFiles(files []formattedFile) error {

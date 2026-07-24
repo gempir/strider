@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/gempir/strider/internal/checks/catalog"
 	"github.com/gempir/strider/internal/cst"
@@ -16,15 +17,23 @@ import (
 )
 
 type Plan struct {
-	checks   []Check
-	settings map[string]configuredCheck
-	root     string
+	checks          []Check
+	settings        map[string]configuredCheck
+	root            string
+	preparedByFile  sync.Map
+	preparedByGroup sync.Map
 }
 
 type configuredCheck struct {
 	severity diagnostic.Severity
 	excludes []string
 	options  catalog.ResolvedOptions
+}
+
+type preparedPlan struct {
+	checks   []Check
+	dispatch map[NodeKind][]Check
+	options  map[string]catalog.ResolvedOptions
 }
 
 // SelectedCheck is a fully bound syntax check produced by the unified
@@ -73,15 +82,40 @@ func (r *Plan) Severity(code string) diagnostic.Severity {
 	return r.settings[code].severity
 }
 
-func (r *Plan) activeChecks(filename string) []Check {
+func (r *Plan) prepare(filename string) *preparedPlan {
+	if cached, ok := r.preparedByFile.Load(filename); ok {
+		if prepared, valid := cached.(*preparedPlan); valid {
+			return prepared
+		}
+	}
 	active := make([]Check, 0, len(r.checks))
+	codes := make([]string, 0, len(r.checks))
 	for _, check := range r.checks {
 		if pathfilter.Excluded(r.root, filename, r.settings[check.Meta().Code].excludes) {
 			continue
 		}
 		active = append(active, check)
+		codes = append(codes, check.Meta().Code)
 	}
-	return active
+	groupKey := strings.Join(codes, "\x00")
+	cached, ok := r.preparedByGroup.Load(groupKey)
+	if !ok {
+		prepared := &preparedPlan{
+			checks:   active,
+			dispatch: buildDispatch(active),
+			options:  r.boundOptions(active),
+		}
+		cached, _ = r.preparedByGroup.LoadOrStore(groupKey, prepared)
+	}
+	prepared, valid := cached.(*preparedPlan)
+	if !valid {
+		prepared = &preparedPlan{}
+	}
+	cached, _ = r.preparedByFile.LoadOrStore(filename, prepared)
+	if stored, valid := cached.(*preparedPlan); valid {
+		return stored
+	}
+	return prepared
 }
 
 // Applies reports whether at least one selected concrete-syntax check applies
@@ -90,12 +124,7 @@ func (r *Plan) Applies(filename string) bool {
 	if r == nil {
 		return false
 	}
-	for _, check := range r.checks {
-		if !pathfilter.Excluded(r.root, filename, r.settings[check.Meta().Code].excludes) {
-			return true
-		}
-	}
-	return false
+	return len(r.prepare(filename).checks) != 0
 }
 
 // AnalyzeTree runs the selected concrete-syntax checks against a shared tree.
@@ -103,18 +132,23 @@ func AnalyzeTree(filename string, concreteTree *cst.Tree, registry *Plan) []diag
 	if concreteTree == nil || registry == nil {
 		return nil
 	}
-	activeChecks := registry.activeChecks(filename)
-	return analyzeTree(filename, concreteTree, activeChecks, registry)
+	return AnalyzeTreeWithDisplay(filename, source.DiagnosticPath(registry.root, filename), concreteTree, registry)
 }
 
-func analyzeTree(filename string, concreteTree *cst.Tree, activeChecks []Check, registry *Plan) []diagnostic.Diagnostic {
-	if len(activeChecks) == 0 {
+// AnalyzeTreeWithDisplay runs the selected syntax checks with a display path
+// already materialized by the caller's per-run path cache.
+func AnalyzeTreeWithDisplay(filename, displayFilename string, concreteTree *cst.Tree, registry *Plan) []diagnostic.Diagnostic {
+	if concreteTree == nil || registry == nil {
+		return nil
+	}
+	prepared := registry.prepare(filename)
+	if len(prepared.checks) == 0 {
 		return nil
 	}
 	concreteIgnores, concreteNodes := concreteSuppressions(concreteTree)
 	context := &Context{
 		filename:        filename,
-		displayFilename: source.DiagnosticPath(registry.root, filename),
+		displayFilename: displayFilename,
 		concreteIgnores: concreteIgnores,
 		concreteNodes:   concreteNodes,
 	}
@@ -122,8 +156,9 @@ func analyzeTree(filename string, concreteTree *cst.Tree, activeChecks []Check, 
 		CSTInput{
 			Filename: filename,
 			Tree:     concreteTree,
-			Checks:   activeChecks,
-			Options:  registry.boundOptions(activeChecks),
+			Checks:   prepared.checks,
+			Dispatch: prepared.dispatch,
+			Options:  prepared.options,
 			Report: func(finding Finding) {
 				context.reportConcrete(concreteTree, finding, registry.Severity(finding.Code))
 			},

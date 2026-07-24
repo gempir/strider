@@ -815,14 +815,69 @@ func TestFormatTreeMatchesSourceFormatting(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	preview, err := session.FormatTreeUnverified("tree.go", tree, DefaultOptions())
-	if err != nil {
-		t.Fatal(err)
-	}
 	if !bytes.Equal(fromTree.Source, fromSource.Source) || fromTree.Changed != fromSource.Changed {
 		t.Fatalf("tree result %#v differs from source result %#v", fromTree, fromSource)
 	}
-	if !bytes.Equal(preview.Source, fromTree.Source) || preview.Changed != fromTree.Changed {
-		t.Fatalf("preview result %#v differs from verified result %#v", preview, fromTree)
+}
+
+func TestWouldChangeTreeMatchesFullFormatter(t *testing.T) {
+	for _, source := range []string{
+		"package p\n",
+		"package p\nfunc F( ){return}\n",
+		"//strider:format-ignore\npackage p\nfunc F( ){return}\n",
+		"package p\nimport \"github.com/acme/project/pkg\"\nimport \"fmt\"\nfunc F(){fmt.Println(pkg.Value)}\n",
+		"package p\n\nfunc F() {\n\n\tprintln(\"one\")\n}\n",
+	} {
+		assertWouldChangeTreeMatchesFullFormatter(t, source)
 	}
+}
+
+func assertWouldChangeTreeMatchesFullFormatter(t *testing.T, source string) {
+	t.Helper()
+	tree, err := cst.Parse("tree.go", []byte(source))
+	if err != nil {
+		t.Fatal(err)
+	}
+	session := NewFormatter()
+	changed, ignored, err := session.WouldChangeTree("tree.go", tree, DefaultOptions())
+	if err != nil {
+		t.Fatal(err)
+	}
+	full, err := session.FormatTree("tree.go", tree, DefaultOptions())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changed != full.Changed || ignored != full.Ignored {
+		t.Fatalf("source %q: status (%t, %t) differs from full (%t, %t)", source, changed, ignored, full.Changed, full.Ignored)
+	}
+}
+
+func FuzzWouldChangeTreeMatchesFullFormatter(f *testing.F) {
+	for _, source := range []string{
+		"package p\n",
+		"package p\nfunc F(a, b int) int { return a + b }\n",
+		"//strider:format-ignore\npackage p\n",
+	} {
+		f.Add(source)
+	}
+	f.Fuzz(
+		func(t *testing.T, source string) {
+			tree, err := cst.Parse("fuzz.go", []byte(source))
+			if err != nil {
+				return
+			}
+			session := NewFormatter()
+			full, err := session.FormatTree("fuzz.go", tree, DefaultOptions())
+			if err != nil {
+				return
+			}
+			changed, ignored, err := session.WouldChangeTree("fuzz.go", tree, DefaultOptions())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if changed != full.Changed || ignored != full.Ignored {
+				t.Fatalf("status (%t, %t) differs from full (%t, %t)", changed, ignored, full.Changed, full.Ignored)
+			}
+		},
+	)
 }

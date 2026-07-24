@@ -89,6 +89,7 @@ type CSTInput struct {
 	Filename string
 	Tree     *cst.Tree
 	Checks   []Check
+	Dispatch map[NodeKind][]Check
 	Options  map[string]catalog.ResolvedOptions
 	Report   func(Finding)
 }

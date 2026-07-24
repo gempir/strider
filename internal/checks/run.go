@@ -229,7 +229,9 @@ func runConcreteFile(ctx context.Context, file *workspace.File, registry *Regist
 		}
 	}
 	lintApplies := registry.syntax != nil && registry.syntax.Applies(filename)
-	if registry.formatApplies(filename) && !lintApplies {
+	formatApplies := registry.formatApplies(filename)
+	formatIgnored := false
+	if formatApplies {
 		contents, readErr := file.Bytes()
 		if readErr != nil {
 			return fileResult{
@@ -237,7 +239,8 @@ func runConcreteFile(ctx context.Context, file *workspace.File, registry *Regist
 				err:      readErr,
 			}
 		}
-		if formatter.IsIgnored(contents) {
+		formatIgnored = formatter.IsIgnored(contents)
+		if formatIgnored && !lintApplies {
 			return fileResult{
 				filename: filename,
 			}
@@ -259,37 +262,48 @@ func runConcreteFile(ctx context.Context, file *workspace.File, registry *Regist
 	result := fileResult{
 		filename: filename,
 	}
+	display := registry.diagnosticPath(filename)
 	if err := ctx.Err(); err != nil {
 		result.err = err
 		return result
 	}
-	if registry.formatApplies(filename) {
-		var formatted formatter.Result
-		var formatErr error
+	if formatApplies && !formatIgnored {
 		if collectCandidate {
-			formatted, formatErr = session.FormatTree(filename, tree, formatOptions)
-		} else {
-			formatted, formatErr = session.FormatTreeUnverified(filename, tree, formatOptions)
-		}
-		if formatErr != nil {
-			result.err = formatErr
-			return result
-		}
-		if formatted.Changed && !formatted.Ignored {
-			result.diagnostics = append(result.diagnostics, formatDiagnostic(registry.root, filename, registry.Severity(formatMeta.Code)))
-			if collectCandidate {
+			formatted, formatErr := session.FormatTreeKnownActive(filename, tree, formatOptions)
+			if formatErr != nil {
+				result.err = formatErr
+				return result
+			}
+			if err := ctx.Err(); err != nil {
+				result.err = err
+				return result
+			}
+			if formatted.Changed && !formatted.Ignored {
+				result.diagnostics = append(result.diagnostics, formatDiagnostic(display, registry.Severity(formatMeta.Code)))
 				result.candidate = &formatted
+			}
+		} else {
+			changed, formatErr := session.WouldChangeTreeKnownActive(filename, tree, formatOptions)
+			if formatErr != nil {
+				result.err = formatErr
+				return result
+			}
+			if err := ctx.Err(); err != nil {
+				result.err = err
+				return result
+			}
+			if changed {
+				result.diagnostics = append(result.diagnostics, formatDiagnostic(display, registry.Severity(formatMeta.Code)))
 			}
 		}
 	}
 	if lintApplies {
-		result.diagnostics = append(result.diagnostics, syntax.AnalyzeTree(filename, tree, registry.syntax)...)
+		result.diagnostics = append(result.diagnostics, syntax.AnalyzeTreeWithDisplay(filename, display, tree, registry.syntax)...)
 	}
 	return result
 }
 
-func formatDiagnostic(root, filename string, severity diagnostic.Severity) diagnostic.Diagnostic {
-	display := source.DiagnosticPath(root, filename)
+func formatDiagnostic(display string, severity diagnostic.Severity) diagnostic.Diagnostic {
 	position := token.Position{
 		Filename: display,
 		Offset:   0,

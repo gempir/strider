@@ -4,6 +4,7 @@ package checks
 import (
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/gempir/strider/internal/checks/catalog"
 	"github.com/gempir/strider/internal/checks/semantic"
@@ -33,6 +34,7 @@ type Registry struct {
 	format     bool
 	syntax     *syntax.Plan
 	semantic   *semantic.Plan
+	display    sync.Map
 }
 
 type configuredCheck struct {
@@ -201,4 +203,18 @@ func (registry *Registry) needsCST(filename string) bool {
 
 func (registry *Registry) formatApplies(filename string) bool {
 	return registry != nil && registry.format && !pathfilter.Excluded(registry.root, filename, registry.settings[formatMeta.Code].excludes)
+}
+
+func (registry *Registry) diagnosticPath(filename string) string {
+	if cached, ok := registry.display.Load(filename); ok {
+		if display, valid := cached.(string); valid {
+			return display
+		}
+	}
+	display := source.DiagnosticPath(registry.root, filename)
+	cached, _ := registry.display.LoadOrStore(filename, display)
+	if stored, valid := cached.(string); valid {
+		return stored
+	}
+	return display
 }

@@ -31,6 +31,12 @@ parallel phases distinguish critical-path wall time from summed worker time.
 Set `STRIDER_CPU_PROFILE` or `STRIDER_HEAP_PROFILE` alongside
 `STRIDER_TELEMETRY` when a focused run needs Go pprof output.
 
+Scheduling experiments use `STRIDER_FILE_SCHEDULER=fifo`,
+`largest-first`, or `work-stealing`. Dynamic work stealing is the default.
+`STRIDER_OVERLAP_PACKAGE_LOADING=1` is an evaluation-only switch; package
+loading remains sequential by default because the Phase 6 fixed- and
+native-core runs both regressed with overlap.
+
 For a focused SFTPGo comparison:
 
 ```sh

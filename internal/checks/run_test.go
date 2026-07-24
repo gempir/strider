@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/gempir/strider/internal/diagnostic"
+	"github.com/gempir/strider/internal/fileschedule"
 	"github.com/gempir/strider/internal/formatter"
 	"github.com/gempir/strider/internal/resultcache"
 	"github.com/gempir/strider/internal/telemetry"
@@ -66,6 +67,7 @@ func TestRunReleasesOneShotWorkspace(t *testing.T) {
 }
 
 func TestRunWithWorkspaceCacheObservesDependencyChanges(t *testing.T) {
+	t.Setenv(SemanticOverlapEnvironment, "1")
 	directory := t.TempDir()
 	dependencyDirectory := filepath.Join(directory, "dep")
 	if err := os.Mkdir(dependencyDirectory, 0o700); err != nil {
@@ -279,32 +281,39 @@ func TestRunIsDeterministicAcrossWorkersAndPackages(t *testing.T) {
 		runtime.GOMAXPROCS(previous)
 	})
 	var expected []diagnostic.Diagnostic
-	for _, workers := range []int{
-		1,
-		4,
-		2,
-		8,
+	for _, strategy := range []fileschedule.Strategy{
+		fileschedule.FIFO,
+		fileschedule.LargestFirst,
+		fileschedule.WorkStealing,
 	} {
-		runtime.GOMAXPROCS(workers)
-		shared, err := workspace.Open([]string{
-			root,
-		}, workspace.Options{})
-		if err != nil {
-			t.Fatal(err)
-		}
-		result, err := Run(context.Background(), shared, registry, RunOptions{
-			Formatter: formatter.DefaultOptions(),
-			Root:      root,
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if expected == nil {
-			expected = result.Diagnostics
-			continue
-		}
-		if !reflect.DeepEqual(result.Diagnostics, expected) {
-			t.Fatalf("GOMAXPROCS=%d diagnostics changed:\nfirst: %#v\nnext:  %#v", workers, expected, result.Diagnostics)
+		t.Setenv(fileschedule.EnvironmentVariable, string(strategy))
+		for _, workers := range []int{
+			1,
+			4,
+			2,
+			8,
+		} {
+			runtime.GOMAXPROCS(workers)
+			shared, err := workspace.Open([]string{
+				root,
+			}, workspace.Options{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			result, err := Run(context.Background(), shared, registry, RunOptions{
+				Formatter: formatter.DefaultOptions(),
+				Root:      root,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if expected == nil {
+				expected = result.Diagnostics
+				continue
+			}
+			if !reflect.DeepEqual(result.Diagnostics, expected) {
+				t.Fatalf("strategy=%s GOMAXPROCS=%d diagnostics changed:\nfirst: %#v\nnext:  %#v", strategy, workers, expected, result.Diagnostics)
+			}
 		}
 	}
 	if len(expected) < 6 {

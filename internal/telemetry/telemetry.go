@@ -58,21 +58,22 @@ type MemoryPoint struct {
 }
 
 type Report struct {
-	SchemaVersion int           `json:"schema_version"`
-	Command       string        `json:"command"`
-	BuildIdentity string        `json:"build_identity"`
-	Revision      string        `json:"revision,omitempty"`
-	GoVersion     string        `json:"go_version"`
-	GOOS          string        `json:"goos"`
-	GOARCH        string        `json:"goarch"`
-	GOMAXPROCS    int           `json:"gomaxprocs"`
-	StartedAt     string        `json:"started_at"`
-	DurationNS    int64         `json:"duration_ns"`
-	MemoryBefore  Memory        `json:"memory_before"`
-	MemoryAfter   Memory        `json:"memory_after"`
-	MemoryPoints  []MemoryPoint `json:"memory_points,omitempty"`
-	Phases        []Phase       `json:"phases"`
-	Events        []event       `json:"events,omitempty"`
+	SchemaVersion int               `json:"schema_version"`
+	Command       string            `json:"command"`
+	BuildIdentity string            `json:"build_identity"`
+	Revision      string            `json:"revision,omitempty"`
+	GoVersion     string            `json:"go_version"`
+	GOOS          string            `json:"goos"`
+	GOARCH        string            `json:"goarch"`
+	GOMAXPROCS    int               `json:"gomaxprocs"`
+	StartedAt     string            `json:"started_at"`
+	DurationNS    int64             `json:"duration_ns"`
+	MemoryBefore  Memory            `json:"memory_before"`
+	MemoryAfter   Memory            `json:"memory_after"`
+	MemoryPoints  []MemoryPoint     `json:"memory_points,omitempty"`
+	Attributes    map[string]string `json:"attributes,omitempty"`
+	Phases        []Phase           `json:"phases"`
+	Events        []event           `json:"events,omitempty"`
 }
 
 type recorder struct {
@@ -83,6 +84,7 @@ type recorder struct {
 	mu           sync.Mutex
 	events       []event
 	memoryPoints []MemoryPoint
+	attributes   map[string]string
 	cpuProfile   *os.File
 }
 
@@ -159,6 +161,20 @@ func Snapshot(name string) {
 	current.mu.Unlock()
 }
 
+// Attribute records a low-cardinality profiling or scheduling choice.
+func Attribute(name, value string) {
+	current := active.Load()
+	if current == nil {
+		return
+	}
+	current.mu.Lock()
+	if current.attributes == nil {
+		current.attributes = make(map[string]string)
+	}
+	current.attributes[name] = value
+	current.mu.Unlock()
+}
+
 // Flush atomically writes the active report. A missing recorder is a no-op.
 func Flush() error {
 	current := active.Swap(nil)
@@ -176,6 +192,10 @@ func Flush() error {
 	current.mu.Lock()
 	events := append([]event(nil), current.events...)
 	memoryPoints := append([]MemoryPoint(nil), current.memoryPoints...)
+	attributes := make(map[string]string, len(current.attributes))
+	for name, value := range current.attributes {
+		attributes[name] = value
+	}
 	current.mu.Unlock()
 	sort.SliceStable(
 		events,
@@ -200,6 +220,7 @@ func Flush() error {
 		MemoryBefore:  memorySnapshot(&current.memoryBefore),
 		MemoryAfter:   memorySnapshot(&after),
 		MemoryPoints:  memoryPoints,
+		Attributes:    attributes,
 		Phases:        aggregate(events),
 		Events:        events,
 	}

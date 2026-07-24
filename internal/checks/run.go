@@ -9,11 +9,12 @@ import (
 	"os"
 	"runtime"
 	"sort"
-	"sync"
+	"strconv"
 
 	"github.com/gempir/strider/internal/checks/semantic"
 	"github.com/gempir/strider/internal/checks/syntax"
 	"github.com/gempir/strider/internal/diagnostic"
+	"github.com/gempir/strider/internal/fileschedule"
 	"github.com/gempir/strider/internal/formatter"
 	"github.com/gempir/strider/internal/pathfilter"
 	"github.com/gempir/strider/internal/resultcache"
@@ -21,6 +22,8 @@ import (
 	"github.com/gempir/strider/internal/telemetry"
 	"github.com/gempir/strider/internal/workspace"
 )
+
+const SemanticOverlapEnvironment = "STRIDER_OVERLAP_PACKAGE_LOADING"
 
 // RunOptions configures one read-only check pass.
 type RunOptions struct {
@@ -57,6 +60,11 @@ type analysisRunner func(context.Context, []string, *semantic.Plan) ([]diagnosti
 
 type concreteFileRunner func(context.Context, *workspace.File, *Registry, *formatter.Formatter, formatter.Options, bool) fileResult
 
+type semanticResult struct {
+	diagnostics []diagnostic.Diagnostic
+	err         error
+}
+
 // Run executes the selected checks. Concrete-syntax checks and formatting
 // share each workspace file's CST; package-aware checks retain the original
 // input patterns so go/packages semantics remain unchanged.
@@ -79,15 +87,20 @@ func Run(ctx context.Context, shared *workspace.Workspace, registry *Registry, o
 		options.Formatter = formatter.DefaultOptions()
 	}
 
-	result, err := runConcreteChecks(ctx, shared.Files(), registry, options.Formatter, options.CollectCandidates, options.Cache)
+	var result Result
+	var err error
+	overlap := !options.SkipPackageLoading && registry.semantic != nil && os.Getenv(SemanticOverlapEnvironment) == "1"
+	telemetry.Attribute("semantic_overlap", strconv.FormatBool(overlap))
+	if overlap {
+		result, err = runOverlappedChecks(ctx, shared, registry, options)
+	} else {
+		result, err = runConcreteChecks(ctx, shared.Files(), registry, options.Formatter, options.CollectCandidates, options.Cache)
+		if err == nil && !options.SkipPackageLoading {
+			err = appendAnalysis(ctx, &result, shared, registry, semantic.RunContext)
+		}
+	}
 	if err != nil {
 		return Result{}, err
-	}
-	telemetry.Snapshot("check.after-file-local")
-	if !options.SkipPackageLoading {
-		if err := appendAnalysis(ctx, &result, shared, registry, semantic.RunContext); err != nil {
-			return Result{}, err
-		}
 	}
 	filterExcludedResults(&result, options.Root, options.Excludes)
 	sortFinish := telemetry.Start("check.sort")
@@ -96,6 +109,35 @@ func Run(ctx context.Context, shared *workspace.Workspace, registry *Registry, o
 	if result.Diagnostics == nil {
 		result.Diagnostics = []diagnostic.Diagnostic{}
 	}
+	return result, nil
+}
+
+func runOverlappedChecks(ctx context.Context, shared *workspace.Workspace, registry *Registry, options RunOptions) (Result, error) {
+	overlapContext, cancel := context.WithCancel(ctx)
+	defer cancel()
+	semanticResults := make(chan semanticResult, 1)
+	go func() {
+		diagnostics, err := semantic.RunContext(overlapContext, shared.Inputs(), registry.semantic)
+		if err != nil {
+			cancel()
+		}
+		semanticResults <- semanticResult{
+			diagnostics: diagnostics,
+			err:         err,
+		}
+	}()
+	result, concreteErr := runConcreteChecks(overlapContext, shared.Files(), registry, options.Formatter, options.CollectCandidates, options.Cache)
+	if concreteErr != nil {
+		cancel()
+	}
+	analysis := <-semanticResults
+	if concreteErr != nil {
+		return Result{}, concreteErr
+	}
+	if analysis.err != nil {
+		return Result{}, analysis.err
+	}
+	result.Diagnostics = append(result.Diagnostics, analysis.diagnostics...)
 	return result, nil
 }
 
@@ -145,7 +187,9 @@ func runConcreteChecks(ctx context.Context, files []*workspace.File, registry *R
 		}
 		return runConcreteFileCached(ctx, file, registry, session, formatOptions, collectCandidate, activeCache, admission)
 	}
-	return runConcreteChecksWith(ctx, files, registry, formatOptions, collectCandidates, runFile)
+	result, err := runConcreteChecksWith(ctx, files, registry, formatOptions, collectCandidates, runFile)
+	telemetry.Snapshot("check.after-file-local")
+	return result, err
 }
 
 func runConcreteChecksWith(ctx context.Context, files []*workspace.File, registry *Registry, formatOptions formatter.Options, collectCandidates bool, runFile concreteFileRunner) (
@@ -169,45 +213,37 @@ func runConcreteChecksWith(ctx context.Context, files []*workspace.File, registr
 	if len(applicable) == 0 {
 		return result, nil
 	}
+	strategy, err := fileschedule.Resolve()
+	if err != nil {
+		return Result{}, err
+	}
+	applicable, err = fileschedule.Order(applicable, strategy, func(file *workspace.File) (int64, error) {
+		contents, readErr := file.Bytes()
+		return int64(len(contents)), readErr
+	})
+	if err != nil {
+		return Result{}, err
+	}
+	telemetry.Attribute("file_scheduler", string(strategy))
 
 	session := formatter.NewFormatter()
 	workerContext, cancel := context.WithCancel(ctx)
 	defer cancel()
 	workers := min(runtime.GOMAXPROCS(0), len(applicable))
-	jobs := make(chan *workspace.File)
 	results := make(chan fileResult, len(applicable))
-	var group sync.WaitGroup
-	for range workers {
-		group.Add(1)
-		go func() {
-			defer group.Done()
-			for {
-				select {
-				case <-workerContext.Done():
-					return
-				case file, ok := <-jobs:
-					if !ok {
-						return
-					}
-					item := runFile(workerContext, file, registry, session, formatOptions, collectCandidates)
-					results <- item
-					if item.err != nil {
-						cancel()
-					}
-				}
+	fileschedule.Run(
+		workerContext,
+		strategy,
+		workers,
+		applicable,
+		func(_ context.Context, file *workspace.File) {
+			item := runFile(workerContext, file, registry, session, formatOptions, collectCandidates)
+			results <- item
+			if item.err != nil {
+				cancel()
 			}
-		}()
-	}
-dispatch:
-	for _, file := range applicable {
-		select {
-		case <-workerContext.Done():
-			break dispatch
-		case jobs <- file:
-		}
-	}
-	close(jobs)
-	group.Wait()
+		},
+	)
 	close(results)
 
 	completed := make([]fileResult, 0, len(applicable))

@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"runtime/debug"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -58,6 +60,44 @@ func TestCSTAdmissionOversizeEstimateGetsExclusiveCapacity(t *testing.T) {
 	}
 	release()
 	release()
+}
+
+func TestCSTAdmissionBoundsSeveralLargeConcurrentFiles(t *testing.T) {
+	admission := NewCSTAdmission(100)
+	start := make(chan struct{})
+	var live atomic.Int64
+	var maximum atomic.Int64
+	var group sync.WaitGroup
+	for range 8 {
+		group.Add(1)
+		go func() {
+			defer group.Done()
+			<-start
+			release, err := admission.Acquire(context.Background(), 60)
+			if err != nil {
+				t.Error(err)
+				return
+			}
+			current := live.Add(60)
+			storeMaximum(&maximum, current)
+			live.Add(-60)
+			release()
+		}()
+	}
+	close(start)
+	group.Wait()
+	if got := maximum.Load(); got > 100 {
+		t.Fatalf("maximum admitted estimate = %d, capacity 100", got)
+	}
+}
+
+func storeMaximum(maximum *atomic.Int64, value int64) {
+	for {
+		previous := maximum.Load()
+		if value <= previous || maximum.CompareAndSwap(previous, value) {
+			return
+		}
+	}
 }
 
 func TestEstimatedCSTBytesUsesFloorAndSourceMultiplier(t *testing.T) {

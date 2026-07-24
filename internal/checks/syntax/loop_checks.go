@@ -95,18 +95,27 @@ func singleIdentifier(node cst.Node) cst.Token {
 	if node == nil {
 		return cst.Token{}
 	}
-	tokens := cst.NodeTokens(node)
-	if len(tokens) == 1 && tokens[0].Src() != "" {
-		return tokens[0]
+	var result cst.Token
+	count := 0
+	cst.ForEachToken(node, func(current cst.Token) bool {
+		count++
+		result = current
+		return count < 2
+	})
+	if count == 1 && result.Src() != "" {
+		return result
 	}
 	return cst.Token{}
 }
 
 func containsIdentifier(node cst.Node, name string) bool {
-	for _, current := range cst.NodeTokens(node) {
+	found := false
+	cst.ForEachToken(node, func(current cst.Token) bool {
 		if current.Src() == name {
-			return true
+			found = true
+			return false
 		}
-	}
-	return false
+		return true
+	})
+	return found
 }

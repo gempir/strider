@@ -103,9 +103,9 @@ func (l *layout) indexTree() {
 				}
 			}
 			if kind == "LiteralValue" {
-				tokens := cst.NodeTokens(node)
-				if len(tokens) != 0 {
-					l.markToken(tokens[0], propertyForceBreak)
+				first, _, ok := l.tree.TokenBounds(node)
+				if ok {
+					l.markToken(first, propertyForceBreak)
 				}
 			}
 			switch kind {
@@ -157,19 +157,27 @@ func (l *layout) indexTree() {
 				l.markToken(current.OR, propertySpacedOp)
 			}
 			if kind == "SendStmt" || kind == "RangeClause" || kind == "TypeSwitchGuard" {
-				for _, current := range cst.NodeTokens(node) {
-					switch current.Ch() {
-					case token.ARROW, token.ASSIGN, token.DEFINE:
-						l.markToken(current, propertySpacedOp)
-					}
-				}
+				l.tree.ForEachToken(
+					node,
+					func(current cst.Token) bool {
+						switch current.Ch() {
+						case token.ARROW, token.ASSIGN, token.DEFINE:
+							l.markToken(current, propertySpacedOp)
+						}
+						return true
+					},
+				)
 			}
 			if kind == "RecvStmt" {
-				for _, current := range cst.NodeTokens(node) {
-					if current.Ch() == token.ASSIGN || current.Ch() == token.DEFINE {
-						l.markToken(current, propertySpacedOp)
-					}
-				}
+				l.tree.ForEachToken(
+					node,
+					func(current cst.Token) bool {
+						if current.Ch() == token.ASSIGN || current.Ch() == token.DEFINE {
+							l.markToken(current, propertySpacedOp)
+						}
+						return true
+					},
+				)
 			}
 			if kind == "ChannelType" {
 				l.markTokens(node, token.ARROW, propertyChannelArrow)
@@ -181,14 +189,18 @@ func (l *layout) indexTree() {
 				l.markTokens(node, token.COLON, propertyLabelColon)
 			}
 			if kind == "ExprCaseClauseList" || kind == "TypeCaseClause" || kind == "CommClause" {
-				for _, current := range cst.NodeTokens(node) {
-					switch current.Ch() {
-					case token.CASE, token.DEFAULT:
-						l.markToken(current, propertyCaseToken)
-					case token.COLON:
-						l.markToken(current, propertyCaseColon)
-					}
-				}
+				l.tree.ForEachToken(
+					node,
+					func(current cst.Token) bool {
+						switch current.Ch() {
+						case token.CASE, token.DEFAULT:
+							l.markToken(current, propertyCaseToken)
+						case token.COLON:
+							l.markToken(current, propertyCaseColon)
+						}
+						return true
+					},
+				)
 			}
 			return true
 		},
@@ -196,11 +208,11 @@ func (l *layout) indexTree() {
 }
 
 func (l *layout) markAnyDelimited(node cst.Node, style delimiterStyle) {
-	tokens := cst.NodeTokens(node)
-	if len(tokens) < 2 {
+	first, last, ok := l.tree.TokenBounds(node)
+	if !ok || first == last {
 		return
 	}
-	open, close := tokens[0].Ch(), tokens[len(tokens)-1].Ch()
+	open, close := first.Ch(), last.Ch()
 	if (open == token.LPAREN && close == token.RPAREN) || (open == token.LBRACK && close == token.RBRACK) || (open == token.LBRACE && close == token.RBRACE) {
 		l.markDelimited(node, open, close, style)
 	}
@@ -314,9 +326,9 @@ func (l *layout) markFirstToken(node cst.Node) {
 	if node == nil {
 		return
 	}
-	tokens := cst.NodeTokens(node)
-	if len(tokens) != 0 {
-		l.markToken(tokens[0], propertySpaceBefore)
+	first, _, ok := l.tree.TokenBounds(node)
+	if ok {
+		l.markToken(first, propertySpaceBefore)
 	}
 }
 

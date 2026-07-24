@@ -209,9 +209,9 @@ func (r *Plan) boundOptions(checks []Check) map[string]catalog.ResolvedOptions {
 }
 
 func (c *Context) reportConcrete(tree *cst.Tree, finding Finding, severity diagnostic.Severity) {
-	startOffset, endOffset := cst.Range(finding.Node)
-	if finding.HasRange {
-		startOffset, endOffset = finding.Start, finding.End
+	startOffset, endOffset := finding.Start, finding.End
+	if !finding.HasRange {
+		startOffset, endOffset = tree.Range(finding.Node)
 	}
 	if c.suppressedRange(finding.Code, startOffset, endOffset) {
 		return
@@ -253,7 +253,7 @@ func concreteSuppressions(tree *cst.Tree) (map[string]bool, []concreteSuppressio
 	}
 	fileIgnores := make(map[string]bool)
 	candidates := concreteSuppressionCandidates(tree)
-	packageStart, _ := cst.Range(tree.Root())
+	packageStart, _ := tree.Range(tree.Root())
 	comments := tree.Comments()
 	result := make([]concreteSuppression, 0, len(comments))
 	for _, comment := range comments {
@@ -289,21 +289,18 @@ func concreteSuppressions(tree *cst.Tree) (map[string]bool, []concreteSuppressio
 
 func concreteSuppressionCandidates(tree *cst.Tree) []concreteSuppression {
 	result := []concreteSuppression{}
-	cst.Walk(
-		tree.Root(),
-		func(node cst.Node) bool {
+	tree.WalkProductionsWithRanges(
+		func(node cst.Node, _ []cst.Node, start, end int) {
 			kind := cst.Kind(node)
 			if !strings.HasSuffix(kind, "Decl") && !strings.HasSuffix(kind, "Stmt") {
-				return true
+				return
 			}
-			start, end := cst.Range(node)
 			if end > start {
 				result = append(result, concreteSuppression{
 					start: start,
 					end:   end,
 				})
 			}
-			return true
 		},
 	)
 	sort.SliceStable(result, func(i, j int) bool {

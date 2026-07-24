@@ -107,10 +107,14 @@ func (a *Pass) Report(node cst.Node, message string) {
 	if a.check == nil || node == nil || a.reporter == nil {
 		return
 	}
+	start, end := a.findingRange(node)
 	a.reporter(Finding{
-		Node:    node,
-		Code:    a.check.Meta().Code,
-		Message: message,
+		Node:     node,
+		Start:    start,
+		End:      end,
+		HasRange: true,
+		Code:     a.check.Meta().Code,
+		Message:  message,
 	})
 }
 
@@ -119,14 +123,22 @@ func (a *Pass) ReportFix(node cst.Node, message string, fix diagnostic.Fix) {
 	if a.check == nil || node == nil || a.reporter == nil {
 		return
 	}
+	start, end := a.findingRange(node)
 	a.reporter(Finding{
-		Node:    node,
-		Code:    a.check.Meta().Code,
-		Message: message,
+		Node:     node,
+		Start:    start,
+		End:      end,
+		HasRange: true,
+		Code:     a.check.Meta().Code,
+		Message:  message,
 		Fixes: []diagnostic.Fix{
 			fix,
 		},
 	})
+}
+
+func (a *Pass) findingRange(node cst.Node) (start, end int) {
+	return a.tree.Range(node)
 }
 
 // ReportRange emits an offset finding owned by the current descriptor.

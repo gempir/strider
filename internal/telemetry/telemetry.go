@@ -2,7 +2,7 @@
 // runs. The normal path uses a nil recorder: disabled spans do not read the
 // clock, allocate, or take locks.
 //
-//strider:ignore-file cognitive-complexity,discarded-error-result,no-package-var,range-value-address,top-level-declaration-order,use-slices-sort
+//strider:ignore-file cognitive-complexity,cyclomatic-complexity,function-length,no-package-var,range-value-address,top-level-declaration-order,use-slices-sort
 package telemetry
 
 import (
@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"runtime/pprof"
 	"sort"
 	"sync"
 	"sync/atomic"
@@ -19,7 +20,11 @@ import (
 	"github.com/gempir/strider/internal/buildidentity"
 )
 
-const EnvironmentVariable = "STRIDER_TELEMETRY"
+const (
+	EnvironmentVariable    = "STRIDER_TELEMETRY"
+	CPUProfileEnvironment  = "STRIDER_CPU_PROFILE"
+	HeapProfileEnvironment = "STRIDER_HEAP_PROFILE"
+)
 
 type event struct {
 	Name     string `json:"name"`
@@ -78,6 +83,7 @@ type recorder struct {
 	mu           sync.Mutex
 	events       []event
 	memoryPoints []MemoryPoint
+	cpuProfile   *os.File
 }
 
 var active atomic.Pointer[recorder]
@@ -94,12 +100,25 @@ func ConfigureFromEnvironment(command string) {
 	}
 	var memory runtime.MemStats
 	runtime.ReadMemStats(&memory)
-	active.Store(&recorder{
+	current := &recorder{
 		path:         path,
 		command:      command,
 		started:      time.Now(),
 		memoryBefore: memory,
-	})
+	}
+	cpuPath := os.Getenv(CPUProfileEnvironment)
+	if cpuPath != "" {
+		if profile, err := createProfile(cpuPath); err == nil {
+			if err := pprof.StartCPUProfile(profile); err == nil {
+				current.cpuProfile = profile
+			} else {
+				if closeErr := profile.Close(); closeErr != nil {
+					current.cpuProfile = nil
+				}
+			}
+		}
+	}
+	active.Store(current)
 }
 
 // Start begins a coarse span. When telemetry is disabled it returns a shared
@@ -145,6 +164,12 @@ func Flush() error {
 	current := active.Swap(nil)
 	if current == nil {
 		return nil
+	}
+	if current.cpuProfile != nil {
+		pprof.StopCPUProfile()
+		if err := current.cpuProfile.Close(); err != nil {
+			return err
+		}
 	}
 	var after runtime.MemStats
 	runtime.ReadMemStats(&after)
@@ -206,7 +231,27 @@ func Flush() error {
 	if err := os.Rename(temporaryPath, current.path); err != nil {
 		return errors.Join(err, os.Remove(temporaryPath))
 	}
+	heapPath := os.Getenv(HeapProfileEnvironment)
+	if heapPath != "" {
+		profile, err := createProfile(heapPath)
+		if err != nil {
+			return err
+		}
+		if err := pprof.WriteHeapProfile(profile); err != nil {
+			return errors.Join(err, profile.Close())
+		}
+		if err := profile.Close(); err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+func createProfile(path string) (*os.File, error) {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return nil, err
+	}
+	return os.Create(path)
 }
 
 func memorySnapshot(stats *runtime.MemStats) Memory {

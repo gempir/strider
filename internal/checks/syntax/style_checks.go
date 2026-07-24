@@ -89,7 +89,7 @@ func (a *Pass) reportDocumentationComment(comment cst.Comment) {
 }
 
 func (a *Pass) attachedComment(node cst.Node) (cst.Comment, bool) {
-	start, _ := cst.Range(node)
+	start, _ := a.tree.Range(node)
 	comments := a.tree.Comments()
 	for index := len(comments) - 1; index >= 0; index-- {
 		comment := comments[index]

@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "phase": 4,
+  "protocol": {
+    "samples": 7,
+    "warmups": 1,
+    "scheduler": "fixed",
+    "gomaxprocs": 2,
+    "strider_cache": "cold",
+    "go_build_cache": "warm",
+    "target": "linux/amd64",
+    "host": "darwin/arm64",
+    "go_version": "go1.26.4",
+    "corpus": "sftpgo",
+    "corpus_revision": "42f7a4d415dc7a97da08880edb82e5b0db5fcfc8",
+    "os_filesystem_cache": "accepted as warm"
+  },
+  "operations": {
+    "format": {
+      "median_ms": 488,
+      "p95_ms": 506,
+      "peak_rss_bytes": 258523136,
+      "allocated_bytes": 599217512,
+      "gc_cycles": 16,
+      "digest": "deb5d65d4c8a2fe9a78b395c8c2a84acc9dc9bed01c7bcfa4c93ad1d0767ead9"
+    },
+    "check_file_local": {
+      "median_ms": 845,
+      "p95_ms": 851,
+      "peak_rss_bytes": 247152640,
+      "allocated_bytes": 834820136,
+      "gc_cycles": 25,
+      "phase0_syntax_worker_sum_ms": 827.983,
+      "syntax_worker_sum_ms": 653.307,
+      "syntax_cpu_reduction_percent": 21.1,
+      "digest": "420c333de766aa1474f90f3abd1968a773442ae8bd0e9abc90eb21585d916287"
+    },
+    "check": {
+      "median_ms": 2733,
+      "p95_ms": 3207,
+      "peak_rss_bytes": 1040482304,
+      "allocated_bytes": 2411584168,
+      "gc_cycles": 36,
+      "syntax_worker_sum_ms": 660.611,
+      "digest": "2d29be88549e2b0accdfbfba5785b7f7704357dfef6e181148f76b8ec7eb9d08"
+    }
+  },
+  "profile": {
+    "command": "STRIDER_TELEMETRY=telemetry.json STRIDER_CPU_PROFILE=cpu.pprof STRIDER_HEAP_PROFILE=heap.pprof GOMAXPROCS=2 strider --no-config --no-cache check --no-package-loading --minimum-severity note --format json .",
+    "node_token_bounds_cumulative_percent": 9.03,
+    "finding": "CST query cost remains visible but is not large enough to amortize a whole-tree node index."
+  }
+}

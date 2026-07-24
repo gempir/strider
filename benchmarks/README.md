@@ -28,6 +28,8 @@ the package-loading, type-analysis, and SSA floor in a full check.
 p95, allocations, GC cycles and pause time, external peak RSS, and aggregate
 phase spans. Detailed event traces live below `target/corpus/raw`. Aggregate
 parallel phases distinguish critical-path wall time from summed worker time.
+Set `STRIDER_CPU_PROFILE` or `STRIDER_HEAP_PROFILE` alongside
+`STRIDER_TELEMETRY` when a focused run needs Go pprof output.
 
 For a focused SFTPGo comparison:
 

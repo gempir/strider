@@ -174,6 +174,24 @@ func F[T ~int](values []T) (total T) {
 	if !slices.Equal(gotWalk, wantWalk) {
 		t.Fatal("linear walk order differs from concrete child traversal")
 	}
+	wantProductions := []Node{}
+	WalkProductionsWithAncestors(tree.Root(), func(node Node, _ []Node) bool {
+		wantProductions = append(wantProductions, node)
+		return true
+	})
+	rangedProductions := []Node{}
+	tree.WalkProductionsWithRanges(
+		func(node Node, _ []Node, start, end int) {
+			rangedProductions = append(rangedProductions, node)
+			wantStart, wantEnd := Range(node)
+			if start != wantStart || end != wantEnd {
+				t.Fatalf("%s precomputed range = %d:%d, want %d:%d", Kind(node), start, end, wantStart, wantEnd)
+			}
+		},
+	)
+	if !slices.Equal(rangedProductions, wantProductions) {
+		t.Fatal("range sidecar changed production order")
+	}
 
 	for _, node := range wantWalk {
 		wantChildren := referenceChildren(node)
@@ -186,10 +204,26 @@ func F[T ~int](values []T) (total T) {
 		if !slices.Equal(gotTokens, wantTokens) {
 			t.Fatalf("%s tokens differ: got %d, want %d", Kind(node), len(gotTokens), len(wantTokens))
 		}
+		iteratedTokens := []Token{}
+		tree.ForEachToken(node, func(current Token) bool {
+			iteratedTokens = append(iteratedTokens, current)
+			return true
+		})
+		if !slices.Equal(iteratedTokens, wantTokens) {
+			t.Fatalf("%s indexed token iteration differs", Kind(node))
+		}
+		first, last, found := tree.TokenBounds(node)
+		if found != (len(wantTokens) != 0) || found && (first != wantTokens[0] || last != wantTokens[len(wantTokens)-1]) {
+			t.Fatalf("%s token bounds differ", Kind(node))
+		}
 		wantStart, wantEnd := referenceRange(wantTokens)
 		gotStart, gotEnd := Range(node)
 		if gotStart != wantStart || gotEnd != wantEnd {
 			t.Fatalf("%s range = %d:%d, want %d:%d", Kind(node), gotStart, gotEnd, wantStart, wantEnd)
+		}
+		indexedStart, indexedEnd := tree.Range(node)
+		if indexedStart != wantStart || indexedEnd != wantEnd {
+			t.Fatalf("%s indexed range = %d:%d, want %d:%d", Kind(node), indexedStart, indexedEnd, wantStart, wantEnd)
 		}
 	}
 
@@ -399,6 +433,27 @@ func BenchmarkGeneratedProductionAncestorWalk(b *testing.B) {
 		WalkProductionsWithAncestors(tree.Root(), func(Node, []Node) bool {
 			return true
 		})
+	}
+}
+
+func BenchmarkIndexedTokenIteration(b *testing.B) {
+	tree := benchmarkTree(b)
+	tree.Range(tree.Root())
+	b.ReportAllocs()
+	b.ResetTimer()
+	for range b.N {
+		tree.ForEachToken(tree.Root(), func(Token) bool {
+			return true
+		})
+	}
+}
+
+func BenchmarkNodeTokens(b *testing.B) {
+	tree := benchmarkTree(b)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for range b.N {
+		NodeTokens(tree.Root())
 	}
 }
 

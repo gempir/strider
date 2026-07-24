@@ -100,7 +100,7 @@ func (snapshot *fileSnapshot) CST() (*cst.Tree, error) {
 		func() {
 			snapshot.tree, snapshot.treeErr = cst.Parse(snapshot.path, snapshot.source)
 			if snapshot.tree != nil && snapshot.onTree != nil {
-				snapshot.onTree(estimatedCSTBytes(snapshot.source))
+				snapshot.onTree(EstimatedCSTBytes(int64(len(snapshot.source))))
 			}
 		},
 	)
@@ -308,8 +308,10 @@ func (cache *Cache) recordTree(key cacheKey, snapshot *fileSnapshot, treeBytes i
 	cache.evictLocked()
 }
 
-func estimatedCSTBytes(source []byte) int64 {
-	estimate := int64(len(source)) * cstEstimateMultiplier
+// EstimatedCSTBytes conservatively estimates the pointer-rich CST heap from
+// source size. Watch-cache eviction and one-shot admission share this model.
+func EstimatedCSTBytes(sourceBytes int64) int64 {
+	estimate := sourceBytes * cstEstimateMultiplier
 	if estimate < cstEstimateFloor {
 		return cstEstimateFloor
 	}

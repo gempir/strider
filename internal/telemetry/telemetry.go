@@ -45,21 +45,29 @@ type Memory struct {
 	PauseTotalNS    uint64 `json:"pause_total_ns"`
 }
 
+// MemoryPoint captures live runtime memory at a named pipeline boundary.
+type MemoryPoint struct {
+	Name   string `json:"name"`
+	AtNS   int64  `json:"at_ns"`
+	Memory Memory `json:"memory"`
+}
+
 type Report struct {
-	SchemaVersion int     `json:"schema_version"`
-	Command       string  `json:"command"`
-	BuildIdentity string  `json:"build_identity"`
-	Revision      string  `json:"revision,omitempty"`
-	GoVersion     string  `json:"go_version"`
-	GOOS          string  `json:"goos"`
-	GOARCH        string  `json:"goarch"`
-	GOMAXPROCS    int     `json:"gomaxprocs"`
-	StartedAt     string  `json:"started_at"`
-	DurationNS    int64   `json:"duration_ns"`
-	MemoryBefore  Memory  `json:"memory_before"`
-	MemoryAfter   Memory  `json:"memory_after"`
-	Phases        []Phase `json:"phases"`
-	Events        []event `json:"events,omitempty"`
+	SchemaVersion int           `json:"schema_version"`
+	Command       string        `json:"command"`
+	BuildIdentity string        `json:"build_identity"`
+	Revision      string        `json:"revision,omitempty"`
+	GoVersion     string        `json:"go_version"`
+	GOOS          string        `json:"goos"`
+	GOARCH        string        `json:"goarch"`
+	GOMAXPROCS    int           `json:"gomaxprocs"`
+	StartedAt     string        `json:"started_at"`
+	DurationNS    int64         `json:"duration_ns"`
+	MemoryBefore  Memory        `json:"memory_before"`
+	MemoryAfter   Memory        `json:"memory_after"`
+	MemoryPoints  []MemoryPoint `json:"memory_points,omitempty"`
+	Phases        []Phase       `json:"phases"`
+	Events        []event       `json:"events,omitempty"`
 }
 
 type recorder struct {
@@ -69,6 +77,7 @@ type recorder struct {
 	memoryBefore runtime.MemStats
 	mu           sync.Mutex
 	events       []event
+	memoryPoints []MemoryPoint
 }
 
 var active atomic.Pointer[recorder]
@@ -113,6 +122,24 @@ func Start(name string) func() {
 	}
 }
 
+// Snapshot captures live memory at a coarse pipeline boundary. Disabled
+// telemetry returns before reading runtime memory.
+func Snapshot(name string) {
+	current := active.Load()
+	if current == nil {
+		return
+	}
+	var memory runtime.MemStats
+	runtime.ReadMemStats(&memory)
+	current.mu.Lock()
+	current.memoryPoints = append(current.memoryPoints, MemoryPoint{
+		Name:   name,
+		AtNS:   time.Since(current.started).Nanoseconds(),
+		Memory: memorySnapshot(&memory),
+	})
+	current.mu.Unlock()
+}
+
 // Flush atomically writes the active report. A missing recorder is a no-op.
 func Flush() error {
 	current := active.Swap(nil)
@@ -123,6 +150,7 @@ func Flush() error {
 	runtime.ReadMemStats(&after)
 	current.mu.Lock()
 	events := append([]event(nil), current.events...)
+	memoryPoints := append([]MemoryPoint(nil), current.memoryPoints...)
 	current.mu.Unlock()
 	sort.SliceStable(
 		events,
@@ -146,6 +174,7 @@ func Flush() error {
 		DurationNS:    time.Since(current.started).Nanoseconds(),
 		MemoryBefore:  memorySnapshot(&current.memoryBefore),
 		MemoryAfter:   memorySnapshot(&after),
+		MemoryPoints:  memoryPoints,
 		Phases:        aggregate(events),
 		Events:        events,
 	}

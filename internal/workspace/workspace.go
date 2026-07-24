@@ -107,7 +107,7 @@ func (workspace *Workspace) Close() error {
 	}
 	workspace.closeOnce.Do(func() {
 		for _, file := range workspace.files {
-			file.release()
+			file.Release()
 		}
 	})
 	return nil
@@ -226,7 +226,10 @@ func (file *File) Identity() (ContentIdentity, error) {
 	return sha256.Sum256(contents), nil
 }
 
-func (file *File) releaseCST() {
+// ReleaseCST drops this generation's tree handle after its last concrete
+// consumer. Cached watch snapshots remain intact for reuse by later
+// generations.
+func (file *File) ReleaseCST() {
 	if file == nil {
 		return
 	}
@@ -236,11 +239,14 @@ func (file *File) releaseCST() {
 	file.treeMu.Unlock()
 }
 
-func (file *File) release() {
+// Release drops this generation's source and tree handles. References already
+// materialized by transactional write, diff, or fix planning remain valid.
+// The method is idempotent and safe to call concurrently with reads.
+func (file *File) Release() {
 	if file == nil {
 		return
 	}
-	file.releaseCST()
+	file.ReleaseCST()
 	file.bytesMu.Lock()
 	file.bytes = nil
 	file.bytesReleased = true

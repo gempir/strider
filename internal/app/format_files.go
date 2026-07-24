@@ -33,6 +33,8 @@ type formattedStatus struct {
 func formatFiles(ctx context.Context, files []*workspace.File, options formatter.Options) ([]formattedFile, []error) {
 	finish := telemetry.Start("format.file-local")
 	defer finish()
+	restoreGC := workspace.BeginCSTCollectionWindow()
+	defer restoreGC()
 	formatted := make([]formattedFile, len(files))
 	errorsByFile := make([]error, len(files))
 	if len(files) == 0 {
@@ -40,6 +42,7 @@ func formatFiles(ctx context.Context, files []*workspace.File, options formatter
 	}
 
 	session := formatter.NewFormatter()
+	admission := workspace.NewCSTAdmission(0)
 	workerContext, cancel := context.WithCancel(ctx)
 	defer cancel()
 	jobs := make(chan int)
@@ -64,6 +67,7 @@ func formatFiles(ctx context.Context, files []*workspace.File, options formatter
 				func() {
 					finish := telemetry.Start("format.file-worker")
 					defer finish()
+					defer file.Release()
 					if err := workerContext.Err(); err != nil {
 						return
 					}
@@ -84,6 +88,13 @@ func formatFiles(ctx context.Context, files []*workspace.File, options formatter
 						}
 						return
 					}
+					releaseAdmission, err := admission.Acquire(workerContext, workspace.EstimatedCSTBytes(int64(len(original))))
+					if err != nil {
+						errorsByFile[index] = err
+						cancel()
+						return
+					}
+					defer releaseAdmission()
 					tree, err := file.CST()
 					if err != nil {
 						errorsByFile[index] = fmt.Errorf("%s: %w", source.DisplayPath(filename), err)
@@ -128,6 +139,8 @@ func formatFileStatuses(ctx context.Context, files []*workspace.File, options fo
 	[]formattedStatus,
 	[]error,
 ) {
+	restoreGC := workspace.BeginCSTCollectionWindow()
+	defer restoreGC()
 	statuses := make([]formattedStatus, len(files))
 	errorsByFile := make([]error, len(files))
 	if len(files) == 0 {
@@ -135,6 +148,7 @@ func formatFileStatuses(ctx context.Context, files []*workspace.File, options fo
 	}
 
 	session := formatter.NewFormatter()
+	admission := workspace.NewCSTAdmission(0)
 	resolvedRoot := source.ResolveRoot(root)
 	cacheConfiguration := formatCacheConfiguration(excludes)
 	workerContext, cancel := context.WithCancel(ctx)
@@ -158,62 +172,80 @@ func formatFileStatuses(ctx context.Context, files []*workspace.File, options fo
 					}
 				}
 				file := files[index]
-				filename := file.Path()
-				if err := workerContext.Err(); err != nil {
-					return
-				}
-				original, err := file.Bytes()
-				if err != nil {
-					errorsByFile[index] = fmt.Errorf("%s: %w", source.DisplayPath(filename), err)
-					cancel()
-					return
-				}
-				cacheKey := formatStatusCacheKey(cache, session, filename, source.DiagnosticPath(resolvedRoot, filename), original, options, cacheConfiguration)
-				if cached, hit := cache.Get(cacheKey); hit && cached.FormatKnown {
-					statuses[index] = formattedStatus{
-						filename: filename,
-						changed:  cached.FormatChanged,
-						ignored:  cached.FormatIgnored,
+				func() {
+					defer file.Release()
+					filename := file.Path()
+					if err := workerContext.Err(); err != nil {
+						return
 					}
-					continue
-				}
-				if formatter.IsIgnored(original) {
+					original, err := file.Bytes()
+					if err != nil {
+						errorsByFile[index] = fmt.Errorf("%s: %w", source.DisplayPath(filename), err)
+						cancel()
+						return
+					}
+					cacheKey := formatStatusCacheKey(
+						cache,
+						session,
+						filename,
+						source.DiagnosticPath(resolvedRoot, filename),
+						original,
+						options,
+						cacheConfiguration,
+					)
+					if cached, hit := cache.Get(cacheKey); hit && cached.FormatKnown {
+						statuses[index] = formattedStatus{
+							filename: filename,
+							changed:  cached.FormatChanged,
+							ignored:  cached.FormatIgnored,
+						}
+						return
+					}
+					if formatter.IsIgnored(original) {
+						statuses[index] = formattedStatus{
+							filename: filename,
+							ignored:  true,
+						}
+						cache.Store(cacheKey, resultcache.Entry{
+							FormatKnown:   true,
+							FormatIgnored: true,
+						})
+						return
+					}
+					releaseAdmission, err := admission.Acquire(workerContext, workspace.EstimatedCSTBytes(int64(len(original))))
+					if err != nil {
+						errorsByFile[index] = err
+						cancel()
+						return
+					}
+					defer releaseAdmission()
+					tree, err := file.CST()
+					if err != nil {
+						errorsByFile[index] = fmt.Errorf("%s: %w", source.DisplayPath(filename), err)
+						cancel()
+						return
+					}
+					if err := workerContext.Err(); err != nil {
+						return
+					}
+					changed, err := session.WouldChangeTreeKnownActive(filename, tree, options)
+					if err != nil {
+						errorsByFile[index] = err
+						cancel()
+						return
+					}
+					if err := workerContext.Err(); err != nil {
+						return
+					}
 					statuses[index] = formattedStatus{
 						filename: filename,
-						ignored:  true,
+						changed:  changed,
 					}
 					cache.Store(cacheKey, resultcache.Entry{
 						FormatKnown:   true,
-						FormatIgnored: true,
+						FormatChanged: changed,
 					})
-					continue
-				}
-				tree, err := file.CST()
-				if err != nil {
-					errorsByFile[index] = fmt.Errorf("%s: %w", source.DisplayPath(filename), err)
-					cancel()
-					return
-				}
-				if err := workerContext.Err(); err != nil {
-					return
-				}
-				changed, err := session.WouldChangeTreeKnownActive(filename, tree, options)
-				if err != nil {
-					errorsByFile[index] = err
-					cancel()
-					return
-				}
-				if err := workerContext.Err(); err != nil {
-					return
-				}
-				statuses[index] = formattedStatus{
-					filename: filename,
-					changed:  changed,
-				}
-				cache.Store(cacheKey, resultcache.Entry{
-					FormatKnown:   true,
-					FormatChanged: changed,
-				})
+				}()
 			}
 		}()
 	}

@@ -183,6 +183,7 @@ func formatPaths(ctx context.Context, options formatOptions, stdout, stderr io.W
 	}
 	if options.check {
 		statuses, formatErrors := formatFileStatuses(ctx, shared.Files(), options.formatter, options.root, options.excludes, options.cache)
+		telemetry.Snapshot("format.after-file-local")
 		for _, formatErr := range formatErrors {
 			if formatErr != nil {
 				printCommandError(stderr, options.colorMode, "strider fmt", "%v", formatErr)
@@ -199,6 +200,7 @@ func formatPaths(ctx context.Context, options formatOptions, stdout, stderr io.W
 		return exitSuccess
 	}
 	formatted, formatErrors := formatFiles(ctx, shared.Files(), options.formatter)
+	telemetry.Snapshot("format.after-file-local")
 	for _, formatErr := range formatErrors {
 		if formatErr != nil {
 			printCommandError(stderr, options.colorMode, "strider fmt", "%v", formatErr)

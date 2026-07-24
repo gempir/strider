@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -31,7 +32,7 @@ func TestRunRejectsPreCanceledContext(t *testing.T) {
 	}
 }
 
-func TestRunDoesNotConsumeWorkspace(t *testing.T) {
+func TestRunReleasesOneShotWorkspace(t *testing.T) {
 	directory := t.TempDir()
 	if err := os.WriteFile(filepath.Join(directory, "main.go"), []byte("package sample\nfunc init() {}\n"), 0o600); err != nil {
 		t.Fatal(err)
@@ -52,16 +53,15 @@ func TestRunDoesNotConsumeWorkspace(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	first, err := Run(context.Background(), shared, registry, RunOptions{})
+	result, err := Run(context.Background(), shared, registry, RunOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := Run(context.Background(), shared, registry, RunOptions{})
-	if err != nil {
-		t.Fatal(err)
+	if len(result.Diagnostics) != 1 || result.Diagnostics[0].Code != "no-init" {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
 	}
-	if !reflect.DeepEqual(first, second) {
-		t.Fatalf("repeated Run changed result:\nfirst:  %#v\nsecond: %#v", first, second)
+	if _, err := Run(context.Background(), shared, registry, RunOptions{}); err == nil || !strings.Contains(err.Error(), "source cache released") {
+		t.Fatalf("second Run error = %v, want released workspace", err)
 	}
 }
 

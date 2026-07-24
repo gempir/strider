@@ -83,6 +83,7 @@ func Run(ctx context.Context, shared *workspace.Workspace, registry *Registry, o
 	if err != nil {
 		return Result{}, err
 	}
+	telemetry.Snapshot("check.after-file-local")
 	if !options.SkipPackageLoading {
 		if err := appendAnalysis(ctx, &result, shared, registry, semantic.RunContext); err != nil {
 			return Result{}, err
@@ -134,18 +135,15 @@ func runConcreteChecks(ctx context.Context, files []*workspace.File, registry *R
 	Result,
 	error,
 ) {
-	runFile := runConcreteFile
-	if cache != nil && !collectCandidates {
-		runFile = func(
-			ctx context.Context,
-			file *workspace.File,
-			registry *Registry,
-			session *formatter.Formatter,
-			formatOptions formatter.Options,
-			collectCandidate bool,
-		) fileResult {
-			return runConcreteFileCached(ctx, file, registry, session, formatOptions, collectCandidate, cache)
+	restoreGC := workspace.BeginCSTCollectionWindow()
+	defer restoreGC()
+	admission := workspace.NewCSTAdmission(0)
+	runFile := func(ctx context.Context, file *workspace.File, registry *Registry, session *formatter.Formatter, formatOptions formatter.Options, collectCandidate bool) fileResult {
+		activeCache := cache
+		if collectCandidate {
+			activeCache = nil
 		}
+		return runConcreteFileCached(ctx, file, registry, session, formatOptions, collectCandidate, activeCache, admission)
 	}
 	return runConcreteChecksWith(ctx, files, registry, formatOptions, collectCandidates, runFile)
 }
@@ -240,7 +238,7 @@ dispatch:
 }
 
 func runConcreteFile(ctx context.Context, file *workspace.File, registry *Registry, session *formatter.Formatter, formatOptions formatter.Options, collectCandidate bool) fileResult {
-	return runConcreteFileCached(ctx, file, registry, session, formatOptions, collectCandidate, nil)
+	return runConcreteFileCached(ctx, file, registry, session, formatOptions, collectCandidate, nil, nil)
 }
 
 func runConcreteFileCached(
@@ -251,9 +249,11 @@ func runConcreteFileCached(
 	formatOptions formatter.Options,
 	collectCandidate bool,
 	cache *resultcache.Cache,
+	admission *workspace.CSTAdmission,
 ) fileResult {
 	finish := telemetry.Start("check.file-worker")
 	defer finish()
+	defer file.Release()
 	filename := file.Path()
 	if err := ctx.Err(); err != nil {
 		return fileResult{
@@ -294,6 +294,14 @@ func runConcreteFileCached(
 			err:      err,
 		}
 	}
+	releaseAdmission, err := admission.Acquire(ctx, workspace.EstimatedCSTBytes(int64(len(contents))))
+	if err != nil {
+		return fileResult{
+			filename: filename,
+			err:      err,
+		}
+	}
+	defer releaseAdmission()
 	tree, err := file.CST()
 	if err != nil {
 		return fileResult{

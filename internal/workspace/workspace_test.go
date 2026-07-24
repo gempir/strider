@@ -144,6 +144,103 @@ func TestCloseReleasesImmutableGenerationCaches(t *testing.T) {
 	}
 }
 
+func TestFileReleaseCSTKeepsSourceForTransactionalConsumers(t *testing.T) {
+	directory := t.TempDir()
+	filename := filepath.Join(directory, "main.go")
+	sourceText := []byte("package main\n")
+	if err := os.WriteFile(filename, sourceText, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	opened, err := Open([]string{
+		filename,
+	}, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	file := opened.Files()[0]
+	if _, err := file.CST(); err != nil {
+		t.Fatal(err)
+	}
+	file.ReleaseCST()
+	if _, err := file.CST(); err == nil {
+		t.Fatal("expected released CST to stay unavailable")
+	}
+	if contents, err := file.Bytes(); err != nil || !bytes.Equal(contents, sourceText) {
+		t.Fatalf("source after CST release = %q, %v", contents, err)
+	}
+}
+
+func TestCachedGenerationReleaseDoesNotInvalidateWatchReuse(t *testing.T) {
+	directory := t.TempDir()
+	filename := filepath.Join(directory, "main.go")
+	if err := os.WriteFile(filename, []byte("package main\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cache := NewCache(CacheOptions{})
+	first, err := cache.Open([]string{
+		filename,
+	}, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	firstTree, err := first.Files()[0].CST()
+	if err != nil {
+		t.Fatal(err)
+	}
+	first.Files()[0].Release()
+	second, err := cache.Open([]string{
+		filename,
+	}, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	secondTree, err := second.Files()[0].CST()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if secondTree != firstTree {
+		t.Fatal("released generation invalidated the cached watch snapshot")
+	}
+}
+
+func TestFileReleaseConcurrentWithReads(t *testing.T) {
+	directory := t.TempDir()
+	filename := filepath.Join(directory, "main.go")
+	if err := os.WriteFile(filename, []byte("package main\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	opened, err := Open([]string{
+		filename,
+	}, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	file := opened.Files()[0]
+	var group sync.WaitGroup
+	for range 8 {
+		group.Add(1)
+		go func() {
+			defer group.Done()
+			for range 100 {
+				if _, err := file.Bytes(); err != nil {
+					continue
+				}
+				if _, err := file.CST(); err != nil {
+					continue
+				}
+			}
+		}()
+	}
+	file.Release()
+	group.Wait()
+	if _, err := file.Bytes(); err == nil {
+		t.Fatal("expected source to remain released")
+	}
+	if _, err := file.CST(); err == nil {
+		t.Fatal("expected CST to remain released")
+	}
+}
+
 func TestCacheReusesImmutableSnapshotAcrossGenerations(t *testing.T) {
 	directory := t.TempDir()
 	filename := filepath.Join(directory, "main.go")
